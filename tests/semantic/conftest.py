@@ -21,6 +21,7 @@ from verity.cost import RunAccumulator
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.providers import LLMProvider
+from verity.reporting import render_cost_summary, write_step_summary
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
 
@@ -66,9 +67,16 @@ def golden_cases() -> list[GoldenCase]:
     return load_golden(_GOLDEN_DIR)
 
 
+_SESSION_ACCUMULATOR = RunAccumulator()
+
+
 def live_agent(settings: Settings) -> CoverageAgent:
     """Create a live CoverageAgent using the real retriever (needs Chroma indexed)."""
-    accumulator = RunAccumulator()
-    provider = LLMProvider(settings, accumulator)
+    provider = LLMProvider(settings, _SESSION_ACCUMULATOR)
     retriever = PolicyRetriever(settings.retrieval)
     return CoverageAgent(settings=settings, retriever=retriever, provider=provider)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    summary = render_cost_summary(_SESSION_ACCUMULATOR)
+    write_step_summary(summary)
