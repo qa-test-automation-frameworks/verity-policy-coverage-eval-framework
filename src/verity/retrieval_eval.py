@@ -32,7 +32,9 @@ class RetrievalScore(BaseModel):
     message: str
 
 
-def load_retrieval_benchmarks(path: Path | str = "datasets/retrieval/benchmarks.yaml") -> list[RetrievalBenchmark]:
+def load_retrieval_benchmarks(
+    path: Path | str = "datasets/retrieval/benchmarks.yaml",
+) -> list[RetrievalBenchmark]:
     """Load retrieval benchmark expectations from YAML."""
     benchmark_path = Path(path)
     with benchmark_path.open(encoding="utf-8") as fh:

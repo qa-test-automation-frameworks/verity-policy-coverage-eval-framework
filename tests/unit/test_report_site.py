@@ -96,6 +96,8 @@ class TestNavContent:
 class TestVulnerabilitiesPage:
     def _make_site(self, tmp_path: Path) -> dict[str, bool]:
         import importlib
+        from unittest.mock import patch
+
         import scripts.build_report_site as mod
 
         importlib.reload(mod)
@@ -103,7 +105,6 @@ class TestVulnerabilitiesPage:
         def fake_md_to_html(md_path: Path, title: str) -> str:
             return f"<html><body>{md_path.name}:{title}</body></html>"
 
-        from unittest.mock import patch
         with patch.object(mod, "_md_to_html", side_effect=fake_md_to_html):
             return mod.build_site(site_dir=tmp_path)
 
@@ -118,6 +119,8 @@ class TestVulnerabilitiesPage:
 
     def test_vulnerabilities_placeholder_references_defects_report(self, tmp_path: Path) -> None:
         import importlib
+        from unittest.mock import patch
+
         import scripts.build_report_site as mod
 
         importlib.reload(mod)
@@ -125,8 +128,6 @@ class TestVulnerabilitiesPage:
         def fake_md_to_html(md_path: Path, title: str) -> str:
             return f"<html><body>{md_path.name}</body></html>"
 
-        from unittest.mock import patch
-        # Remove defects-caught.md temporarily by patching Path.exists
         original_exists = Path.exists
 
         def patched_exists(self: Path) -> bool:
@@ -134,9 +135,11 @@ class TestVulnerabilitiesPage:
                 return False
             return original_exists(self)
 
-        with patch.object(mod, "_md_to_html", side_effect=fake_md_to_html):
-            with patch.object(Path, "exists", patched_exists):
-                result = mod.build_site(site_dir=tmp_path)
+        with (
+            patch.object(mod, "_md_to_html", side_effect=fake_md_to_html),
+            patch.object(Path, "exists", patched_exists),
+        ):
+            result = mod.build_site(site_dir=tmp_path)
 
         assert result.get("vulnerabilities.html") is False
         content = (tmp_path / "vulnerabilities.html").read_text()

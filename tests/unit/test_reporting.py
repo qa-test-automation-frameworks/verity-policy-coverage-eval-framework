@@ -13,7 +13,11 @@ from verity.reporting import render_cost_summary, write_step_summary
 def _log(acc: RunAccumulator, label: str, prompt: int = 100, completion: int = 50) -> None:
     acc.log_call(
         model="fake/model",
-        usage=Usage(prompt_tokens=prompt, completion_tokens=completion, total_tokens=prompt + completion),
+        usage=Usage(
+            prompt_tokens=prompt,
+            completion_tokens=completion,
+            total_tokens=prompt + completion,
+        ),
         latency_ms=10.0,
         label=label,
     )
@@ -62,7 +66,9 @@ class TestRenderCostSummary:
 
 
 class TestWriteStepSummary:
-    def test_writes_to_local_file_when_no_env_var(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_writes_to_local_file_when_no_env_var(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "reports").mkdir()
@@ -70,14 +76,18 @@ class TestWriteStepSummary:
         content = (tmp_path / "reports" / "cost-summary.md").read_text()
         assert "# Test" in content
 
-    def test_writes_to_github_step_summary_when_env_set(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_writes_to_github_step_summary_when_env_set(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         summary_file = tmp_path / "step_summary.md"
         summary_file.touch()
         monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary_file))
         write_step_summary("hello CI\n")
         assert "hello CI" in summary_file.read_text()
 
-    def test_appends_when_called_twice(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_appends_when_called_twice(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "reports").mkdir()

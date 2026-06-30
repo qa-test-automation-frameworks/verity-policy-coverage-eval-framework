@@ -8,6 +8,7 @@ the integration test (make defects-report).
 from __future__ import annotations
 
 import copy
+from pathlib import Path
 
 from scripts.defects_report import (
     DEFECT_CATALOG,
@@ -177,13 +178,13 @@ class TestBuildJson:
 
 
 class TestIngestSemanticResults:
-    def test_no_semantic_file_leaves_defects_covered(self, tmp_path: pytest.MonkeyPatch) -> None:
+    def test_no_semantic_file_leaves_defects_covered(self, tmp_path: Path) -> None:
         import copy
+        import os
+
         from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
 
         catalog = copy.deepcopy(DEFECT_CATALOG)
-        # _ingest_semantic_results reads from a fixed path; use monkeypatch via chdir
-        import os
         original = os.getcwd()
         os.chdir(tmp_path)
         try:
@@ -196,10 +197,11 @@ class TestIngestSemanticResults:
                 assert entry.status == "COVERED"
                 assert any("COVERED" in d for d in entry.details)
 
-    def test_semantic_file_with_matching_key_upgrades_to_verified(self, tmp_path: pytest.MonkeyPatch) -> None:
+    def test_semantic_file_with_matching_key_upgrades_to_verified(self, tmp_path: Path) -> None:
         import copy
         import json
         import os
+
         from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
 
         sem_dir = tmp_path / "reports" / "semantic"

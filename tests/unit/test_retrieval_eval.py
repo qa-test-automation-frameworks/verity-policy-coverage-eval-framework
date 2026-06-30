@@ -22,7 +22,9 @@ def test_score_retrieval_passes_when_sources_and_terms_match() -> None:
         required_terms=["covered"],
         min_context_precision=1.0,
     )
-    chunks = [Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")]
+    chunks = [
+        Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")
+    ]
 
     score = score_retrieval(chunks, benchmark)
 
@@ -40,7 +42,9 @@ def test_score_retrieval_fails_when_required_term_is_missing() -> None:
         required_terms=["excluded"],
         min_context_precision=1.0,
     )
-    chunks = [Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")]
+    chunks = [
+        Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")
+    ]
 
     score = score_retrieval(chunks, benchmark)
 

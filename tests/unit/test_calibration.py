@@ -349,27 +349,25 @@ class TestBuildScoringPrompt:
 
 
 class TestCalibrationJsonArtifact:
-    def test_calibration_json_has_judge_metadata(self, tmp_path: pytest.MonkeyPatch) -> None:
-        import copy
-        import json
-        import os
-        import time
+    def test_calibration_json_has_judge_metadata(self) -> None:
+        import sys
+        import warnings
+
+        from scripts.run_calibration import _run_hermetic
+
+        from verity.calibration import compute_agreement, compute_self_bias, load_calibration
 
         cases_path = Path("datasets/calibration/labeled.yaml")
         if not cases_path.exists():
             pytest.skip("calibration dataset not found")
 
-        from verity.calibration import load_calibration, compute_agreement, compute_self_bias
-
         cases = load_calibration(cases_path)
 
-        import sys
         sys.path.insert(0, str(Path("scripts")))
-        from scripts.run_calibration import _run_hermetic
-        import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             from verity.config import Settings
+
             settings = Settings()
 
         judge_scores = _run_hermetic(cases, settings)
@@ -383,8 +381,10 @@ class TestCalibrationJsonArtifact:
             },
             "agreement": {"n": agreement.n},
             "self_bias": {"self_preference_delta": round(bias.self_preference_delta, 4)},
-            "per_case": [{"id": c.id, "human": c.human_score, "judge": round(s, 3)}
-                         for c, s in zip(cases, judge_scores)],
+            "per_case": [
+                {"id": c.id, "human": c.human_score, "judge": round(s, 3)}
+                for c, s in zip(cases, judge_scores, strict=False)
+            ],
         }
 
         assert "judge" in raw
@@ -392,13 +392,14 @@ class TestCalibrationJsonArtifact:
         assert "mode" in raw["judge"]
 
     def test_calibration_artifact_structure(self) -> None:
+        import json
+
         artifact_dir = Path("reports/calibration")
         if not artifact_dir.exists():
             pytest.skip("no calibration artifacts present")
         json_files = list(artifact_dir.glob("calibration-*.json"))
         if not json_files:
             pytest.skip("no calibration JSON files found")
-        import json
         latest = sorted(json_files)[-1]
         data = json.loads(latest.read_text())
         assert "agreement" in data

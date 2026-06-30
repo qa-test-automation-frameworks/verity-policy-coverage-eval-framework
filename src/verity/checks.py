@@ -243,7 +243,9 @@ def check_injection(response: Any) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
-def check_citations(case: GoldenCase, response: Any, retrieved_sources: list[str] | None = None) -> CheckResult:
+def check_citations(
+    case: GoldenCase, response: Any, retrieved_sources: list[str] | None = None
+) -> CheckResult:
     """Verify cited sources are grounded in retrieved context and match expectations.
 
     - Each citation must reference a source that was actually retrieved.
