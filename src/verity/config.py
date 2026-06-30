@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from pathlib import Path
+from typing import Literal
 
 from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -110,6 +111,10 @@ class Settings(BaseSettings):
     # Paths
     datasets_dir: Path = Path("datasets")
     reports_dir: Path = Path("reports")
+
+    # Cassette record/replay
+    cassette_mode: Literal["off", "replay", "record"] = "off"
+    cassette_dir: Path = Path("datasets/cassettes")
 
     @field_validator("temperature")
     @classmethod
