@@ -13,10 +13,41 @@ Thresholds:
 
 from __future__ import annotations
 
+import importlib
+import sys
+import types
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from verity.judges import ProviderJudge
+
+
+def ensure_ragas_compat() -> None:
+    """Install a narrow compatibility shim for RAGAS optional imports."""
+    module_name = "langchain_community.chat_models.vertexai"
+    if module_name in sys.modules:
+        return
+    try:
+        importlib.import_module(module_name)
+        return
+    except ModuleNotFoundError as exc:
+        if exc.name != module_name:
+            raise
+
+    module = types.ModuleType(module_name)
+
+    class ChatVertexAI:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            raise ImportError(
+                "ChatVertexAI moved out of langchain-community; install the provider "
+                "integration before using Vertex-backed RAGAS judges."
+            )
+
+    module.ChatVertexAI = ChatVertexAI
+    sys.modules[module_name] = module
+    parent = importlib.import_module("langchain_community.chat_models")
+    parent.vertexai = module
+
 
 # Per-metric thresholds
 THRESHOLD_FAITHFULNESS: float = 0.7  # defects #1, #2, #7 fall below
@@ -36,6 +67,7 @@ def make_faithfulness(judge: ProviderJudge, threshold: float = THRESHOLD_FAITHFU
     Primary targets: defect #1 (bariatric hallucination), defect #2 (stale premium),
     defect #7 (injection compliance language not grounded in authoritative corpus).
     """
+    ensure_ragas_compat()
     try:
         from ragas.metrics import Faithfulness
     except ImportError as exc:
@@ -49,6 +81,7 @@ def make_context_precision(
     judge: ProviderJudge, threshold: float = THRESHOLD_CONTEXT_PRECISION
 ) -> Any:
     """RAGAS ContextPrecision — measures retrieval precision (relevant chunks retrieved)."""
+    ensure_ragas_compat()
     try:
         from ragas.metrics import ContextPrecision
     except ImportError as exc:
@@ -62,6 +95,7 @@ def make_ragas_answer_relevancy(
     judge: ProviderJudge, threshold: float = THRESHOLD_ANSWER_RELEVANCY
 ) -> Any:
     """RAGAS AnswerRelevancy — penalizes incomplete or off-topic answers."""
+    ensure_ragas_compat()
     try:
         from ragas.metrics import AnswerRelevancy
     except ImportError as exc:

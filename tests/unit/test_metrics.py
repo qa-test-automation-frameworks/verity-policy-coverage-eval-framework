@@ -23,6 +23,7 @@ from verity.metrics.deepeval_metrics import (
 )
 from verity.metrics.ragas_metrics import (
     THRESHOLD_FAITHFULNESS,
+    ensure_ragas_compat,
     make_context_precision,
     make_faithfulness,
     make_ragas_answer_relevancy,
@@ -134,6 +135,12 @@ class TestDeepEvalMetricConstruction:
 
 
 class TestRagasMetricConstruction:
+    def test_ragas_metric_import_smoke(self) -> None:
+        ensure_ragas_compat()
+        from ragas.metrics import Faithfulness
+
+        assert Faithfulness is not None
+
     def test_make_faithfulness_returns_object(self) -> None:
         try:
             m = make_faithfulness(_mock_judge())

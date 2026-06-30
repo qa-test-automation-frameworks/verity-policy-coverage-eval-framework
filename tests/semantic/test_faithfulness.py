@@ -14,7 +14,11 @@ from tests.semantic.conftest import live_agent
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
-from verity.metrics.ragas_metrics import THRESHOLD_FAITHFULNESS, make_faithfulness
+from verity.metrics.ragas_metrics import (
+    THRESHOLD_FAITHFULNESS,
+    ensure_ragas_compat,
+    make_faithfulness,
+)
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -32,6 +36,7 @@ def _score_faithfulness(
     settings: Settings,
     judge: ProviderJudge,
 ) -> float:
+    ensure_ragas_compat()
     try:
         from ragas import SingleTurnSample
     except ImportError:
