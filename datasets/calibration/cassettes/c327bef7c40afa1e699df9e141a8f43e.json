@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-faithfulness-008 (faithfulness)",
+  "model": "openai/glm-5.2",
+  "content": "Score: 6\n\nAdds referral requirement not in context.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

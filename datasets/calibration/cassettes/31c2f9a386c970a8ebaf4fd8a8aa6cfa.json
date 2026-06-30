@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-disambiguation-002 (disambiguation)",
+  "model": "openai/glm-5.2",
+  "content": "Score: 4\n\nOnly one plan's cost stated; no comparison.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

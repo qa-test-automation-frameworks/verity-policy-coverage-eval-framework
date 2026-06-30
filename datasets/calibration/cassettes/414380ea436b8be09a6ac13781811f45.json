@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-disambiguation-003 (disambiguation)",
+  "model": "openai/glm-5.2",
+  "content": "Score: 9\n\nParity confirmed, anomaly mentioned briefly.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-faithfulness-001 (faithfulness)",
+  "model": "openai/glm-5.2",
+  "content": "Score: 10\n\nUses amended $445 figure and cites source.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}
