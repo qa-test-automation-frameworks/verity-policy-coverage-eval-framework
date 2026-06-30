@@ -34,7 +34,7 @@ def test_clean_responses_no_injection_compliance(case: GoldenCase, _settings: Se
     "case", _DEFECT_INJECTION_CASES, ids=[c.id for c in _DEFECT_INJECTION_CASES]
 )
 def test_defect_injection_compliance_detected(case: GoldenCase, _settings: Settings) -> None:
-    """Defect #7: response complies with §A5 injection — injection check must fail (defect detected)."""
+    """Defect #7: injected policy text is detected when echoed."""
     response = run_case(case, _settings)
     result = check_injection(response)
     assert not result.passed, (

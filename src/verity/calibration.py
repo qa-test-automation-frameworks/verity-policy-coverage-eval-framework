@@ -5,16 +5,16 @@ annotations, and quantifies self-preference bias (inflated scores when the
 judge evaluates outputs from its own model family).
 
 Key exports:
-    CalibrationCase   — typed schema for a single labeled item
-    load_calibration  — loader for datasets/calibration/labeled.yaml
-    AgreementReport   — raw %, Cohen's kappa, MAE vs human labels
-    SelfBiasReport    — self_preference_delta = E[Δ | glm] − E[Δ | other]
-    compute_agreement — compute AgreementReport from labels + judge scores
-    compute_self_bias — compute SelfBiasReport from labels + judge scores
-    build_scoring_prompt — deterministic rubric-based scoring prompt
-    parse_judge_score — extract normalized 0-1 score from judge text
-    score_case        — run one calibration case through the judge
-    score_all         — run all cases, returning a list of scores
+    CalibrationCase   - typed schema for a single labeled item
+    load_calibration  - loader for datasets/calibration/labeled.yaml
+    AgreementReport   - raw %, Cohen's kappa, MAE vs human labels
+    SelfBiasReport    - self_preference_delta = E[delta | glm] - E[delta | other]
+    compute_agreement - compute AgreementReport from labels + judge scores
+    compute_self_bias - compute SelfBiasReport from labels + judge scores
+    build_scoring_prompt - deterministic rubric-based scoring prompt
+    parse_judge_score - extract normalized 0-1 score from judge text
+    score_case        - run one calibration case through the judge
+    score_all         - run all cases, returning a list of scores
 """
 
 from __future__ import annotations
@@ -26,7 +26,6 @@ from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field
-
 
 # ---------------------------------------------------------------------------
 # Schema
@@ -42,7 +41,7 @@ class CalibrationCase(BaseModel):
     context: list[str] = Field(default_factory=list)
     candidate_output: str
     output_family: Literal["glm", "other"]
-    human_score: float  # 0.0 – 1.0
+    human_score: float  # 0.0 - 1.0
     human_pass: bool
     rationale: str = ""
 
@@ -68,15 +67,15 @@ class AgreementReport:
     n: int
     raw_agreement: float  # fraction where judge_pass == human_pass
     cohen_kappa: float
-    mae: float  # mean |judge_score − human_score|
-    per_metric: dict[str, dict[str, float]]  # metric → {raw_agreement, mae, n}
+    mae: float  # mean |judge_score - human_score|
+    per_metric: dict[str, dict[str, float]]  # metric -> {raw_agreement, mae, n}
 
     def __str__(self) -> str:
         lines = [
             f"Agreement Report (n={self.n})",
             f"  Raw agreement : {self.raw_agreement:.1%}",
             f"  Cohen's kappa : {self.cohen_kappa:.3f}",
-            f"  MAE (0–1)     : {self.mae:.3f}",
+            f"  MAE (0-1)     : {self.mae:.3f}",
             "  Per metric:",
         ]
         for metric, stats in sorted(self.per_metric.items()):
@@ -95,9 +94,9 @@ class SelfBiasReport:
     self_preference_delta > 0 means the judge is more lenient on GLM-family outputs.
     """
 
-    self_preference_delta: float  # mean_delta_own − mean_delta_other
-    mean_delta_own_family: float  # mean(judge − human) for output_family="glm"
-    mean_delta_other_family: float  # mean(judge − human) for output_family="other"
+    self_preference_delta: float  # mean_delta_own - mean_delta_other
+    mean_delta_own_family: float  # mean(judge - human) for output_family="glm"
+    mean_delta_other_family: float  # mean(judge - human) for output_family="other"
     n_own: int
     n_other: int
 
@@ -106,9 +105,9 @@ class SelfBiasReport:
         return (
             f"Self-Bias Report\n"
             f"  GLM-family outputs   (n={self.n_own}): "
-            f"mean Δ = {self.mean_delta_own_family:+.3f}\n"
+            f"mean delta = {self.mean_delta_own_family:+.3f}\n"
             f"  Other-family outputs (n={self.n_other}): "
-            f"mean Δ = {self.mean_delta_other_family:+.3f}\n"
+            f"mean delta = {self.mean_delta_other_family:+.3f}\n"
             f"  Self-preference delta: {sign}{self.self_preference_delta:.3f}"
         )
 
@@ -127,7 +126,7 @@ def compute_agreement(
     judge_scores:
         Float scores in [0, 1] from the judge, one per case (same order).
     judge_threshold:
-        Threshold for converting judge float score → binary pass/fail.
+        Threshold for converting judge float score -> binary pass/fail.
     """
     n = len(cases)
     if n == 0:
@@ -140,7 +139,7 @@ def compute_agreement(
     judge_passes = [s >= judge_threshold for s in judge_scores]
 
     # Raw agreement
-    agree_count = sum(jp == c.human_pass for jp, c in zip(judge_passes, cases))
+    agree_count = sum(jp == c.human_pass for jp, c in zip(judge_passes, cases, strict=True))
     raw_agreement = agree_count / n
 
     # Cohen's kappa (binary classification)
@@ -151,7 +150,7 @@ def compute_agreement(
     cohen_kappa = (p_o - p_e) / (1 - p_e) if (1 - p_e) > 1e-9 else 0.0
 
     # Mean Absolute Error
-    mae = sum(abs(js - c.human_score) for js, c in zip(judge_scores, cases)) / n
+    mae = sum(abs(js - c.human_score) for js, c in zip(judge_scores, cases, strict=True)) / n
 
     # Per-metric breakdown
     metrics = sorted({c.metric for c in cases})
@@ -179,15 +178,15 @@ def compute_self_bias(
 ) -> SelfBiasReport:
     """Quantify self-preference bias.
 
-    delta = judge_score − human_score per case.
-    self_preference_delta = mean(delta on glm outputs) − mean(delta on other outputs).
+    delta = judge_score - human_score per case.
+    self_preference_delta = mean(delta on glm outputs) - mean(delta on other outputs).
     A positive delta means the judge is more lenient on its own family's outputs.
     """
     if len(cases) != len(judge_scores):
         raise ValueError("cases and judge_scores must have the same length")
 
-    own = [(c, s) for c, s in zip(cases, judge_scores) if c.output_family == "glm"]
-    other = [(c, s) for c, s in zip(cases, judge_scores) if c.output_family == "other"]
+    own = [(c, s) for c, s in zip(cases, judge_scores, strict=True) if c.output_family == "glm"]
+    other = [(c, s) for c, s in zip(cases, judge_scores, strict=True) if c.output_family == "other"]
 
     def _mean_delta(pairs: list[tuple[CalibrationCase, float]]) -> float:
         if not pairs:
@@ -278,7 +277,7 @@ def parse_judge_score(text: str) -> float:
     return 0.0
 
 
-def score_case(case: CalibrationCase, judge: "Any") -> float:
+def score_case(case: CalibrationCase, judge: Any) -> float:
     """Score a single calibration case using the judge.
 
     Parameters
@@ -293,6 +292,6 @@ def score_case(case: CalibrationCase, judge: "Any") -> float:
     return parse_judge_score(response)
 
 
-def score_all(cases: list[CalibrationCase], judge: "Any") -> list[float]:
+def score_all(cases: list[CalibrationCase], judge: Any) -> list[float]:
     """Score all calibration cases and return a list of 0-1 scores."""
     return [score_case(c, judge) for c in cases]

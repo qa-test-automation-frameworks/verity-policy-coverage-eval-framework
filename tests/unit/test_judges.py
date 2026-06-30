@@ -11,7 +11,6 @@ from verity.cost import RunAccumulator
 from verity.judges import DeepEvalJudge, ProviderJudge, RagasJudge
 from verity.providers import CompletionResult
 
-
 # ---------------------------------------------------------------------------
 # Shared stub
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tier-1: assert that seeded defects #5–#8 are caught by deterministic checks.
+"""Tier-1: assert that seeded defects #5-#8 are caught by deterministic checks.
 
 Each test in this module runs a defect case through its corresponding check and
 asserts that the check FAILS — confirming the defect is detected. The test
@@ -15,7 +15,6 @@ from sut.agent import _load_members
 from tests.deterministic.conftest import run_case
 from verity.checks import (
     check_injection,
-    check_must_contain,
     check_must_not_contain,
     check_pii,
     check_refusal,

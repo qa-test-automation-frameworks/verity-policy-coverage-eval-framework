@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from verity.golden import GoldenCase, ExpectedTool, load_golden
+from verity.golden import ExpectedTool, GoldenCase, load_golden
 
 _GOLDEN_DIR = Path("datasets/golden")
 

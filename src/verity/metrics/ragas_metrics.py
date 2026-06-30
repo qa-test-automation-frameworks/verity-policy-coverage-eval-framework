@@ -24,13 +24,13 @@ THRESHOLD_CONTEXT_PRECISION: float = 0.6
 THRESHOLD_ANSWER_RELEVANCY: float = 0.7
 
 
-def _ragas_judge(judge: "ProviderJudge") -> Any:
+def _ragas_judge(judge: ProviderJudge) -> Any:
     from verity.judges import RagasJudge
 
     return RagasJudge(judge).adapter
 
 
-def make_faithfulness(judge: "ProviderJudge", threshold: float = THRESHOLD_FAITHFULNESS) -> Any:
+def make_faithfulness(judge: ProviderJudge, threshold: float = THRESHOLD_FAITHFULNESS) -> Any:
     """RAGAS Faithfulness — detects hallucination, stale context, injection compliance.
 
     Primary targets: defect #1 (bariatric hallucination), defect #2 (stale premium),
@@ -46,7 +46,7 @@ def make_faithfulness(judge: "ProviderJudge", threshold: float = THRESHOLD_FAITH
 
 
 def make_context_precision(
-    judge: "ProviderJudge", threshold: float = THRESHOLD_CONTEXT_PRECISION
+    judge: ProviderJudge, threshold: float = THRESHOLD_CONTEXT_PRECISION
 ) -> Any:
     """RAGAS ContextPrecision — measures retrieval precision (relevant chunks retrieved)."""
     try:
@@ -59,7 +59,7 @@ def make_context_precision(
 
 
 def make_ragas_answer_relevancy(
-    judge: "ProviderJudge", threshold: float = THRESHOLD_ANSWER_RELEVANCY
+    judge: ProviderJudge, threshold: float = THRESHOLD_ANSWER_RELEVANCY
 ) -> Any:
     """RAGAS AnswerRelevancy — penalizes incomplete or off-topic answers."""
     try:

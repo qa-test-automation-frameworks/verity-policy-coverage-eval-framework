@@ -21,7 +21,6 @@ from verity.checks import (
 )
 from verity.golden import ExpectedTool, GoldenCase
 
-
 # ---------------------------------------------------------------------------
 # Minimal stub for AgentResponse (avoids importing sut from verity tests)
 # ---------------------------------------------------------------------------

@@ -119,7 +119,7 @@ class DeepEvalJudge:
             def get_model_name(self) -> str:
                 return judge.model_name
 
-            def load_model(self, *args: Any, **kwargs: Any) -> "DeepEvalBaseLLM":
+            def load_model(self, *args: Any, **kwargs: Any) -> DeepEvalBaseLLM:
                 return self
 
             def generate(self, prompt: str) -> str:

@@ -30,19 +30,19 @@ if TYPE_CHECKING:
 
 THRESHOLD_HALLUCINATION: float = 0.5  # HallucinationMetric score > 0.5 = hallucinated
 THRESHOLD_ANSWER_RELEVANCY: float = 0.7
-THRESHOLD_COMPLETENESS: float = 0.7  # G-Eval score (0–1); defect #3 falls below
+THRESHOLD_COMPLETENESS: float = 0.7  # G-Eval score (0-1); defect #3 falls below
 THRESHOLD_DISAMBIGUATION: float = 0.6  # G-Eval score; defect #4 falls below
 THRESHOLD_REFUSAL: float = 0.7  # G-Eval score; defect #6 falls below
 THRESHOLD_TOOL_CORRECTNESS: float = 0.6  # ToolCorrectnessMetric; defect #5 falls below
 
 
-def _deepeval_judge(judge: "ProviderJudge") -> Any:
+def _deepeval_judge(judge: ProviderJudge) -> Any:
     from verity.judges import DeepEvalJudge
 
     return DeepEvalJudge(judge).adapter
 
 
-def make_hallucination(judge: "ProviderJudge", threshold: float = THRESHOLD_HALLUCINATION) -> Any:
+def make_hallucination(judge: ProviderJudge, threshold: float = THRESHOLD_HALLUCINATION) -> Any:
     """HallucinationMetric — detects claims not grounded in the retrieved context.
 
     Primary target: defect #1 (bariatric surgery hallucination) and defect #7
@@ -60,7 +60,7 @@ def make_hallucination(judge: "ProviderJudge", threshold: float = THRESHOLD_HALL
 
 
 def make_answer_relevancy(
-    judge: "ProviderJudge", threshold: float = THRESHOLD_ANSWER_RELEVANCY
+    judge: ProviderJudge, threshold: float = THRESHOLD_ANSWER_RELEVANCY
 ) -> Any:
     """AnswerRelevancyMetric — detects off-topic or non-responsive answers."""
     try:
@@ -74,7 +74,7 @@ def make_answer_relevancy(
     )
 
 
-def make_completeness(judge: "ProviderJudge", threshold: float = THRESHOLD_COMPLETENESS) -> Any:
+def make_completeness(judge: ProviderJudge, threshold: float = THRESHOLD_COMPLETENESS) -> Any:
     """G-Eval completeness — detects defect #3 (incomplete multi-hop cost calculation)."""
     try:
         from deepeval.metrics import GEval
@@ -90,7 +90,7 @@ def make_completeness(judge: "ProviderJudge", threshold: float = THRESHOLD_COMPL
     )
 
 
-def make_disambiguation(judge: "ProviderJudge", threshold: float = THRESHOLD_DISAMBIGUATION) -> Any:
+def make_disambiguation(judge: ProviderJudge, threshold: float = THRESHOLD_DISAMBIGUATION) -> Any:
     """G-Eval disambiguation — detects defect #4 (contradiction not surfaced)."""
     try:
         from deepeval.metrics import GEval
@@ -106,7 +106,7 @@ def make_disambiguation(judge: "ProviderJudge", threshold: float = THRESHOLD_DIS
     )
 
 
-def make_refusal_geval(judge: "ProviderJudge", threshold: float = THRESHOLD_REFUSAL) -> Any:
+def make_refusal_geval(judge: ProviderJudge, threshold: float = THRESHOLD_REFUSAL) -> Any:
     """G-Eval refusal — detects defect #6 (refusal boundary breach)."""
     try:
         from deepeval.metrics import GEval
@@ -123,7 +123,7 @@ def make_refusal_geval(judge: "ProviderJudge", threshold: float = THRESHOLD_REFU
 
 
 def make_tool_correctness(
-    judge: "ProviderJudge", threshold: float = THRESHOLD_TOOL_CORRECTNESS
+    judge: ProviderJudge, threshold: float = THRESHOLD_TOOL_CORRECTNESS
 ) -> Any:
     """ToolCorrectnessMetric — detects defect #5 (tool argument transposition/skip)."""
     try:

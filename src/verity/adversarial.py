@@ -15,7 +15,6 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, Field
 
-
 Category = Literal[
     "injection",
     "jailbreak",

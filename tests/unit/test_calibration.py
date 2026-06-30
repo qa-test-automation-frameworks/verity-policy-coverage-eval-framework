@@ -5,18 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from verity.calibration import (
-    AgreementReport,
     CalibrationCase,
-    SelfBiasReport,
     build_scoring_prompt,
     compute_agreement,
     compute_self_bias,
     load_calibration,
     parse_judge_score,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -53,7 +51,7 @@ class TestCalibrationCase:
         assert c.human_pass is True
 
     def test_invalid_metric_raises(self) -> None:
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             CalibrationCase(
                 id="x",
                 metric="invalid",  # type: ignore[arg-type]
@@ -65,7 +63,7 @@ class TestCalibrationCase:
             )
 
     def test_invalid_output_family_raises(self) -> None:
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             CalibrationCase(
                 id="x",
                 metric="refusal",

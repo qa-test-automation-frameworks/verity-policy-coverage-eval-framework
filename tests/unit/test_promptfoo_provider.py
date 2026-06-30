@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import ClassVar
 
 import promptfoo.provider as promptfoo_provider
 
 
 class _FakeSettings:
-    seen_modes: list[str] = []
+    seen_modes: ClassVar[list[str]] = []
 
     def __init__(self, *, cassette_mode: str) -> None:
         self.cassette_mode = cassette_mode

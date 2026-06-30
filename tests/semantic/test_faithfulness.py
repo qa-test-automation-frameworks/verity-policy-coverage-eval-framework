@@ -34,7 +34,6 @@ def _score_faithfulness(
 ) -> float:
     try:
         from ragas import SingleTurnSample
-        from ragas.metrics import Faithfulness
     except ImportError:
         pytest.skip("ragas not available")
 
