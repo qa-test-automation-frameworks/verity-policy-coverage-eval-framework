@@ -1,0 +1,98 @@
+name: Adversarial Red-Team
+
+on:
+  schedule:
+    # Weekly: every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  key_check:
+    runs-on: ubuntu-latest
+    outputs:
+      has_key: ${{ steps.check.outputs.has_key }}
+    steps:
+      - id: check
+        run: |
+          if [ -n "${{ secrets.VERITY_ZAI_API_KEY }}" ]; then
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  redteam-hermetic:
+    needs: key_check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Hermetic adversarial suite
+        run: PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+
+  redteam-live:
+    needs: key_check
+    if: needs.key_check.outputs.has_key == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Promptfoo live red-team eval
+        env:
+          VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
+          VERITY_CASSETTE_MODE: passthrough
+        run: |
+          mkdir -p reports/redteam
+          npx --yes promptfoo@latest eval \
+            --config promptfoo/redteam.yaml \
+            --output reports/redteam/results.json
+
+      - name: Upload red-team report
+        uses: actions/upload-artifact@v4
+        with:
+          name: redteam-report
+          path: reports/redteam/
+
+  calibrate-live:
+    needs: key_check
+    if: needs.key_check.outputs.has_key == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Live calibration run
+        env:
+          VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
+        run: |
+          mkdir -p reports
+          PYTHONPATH=src uv run python scripts/run_calibration.py --record
+
+      - name: Upload calibration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: calibration-report
+          path: docs/calibration-report.md

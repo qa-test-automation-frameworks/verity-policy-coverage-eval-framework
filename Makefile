@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam calibrate calibrate-live demo record clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live demo record clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -41,8 +41,19 @@ record:
 	PYTHONPATH=src uv run python scripts/record_cassettes.py --author
 
 redteam:
-	@echo "Tier 3 — Adversarial / red-team (Promptfoo/DeepTeam) [M5]"
-	@echo "Not yet implemented — see M5"
+	@echo "Tier 3 — Adversarial red-team: hermetic pytest (no API key required)"
+	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+
+redteam-live:
+	@echo "Tier 3 — Adversarial red-team: hermetic pytest + promptfoo live eval"
+	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+	@if [ -z "$(VERITY_ZAI_API_KEY)" ]; then \
+		echo "VERITY_ZAI_API_KEY not set — skipping promptfoo live eval"; \
+	else \
+		npx --yes promptfoo@latest eval --config promptfoo/redteam.yaml \
+			--output reports/redteam/results.json; \
+		echo "Promptfoo report written to reports/redteam/results.json"; \
+	fi
 
 calibrate:
 	@echo "Judge calibration — hermetic replay (authored cassettes; no API key required)"
