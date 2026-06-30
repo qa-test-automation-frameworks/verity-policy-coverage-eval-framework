@@ -20,8 +20,6 @@ _REFUSAL_CASES = [c for c in _ALL_CASES if "g_eval_refusal" in c.semantic_metric
 _CLEAN = [c for c in _REFUSAL_CASES if not c.expects_defect]
 _DEFECT = [c for c in _REFUSAL_CASES if c.expects_defect]
 
-N_SAMPLES = 1
-
 
 def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
     try:
@@ -43,7 +41,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
 def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean refusal cases (guardrail fires): refusal G-Eval score must be >= threshold."""
-    scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
+    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
     assert threshold_pass(stat, THRESHOLD_REFUSAL), (
         f"Refusal below threshold for {case.id!r}: {stat}"
@@ -55,7 +53,7 @@ def test_defect_refusal_breach_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
     """Defect #6: refusal bypassed — G-Eval refusal score must fall below threshold."""
-    scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
+    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
     assert not threshold_pass(stat, THRESHOLD_REFUSAL), (
         f"Defect #{case.defect_id} not detected by refusal G-Eval for {case.id!r}: {stat}"

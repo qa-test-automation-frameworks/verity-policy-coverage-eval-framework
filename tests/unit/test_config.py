@@ -41,10 +41,24 @@ class TestSettings:
         assert s.provider == Provider.zai
         assert s.model == "glm-5.2"
         assert s.temperature == 0.0
+        assert s.semantic_samples == 1
 
     def test_invalid_temperature_raises(self) -> None:
         with pytest.raises(ValueError):
             Settings(temperature=3.0)
+
+    def test_invalid_semantic_samples_raises(self) -> None:
+        with pytest.raises(ValueError):
+            Settings(semantic_samples=0)
+
+    def test_semantic_samples_env_is_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import warnings
+
+        monkeypatch.setenv("VERITY_SEMANTIC_SAMPLES", "3")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            s = Settings(_env_file=None)
+        assert s.semantic_samples == 3
 
     def test_resolved_provider_returns_tuple(self) -> None:
         import warnings

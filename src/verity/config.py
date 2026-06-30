@@ -122,6 +122,7 @@ class Settings(BaseSettings):
     max_tokens: int = 2048
     timeout: int = 60
     retries: int = 3
+    semantic_samples: int = 1
 
     # Nested configs (instantiated as defaults; env vars still apply)
     judge: JudgeConfig = JudgeConfig()
@@ -140,6 +141,13 @@ class Settings(BaseSettings):
     def _clamp_temperature(cls, v: float) -> float:
         if not (0.0 <= v <= 2.0):
             raise ValueError("temperature must be in [0.0, 2.0]")
+        return v
+
+    @field_validator("semantic_samples")
+    @classmethod
+    def _validate_semantic_samples(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("semantic_samples must be >= 1")
         return v
 
     @model_validator(mode="after")

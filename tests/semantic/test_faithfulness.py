@@ -28,8 +28,6 @@ _FAITH_CASES = [c for c in _ALL_CASES if "faithfulness" in c.semantic_metrics]
 _CLEAN_FAITH = [c for c in _FAITH_CASES if not c.expects_defect]
 _DEFECT_FAITH = [c for c in _FAITH_CASES if c.expects_defect]
 
-N_SAMPLES = 1  # increase to 3+ for robustness; set low for CI speed
-
 
 def _score_faithfulness(
     case: GoldenCase,
@@ -59,7 +57,7 @@ def _score_faithfulness(
 @pytest.mark.parametrize("case", _CLEAN_FAITH, ids=[c.id for c in _CLEAN_FAITH])
 def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases: faithfulness must be >= threshold (no hallucination)."""
-    scores = [_score_faithfulness(case, settings, judge) for _ in range(N_SAMPLES)]
+    scores = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
     assert threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
         f"Faithfulness below threshold for {case.id!r}: {stat}"
@@ -71,7 +69,7 @@ def test_defect_faithfulness_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
     """Defect cases: faithfulness must fall BELOW threshold (defect detected)."""
-    scores = [_score_faithfulness(case, settings, judge) for _ in range(N_SAMPLES)]
+    scores = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
     assert not threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
         f"Defect #{case.defect_id} not detected by faithfulness check for {case.id!r}: {stat}"

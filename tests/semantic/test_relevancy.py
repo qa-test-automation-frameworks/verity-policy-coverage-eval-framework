@@ -20,8 +20,6 @@ _RELEVANCY_CASES = [
     c for c in _ALL_CASES if "answer_relevancy" in c.semantic_metrics and not c.expects_defect
 ]
 
-N_SAMPLES = 1
-
 
 def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
     try:
@@ -43,7 +41,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 @pytest.mark.parametrize("case", _RELEVANCY_CASES, ids=[c.id for c in _RELEVANCY_CASES])
 def test_answer_relevancy(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases must return a relevant, on-topic answer."""
-    scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
+    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
     assert threshold_pass(stat, THRESHOLD_ANSWER_RELEVANCY), (
         f"Answer relevancy below threshold for {case.id!r}: {stat}"

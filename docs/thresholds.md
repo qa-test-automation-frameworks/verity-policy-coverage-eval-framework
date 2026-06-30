@@ -13,8 +13,8 @@ the same query can score 0.85 one run and 0.65 the next. Rather than evaluating
 once and hoping the draw was representative, the framework uses the following
 pipeline:
 
-1. **N samples** — run the same query N times (configurable; default N=1 in CI
-   for cost; N=3 in nightly for reliability).
+1. **N samples** — run the same query N times via `VERITY_SEMANTIC_SAMPLES`
+   (default N=1 for local and push runs; scheduled semantic runs set N=3).
 2. **Aggregate** — compute mean, median, stdev, and pass-rate (fraction of
    individual runs that exceeded the threshold).
 3. **Threshold mode** — the comparison is made at the distribution level:

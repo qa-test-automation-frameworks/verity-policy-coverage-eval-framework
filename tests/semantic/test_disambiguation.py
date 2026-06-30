@@ -20,8 +20,6 @@ _DISAMBIG_CASES = [c for c in _ALL_CASES if "g_eval_disambiguation" in c.semanti
 _CLEAN = [c for c in _DISAMBIG_CASES if not c.expects_defect]
 _DEFECT = [c for c in _DISAMBIG_CASES if c.expects_defect]
 
-N_SAMPLES = 1
-
 
 def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
     try:
@@ -43,7 +41,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
 def test_clean_disambiguation(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
-    scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
+    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
     assert threshold_pass(stat, THRESHOLD_DISAMBIGUATION), (
         f"Disambiguation below threshold for {case.id!r}: {stat}"
@@ -54,7 +52,7 @@ def test_clean_disambiguation(case: GoldenCase, settings: Settings, judge: Provi
 def test_defect_disambiguation_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
-    scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
+    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
     assert not threshold_pass(stat, THRESHOLD_DISAMBIGUATION), (
         f"Defect #{case.defect_id} not detected by disambiguation for {case.id!r}: {stat}"
