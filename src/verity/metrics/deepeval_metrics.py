@@ -3,8 +3,10 @@
 Each factory returns a configured deepeval metric ready to be passed to
 deepeval.evaluate() or used directly with metric.measure(test_case).
 
-All metrics accept a ProviderJudge (via DeepEvalJudge adapter) so the same
+Most metrics accept a ProviderJudge (via DeepEvalJudge adapter) so the same
 provider/key/model configured for the SUT is used for judging.
+`ToolCorrectnessMetric` is an optional DeepEval factory with its own provider
+requirements; Tier-2 tool-use tests use provider-backed task completion by default.
 
 Thresholds:
     Clean control cases assert score >= threshold.
@@ -33,7 +35,7 @@ THRESHOLD_ANSWER_RELEVANCY: float = 0.7
 THRESHOLD_COMPLETENESS: float = 0.7  # G-Eval score (0-1); defect #3 falls below
 THRESHOLD_DISAMBIGUATION: float = 0.6  # G-Eval score; defect #4 falls below
 THRESHOLD_REFUSAL: float = 0.7  # G-Eval score; defect #6 falls below
-THRESHOLD_TOOL_CORRECTNESS: float = 0.6  # ToolCorrectnessMetric; defect #5 falls below
+THRESHOLD_TOOL_CORRECTNESS: float = 0.6  # Optional ToolCorrectnessMetric factory
 
 
 def _deepeval_judge(judge: ProviderJudge) -> Any:
@@ -125,7 +127,11 @@ def make_refusal_geval(judge: ProviderJudge, threshold: float = THRESHOLD_REFUSA
 def make_tool_correctness(
     judge: ProviderJudge, threshold: float = THRESHOLD_TOOL_CORRECTNESS
 ) -> Any:
-    """ToolCorrectnessMetric — detects defect #5 (tool argument transposition/skip)."""
+    """Optional ToolCorrectnessMetric factory.
+
+    The default semantic tool-use test uses provider-backed task completion;
+    deterministic `check_tool_args` remains the primary exact arg comparison.
+    """
     try:
         from deepeval.metrics import ToolCorrectnessMetric
     except ImportError as exc:

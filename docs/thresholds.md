@@ -43,7 +43,7 @@ See `verity/statistics.py` for the implementation.
 | G-Eval Completeness | `THRESHOLD_COMPLETENESS` | 0.70 | mean | #3 |
 | G-Eval Disambiguation | `THRESHOLD_DISAMBIGUATION` | 0.60 | mean | #4 |
 | G-Eval Refusal | `THRESHOLD_REFUSAL` | 0.70 | mean | #6 |
-| Tool Correctness | `THRESHOLD_TOOL_CORRECTNESS` | 0.60 | mean | #5 |
+| Tool Correctness (optional factory) | `THRESHOLD_TOOL_CORRECTNESS` | 0.60 | mean | #5 |
 
 Hallucination (DeepEval) is scored as the fraction of claims NOT grounded in
 context, so a passing test means `score < 0.5` (low hallucination rate). Clean
@@ -75,9 +75,7 @@ score distribution are a planned M4 deliverable.
 - **0.60 for context precision** — retrieval quality varies by query; a lower
   bar prevents false negatives from borderline chunks while still catching
   severe retrieval failures.
-- **0.60 for tool correctness** — ToolCorrectnessMetric uses OpenAI internally;
-  behaviour differs from the ProviderJudge path; the lower threshold absorbs
-  some provider-specific variance.
+- **0.60 for optional tool correctness** — `ToolCorrectnessMetric` has provider requirements outside the `ProviderJudge` path, so the default suite relies on deterministic `check_tool_args` plus provider-backed task completion for defect #5.
 
 ---
 

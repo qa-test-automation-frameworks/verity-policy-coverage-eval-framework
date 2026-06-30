@@ -55,7 +55,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `checks.py` | Pure deterministic assertion functions: `validate_response_schema`, `check_refusal`, `check_human_review`, `check_tool_args`, `scan_pii`, `check_pii`, `scan_injection`, `check_injection`, `check_must_contain`, `check_must_not_contain` |
 | `statistics.py` | `run_n_samples(fn, n)`, `aggregate(scores)` (mean/median/stdev/pass_rate), `threshold_pass(stat, threshold, mode)` |
 | `metrics/rubrics.py` | G-Eval rubric text constants for completeness (#3), disambiguation (#4), refusal (#6), and faithfulness |
-| `metrics/deepeval_metrics.py` | Six lazy metric factories: hallucination, answer relevancy, completeness, disambiguation, refusal, tool correctness |
+| `metrics/deepeval_metrics.py` | Six lazy metric factories: hallucination, answer relevancy, completeness, disambiguation, refusal, optional tool correctness |
 | `metrics/ragas_metrics.py` | Three RAGAS metric factories: faithfulness, context precision, answer relevancy |
 | `judges.py` | `ProviderJudge` (routes to `LLMProvider`); `DeepEvalJudge` adapter; `RagasJudge` LangChain duck-type shim |
 | `calibration.py` | `CalibrationCase` schema; `compute_agreement()` (raw %, Cohen's kappa, MAE); `compute_self_bias()` (GLM vs other delta); `score_all()` via rubric scoring prompt |
