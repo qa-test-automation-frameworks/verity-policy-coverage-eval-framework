@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from verity.config import Provider, Settings, resolve_provider
+from verity.config import Provider, Settings, get_settings, reset_settings, resolve_provider
 
 
 class TestResolveProvider:
@@ -100,3 +100,17 @@ class TestSettings:
             warnings.simplefilter("ignore")
             s = Settings(_env_file=None)
         assert s.resolved_provider()[1] == "https://runtime.example/v1"
+
+
+class TestSettingsSingleton:
+    def test_reset_settings_reloads_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        reset_settings()
+        monkeypatch.setenv("VERITY_MODEL", "first-model")
+        assert get_settings().model == "first-model"
+
+        monkeypatch.setenv("VERITY_MODEL", "second-model")
+        assert get_settings().model == "first-model"
+
+        reset_settings()
+        assert get_settings().model == "second-model"
+        reset_settings()
