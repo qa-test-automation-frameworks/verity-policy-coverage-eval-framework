@@ -1,0 +1,19 @@
+{
+  "_request_preview": "[turn-1] How much will I owe for a $1,000 diagnostic lab on my Gold plan?",
+  "model": "openai/glm-5.2",
+  "content": "",
+  "tool_calls": [
+    {
+      "id": "call_gold_lab_cost",
+      "function": {
+        "name": "coverage_calculator",
+        "arguments": "{\"claim_amount\": 1000.0, \"plan_deductible\": 750.0, \"accrued_deductible\": 750.0, \"plan_oop_max\": 4000.0, \"accrued_oop\": 1200.0, \"coinsurance_member\": 0.10}"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 140,
+    "completion_tokens": 32,
+    "total_tokens": 172
+  }
+}

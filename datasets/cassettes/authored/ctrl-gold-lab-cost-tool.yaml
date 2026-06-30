@@ -1,0 +1,16 @@
+turns:
+  - content: ""
+    tool_calls:
+      - id: call_gold_lab_cost
+        function:
+          name: coverage_calculator
+          arguments: '{"claim_amount": 1000.0, "plan_deductible": 750.0, "accrued_deductible": 750.0, "plan_oop_max": 4000.0, "accrued_oop": 1200.0, "coinsurance_member": 0.10}'
+    prompt_tokens: 140
+    completion_tokens: 32
+  - content: >
+      For a $1,000 in-network diagnostic lab on Gold, your deductible is already met.
+      The Gold lab benefit uses 10% member coinsurance after deductible, so you pay
+      **$100** and the plan pays **$900**, assuming the claim is otherwise covered
+      and in network.
+    prompt_tokens: 170
+    completion_tokens: 55
