@@ -151,11 +151,11 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
         )
         generated["cost.html"] = False
 
-    # vulnerabilities.html
-    vuln_md = Path("docs/seeded-defects.md")
-    if vuln_md.exists():
+    # vulnerabilities.html — prefer the generated run artifact over the design catalog
+    defects_caught_md = Path("docs/defects-caught.md")
+    if defects_caught_md.exists():
         (site_dir / "vulnerabilities.html").write_text(
-            _md_to_html(vuln_md, "Adversarial Vulnerability Summary"),
+            _md_to_html(defects_caught_md, "Adversarial Vulnerability Summary"),
             encoding="utf-8",
         )
         generated["vulnerabilities.html"] = True
@@ -163,7 +163,8 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
         (site_dir / "vulnerabilities.html").write_text(
             _placeholder_html(
                 "Adversarial Vulnerability Summary",
-                "docs/seeded-defects.md not found",
+                "Run `make defects-report` to generate docs/defects-caught.md from cassette replay. "
+                "The seeded-defect design catalog is at docs/seeded-defects.md.",
             ),
             encoding="utf-8",
         )
