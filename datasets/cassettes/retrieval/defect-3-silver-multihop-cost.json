@@ -1,0 +1,14 @@
+[
+  {
+    "text": "## §1. Overview\n\n| Parameter | Value |\n|-----------|-------|\n| Annual Deductible (individual) | $2,000 |\n| Out-of-Pocket Maximum (individual) | $6,000 |\n| Coinsurance (after deductible) | 20% member / 80% plan |",
+    "source": "silver.md",
+    "section": "§1. Overview",
+    "chunk_id": "fx-d3-silver-params-01"
+  },
+  {
+    "text": "## §A3. Silver and Gold Plans — Outpatient Surgical Procedure Cost Example\n\n**Silver Plan example — knee arthroscopy, allowed amount $3,500, member has $1,200 remaining deductible:**\n\nStep 1 — Apply remaining deductible: member pays $1,200; plan pays $0 against deductible.\nStep 2 — Apply coinsurance to remainder: $3,500 − $1,200 = $2,300 subject to coinsurance.\n         Member pays 20% of $2,300 = $460.\nTotal member cost: $1,200 + $460 = **$1,660**.\nTotal plan pays: $3,500 − $1,660 = **$1,840**.",
+    "source": "amendments.md",
+    "section": "§A3. Silver and Gold Plans — Outpatient Surgical Procedure Cost Example",
+    "chunk_id": "fx-d3-amend-a3-01"
+  }
+]

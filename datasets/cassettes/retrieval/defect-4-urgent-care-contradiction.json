@@ -1,0 +1,14 @@
+[
+  {
+    "text": "### §3.7 Urgent Care\n- **In-network urgent care:** $75 copay per visit\n- **Out-of-network urgent care:** 10% coinsurance after deductible",
+    "source": "gold.md",
+    "section": "§3.7 Urgent Care",
+    "chunk_id": "fx-d4-gold-uc-01"
+  },
+  {
+    "text": "### §3.7 Urgent Care\n- **In-network urgent care:** $75 copay per visit\n- **Out-of-network urgent care:** 20% coinsurance after deductible",
+    "source": "silver.md",
+    "section": "§3.7 Urgent Care",
+    "chunk_id": "fx-d4-silver-uc-01"
+  }
+]

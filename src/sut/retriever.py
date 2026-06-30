@@ -5,13 +5,19 @@ is fully local and reproducible — no external embedding API calls.
 
 The ONNX model is downloaded and cached by Chroma on first use; subsequent runs
 are offline. Document this in CONTRIBUTING and cache in CI if needed (M2).
+
+FixtureRetriever is a drop-in replacement for deterministic tests: it serves
+pre-authored Chunk lists from JSON files in datasets/cassettes/retrieval/
+so Tier-1 tests need no Chroma instance and no ONNX download.
 """
 
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import chromadb
@@ -151,3 +157,47 @@ class PolicyRetriever:
                 )
             )
         return chunks
+
+
+# ---------------------------------------------------------------------------
+# Fixture retriever — deterministic / no Chroma required
+# ---------------------------------------------------------------------------
+
+_RETRIEVAL_FIXTURE_DIR = Path("datasets/cassettes/retrieval")
+
+
+class FixtureRetriever:
+    """Serves pre-authored Chunk lists from JSON fixture files.
+
+    Drop-in replacement for PolicyRetriever in deterministic tests.
+    No Chroma instance, no ONNX model download, no network required.
+
+    Fixture files live at: datasets/cassettes/retrieval/<case_id>.json
+    Each file is a JSON array of Chunk-compatible dicts.
+    """
+
+    def __init__(
+        self,
+        case_id: str,
+        fixture_dir: Path | None = None,
+    ) -> None:
+        self._case_id = case_id
+        self._dir = fixture_dir or _RETRIEVAL_FIXTURE_DIR
+
+    def index_corpus(self, force: bool = False) -> int:
+        return 0  # no-op — fixtures are pre-authored
+
+    def retrieve(self, query: str, top_k: int | None = None) -> list[Chunk]:
+        fixture_file = self._dir / f"{self._case_id}.json"
+        if not fixture_file.exists():
+            return []
+        raw: Any = json.loads(fixture_file.read_text())
+        return [
+            Chunk(
+                text=item["text"],
+                source=item["source"],
+                section=item.get("section", ""),
+                chunk_id=item.get("chunk_id", _stable_id(item["source"], item["text"])),
+            )
+            for item in raw
+        ]

@@ -1,8 +1,11 @@
-"""Unit tests for the corpus chunker (no Chroma, no embedding calls)."""
+"""Unit tests for the corpus chunker and FixtureRetriever (no Chroma, no embedding calls)."""
 
 from __future__ import annotations
 
-from sut.retriever import _chunk_text, _extract_section_heading, _stable_id
+import json
+from pathlib import Path
+
+from sut.retriever import Chunk, FixtureRetriever, _chunk_text, _extract_section_heading, _stable_id
 
 
 class TestChunkText:
@@ -60,3 +63,63 @@ class TestStableId:
         id1 = _stable_id("bronze.md", "text")
         id2 = _stable_id("silver.md", "text")
         assert id1 != id2
+
+
+class TestFixtureRetriever:
+    def test_returns_empty_for_missing_fixture(self, tmp_path: Path) -> None:
+        r = FixtureRetriever("no-such-case", fixture_dir=tmp_path)
+        assert r.retrieve("anything") == []
+
+    def test_loads_chunks_from_json(self, tmp_path: Path) -> None:
+        fixture = [
+            {
+                "text": "## §3.2 Specialist Visits\n- $60 copay",
+                "source": "silver.md",
+                "section": "§3.2 Specialist Visits",
+                "chunk_id": "fx-test-01",
+            }
+        ]
+        (tmp_path / "my-case.json").write_text(json.dumps(fixture))
+
+        r = FixtureRetriever("my-case", fixture_dir=tmp_path)
+        chunks = r.retrieve("specialist copay")
+        assert len(chunks) == 1
+        assert chunks[0].source == "silver.md"
+        assert chunks[0].section == "§3.2 Specialist Visits"
+        assert "60 copay" in chunks[0].text
+
+    def test_returns_chunk_dataclass(self, tmp_path: Path) -> None:
+        fixture = [{"text": "some text", "source": "gold.md", "section": "§1"}]
+        (tmp_path / "c.json").write_text(json.dumps(fixture))
+        chunks = FixtureRetriever("c", fixture_dir=tmp_path).retrieve("q")
+        assert isinstance(chunks[0], Chunk)
+
+    def test_index_corpus_is_noop(self, tmp_path: Path) -> None:
+        r = FixtureRetriever("x", fixture_dir=tmp_path)
+        assert r.index_corpus() == 0
+        assert r.index_corpus(force=True) == 0
+
+    def test_query_ignored_returns_all_fixtures(self, tmp_path: Path) -> None:
+        fixture = [
+            {"text": "chunk one", "source": "a.md", "section": "§1"},
+            {"text": "chunk two", "source": "b.md", "section": "§2"},
+        ]
+        (tmp_path / "multi.json").write_text(json.dumps(fixture))
+        r = FixtureRetriever("multi", fixture_dir=tmp_path)
+        assert len(r.retrieve("irrelevant query")) == 2
+
+    def test_chunk_id_auto_generated_when_missing(self, tmp_path: Path) -> None:
+        fixture = [{"text": "text without id", "source": "x.md"}]
+        (tmp_path / "noid.json").write_text(json.dumps(fixture))
+        chunks = FixtureRetriever("noid", fixture_dir=tmp_path).retrieve("q")
+        assert chunks[0].chunk_id  # non-empty auto-generated id
+
+    def test_real_fixture_dir_contains_all_case_fixtures(self) -> None:
+        from verity.golden import load_golden
+
+        fixture_dir = Path("datasets/cassettes/retrieval")
+        cases = load_golden()
+        missing = [
+            c.id for c in cases if not (fixture_dir / f"{c.id}.json").exists()
+        ]
+        assert not missing, f"Missing retrieval fixtures for cases: {missing}"

@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## §4. Prescription Drugs\n\n| Tier | Description | Cost |\n|------|-------------|------|\n| Tier 1 (Generic) | $10 copay | No deductible |\n| Tier 2 (Preferred Brand) | $40 copay | No deductible |\n| Tier 3 (Non-Preferred Brand) | $80 copay | After deductible |\n| Tier 4 (Specialty) | 20% coinsurance | After deductible; PA required |",
+    "source": "silver.md",
+    "section": "§4. Prescription Drugs",
+    "chunk_id": "fx-ctrl-silver-rx-01"
+  }
+]
