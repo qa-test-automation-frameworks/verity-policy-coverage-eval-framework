@@ -2,7 +2,13 @@
 
 > A production-grade evaluation framework for LLM applications — solving non-determinism, cost, provider-coupling, and judge trust — demonstrated on a high-stakes RAG + tool-use assistant.
 
-**Status:** M0 (Foundation) + M1 (SUT) + M2 (Deterministic Tier) + M3 (Semantic Tier) + M4 (Judge Calibration) + M5 (Adversarial Tier) + M6 (Observability & Cost) complete · M7–M8 in progress
+[![PR Gate](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
+[![Semantic Eval](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
+[![Adversarial](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+
+**Status:** M0–M7 complete · M8 in progress
 
 ---
 
