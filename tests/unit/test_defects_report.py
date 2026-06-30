@@ -169,3 +169,53 @@ class TestBuildJson:
         summary = data["summary"]
         assert isinstance(summary, dict)
         assert summary["caught"] == 4
+
+
+# ---------------------------------------------------------------------------
+# _ingest_semantic_results
+# ---------------------------------------------------------------------------
+
+
+class TestIngestSemanticResults:
+    def test_no_semantic_file_leaves_defects_covered(self, tmp_path: pytest.MonkeyPatch) -> None:
+        import copy
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        # _ingest_semantic_results reads from a fixed path; use monkeypatch via chdir
+        import os
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        for entry in catalog:
+            if entry.id <= 4:
+                assert entry.status == "COVERED"
+                assert any("COVERED" in d for d in entry.details)
+
+    def test_semantic_file_with_matching_key_upgrades_to_verified(self, tmp_path: pytest.MonkeyPatch) -> None:
+        import copy
+        import json
+        import os
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        sem_dir = tmp_path / "reports" / "semantic"
+        sem_dir.mkdir(parents=True)
+        (sem_dir / "results.json").write_text(
+            json.dumps({"defect-1-hallucination": {"passed": False}}),
+            encoding="utf-8",
+        )
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        defect_1 = next(e for e in catalog if e.id == 1)
+        assert defect_1.status == "VERIFIED"

@@ -91,3 +91,53 @@ class TestNavContent:
         assert "Test Title" in html
         assert "Test message here" in html
         assert "verity eval" in html
+
+
+class TestVulnerabilitiesPage:
+    def _make_site(self, tmp_path: Path) -> dict[str, bool]:
+        import importlib
+        import scripts.build_report_site as mod
+
+        importlib.reload(mod)
+
+        def fake_md_to_html(md_path: Path, title: str) -> str:
+            return f"<html><body>{md_path.name}:{title}</body></html>"
+
+        from unittest.mock import patch
+        with patch.object(mod, "_md_to_html", side_effect=fake_md_to_html):
+            return mod.build_site(site_dir=tmp_path)
+
+    def test_vulnerabilities_uses_defects_caught_when_present(self, tmp_path: Path) -> None:
+        defects_md = Path("docs/defects-caught.md")
+        if not defects_md.exists():
+            return
+        result = self._make_site(tmp_path)
+        assert result.get("vulnerabilities.html") is True
+        content = (tmp_path / "vulnerabilities.html").read_text()
+        assert "defects-caught.md" in content
+
+    def test_vulnerabilities_placeholder_references_defects_report(self, tmp_path: Path) -> None:
+        import importlib
+        import scripts.build_report_site as mod
+
+        importlib.reload(mod)
+
+        def fake_md_to_html(md_path: Path, title: str) -> str:
+            return f"<html><body>{md_path.name}</body></html>"
+
+        from unittest.mock import patch
+        # Remove defects-caught.md temporarily by patching Path.exists
+        original_exists = Path.exists
+
+        def patched_exists(self: Path) -> bool:
+            if self.name == "defects-caught.md":
+                return False
+            return original_exists(self)
+
+        with patch.object(mod, "_md_to_html", side_effect=fake_md_to_html):
+            with patch.object(Path, "exists", patched_exists):
+                result = mod.build_site(site_dir=tmp_path)
+
+        assert result.get("vulnerabilities.html") is False
+        content = (tmp_path / "vulnerabilities.html").read_text()
+        assert "defects-report" in content
