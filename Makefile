@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record docker-test clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -102,6 +102,12 @@ demo:
 	PYTHONPATH=src uv run python -m sut.agent "$(QUERY)"
 
 # ---------------------------------------------------------------------------
+# Container
+# ---------------------------------------------------------------------------
+docker-test:
+	@echo "Building container and running Tier-1 checks (no API key required)"
+	docker build -t verity-eval:local . && docker run --rm verity-eval:local
+
 # Cleanup
 # ---------------------------------------------------------------------------
 clean:
