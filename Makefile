@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo defects-report demo record clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -73,6 +73,23 @@ defects-report:
 	@echo "Defects-caught matrix — hermetic replay for defects 5-8; semantic ingestion when available"
 	PYTHONPATH=src:. uv run python scripts/defects_report.py
 	@echo "Report written to docs/defects-caught.md"
+
+report-allure:
+	@echo "Tier 1+3 hermetic suites with Allure results capture (no API key required)"
+	PYTHONPATH=src uv run pytest tests/unit/ tests/deterministic/ tests/adversarial/ \
+		-m "not live" --alluredir reports/allure-results -v
+	@if command -v allure >/dev/null 2>&1; then \
+		allure generate reports/allure-results --clean -o reports/allure-report; \
+		echo "Allure HTML at reports/allure-report/index.html"; \
+	else \
+		echo "allure CLI not found — skipping HTML generation (results captured in reports/allure-results/)"; \
+	fi
+
+report-site:
+	@echo "Building static report site in site/"
+	$(MAKE) defects-report
+	PYTHONPATH=src:. uv run python scripts/build_report_site.py
+	@echo "Site ready at site/index.html"
 
 # ---------------------------------------------------------------------------
 # SUT demo

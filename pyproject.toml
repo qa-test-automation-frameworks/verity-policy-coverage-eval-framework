@@ -35,6 +35,10 @@ otel = [
     "opentelemetry-sdk>=1.25.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.25.0",
 ]
+report = [
+    "allure-pytest>=2.13.0",
+    "markdown>=3.6",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/verity", "src/sut"]
@@ -59,6 +63,10 @@ otel = [
     "opentelemetry-api>=1.25.0",
     "opentelemetry-sdk>=1.25.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.25.0",
+]
+report = [
+    "allure-pytest>=2.13.0",
+    "markdown>=3.6",
 ]
 
 # ---------------------------------------------------------------------------
@@ -103,6 +111,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["opentelemetry.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["markdown.*", "allure.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
