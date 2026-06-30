@@ -9,6 +9,7 @@ import pytest
 
 from verity.checks import (
     CheckResult,
+    check_citations,
     check_injection,
     check_must_contain,
     check_must_not_contain,
@@ -328,3 +329,40 @@ class TestMustNotContain:
 
     def test_empty_must_not_contain_always_passes(self) -> None:
         assert check_must_not_contain(_case(), _Response(answer="anything")).passed
+
+
+class TestCheckCitations:
+    def test_cited_source_in_retrieved_context_passes(self) -> None:
+        case = _case(expected_citations=["gold.md"])
+        resp = _Response(citations=["gold.md: §2.1 Drug Benefits"])
+        assert check_citations(case, resp, retrieved_sources=["gold.md", "exclusions.md"]).passed
+
+    def test_citation_not_in_retrieved_context_fails(self) -> None:
+        case = _case()
+        resp = _Response(citations=["bronze.md: §1"])
+        result = check_citations(case, resp, retrieved_sources=["gold.md"])
+        assert not result.passed
+        assert "bronze.md" in result.message
+
+    def test_expected_source_missing_from_citations_fails(self) -> None:
+        case = _case(expected_citations=["exclusions.md"])
+        resp = _Response(citations=["gold.md: §2"])
+        result = check_citations(case, resp, retrieved_sources=["gold.md", "exclusions.md"])
+        assert not result.passed
+        assert "exclusions.md" in result.message
+
+    def test_no_expected_citations_no_retrieved_sources_passes(self) -> None:
+        case = _case()
+        resp = _Response(citations=[])
+        assert check_citations(case, resp).passed
+
+    def test_citation_source_parsed_correctly_with_section(self) -> None:
+        case = _case(expected_citations=["silver.md"])
+        resp = _Response(citations=["silver.md: §3 Physical Therapy"])
+        assert check_citations(case, resp, retrieved_sources=["silver.md"]).passed
+
+    def test_unsupported_citation_no_expected_still_fails(self) -> None:
+        case = _case()
+        resp = _Response(citations=["phantom.md: §99"])
+        result = check_citations(case, resp, retrieved_sources=["gold.md", "silver.md"])
+        assert not result.passed

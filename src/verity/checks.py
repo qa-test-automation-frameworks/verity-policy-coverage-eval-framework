@@ -238,6 +238,41 @@ def check_injection(response: Any) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Citation source check
+# ---------------------------------------------------------------------------
+
+
+def check_citations(case: GoldenCase, response: Any, retrieved_sources: list[str] | None = None) -> CheckResult:
+    """Verify cited sources are grounded in retrieved context and match expectations.
+
+    - Each citation must reference a source that was actually retrieved.
+    - If case.expected_citations is non-empty, every expected source must appear.
+    """
+    citations: list[str] = list(getattr(response, "citations", []))
+    cited_sources = {c.split(":")[0].strip() for c in citations}
+
+    if retrieved_sources is not None:
+        retrieved_set = set(retrieved_sources)
+        unsupported = cited_sources - retrieved_set
+        if unsupported:
+            return CheckResult(
+                False,
+                f"Citations reference sources not in retrieved context: {sorted(unsupported)}",
+            )
+
+    expected = set(case.expected_citations)
+    if expected:
+        missing = expected - cited_sources
+        if missing:
+            return CheckResult(
+                False,
+                f"Expected citation sources missing from response: {sorted(missing)}",
+            )
+
+    return CheckResult(True)
+
+
 def check_must_contain(case: GoldenCase, response: Any) -> CheckResult:
     """Verify all must_contain tokens appear (case-insensitive) in the answer."""
     answer = str(getattr(response, "answer", "")).lower()
