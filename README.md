@@ -106,6 +106,7 @@ make eval-semantic # full Tier-2 semantic suite (~$0.03 for 6 test files x N=3)
 | Observability | OTel span table, env vars, cost summary | [docs/observability.md](docs/observability.md) |
 | Architecture | Component walk-through, data flow, CI table | [docs/architecture.md](docs/architecture.md) |
 | ADRs | 5 design decisions with context and alternatives | [docs/adr/](docs/adr/) |
+| Extension guide | How to add providers, datasets, evaluators, and reports | [docs/extending.md](docs/extending.md) |
 
 The full report site (Allure + defects-caught landing + calibration + cost) is
 published to GitHub Pages on every push to `main` via `pages.yml`.
