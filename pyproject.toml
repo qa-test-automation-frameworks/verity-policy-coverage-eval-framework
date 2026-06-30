@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "verity-policy-coverage-eval-framework"
 version = "0.1.0"
 description = "A structured, multi-tier evaluation framework for LLM applications — demonstrated on a policy coverage RAG + tool-use assistant."
-license = { text = "MIT" }
+license = { text = "MIT with Attribution" }
 requires-python = ">=3.12"
 readme = "README.md"
 dependencies = [
