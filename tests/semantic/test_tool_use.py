@@ -51,7 +51,9 @@ def test_clean_task_completion(case: GoldenCase, settings: Settings, judge: Prov
 
 
 @pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
-def test_defect_tool_use_detected(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
+def test_defect_tool_use_detected(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> None:
     """Defect #5: tool skipped or args wrong — task completion must fall below threshold."""
     scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
     stat = aggregate(scores)

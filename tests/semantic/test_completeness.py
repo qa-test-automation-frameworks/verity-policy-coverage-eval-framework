@@ -51,7 +51,9 @@ def test_clean_completeness(case: GoldenCase, settings: Settings, judge: Provide
 
 
 @pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
-def test_defect_completeness_detected(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
+def test_defect_completeness_detected(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> None:
     scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
     stat = aggregate(scores)
     assert not threshold_pass(stat, THRESHOLD_COMPLETENESS), (

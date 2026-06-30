@@ -112,8 +112,7 @@ class DeepEvalJudge:
             from deepeval.models.base_model import DeepEvalBaseLLM
         except ImportError as exc:
             raise ImportError(
-                "deepeval is required for Tier-2 evaluation. "
-                "Install with: uv sync --group semantic"
+                "deepeval is required for Tier-2 evaluation. Install with: uv sync --group semantic"
             ) from exc
 
         class _Adapter(DeepEvalBaseLLM):  # type: ignore[no-untyped-call]

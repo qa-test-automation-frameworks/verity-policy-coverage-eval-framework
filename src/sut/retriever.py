@@ -31,9 +31,9 @@ class Chunk:
     """A retrieved text chunk with provenance metadata."""
 
     text: str
-    source: str       # filename (relative to corpus_dir)
-    section: str      # detected heading, or ""
-    chunk_id: str     # stable hash of (source, text)
+    source: str  # filename (relative to corpus_dir)
+    section: str  # detected heading, or ""
+    chunk_id: str  # stable hash of (source, text)
 
 
 def _extract_section_heading(text: str) -> str:

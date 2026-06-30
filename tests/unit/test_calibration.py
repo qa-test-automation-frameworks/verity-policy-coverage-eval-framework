@@ -22,6 +22,7 @@ from verity.calibration import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _case(
     metric: str = "completeness",
     human_score: float = 0.8,
@@ -44,6 +45,7 @@ def _case(
 # CalibrationCase schema
 # ---------------------------------------------------------------------------
 
+
 class TestCalibrationCase:
     def test_valid_case_parses(self) -> None:
         c = _case()
@@ -53,25 +55,36 @@ class TestCalibrationCase:
     def test_invalid_metric_raises(self) -> None:
         with pytest.raises(Exception):
             CalibrationCase(
-                id="x", metric="invalid",  # type: ignore[arg-type]
-                query="q", candidate_output="a",
-                output_family="glm", human_score=0.5, human_pass=True,
+                id="x",
+                metric="invalid",  # type: ignore[arg-type]
+                query="q",
+                candidate_output="a",
+                output_family="glm",
+                human_score=0.5,
+                human_pass=True,
             )
 
     def test_invalid_output_family_raises(self) -> None:
         with pytest.raises(Exception):
             CalibrationCase(
-                id="x", metric="refusal",
-                query="q", candidate_output="a",
+                id="x",
+                metric="refusal",
+                query="q",
+                candidate_output="a",
                 output_family="anthropic",  # type: ignore[arg-type]
-                human_score=0.5, human_pass=True,
+                human_score=0.5,
+                human_pass=True,
             )
 
     def test_context_defaults_empty(self) -> None:
         c = CalibrationCase(
-            id="x", metric="faithfulness",
-            query="q", candidate_output="a",
-            output_family="other", human_score=0.7, human_pass=True,
+            id="x",
+            metric="faithfulness",
+            query="q",
+            candidate_output="a",
+            output_family="other",
+            human_score=0.7,
+            human_pass=True,
         )
         assert c.context == []
 
@@ -83,6 +96,7 @@ class TestCalibrationCase:
 # ---------------------------------------------------------------------------
 # load_calibration
 # ---------------------------------------------------------------------------
+
 
 class TestLoadCalibration:
     def test_loads_real_dataset(self) -> None:
@@ -130,6 +144,7 @@ class TestLoadCalibration:
 # ---------------------------------------------------------------------------
 # compute_agreement
 # ---------------------------------------------------------------------------
+
 
 class TestComputeAgreement:
     def _cases_and_scores(self) -> tuple[list[CalibrationCase], list[float]]:
@@ -201,11 +216,12 @@ class TestComputeAgreement:
 # compute_self_bias
 # ---------------------------------------------------------------------------
 
+
 class TestComputeSelfBias:
     def test_positive_self_preference(self) -> None:
         cases = [
-            _case(human_score=0.6, output_family="glm"),   # judge: 0.8 → delta +0.2
-            _case(human_score=0.7, output_family="glm"),   # judge: 0.9 → delta +0.2
+            _case(human_score=0.6, output_family="glm"),  # judge: 0.8 → delta +0.2
+            _case(human_score=0.7, output_family="glm"),  # judge: 0.9 → delta +0.2
             _case(human_score=0.7, output_family="other"),  # judge: 0.7 → delta 0.0
             _case(human_score=0.8, output_family="other"),  # judge: 0.8 → delta 0.0
         ]
@@ -226,8 +242,8 @@ class TestComputeSelfBias:
 
     def test_negative_self_preference(self) -> None:
         cases = [
-            _case(human_score=0.8, output_family="glm"),    # judge: 0.7 → delta -0.1
-            _case(human_score=0.5, output_family="other"),   # judge: 0.8 → delta +0.3
+            _case(human_score=0.8, output_family="glm"),  # judge: 0.7 → delta -0.1
+            _case(human_score=0.5, output_family="other"),  # judge: 0.8 → delta +0.3
         ]
         judge_scores = [0.7, 0.8]
         report = compute_self_bias(cases, judge_scores)
@@ -262,6 +278,7 @@ class TestComputeSelfBias:
 # parse_judge_score
 # ---------------------------------------------------------------------------
 
+
 class TestParseJudgeScore:
     def test_standard_format(self) -> None:
         assert parse_judge_score("Score: 8") == pytest.approx(0.8)
@@ -294,6 +311,7 @@ class TestParseJudgeScore:
 # ---------------------------------------------------------------------------
 # build_scoring_prompt
 # ---------------------------------------------------------------------------
+
 
 class TestBuildScoringPrompt:
     def test_contains_query(self) -> None:

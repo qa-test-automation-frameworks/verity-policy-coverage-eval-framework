@@ -77,9 +77,11 @@ class TestDeepEvalJudge:
         judge = _make_provider_judge()
         # model_name needs _settings; mock it
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             from verity.config import Settings
+
             judge._settings = Settings()  # type: ignore[attr-defined]
         dj = DeepEvalJudge(judge)
         name = dj.adapter.get_model_name()
@@ -94,9 +96,7 @@ class TestDeepEvalJudge:
     def test_a_generate_via_adapter(self) -> None:
         judge = _make_provider_judge("async judge response")
         dj = DeepEvalJudge(judge)
-        result = asyncio.get_event_loop().run_until_complete(
-            dj.adapter.a_generate("async prompt")
-        )
+        result = asyncio.get_event_loop().run_until_complete(dj.adapter.a_generate("async prompt"))
         assert result == "async judge response"
 
     def test_load_model_returns_self(self) -> None:
@@ -106,7 +106,10 @@ class TestDeepEvalJudge:
         assert loaded is dj.adapter
 
     def test_import_error_when_deepeval_missing(self) -> None:
-        with patch.dict("sys.modules", {"deepeval": None, "deepeval.models": None, "deepeval.models.base_model": None}):
+        with patch.dict(
+            "sys.modules",
+            {"deepeval": None, "deepeval.models": None, "deepeval.models.base_model": None},
+        ):
             judge = _make_provider_judge()
             with pytest.raises(ImportError, match="deepeval is required"):
                 DeepEvalJudge._build_adapter(judge)
@@ -140,9 +143,7 @@ class TestRagasJudge:
     def test_ainvoke_returns_ai_message(self) -> None:
         judge = _make_provider_judge("async ragas")
         rj = RagasJudge(judge)
-        result = asyncio.get_event_loop().run_until_complete(
-            rj.adapter.ainvoke("async prompt")
-        )
+        result = asyncio.get_event_loop().run_until_complete(rj.adapter.ainvoke("async prompt"))
         assert hasattr(result, "content")
         assert result.content == "async ragas"
 
@@ -154,7 +155,14 @@ class TestRagasJudge:
         assert a1 is a2
 
     def test_import_error_when_langchain_missing(self) -> None:
-        with patch.dict("sys.modules", {"langchain_core": None, "langchain_core.messages": None, "langchain_core.outputs": None}):
+        with patch.dict(
+            "sys.modules",
+            {
+                "langchain_core": None,
+                "langchain_core.messages": None,
+                "langchain_core.outputs": None,
+            },
+        ):
             judge = _make_provider_judge()
             with pytest.raises(ImportError, match="langchain-core is required"):
                 RagasJudge._build_adapter(judge)

@@ -81,7 +81,6 @@ def test_record_call_span_sets_attributes(monkeypatch: pytest.MonkeyPatch) -> No
     """record_call_span sets model/token/cost attributes on the current span."""
     pytest.importorskip("opentelemetry.sdk")
 
-
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import SimpleSpanProcessor
     from opentelemetry.sdk.trace.export.in_memory_span_exporter import (

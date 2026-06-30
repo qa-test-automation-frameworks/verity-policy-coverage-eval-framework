@@ -28,16 +28,17 @@ if TYPE_CHECKING:
 # Per-metric thresholds (referenced by semantic tests)
 # ---------------------------------------------------------------------------
 
-THRESHOLD_HALLUCINATION: float = 0.5   # HallucinationMetric score > 0.5 = hallucinated
+THRESHOLD_HALLUCINATION: float = 0.5  # HallucinationMetric score > 0.5 = hallucinated
 THRESHOLD_ANSWER_RELEVANCY: float = 0.7
-THRESHOLD_COMPLETENESS: float = 0.7    # G-Eval score (0–1); defect #3 falls below
+THRESHOLD_COMPLETENESS: float = 0.7  # G-Eval score (0–1); defect #3 falls below
 THRESHOLD_DISAMBIGUATION: float = 0.6  # G-Eval score; defect #4 falls below
-THRESHOLD_REFUSAL: float = 0.7         # G-Eval score; defect #6 falls below
+THRESHOLD_REFUSAL: float = 0.7  # G-Eval score; defect #6 falls below
 THRESHOLD_TOOL_CORRECTNESS: float = 0.6  # ToolCorrectnessMetric; defect #5 falls below
 
 
 def _deepeval_judge(judge: "ProviderJudge") -> Any:
     from verity.judges import DeepEvalJudge
+
     return DeepEvalJudge(judge).adapter
 
 
@@ -58,7 +59,9 @@ def make_hallucination(judge: "ProviderJudge", threshold: float = THRESHOLD_HALL
     )
 
 
-def make_answer_relevancy(judge: "ProviderJudge", threshold: float = THRESHOLD_ANSWER_RELEVANCY) -> Any:
+def make_answer_relevancy(
+    judge: "ProviderJudge", threshold: float = THRESHOLD_ANSWER_RELEVANCY
+) -> Any:
     """AnswerRelevancyMetric — detects off-topic or non-responsive answers."""
     try:
         from deepeval.metrics import AnswerRelevancyMetric
@@ -119,7 +122,9 @@ def make_refusal_geval(judge: "ProviderJudge", threshold: float = THRESHOLD_REFU
     )
 
 
-def make_tool_correctness(judge: "ProviderJudge", threshold: float = THRESHOLD_TOOL_CORRECTNESS) -> Any:
+def make_tool_correctness(
+    judge: "ProviderJudge", threshold: float = THRESHOLD_TOOL_CORRECTNESS
+) -> Any:
     """ToolCorrectnessMetric — detects defect #5 (tool argument transposition/skip)."""
     try:
         from deepeval.metrics import ToolCorrectnessMetric

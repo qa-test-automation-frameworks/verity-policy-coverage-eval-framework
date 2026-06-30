@@ -105,6 +105,7 @@ class TestDeepEvalMetricConstruction:
 
     def test_make_tool_correctness_returns_object(self) -> None:
         import os
+
         if not os.environ.get("OPENAI_API_KEY"):
             pytest.skip("OPENAI_API_KEY not set — ToolCorrectnessMetric requires OpenAI")
         m = make_tool_correctness(_mock_judge())

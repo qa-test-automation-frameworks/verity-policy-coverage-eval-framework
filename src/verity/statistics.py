@@ -26,7 +26,7 @@ class StatResult:
     mean: float
     median: float
     stdev: float
-    pass_rate: float   # fraction of scores above the pass threshold
+    pass_rate: float  # fraction of scores above the pass threshold
     n: int
 
     def __str__(self) -> str:

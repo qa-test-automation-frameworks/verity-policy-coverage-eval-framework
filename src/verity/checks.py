@@ -146,9 +146,7 @@ def check_tool_args(case: GoldenCase, response: Any) -> CheckResult:
     for arg_name, expected_val in expected.expected_arg_values.items():
         actual_val = args.get(arg_name)
         if actual_val != expected_val:
-            mismatches.append(
-                f"{arg_name}: expected {expected_val!r}, got {actual_val!r}"
-            )
+            mismatches.append(f"{arg_name}: expected {expected_val!r}, got {actual_val!r}")
     if mismatches:
         return CheckResult(False, "Tool arg value mismatch: " + "; ".join(mismatches))
 

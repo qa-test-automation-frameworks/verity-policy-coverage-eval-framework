@@ -49,7 +49,7 @@ def _load_members() -> dict[str, dict[str, Any]]:
 _PLAN_PARAMS: dict[str, dict[str, float]] = {
     "bronze": {"plan_deductible": 4000.0, "plan_oop_max": 8000.0, "coinsurance_member": 0.40},
     "silver": {"plan_deductible": 2000.0, "plan_oop_max": 6000.0, "coinsurance_member": 0.20},
-    "gold":   {"plan_deductible": 750.0,  "plan_oop_max": 4000.0, "coinsurance_member": 0.10},
+    "gold": {"plan_deductible": 750.0, "plan_oop_max": 4000.0, "coinsurance_member": 0.10},
 }
 
 # ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ class ToolInvocation(BaseModel):
 
 class AgentResponse(BaseModel):
     answer: str
-    citations: list[str]         # list of "source: section" strings
+    citations: list[str]  # list of "source: section" strings
     tool_invocations: list[ToolInvocation]
     refused: bool
     refusal_reason: str
@@ -143,6 +143,7 @@ def _build_system_prompt(member: dict[str, Any], chunks: list[Chunk]) -> str:
 # Agent
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CoverageAgent:
     settings: Settings = field(default_factory=get_settings)
@@ -212,21 +213,23 @@ class CoverageAgent:
             # 6. Handle tool calls (single round)
             if result.tool_calls:
                 tool_results_msgs: list[dict[str, Any]] = []
-                messages.append({
-                    "role": "assistant",
-                    "content": result.content or "",
-                    "tool_calls": [
-                        {
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
-                            },
-                        }
-                        for tc in result.tool_calls
-                    ],
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": result.content or "",
+                        "tool_calls": [
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tc.function.name,
+                                    "arguments": tc.function.arguments,
+                                },
+                            }
+                            for tc in result.tool_calls
+                        ],
+                    }
+                )
 
                 for tc in result.tool_calls:
                     fn_name = tc.function.name
@@ -244,11 +247,13 @@ class CoverageAgent:
                     tool_invocations.append(
                         ToolInvocation(tool_name=fn_name, args=args, result=tool_result)
                     )
-                    tool_results_msgs.append({
-                        "role": "tool",
-                        "tool_call_id": tc.id,
-                        "content": json.dumps(tool_result),
-                    })
+                    tool_results_msgs.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tc.id,
+                            "content": json.dumps(tool_result),
+                        }
+                    )
 
                 messages.extend(tool_results_msgs)
 
@@ -285,6 +290,7 @@ class CoverageAgent:
 # ---------------------------------------------------------------------------
 # CLI entrypoint
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     import argparse

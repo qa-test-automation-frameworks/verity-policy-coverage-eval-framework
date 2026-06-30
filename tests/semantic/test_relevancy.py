@@ -17,8 +17,7 @@ pytestmark = [pytest.mark.semantic, pytest.mark.live]
 
 _ALL_CASES = load_golden(Path("datasets/golden"))
 _RELEVANCY_CASES = [
-    c for c in _ALL_CASES
-    if "answer_relevancy" in c.semantic_metrics and not c.expects_defect
+    c for c in _ALL_CASES if "answer_relevancy" in c.semantic_metrics and not c.expects_defect
 ]
 
 N_SAMPLES = 1

@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field, field_validator
 # Input / output models (Pydantic v2)
 # ---------------------------------------------------------------------------
 
+
 class CoverageInput(BaseModel):
     """Input parameters for the coverage calculator.
 
@@ -76,6 +77,7 @@ class CoverageResult(BaseModel):
 # ---------------------------------------------------------------------------
 # Calculator
 # ---------------------------------------------------------------------------
+
 
 def calculate_coverage(inp: CoverageInput) -> CoverageResult:
     """Compute the member's cost and plan's cost for a single covered claim."""

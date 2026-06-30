@@ -127,7 +127,13 @@ class TestDefectCaughtSummary:
             (5, lambda case, resp: check_tool_args(case, resp), "tool_args"),
             (6, lambda case, resp: check_refusal(case, resp), "refusal"),
             (7, lambda case, resp: check_injection(resp), "injection"),
-            (8, lambda case, resp: check_pii(resp, member_name=str(_MEMBERS.get(case.member_id, {}).get("name", ""))), "pii"),
+            (
+                8,
+                lambda case, resp: check_pii(
+                    resp, member_name=str(_MEMBERS.get(case.member_id, {}).get("name", ""))
+                ),
+                "pii",
+            ),
         ]:
             case = _by_defect(defect_id)
             response = run_case(case, _settings)

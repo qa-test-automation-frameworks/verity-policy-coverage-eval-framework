@@ -20,6 +20,7 @@ from scripts.defects_report import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _catalog_with_statuses(
     statuses: dict[int, str],
 ) -> list[DefectEntry]:
@@ -34,6 +35,7 @@ def _catalog_with_statuses(
 # ---------------------------------------------------------------------------
 # DEFECT_CATALOG structure
 # ---------------------------------------------------------------------------
+
 
 class TestCatalogStructure:
     def test_has_eight_entries(self) -> None:
@@ -72,11 +74,10 @@ class TestCatalogStructure:
 # render_markdown
 # ---------------------------------------------------------------------------
 
+
 class TestRenderMarkdown:
     def test_contains_all_eight_defect_rows(self) -> None:
-        catalog = _catalog_with_statuses(
-            {5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"}
-        )
+        catalog = _catalog_with_statuses({5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"})
         md = render_markdown(catalog)
         for i in range(1, 9):
             assert f"| {i} |" in md, f"Row for defect #{i} missing from markdown"
@@ -102,9 +103,7 @@ class TestRenderMarkdown:
         assert "✅ VERIFIED" in md
 
     def test_hermetic_count_in_header(self) -> None:
-        catalog = _catalog_with_statuses(
-            {5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"}
-        )
+        catalog = _catalog_with_statuses({5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"})
         md = render_markdown(catalog)
         assert "4 of 8 defects caught hermetically" in md
 
@@ -124,6 +123,7 @@ class TestRenderMarkdown:
 # ---------------------------------------------------------------------------
 # build_json
 # ---------------------------------------------------------------------------
+
 
 class TestBuildJson:
     def test_summary_keys_present(self) -> None:
@@ -151,9 +151,7 @@ class TestBuildJson:
         assert len(defects) == 8
 
     def test_status_counts_sum_to_total(self) -> None:
-        catalog = _catalog_with_statuses(
-            {5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"}
-        )
+        catalog = _catalog_with_statuses({5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"})
         data = build_json(catalog)
         summary = data["summary"]
         assert isinstance(summary, dict)
@@ -166,9 +164,7 @@ class TestBuildJson:
         assert total == 8
 
     def test_four_caught_reflected_in_json(self) -> None:
-        catalog = _catalog_with_statuses(
-            {5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"}
-        )
+        catalog = _catalog_with_statuses({5: "CAUGHT", 6: "CAUGHT", 7: "CAUGHT", 8: "CAUGHT"})
         data = build_json(catalog)
         summary = data["summary"]
         assert isinstance(summary, dict)

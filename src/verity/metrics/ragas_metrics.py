@@ -19,13 +19,14 @@ if TYPE_CHECKING:
     from verity.judges import ProviderJudge
 
 # Per-metric thresholds
-THRESHOLD_FAITHFULNESS: float = 0.7       # defects #1, #2, #7 fall below
+THRESHOLD_FAITHFULNESS: float = 0.7  # defects #1, #2, #7 fall below
 THRESHOLD_CONTEXT_PRECISION: float = 0.6
 THRESHOLD_ANSWER_RELEVANCY: float = 0.7
 
 
 def _ragas_judge(judge: "ProviderJudge") -> Any:
     from verity.judges import RagasJudge
+
     return RagasJudge(judge).adapter
 
 
@@ -44,7 +45,9 @@ def make_faithfulness(judge: "ProviderJudge", threshold: float = THRESHOLD_FAITH
     return metric
 
 
-def make_context_precision(judge: "ProviderJudge", threshold: float = THRESHOLD_CONTEXT_PRECISION) -> Any:
+def make_context_precision(
+    judge: "ProviderJudge", threshold: float = THRESHOLD_CONTEXT_PRECISION
+) -> Any:
     """RAGAS ContextPrecision — measures retrieval precision (relevant chunks retrieved)."""
     try:
         from ragas.metrics import ContextPrecision
@@ -55,7 +58,9 @@ def make_context_precision(judge: "ProviderJudge", threshold: float = THRESHOLD_
     return metric
 
 
-def make_ragas_answer_relevancy(judge: "ProviderJudge", threshold: float = THRESHOLD_ANSWER_RELEVANCY) -> Any:
+def make_ragas_answer_relevancy(
+    judge: "ProviderJudge", threshold: float = THRESHOLD_ANSWER_RELEVANCY
+) -> Any:
     """RAGAS AnswerRelevancy — penalizes incomplete or off-topic answers."""
     try:
         from ragas.metrics import AnswerRelevancy

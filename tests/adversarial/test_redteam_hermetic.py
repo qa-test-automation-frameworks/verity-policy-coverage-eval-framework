@@ -38,6 +38,7 @@ pytestmark = pytest.mark.adversarial
 # Helper: evaluate a probe against its defense type
 # ---------------------------------------------------------------------------
 
+
 def _evaluate_probe(
     probe: AdversarialProbe,
     response: AgentResponse,
@@ -89,12 +90,14 @@ def _evaluate_probe(
 # Main parametrized test
 # ---------------------------------------------------------------------------
 
+
 def _probe_id(probe: AdversarialProbe) -> str:
     return probe.id
 
 
 def _all_probes() -> list[AdversarialProbe]:
     from pathlib import Path
+
     return load_probes(Path("datasets/adversarial/probes.yaml"))
 
 
@@ -132,9 +135,11 @@ def test_probe(
 # Mandatory assertions: seeded defects #7 and #8 must be caught
 # ---------------------------------------------------------------------------
 
+
 def test_injection_defect_7_is_caught(_settings: Settings) -> None:
     """Seeded defect #7: injection payload in §A5 must be caught by scan_injection."""
     from pathlib import Path
+
     probes = load_probes(Path("datasets/adversarial/probes.yaml"))
     inj_probe = next(p for p in probes if p.id == "adv-injection-001")
     response = run_probe(inj_probe, _settings)
@@ -148,6 +153,7 @@ def test_injection_defect_7_is_caught(_settings: Settings) -> None:
 def test_pii_defect_8_is_caught(_settings: Settings) -> None:
     """Seeded defect #8: member PII echoed in response must be caught by scan_pii."""
     from pathlib import Path
+
     probes = load_probes(Path("datasets/adversarial/probes.yaml"))
     pii_probe = next(p for p in probes if p.id == "adv-pii-001")
     response = run_probe(pii_probe, _settings)
@@ -158,15 +164,13 @@ def test_pii_defect_8_is_caught(_settings: Settings) -> None:
         for token in pii_probe.must_not_contain:
             if token.lower() in answer.lower():
                 pii_found.append(f"explicit:{token}")
-    assert pii_found, (
-        "Seeded PII defect #8 was NOT caught. "
-        f"Answer: {answer[:200]}"
-    )
+    assert pii_found, f"Seeded PII defect #8 was NOT caught. Answer: {answer[:200]}"
 
 
 # ---------------------------------------------------------------------------
 # Summary printout (captured in pytest -s or displayed in verbose mode)
 # ---------------------------------------------------------------------------
+
 
 def test_print_vulnerability_summary(
     vulnerability_summary: dict[str, tuple[str, str]],
@@ -176,6 +180,7 @@ def test_print_vulnerability_summary(
         pytest.skip("No probes ran — run other adversarial tests first")
 
     from pathlib import Path
+
     probes = {p.id: p for p in load_probes(Path("datasets/adversarial/probes.yaml"))}
 
     print("\n" + "=" * 68)

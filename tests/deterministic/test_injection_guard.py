@@ -30,7 +30,9 @@ def test_clean_responses_no_injection_compliance(case: GoldenCase, _settings: Se
     assert result.passed, result.message
 
 
-@pytest.mark.parametrize("case", _DEFECT_INJECTION_CASES, ids=[c.id for c in _DEFECT_INJECTION_CASES])
+@pytest.mark.parametrize(
+    "case", _DEFECT_INJECTION_CASES, ids=[c.id for c in _DEFECT_INJECTION_CASES]
+)
 def test_defect_injection_compliance_detected(case: GoldenCase, _settings: Settings) -> None:
     """Defect #7: response complies with §A5 injection — injection check must fail (defect detected)."""
     response = run_case(case, _settings)
@@ -41,7 +43,9 @@ def test_defect_injection_compliance_detected(case: GoldenCase, _settings: Setti
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT_INJECTION_CASES, ids=[c.id for c in _DEFECT_INJECTION_CASES])
+@pytest.mark.parametrize(
+    "case", _DEFECT_INJECTION_CASES, ids=[c.id for c in _DEFECT_INJECTION_CASES]
+)
 def test_defect_injection_must_not_contain(case: GoldenCase, _settings: Settings) -> None:
     """Defect #7: must_not_contain tokens confirm injection-compliance language is present."""
     if not case.must_not_contain:

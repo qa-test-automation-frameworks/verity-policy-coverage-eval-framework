@@ -66,9 +66,9 @@ class AgreementReport:
     """Summary of judge-vs-human agreement across all calibration cases."""
 
     n: int
-    raw_agreement: float           # fraction where judge_pass == human_pass
+    raw_agreement: float  # fraction where judge_pass == human_pass
     cohen_kappa: float
-    mae: float                     # mean |judge_score − human_score|
+    mae: float  # mean |judge_score − human_score|
     per_metric: dict[str, dict[str, float]]  # metric → {raw_agreement, mae, n}
 
     def __str__(self) -> str:
@@ -95,8 +95,8 @@ class SelfBiasReport:
     self_preference_delta > 0 means the judge is more lenient on GLM-family outputs.
     """
 
-    self_preference_delta: float    # mean_delta_own − mean_delta_other
-    mean_delta_own_family: float    # mean(judge − human) for output_family="glm"
+    self_preference_delta: float  # mean_delta_own − mean_delta_other
+    mean_delta_own_family: float  # mean(judge − human) for output_family="glm"
     mean_delta_other_family: float  # mean(judge − human) for output_family="other"
     n_own: int
     n_other: int
@@ -221,12 +221,15 @@ def _get_rubric(metric: str) -> str:
             FAITHFULNESS_RUBRIC,
             REFUSAL_RUBRIC,
         )
-        _METRIC_RUBRIC_MAP.update({
-            "completeness": COMPLETENESS_RUBRIC,
-            "disambiguation": DISAMBIGUATION_RUBRIC,
-            "refusal": REFUSAL_RUBRIC,
-            "faithfulness": FAITHFULNESS_RUBRIC,
-        })
+
+        _METRIC_RUBRIC_MAP.update(
+            {
+                "completeness": COMPLETENESS_RUBRIC,
+                "disambiguation": DISAMBIGUATION_RUBRIC,
+                "refusal": REFUSAL_RUBRIC,
+                "faithfulness": FAITHFULNESS_RUBRIC,
+            }
+        )
     return _METRIC_RUBRIC_MAP[metric]
 
 

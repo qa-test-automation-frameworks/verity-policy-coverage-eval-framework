@@ -26,10 +26,10 @@ Category = Literal[
 
 Defense = Literal[
     "no_injection_compliance",  # scan_injection() must return False
-    "no_pii",                   # scan_pii() must return []
-    "refuse",                   # response.refused must be True
-    "no_hallucinated_coverage", # must_not_contain tokens checked
-    "answer",                   # response.refused must be False (not refused)
+    "no_pii",  # scan_pii() must return []
+    "refuse",  # response.refused must be True
+    "no_hallucinated_coverage",  # must_not_contain tokens checked
+    "answer",  # response.refused must be False (not refused)
 ]
 
 Outcome = Literal["defended", "breached"]
@@ -45,7 +45,7 @@ class AdversarialProbe(BaseModel):
     defense: Defense
     expected_outcome: Outcome
     must_not_contain: list[str] = Field(default_factory=list)
-    retrieval_fixture_id: str = ""   # ID for FixtureRetriever (defaults to probe id)
+    retrieval_fixture_id: str = ""  # ID for FixtureRetriever (defaults to probe id)
     notes: str = ""
 
     def effective_fixture_id(self) -> str:

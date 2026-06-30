@@ -30,12 +30,14 @@ _ALL_CASES = load_golden(_GOLDEN_DIR)
 def _requires_no_llm(case: GoldenCase) -> bool:
     """True when guardrails will short-circuit before any LLM call for this case."""
     from sut.guardrails import check_input
+
     refused, _ = check_input(case.query)
     return refused
 
 
 def _first_turn_key(case: GoldenCase, settings: Settings) -> str:
     from sut.agent import _build_system_prompt
+
     members = _load_members()
     member = members.get(case.member_id, next(iter(members.values())))
     retriever = FixtureRetriever(case.id)
@@ -69,8 +71,7 @@ class TestCassetteManifest:
             if not lib.has(key):
                 missing.append(f"{case.id} (key={key[:12]}…)")
         assert not missing, (
-            f"Missing cassettes for cases: {missing}. "
-            "Run 'make record' to regenerate."
+            f"Missing cassettes for cases: {missing}. Run 'make record' to regenerate."
         )
 
     def test_cassette_dir_has_json_files(self) -> None:
@@ -79,9 +80,7 @@ class TestCassetteManifest:
 
     def test_retrieval_dir_has_all_fixture_files(self) -> None:
         fixture_dir = _CASSETTE_DIR / "retrieval"
-        missing = [
-            c.id for c in _ALL_CASES if not (fixture_dir / f"{c.id}.json").exists()
-        ]
+        missing = [c.id for c in _ALL_CASES if not (fixture_dir / f"{c.id}.json").exists()]
         assert not missing, f"Missing retrieval fixture files: {missing}"
 
 

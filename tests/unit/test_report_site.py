@@ -16,6 +16,7 @@ class TestBuildSite:
         import importlib
 
         import scripts.build_report_site as mod
+
         importlib.reload(mod)
 
         def fake_md_to_html(md_path: Path, title: str) -> str:
@@ -58,8 +59,11 @@ class TestBuildSite:
     def test_all_expected_pages_in_result(self, tmp_path: Path) -> None:
         result = self._make_site(tmp_path)
         expected = (
-            "index.html", "calibration.html", "cost.html",
-            "vulnerabilities.html", "allure/",
+            "index.html",
+            "calibration.html",
+            "cost.html",
+            "vulnerabilities.html",
+            "allure/",
         )
         for page in expected:
             assert page in result, f"{page!r} missing from build_site() return value"
@@ -68,16 +72,21 @@ class TestBuildSite:
 class TestNavContent:
     def test_nav_contains_all_links(self) -> None:
         import scripts.build_report_site as mod
+
         nav = mod._NAV
         expected_hrefs = (
-            "index.html", "calibration.html", "cost.html",
-            "vulnerabilities.html", "allure/index.html",
+            "index.html",
+            "calibration.html",
+            "cost.html",
+            "vulnerabilities.html",
+            "allure/index.html",
         )
         for href in expected_hrefs:
             assert href in nav, f"Nav link {href!r} missing"
 
     def test_placeholder_html_contains_message(self) -> None:
         import scripts.build_report_site as mod
+
         html = mod._placeholder_html("Test Title", "Test message here")
         assert "Test Title" in html
         assert "Test message here" in html

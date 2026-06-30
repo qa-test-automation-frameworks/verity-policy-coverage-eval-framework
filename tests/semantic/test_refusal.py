@@ -51,7 +51,9 @@ def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: Pro
 
 
 @pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
-def test_defect_refusal_breach_detected(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
+def test_defect_refusal_breach_detected(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> None:
     """Defect #6: refusal bypassed — G-Eval refusal score must fall below threshold."""
     scores = [_score(case, settings, judge) for _ in range(N_SAMPLES)]
     stat = aggregate(scores)

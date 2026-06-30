@@ -63,7 +63,9 @@ def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: Provide
 
 
 @pytest.mark.parametrize("case", _DEFECT_FAITH, ids=[c.id for c in _DEFECT_FAITH])
-def test_defect_faithfulness_detected(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
+def test_defect_faithfulness_detected(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> None:
     """Defect cases: faithfulness must fall BELOW threshold (defect detected)."""
     scores = [_score_faithfulness(case, settings, judge) for _ in range(N_SAMPLES)]
     stat = aggregate(scores)

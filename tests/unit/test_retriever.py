@@ -119,7 +119,5 @@ class TestFixtureRetriever:
 
         fixture_dir = Path("datasets/cassettes/retrieval")
         cases = load_golden()
-        missing = [
-            c.id for c in cases if not (fixture_dir / f"{c.id}.json").exists()
-        ]
+        missing = [c.id for c in cases if not (fixture_dir / f"{c.id}.json").exists()]
         assert not missing, f"Missing retrieval fixtures for cases: {missing}"

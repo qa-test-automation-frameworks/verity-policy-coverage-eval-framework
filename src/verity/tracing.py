@@ -97,6 +97,7 @@ def init_tracing(service_name: str = "verity") -> None:
                 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
                     OTLPSpanExporter,
                 )
+
                 provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
             except ImportError:
                 print(

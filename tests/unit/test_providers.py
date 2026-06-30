@@ -176,9 +176,7 @@ class TestCassetteReplay:
         with pytest.raises(CassetteMissError):
             provider.complete([{"role": "user", "content": "no cassette here"}])
 
-    def test_record_mode_saves_cassette(
-        self, record_settings: Settings, tmp_path: Path
-    ) -> None:
+    def test_record_mode_saves_cassette(self, record_settings: Settings, tmp_path: Path) -> None:
         lib = CassetteLibrary(tmp_path)
         acc = RunAccumulator()
         provider = LLMProvider(record_settings, acc, cassette_library=lib)
@@ -195,9 +193,7 @@ class TestCassetteReplay:
         key = request_key("openai/glm-5.2", msgs, None, 0.0, 2048)
         assert lib.has(key), "Cassette should have been saved after record-mode call"
 
-    def test_replay_with_tool_calls(
-        self, replay_settings: Settings, tmp_path: Path
-    ) -> None:
+    def test_replay_with_tool_calls(self, replay_settings: Settings, tmp_path: Path) -> None:
         from verity.cassettes import ReplayFunction, request_key
 
         lib = CassetteLibrary(tmp_path)

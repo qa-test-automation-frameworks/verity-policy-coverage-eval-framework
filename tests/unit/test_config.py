@@ -24,7 +24,9 @@ class TestResolveProvider:
         assert "together.xyz" in base
 
     def test_api_base_override(self) -> None:
-        _, base = resolve_provider(Provider.zai, "glm-5.2", api_base_override="https://custom.host/v1")
+        _, base = resolve_provider(
+            Provider.zai, "glm-5.2", api_base_override="https://custom.host/v1"
+        )
         assert base == "https://custom.host/v1"
 
 
@@ -32,6 +34,7 @@ class TestSettings:
     def test_defaults_do_not_raise(self) -> None:
         # No .env present; should load with warnings but not crash
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             s = Settings()
@@ -45,6 +48,7 @@ class TestSettings:
 
     def test_resolved_provider_returns_tuple(self) -> None:
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             s = Settings(provider=Provider.zai)
