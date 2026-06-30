@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      On your Silver plan, Tier-1 generic prescriptions cost a **$10 copay**
+      per fill at in-network pharmacies (Silver §4). The deductible does not
+      apply to Tier-1 generics — the copay is owed from the very first fill.
+    prompt_tokens: 112
+    completion_tokens: 36

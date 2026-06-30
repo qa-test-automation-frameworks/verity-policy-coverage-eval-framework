@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam calibrate demo clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam calibrate demo record clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -35,6 +35,10 @@ test-deterministic:
 eval-semantic:
 	@echo "Tier 2 — Semantic eval (DeepEval + RAGAS; live LLM) [M3]"
 	PYTHONPATH=src uv run pytest tests/semantic/ -m semantic -v
+
+record:
+	@echo "Writing hash-keyed cassettes from authored YAML fixtures (no API key required)"
+	PYTHONPATH=src uv run python scripts/record_cassettes.py --author
 
 redteam:
 	@echo "Tier 3 — Adversarial / red-team (Promptfoo/DeepTeam) [M5]"

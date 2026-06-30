@@ -1,0 +1,9 @@
+turns:
+  - content: >
+      Based on your Bronze plan, bariatric surgery (gastric bypass) is covered
+      as a covered surgical benefit under §3.4 when medically necessary. You
+      would be subject to your standard deductible and coinsurance. Please
+      verify prior-authorization requirements with your provider before
+      scheduling the procedure.
+    prompt_tokens: 130
+    completion_tokens: 52

@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      Telehealth primary care visits are covered at **$0 copay** effective
+      2024-07-01 per Amendment Bulletin #2024-A4 (amendments §A4). This
+      supersedes any prior copay amount for telehealth in your plan documents.
+    prompt_tokens: 118
+    completion_tokens: 42

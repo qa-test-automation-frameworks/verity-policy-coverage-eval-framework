@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      The Silver plan monthly premium is **$420 per month** (Silver §1).
+      This covers an individual and provides moderate cost-sharing through
+      a $2,000 annual deductible and 20% coinsurance after deductible.
+    prompt_tokens: 122
+    completion_tokens: 38

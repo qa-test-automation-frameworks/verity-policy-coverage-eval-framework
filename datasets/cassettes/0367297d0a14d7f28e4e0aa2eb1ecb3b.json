@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] How much will I owe for a $2,000 lab test?",
+  "model": "openai/glm-5.2",
+  "content": "For a $2,000 lab test on your Silver plan, with $800 accrued toward your $2,000 deductible, you have approximately $1,200 remaining. You would pay the remaining $1,200 deductible, then 20% of the residual $800, which is $160. Your estimated total is roughly **$1,360**.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 125,
+    "completion_tokens": 50,
+    "total_tokens": 175
+  }
+}

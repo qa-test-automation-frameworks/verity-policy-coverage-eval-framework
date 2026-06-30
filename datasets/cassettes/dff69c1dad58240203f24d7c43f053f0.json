@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Does the Gold plan have a lower urgent care copay than Silver?",
+  "model": "openai/glm-5.2",
+  "content": "Yes, the Gold plan does offer a lower urgent care copay compared to Silver. Gold's enhanced benefits mean you'll pay less for urgent care visits compared to the Silver tier. I'd recommend using in-network urgent care centers to take full advantage of Gold's reduced cost-sharing.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 128,
+    "completion_tokens": 44,
+    "total_tokens": 172
+  }
+}

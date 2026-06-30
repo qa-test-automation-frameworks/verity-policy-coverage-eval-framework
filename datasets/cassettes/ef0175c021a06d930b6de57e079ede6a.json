@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Is an annual wellness exam covered on the Bronze plan?",
+  "model": "openai/glm-5.2",
+  "content": "Yes! Annual wellness exams are covered at **100%** for in-network preventive services on the Bronze plan (Bronze \u00a72). The deductible does not apply \u2014 you pay $0 for the visit.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 110,
+    "completion_tokens": 40,
+    "total_tokens": 150
+  }
+}

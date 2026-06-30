@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      Your Silver plan covers in-network specialist visits at a **$60 copay** per
+      visit (Silver §3.2). The annual deductible does not apply to specialist
+      copays — you pay the $60 flat fee from your first visit.
+    prompt_tokens: 120
+    completion_tokens: 38

@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      Yes! Annual wellness exams are covered at **100%** for in-network
+      preventive services on the Bronze plan (Bronze §2). The deductible does
+      not apply — you pay $0 for the visit.
+    prompt_tokens: 110
+    completion_tokens: 40

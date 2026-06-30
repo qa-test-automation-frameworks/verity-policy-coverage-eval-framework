@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      The Gold plan has an individual annual deductible of **$750** (Gold §1).
+      Once you meet this amount, the plan begins sharing costs for covered
+      non-preventive services through coinsurance.
+    prompt_tokens: 115
+    completion_tokens: 36

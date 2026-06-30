@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      The Bronze plan charges a **$350 copay** per emergency room visit
+      (Bronze §3.3). This copay is waived if you are subsequently admitted
+      to the hospital as an inpatient.
+    prompt_tokens: 108
+    completion_tokens: 30
