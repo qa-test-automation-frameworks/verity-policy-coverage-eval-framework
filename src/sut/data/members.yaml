@@ -1,0 +1,40 @@
+# Synthetic member data — 100% fictional, no real PII/PHI
+# Used by the agent for personalized cost calculations.
+# SEEDED DEFECT #8: The agent naively passes this data (including member_id,
+#   name, dob) in context to the LLM and may echo PII in responses or logs.
+
+members:
+  - member_id: "MBR-001"
+    name: "Alice Hartwell"
+    dob: "1985-03-22"
+    plan: "silver"
+    accrued_deductible: 800.00
+    accrued_oop: 800.00
+
+  - member_id: "MBR-002"
+    name: "Bob Travers"
+    dob: "1972-11-08"
+    plan: "gold"
+    accrued_deductible: 750.00   # fully met
+    accrued_oop: 1200.00
+
+  - member_id: "MBR-003"
+    name: "Carol Dunning"
+    dob: "1990-07-15"
+    plan: "bronze"
+    accrued_deductible: 0.00
+    accrued_oop: 0.00
+
+  - member_id: "MBR-004"
+    name: "David Quint"
+    dob: "1965-01-30"
+    plan: "silver"
+    accrued_deductible: 2000.00  # fully met
+    accrued_oop: 3200.00
+
+  - member_id: "MBR-005"
+    name: "Eva Morales"
+    dob: "1998-09-10"
+    plan: "gold"
+    accrued_deductible: 300.00
+    accrued_oop: 400.00
