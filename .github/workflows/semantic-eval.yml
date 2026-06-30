@@ -25,9 +25,9 @@ jobs:
 
     # No-op when the required secret is absent (fork PRs, repos without key)
     env:
-      ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+      VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
+      VERITY_OPENROUTER_API_KEY: ${{ secrets.VERITY_OPENROUTER_API_KEY }}
+      VERITY_TOGETHER_API_KEY: ${{ secrets.VERITY_TOGETHER_API_KEY }}
       VERITY_PROVIDER: ${{ inputs.provider || 'zai' }}
       DEEPEVAL_TELEMETRY_OPT_OUT: "1"
       DEEPEVAL_ERROR_REPORTING_OPT_OUT: "1"
@@ -52,7 +52,7 @@ jobs:
       - name: Check for API key
         id: key_check
         run: |
-          if [ -z "$ZAI_API_KEY" ] && [ -z "$OPENROUTER_API_KEY" ] && [ -z "$TOGETHER_API_KEY" ]; then
+          if [ -z "$VERITY_ZAI_API_KEY" ] && [ -z "$VERITY_OPENROUTER_API_KEY" ] && [ -z "$VERITY_TOGETHER_API_KEY" ]; then
             echo "has_key=false" >> "$GITHUB_OUTPUT"
             echo "::warning::No API key secret configured — skipping semantic eval"
           else

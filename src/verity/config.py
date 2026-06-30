@@ -6,7 +6,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr, field_validator, model_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -82,6 +82,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_prefix="VERITY_",
         extra="ignore",
+        populate_by_name=True,
     )
 
     # Provider / model
@@ -89,14 +90,32 @@ class Settings(BaseSettings):
     model: str = "glm-5.2"
 
     # API keys (SecretStr keeps them out of repr/logs)
-    zai_api_key: SecretStr | None = None
-    openrouter_api_key: SecretStr | None = None
-    together_api_key: SecretStr | None = None
+    zai_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_ZAI_API_KEY", "ZAI_API_KEY"),
+    )
+    openrouter_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_OPENROUTER_API_KEY", "OPENROUTER_API_KEY"),
+    )
+    together_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_TOGETHER_API_KEY", "TOGETHER_API_KEY"),
+    )
 
     # API base overrides
-    zai_api_base: str | None = None
-    openrouter_api_base: str | None = None
-    together_api_base: str | None = None
+    zai_api_base: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_ZAI_API_BASE", "ZAI_API_BASE"),
+    )
+    openrouter_api_base: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_OPENROUTER_API_BASE", "OPENROUTER_API_BASE"),
+    )
+    together_api_base: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_TOGETHER_API_BASE", "TOGETHER_API_BASE"),
+    )
 
     # Generation defaults
     temperature: float = 0.0

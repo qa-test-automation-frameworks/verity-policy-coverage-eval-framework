@@ -52,3 +52,33 @@ class TestSettings:
         assert litellm_model.startswith("openai/")
         assert isinstance(api_base, str)
         assert key is None  # no key set in test env
+
+    def test_prefixed_provider_key_env_is_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import warnings
+
+        monkeypatch.setenv("VERITY_ZAI_API_KEY", "prefixed-key")
+        with warnings.catch_warnings(record=True) as warnings_seen:
+            warnings.simplefilter("always")
+            s = Settings(_env_file=None)
+        assert s.resolved_provider()[2] == "prefixed-key"
+        assert warnings_seen == []
+
+    def test_legacy_provider_key_env_is_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import warnings
+
+        monkeypatch.delenv("VERITY_ZAI_API_KEY", raising=False)
+        monkeypatch.setenv("ZAI_API_KEY", "legacy-key")
+        with warnings.catch_warnings(record=True) as warnings_seen:
+            warnings.simplefilter("always")
+            s = Settings(_env_file=None)
+        assert s.resolved_provider()[2] == "legacy-key"
+        assert warnings_seen == []
+
+    def test_prefixed_provider_base_env_is_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import warnings
+
+        monkeypatch.setenv("VERITY_ZAI_API_BASE", "https://runtime.example/v1")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            s = Settings(_env_file=None)
+        assert s.resolved_provider()[1] == "https://runtime.example/v1"
