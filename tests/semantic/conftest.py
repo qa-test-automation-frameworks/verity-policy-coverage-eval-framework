@@ -1,6 +1,6 @@
 """Shared fixtures for the semantic (Tier-2) evaluation suite.
 
-ALL tests here are marked `semantic` and `live` — they make real LLM calls
+ALL tests here are marked `semantic` and `live` -- they make real LLM calls
 via the configured provider and are NOT run in the PR gate (see pr-gate.yml).
 
 Run with: make eval-semantic  (requires API key in .env)
@@ -8,8 +8,10 @@ Run with: make eval-semantic  (requires API key in .env)
 
 from __future__ import annotations
 
+import json
 import os
 import warnings
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -77,6 +79,21 @@ def live_agent(settings: Settings) -> CoverageAgent:
     return CoverageAgent(settings=settings, retriever=retriever, provider=provider)
 
 
+_NODE_RESULTS: dict[str, str] = {}
+
+
+def pytest_runtest_makereport(
+    item: pytest.Item, call: pytest.CallInfo[None]
+) -> Generator[None, pytest.TestReport, None]:
+    outcome = yield
+    if call.when == "call":
+        _NODE_RESULTS[item.nodeid] = outcome.outcome
+
+
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     summary = render_cost_summary(_SESSION_ACCUMULATOR)
     write_step_summary(summary)
+    if _NODE_RESULTS:
+        out = Path("reports/semantic/results.json")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(_NODE_RESULTS, indent=2), encoding="utf-8")
