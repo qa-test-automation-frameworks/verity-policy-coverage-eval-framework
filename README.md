@@ -2,7 +2,7 @@
 
 > A production-grade evaluation framework for LLM applications — solving non-determinism, cost, provider-coupling, and judge trust — demonstrated on a high-stakes RAG + tool-use assistant.
 
-**Status:** M0 (Foundation) + M1 (SUT) + M2 (Deterministic Tier) + M3 (Semantic Tier) + M4 (Judge Calibration) complete · M5–M8 in progress
+**Status:** M0 (Foundation) + M1 (SUT) + M2 (Deterministic Tier) + M3 (Semantic Tier) + M4 (Judge Calibration) + M5 (Adversarial Tier) complete · M6–M8 in progress
 
 ---
 

@@ -13,6 +13,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - CI skeleton: `pr-gate.yml` (Tier 1 — lint, type, unit; no live calls)
 - Makefile with task entrypoints; `.env.example`
 
+### Added — M5 (Adversarial Tier / Tier 3)
+- `verity.adversarial`: `AdversarialProbe` Pydantic schema (id, category, prompt, member_id, defense, expected_outcome, must_not_contain, retrieval_fixture_id); `load_probes(path)` YAML loader
+- `datasets/adversarial/probes.yaml`: 14 probes across 5 categories — 3 injection, 3 jailbreak, 3 PII extraction, 3 harmful content, 2 coverage hallucination
+- `datasets/cassettes/retrieval/adv-{injection-002,003,pii-002,003,harmful-003}.json`: novel retrieval fixtures for non-golden probes
+- `datasets/adversarial/cassettes/`: 14 authored response cassettes; injection-001 and pii-001 reuse golden cassettes to guarantee key consistency
+- `tests/adversarial/conftest.py`: `run_probe()` helper wiring `CassetteLibrary` + `FixtureRetriever` + `CoverageAgent` for hermetic replay; `_settings` fixture
+- `tests/adversarial/test_redteam_hermetic.py`: parametrized across all 14 probes; `_evaluate_probe()` dispatches by defense type; mandatory assertions `test_injection_defect_7_is_caught` and `test_pii_defect_8_is_caught`; `test_print_vulnerability_summary` prints DEFENDED/BREACHED table — 17 tests, zero API calls
+- `scripts/author_adversarial_cassettes.py`: reproduces the full cassette set from probe YAML + retrieval fixtures + system-prompt pipeline
+- `promptfoo/provider.py`: custom Python provider wrapping `CoverageAgent`; returns `{output, tokenUsage}` for promptfoo assertion evaluation
+- `promptfoo/redteam.yaml`: 13 prompts with not-contains assertions for injection compliance language, PII echoes, and hallucinated coverage claims
+- `.github/workflows/adversarial.yml`: weekly + on-demand CI; hermetic pytest always runs; Promptfoo live eval + calibration live run gated on `VERITY_ZAI_API_KEY` secret
+- `Makefile`: `make redteam` (hermetic only) and `make redteam-live` (hermetic + Promptfoo)
+- `docs/seeded-defects.md`: defects #7 and #8 "Caught by" entries updated with hermetic test references
+
 ### Added — M4 (Judge Calibration & Self-Bias)
 - `verity.calibration`: `CalibrationCase` Pydantic schema; `load_calibration()`; `AgreementReport` + `SelfBiasReport` frozen dataclasses; `compute_agreement()` (raw %, Cohen's kappa, per-metric MAE); `compute_self_bias()` (delta = E[judge−human | glm] − E[judge−human | other]); `build_scoring_prompt()`, `parse_judge_score()`, `score_case()`, `score_all()` for rubric-based scoring
 - `verity.metrics.rubrics`: added `FAITHFULNESS_RUBRIC` (calibration reuses all four Tier-2 rubrics)

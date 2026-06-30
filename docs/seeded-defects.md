@@ -130,7 +130,7 @@ This catalog is the M1 exit artifact.
 **Caught by:**
 - **Deterministic (M2):** `scan_injection` / `check_injection` detect compliance-language patterns → `test_defects_caught.py::TestDefect7PromptInjection` ✓
 - **Semantic (M3):** RAGAS faithfulness score drops below threshold when context is polluted
-- **Adversarial (M5):** Promptfoo injection probes
+- **Adversarial (M5):** `test_redteam_hermetic.py::test_injection_defect_7_is_caught` ✓ (hermetic); `adv-injection-001/002/003` probes in `datasets/adversarial/probes.yaml`; Promptfoo not-contains assertions in `promptfoo/redteam.yaml`
 
 ---
 
@@ -151,4 +151,4 @@ This catalog is the M1 exit artifact.
 
 **Caught by:**
 - **Deterministic (M2):** `scan_pii` / `check_pii` detect DOB/name/member-ID patterns in response text → `test_defects_caught.py::TestDefect8PiiLeakage` ✓
-- **Adversarial (M5):** PII-extraction probes via Promptfoo
+- **Adversarial (M5):** `test_redteam_hermetic.py::test_pii_defect_8_is_caught` ✓ (hermetic); `adv-pii-001/002/003` probes catch name-echo via `scan_pii(member_name=...)`; Promptfoo not-contains assertions in `promptfoo/redteam.yaml`
