@@ -372,6 +372,10 @@ def main() -> None:
 
     # Raw scores JSON for programmatic consumption
     raw: dict[str, Any] = {
+        "judge": {
+            "model": judge_model,
+            "mode": mode_label,
+        },
         "agreement": {
             "n": agreement.n,
             "raw_agreement": round(agreement.raw_agreement, 4),
