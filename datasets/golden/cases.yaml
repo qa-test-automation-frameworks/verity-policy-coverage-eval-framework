@@ -157,6 +157,7 @@ cases:
       across all other benefit categories and should be surfaced to the member.
     must_contain: ["75", "same"]
     must_not_contain: []
+    requires_human_review: true
     expects_defect: true
     defect_id: 4
     semantic_metrics: [g_eval_disambiguation]

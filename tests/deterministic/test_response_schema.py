@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from tests.deterministic.conftest import run_case
-from verity.checks import validate_response_schema
+from verity.checks import check_human_review, validate_response_schema
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 
@@ -37,3 +37,13 @@ def test_token_counts_non_negative(case: GoldenCase, _settings: Settings) -> Non
     assert response.prompt_tokens >= 0
     assert response.completion_tokens >= 0
     assert response.total_tokens >= 0
+
+
+@pytest.mark.parametrize("case", _CASES, ids=[c.id for c in _CASES])
+def test_human_review_signal_matches_case(case: GoldenCase, _settings: Settings) -> None:
+    response = run_case(case, _settings)
+    result = check_human_review(case, response)
+    if case.expects_defect and case.requires_human_review:
+        assert not result.passed, "Expected human-review defect to be caught"
+    else:
+        assert result.passed, result.message

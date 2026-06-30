@@ -25,6 +25,7 @@ class GoldenCase(BaseModel):
     must_contain: list[str] = Field(default_factory=list)
     must_not_contain: list[str] = Field(default_factory=list)
     expected_citations: list[str] = Field(default_factory=list)
+    requires_human_review: bool = False
     expected_tool: ExpectedTool | None = None
     expects_defect: bool = False
     defect_id: int | None = None

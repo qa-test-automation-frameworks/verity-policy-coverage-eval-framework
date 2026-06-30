@@ -10,6 +10,7 @@ import pytest
 from verity.checks import (
     CheckResult,
     check_citations,
+    check_human_review,
     check_injection,
     check_must_contain,
     check_must_not_contain,
@@ -41,6 +42,7 @@ class _Response:
     tool_invocations: list[_ToolInvocation] = field(default_factory=list)
     refused: bool = False
     refusal_reason: str = ""
+    requires_human_review: bool = False
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
@@ -131,6 +133,26 @@ class TestCheckRefusal:
 
         result = check_refusal(_case(), NoRefused())
         assert not result.passed
+
+
+# ---------------------------------------------------------------------------
+# Human-review escalation check
+# ---------------------------------------------------------------------------
+
+
+class TestCheckHumanReview:
+    def test_no_review_expected_and_not_flagged_passes(self) -> None:
+        assert check_human_review(_case(), _Response()).passed
+
+    def test_review_expected_and_flagged_passes(self) -> None:
+        case = _case(requires_human_review=True)
+        response = _Response(requires_human_review=True)
+        assert check_human_review(case, response).passed
+
+    def test_review_expected_but_missing_fails(self) -> None:
+        result = check_human_review(_case(requires_human_review=True), _Response())
+        assert not result.passed
+        assert "requires_human_review=True" in result.message
 
 
 # ---------------------------------------------------------------------------

@@ -69,6 +69,7 @@ class AgentResponse(BaseModel):
     tool_invocations: list[ToolInvocation]
     refused: bool
     refusal_reason: str
+    requires_human_review: bool = False
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
@@ -78,6 +79,16 @@ class AgentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # System prompt builder
 # ---------------------------------------------------------------------------
+
+
+def _requires_human_review(query: str, answer: str) -> bool:
+    """Flag policy anomalies that should be surfaced for human review."""
+    combined = f"{query}\n{answer}".lower()
+    urgent_care = "urgent care" in combined
+    compares_gold_silver = "gold" in combined and "silver" in combined
+    same_copay = "same" in combined and "75" in combined
+    return urgent_care and compares_gold_silver and same_copay
+
 
 _SYSTEM_PROMPT_TEMPLATE = """\
 You are the Policy Coverage Copilot for FictiHealth HealthGuard insurance.
@@ -176,6 +187,7 @@ class CoverageAgent:
                 tool_invocations=[],
                 refused=True,
                 refusal_reason=refusal_reason,
+                requires_human_review=False,
                 prompt_tokens=0,
                 completion_tokens=0,
                 total_tokens=0,
@@ -282,6 +294,7 @@ class CoverageAgent:
             tool_invocations=tool_invocations,
             refused=False,
             refusal_reason="",
+            requires_human_review=_requires_human_review(query, final_answer),
             prompt_tokens=totals.prompt_tokens,
             completion_tokens=totals.completion_tokens,
             total_tokens=totals.total_tokens,

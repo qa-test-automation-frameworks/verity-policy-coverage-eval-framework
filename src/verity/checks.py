@@ -41,6 +41,7 @@ _REQUIRED_RESPONSE_FIELDS = (
     "tool_invocations",
     "refused",
     "refusal_reason",
+    "requires_human_review",
     "prompt_tokens",
     "completion_tokens",
     "total_tokens",
@@ -61,6 +62,8 @@ def validate_response_schema(response: Any) -> CheckResult:
         return CheckResult(False, "response.tool_invocations must be list")
     if not isinstance(response.refused, bool):
         return CheckResult(False, "response.refused must be bool")
+    if not isinstance(response.requires_human_review, bool):
+        return CheckResult(False, "response.requires_human_review must be bool")
     return CheckResult(True)
 
 
@@ -95,6 +98,23 @@ def check_refusal(case: GoldenCase, response: Any) -> CheckResult:
             reason = str(getattr(response, "refusal_reason", ""))[:80]
             return CheckResult(False, f"Unexpected refusal: {reason}")
         return CheckResult(True, "Correctly answered")
+
+
+# ---------------------------------------------------------------------------
+# Human-review escalation check
+# ---------------------------------------------------------------------------
+
+
+def check_human_review(case: GoldenCase, response: Any) -> CheckResult:
+    """Verify responses raise a review signal when the golden case requires it."""
+    expected = case.requires_human_review
+    actual = bool(getattr(response, "requires_human_review", False))
+    if actual != expected:
+        return CheckResult(
+            False,
+            f"Expected requires_human_review={expected}, got {actual}",
+        )
+    return CheckResult(True)
 
 
 # ---------------------------------------------------------------------------

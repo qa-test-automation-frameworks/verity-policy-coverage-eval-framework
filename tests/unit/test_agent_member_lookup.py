@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from sut.agent import _load_members
+from sut.agent import _load_members, _requires_human_review
 
 
 def test_known_member_ids_are_loadable() -> None:
@@ -34,3 +34,14 @@ def test_unknown_member_id_does_not_fall_back_to_first_member() -> None:
     result = members.get(unknown_id)
     assert result is None
     assert result != members[first_member_id]
+
+
+def test_requires_human_review_for_gold_silver_urgent_care_anomaly() -> None:
+    assert _requires_human_review(
+        "Does Gold have a lower urgent care copay than Silver?",
+        "Gold and Silver have the same $75 urgent care copay.",
+    )
+
+
+def test_requires_human_review_ignores_routine_answers() -> None:
+    assert not _requires_human_review("What is my deductible?", "Your deductible is $2,000.")
