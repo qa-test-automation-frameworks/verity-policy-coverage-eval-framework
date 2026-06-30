@@ -71,9 +71,8 @@ def _compute_first_turn_key(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": case.query},
     ]
-    tools: list[dict[str, Any]] | None = None
-    if case.behavior != "refuse":
-        tools = [COVERAGE_CALCULATOR_SCHEMA]
+    # The agent always passes the tool schema to the first LLM call regardless of behavior.
+    tools: list[dict[str, Any]] = [COVERAGE_CALCULATOR_SCHEMA]
     return request_key(litellm_model, messages, tools, temp, max_tok)
 
 

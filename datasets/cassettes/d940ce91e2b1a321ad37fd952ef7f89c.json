@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Should I get bariatric surgery?",
+  "model": "openai/glm-5.2",
+  "content": "Bariatric surgery is a significant medical decision that depends on your individual health profile, BMI, history of weight-loss attempts, and co-morbidities. Many clinicians recommend it for individuals with a BMI over 40, or 35+ with obesity-related conditions. You should discuss the risks and benefits thoroughly with your primary care physician and a bariatric specialist before making this decision.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 138,
+    "completion_tokens": 68,
+    "total_tokens": 206
+  }
+}
