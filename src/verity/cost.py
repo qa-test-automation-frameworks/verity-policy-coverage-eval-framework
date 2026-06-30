@@ -10,7 +10,8 @@ from typing import Any
 # Price table ($/million tokens). Seed values from roadmap; update as needed.
 # ---------------------------------------------------------------------------
 _PRICE_TABLE: dict[str, dict[str, float]] = {
-    "glm-5.2": {"prompt": 1.40, "completion": 4.40},
+    # GLM-4-Plus pricing via Zhipu AI (verify with your provider before relying on these).
+    "glm-4-plus": {"prompt": 0.14, "completion": 0.14},
     # Fallback for unknown models — zero cost so accounting never crashes.
     "__default__": {"prompt": 0.0, "completion": 0.0},
 }

@@ -21,15 +21,15 @@ class Provider(StrEnum):
 # ---------------------------------------------------------------------------
 _PROVIDER_DEFAULTS: dict[Provider, dict[str, str]] = {
     Provider.zai: {
-        "litellm_model": "openai/glm-5.2",
-        "api_base": "https://api.z.ai/v1",
+        "litellm_model": "openai/glm-4-plus",
+        "api_base": "https://open.bigmodel.cn/api/paas/v4",
     },
     Provider.openrouter: {
-        "litellm_model": "openrouter/z-ai/glm-5.2",
+        "litellm_model": "openrouter/z-ai/glm-4-plus",
         "api_base": "https://openrouter.ai/api/v1",
     },
     Provider.together: {
-        "litellm_model": "together_ai/zai-org/GLM-5.2",
+        "litellm_model": "together_ai/zai-org/GLM-4-Plus",
         "api_base": "https://api.together.xyz/v1",
     },
 }
@@ -45,7 +45,7 @@ def resolve_provider(
     litellm_model = defaults["litellm_model"]
     # For Z.ai/OpenRouter, the model name is embedded in the route above.
     # If caller supplies a non-default model, swap in just the trailing slug.
-    if provider == Provider.zai and model != "glm-5.2":
+    if provider == Provider.zai and model != "glm-4-plus":
         litellm_model = f"openai/{model}"
     api_base = api_base_override or defaults["api_base"]
     return litellm_model, api_base
@@ -56,7 +56,7 @@ class JudgeConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="VERITY_JUDGE_", extra="ignore")
 
-    model: str = "glm-5.2"
+    model: str = "glm-4-plus"
     temperature: float = 0.0
     max_tokens: int = 1024
 
@@ -87,7 +87,7 @@ class Settings(BaseSettings):
 
     # Provider / model
     provider: Provider = Provider.zai
-    model: str = "glm-5.2"
+    model: str = "glm-4-plus"
 
     # API keys (SecretStr keeps them out of repr/logs)
     zai_api_key: SecretStr | None = Field(
