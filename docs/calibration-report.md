@@ -1,9 +1,17 @@
 # Judge Calibration Report
 
+> **Note:** This report is a **methodology demonstration on synthetic labels**.
+> The dataset (`datasets/calibration/labeled.yaml`) uses hand-authored candidate
+> outputs and author-written "human" reference scores — not outputs from a live
+> judge or a second independent model family. The numbers below illustrate how
+> the calibration pipeline works and what the metrics mean; they are not measured
+> empirical results. Run `make calibrate-live` with a real API key and a genuine
+> second-model-family to produce a calibration report grounded in live data.
+
 **Generated:** 2026-06-30  
 **Judge model:** `openai/glm-5.2`  
-**Dataset:** `datasets/calibration/labeled.yaml` (32 cases)  
-**Mode:** hermetic replay
+**Dataset:** `datasets/calibration/labeled.yaml` (32 cases — synthetic labels)  
+**Mode:** hermetic replay (methodology demonstration)
 
 ---
 
@@ -43,11 +51,14 @@ Self-preference delta measures whether the judge inflates scores for outputs fro
 
 ## Threshold Traceability
 
-The semantic tier thresholds in `docs/thresholds.md` were set with this calibration data in mind:
+The semantic tier thresholds in `docs/thresholds.md` are intentionally conservative and not
+yet formally calibrated to a specific judge's score distribution (calibrated thresholds are
+a planned future improvement — see `docs/thresholds.md`). The numbers below illustrate what
+agreement levels this methodology can measure once run against real judge outputs:
 
-- **Raw agreement ≥ 85%**: this judge's measured agreement is 96.9%, which is within acceptable range.
-- **Cohen's kappa ≥ 0.60** (substantial agreement): measured kappa = 0.934.
-- **Self-preference delta**: +0.056 — see interpretation above.
+- **Raw agreement ≥ 85%**: target; this synthetic run shows 96.9% on authored labels.
+- **Cohen's kappa ≥ 0.60** (substantial agreement): target; this synthetic run shows 0.934.
+- **Self-preference delta**: +0.056 on synthetic data — see interpretation above.
 
 See [`docs/thresholds.md`](thresholds.md) for per-metric threshold values and the statistical method used.
 
