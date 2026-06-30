@@ -38,7 +38,7 @@ eval-semantic:
 
 record:
 	@echo "Writing hash-keyed cassettes from authored YAML fixtures (no API key required)"
-	PYTHONPATH=src uv run python scripts/record_cassettes.py --author
+	PYTHONPATH=src uv run python scripts/record_cassettes.py --author $(if $(CASE),--case $(CASE))
 
 redteam:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest (no API key required)"

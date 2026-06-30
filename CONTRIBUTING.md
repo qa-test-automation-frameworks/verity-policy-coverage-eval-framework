@@ -99,7 +99,7 @@ Tier-1 (`tests/deterministic/`) runs against pre-recorded cassette JSON files so
 **To update an existing cassette** (e.g., after changing the system prompt or retrieval fixtures):
 
 ```bash
-make record --case <case_id>   # regenerate only one case
+make record CASE=<case_id>     # regenerate only one case
 # or
 make record                    # regenerate all
 git add datasets/cassettes/ && git commit -m "chore(cassettes): update cassettes for <reason>"
