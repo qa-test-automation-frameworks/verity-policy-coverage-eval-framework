@@ -46,3 +46,13 @@ jobs:
         env:
           # No API keys — live tests excluded via marker
           PYTHONPATH: src
+
+      - name: Dependency vulnerability scan
+        run: |
+          uv run pip-audit --desc \
+            --ignore-vuln PYSEC-2026-311 \
+            --ignore-vuln CVE-2025-69872 \
+            --ignore-vuln CVE-2026-6587
+
+      - name: Static security scan (medium/high only)
+        run: uv run bandit -r src/ -ll -c pyproject.toml

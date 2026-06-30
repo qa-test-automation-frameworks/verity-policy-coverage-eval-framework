@@ -54,6 +54,8 @@ dev = [
     "pytest-cov>=5.0.0",
     "pre-commit>=3.7.0",
     "types-PyYAML>=6.0.12",
+    "pip-audit>=2.7.0",
+    "bandit>=1.7.0",
 ]
 semantic = [
     "deepeval>=1.5.0",
@@ -140,3 +142,6 @@ omit = ["*/tests/*", "*/__init__.py"]
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
 fail_under = 80
+
+[tool.bandit]
+skips = ["B101"]  # assert is intentional in framework internal guards
