@@ -1,0 +1,74 @@
+"""Shared fixtures for the semantic (Tier-2) evaluation suite.
+
+ALL tests here are marked `semantic` and `live` — they make real LLM calls
+via the configured provider and are NOT run in the PR gate (see pr-gate.yml).
+
+Run with: make eval-semantic  (requires API key in .env)
+"""
+
+from __future__ import annotations
+
+import os
+import warnings
+from pathlib import Path
+
+import pytest
+
+from sut.agent import CoverageAgent
+from sut.retriever import PolicyRetriever
+from verity.config import Settings
+from verity.cost import RunAccumulator
+from verity.golden import GoldenCase, load_golden
+from verity.judges import ProviderJudge
+from verity.providers import LLMProvider
+
+pytestmark = [pytest.mark.semantic, pytest.mark.live]
+
+_GOLDEN_DIR = Path("datasets/golden")
+
+
+def _require_api_key() -> None:
+    """Skip the entire session if no API key is configured."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        s = Settings()
+    _, _, key = s.resolved_provider()
+    if key is None:
+        pytest.skip(
+            "No API key configured for semantic eval. "
+            "Set ZAI_API_KEY (or OPENROUTER_API_KEY / TOGETHER_API_KEY) in .env",
+            allow_module_level=True,
+        )
+
+
+# Guard at import time so all tests in the suite are skipped when no key is set
+_require_api_key()
+
+# Disable deepeval telemetry
+os.environ.setdefault("DEEPEVAL_TELEMETRY_OPT_OUT", "1")
+os.environ.setdefault("DEEPEVAL_ERROR_REPORTING_OPT_OUT", "1")
+
+
+@pytest.fixture(scope="session")
+def settings() -> Settings:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return Settings()
+
+
+@pytest.fixture(scope="session")
+def judge(settings: Settings) -> ProviderJudge:
+    return ProviderJudge(settings=settings)
+
+
+@pytest.fixture(scope="session")
+def golden_cases() -> list[GoldenCase]:
+    return load_golden(_GOLDEN_DIR)
+
+
+def live_agent(settings: Settings) -> CoverageAgent:
+    """Create a live CoverageAgent using the real retriever (needs Chroma indexed)."""
+    accumulator = RunAccumulator()
+    provider = LLMProvider(settings, accumulator)
+    retriever = PolicyRetriever(settings.retrieval)
+    return CoverageAgent(settings=settings, retriever=retriever, provider=provider)
