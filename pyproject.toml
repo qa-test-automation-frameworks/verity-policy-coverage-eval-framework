@@ -30,6 +30,11 @@ semantic = [
     "deepeval>=1.5.0",
     "ragas>=0.2.0",
 ]
+otel = [
+    "opentelemetry-api>=1.25.0",
+    "opentelemetry-sdk>=1.25.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.25.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/verity", "src/sut"]
@@ -49,6 +54,11 @@ dev = [
 semantic = [
     "deepeval>=1.5.0",
     "ragas>=0.2.0",
+]
+otel = [
+    "opentelemetry-api>=1.25.0",
+    "opentelemetry-sdk>=1.25.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.25.0",
 ]
 
 # ---------------------------------------------------------------------------
@@ -89,6 +99,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["deepeval.*", "ragas.*", "langchain.*", "langchain_core.*", "datasets.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["opentelemetry.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
