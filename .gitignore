@@ -1,0 +1,71 @@
+# Secrets & environment
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+# uv
+.venv/
+uv.lock.bak
+
+# Type checking & linting caches
+.mypy_cache/
+.ruff_cache/
+.pyright/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# Chroma vector store
+.chroma/
+*.sqlite3
+*.sqlite
+
+# Reports (generated artifacts)
+reports/
+allure-report/
+allure-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (for promptfoo later)
+node_modules/
+promptfoo/.cache/
+
+# Jupyter (if used for exploration)
+*.ipynb_checkpoints/
+
+# Planning / internal docs (not for version control)
+docs/*-roadmap.md
+
+# Misc
+*.log
+*.tmp
