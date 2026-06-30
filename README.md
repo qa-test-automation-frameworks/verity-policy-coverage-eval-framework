@@ -2,13 +2,13 @@
 
 > A structured, multi-tier evaluation framework for LLM applications — addressing non-determinism, cost, provider-coupling, and judge trust — demonstrated on a RAG + tool-use assistant.
 
-[![PR Gate](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
-[![Semantic Eval](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
-[![Adversarial](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PR Gate](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
+[![Semantic Eval](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
+[![Adversarial](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml/badge.svg)](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml)
+[![License: MIT with Attribution](https://img.shields.io/badge/License-MIT%20with%20Attribution-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 
-**Status:** M0–M8 complete
+**Status:** Framework complete (M0–M8). Live Tier-2 semantic run not yet committed — see [Limitations](#limitations).
 
 ---
 
@@ -65,9 +65,9 @@ The SUT is **intentionally imperfect**. The framework's job is to catch each def
 |-------------------|-----------------|
 | Cassette replay (no live CI calls) | CI cost discipline; non-flaky deterministic gate |
 | Configurable N-sample semantic runs | Flaky-test mastery applied to LLM non-determinism |
-| Judge calibration + self-bias report | Awareness that LLM judges are biased and unreliable |
+| Judge calibration pipeline + self-bias measurement | Awareness that LLM judges are biased and unreliable (methodology demonstrated on synthetic labels; run `make calibrate-live` for real results) |
 | Three-tier CI triggers | Structured pipeline design (Tier 1 blocks merge; Tier 2/3 use API key) |
-| Seeded defects caught by suite | Eval-driven development; proves the suite can fail |
+| Seeded defects caught by suite | Eval-driven development; Tier 1/3 prove the *detectors* fire on known-bad outputs; live Tier 2 proves the *SUT* actually produces them |
 | Provider abstraction (LiteLLM) | Decoupling from single-provider risk |
 | Pydantic-typed config + test schemas | Engineering rigour; zero magic strings |
 
@@ -100,8 +100,8 @@ make eval-semantic # full Tier-2 semantic suite (~$0.03 for 6 test files x N=3)
 
 | Report | Description | Link |
 |--------|-------------|------|
-| Defects Caught | Hermetic proof matrix — 4/8 defects caught with no API key; 8/8 with live semantic run | [docs/defects-caught.md](docs/defects-caught.md) |
-| Calibration | Judge agreement vs human labels: kappa=0.934, self-bias=+0.056 | [docs/calibration-report.md](docs/calibration-report.md) |
+| Defects Caught | Hermetic proof matrix — 4/8 defects caught deterministically (no API key); Tier-2 semantic coverage set up for defects 1–4 (requires live run) | [docs/defects-caught.md](docs/defects-caught.md) |
+| Calibration | Judge calibration pipeline — kappa=0.934, self-bias=+0.056 on synthetic labels (methodology demonstration; see report for details) | [docs/calibration-report.md](docs/calibration-report.md) |
 | Thresholds | Per-metric threshold table with defect coverage map | [docs/thresholds.md](docs/thresholds.md) |
 | Observability | OTel span table, env vars, cost summary | [docs/observability.md](docs/observability.md) |
 | Architecture | Component walk-through, data flow, CI table | [docs/architecture.md](docs/architecture.md) |
@@ -154,6 +154,9 @@ docs/
 ## Limitations
 
 - **Tier 2 and Tier 3 require a live API key.** Hermetic Tier 1 needs no credentials. Semantic and adversarial evals require `VERITY_ZAI_API_KEY` (or `VERITY_OPENROUTER_API_KEY` / `VERITY_TOGETHER_API_KEY`).
+- **No committed live-run artifacts.** Tier 1 and Tier 3 suites prove the *detectors* work against authored known-bad outputs. A live Tier-2 run proving the *SUT itself* exhibits defects #1–#4 has not yet been committed. Run `make eval-semantic` with a configured key to generate it.
+- **Calibration on synthetic labels.** The committed calibration report uses hand-authored labels and candidate outputs to demonstrate the methodology pipeline. Run `make calibrate-live` to produce a report against a real judge.
+- **Provider endpoint unverified.** The default `VERITY_MODEL=glm-5.2` and `VERITY_ZAI_API_BASE` in `.env.example` are configuration templates; verify the exact model slug and base URL for your provider before running live evals.
 - **Golden dataset size.** The current dataset covers 25+ cases across policy plans and defect types. This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
 - **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record-cassettes` when the SUT changes.
 - **RAGAS is optional.** RAGAS faithfulness and context-precision metrics are importable but require compatible optional dependencies. They are included in `uv sync --group semantic` and conditionally enabled.
@@ -162,4 +165,4 @@ docs/
 
 ## License
 
-MIT with Attribution — see [LICENSE](LICENSE).
+MIT with Attribution — see [LICENSE](LICENSE). This license includes an attribution requirement for derivative works; it is not standard MIT.
