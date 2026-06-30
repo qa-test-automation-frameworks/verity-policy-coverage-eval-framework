@@ -43,7 +43,7 @@ API key — no code change.
 - Performance on complex multi-hop reasoning (defects #3, #4) depends on
   the judge model quality. A weaker judge may under-score correct answers.
 - Self-bias risk: using the same model family as both SUT and judge inflates
-  agreement metrics. This is explicitly measured in ADR-0004.
+  agreement metrics. ADR-0004 defines the measurement method; live empirical calibration remains pending.
 
 ## Alternatives Considered
 
