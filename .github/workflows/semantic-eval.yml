@@ -48,7 +48,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies (with semantic extras)
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-extras
 
       - name: Check for API key
         id: key_check
