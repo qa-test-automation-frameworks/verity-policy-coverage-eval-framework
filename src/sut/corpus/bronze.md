@@ -59,11 +59,6 @@ satisfied, when medically necessary and prior-authorized:
 - Hernia repair
 - Cataract surgery
 
-<!-- SEEDED DEFECT #1 LOCATION: "Bariatric surgery" is listed here as a covered surgical benefit.
-     This contradicts exclusions.md §3 which explicitly excludes it under all plans.
-     The ground truth from exclusions.md: bariatric surgery is NOT covered under any plan.
-     An LLM that retrieves only this chunk will hallucinate that Bronze covers bariatric surgery. -->
-
 ### §3.5 Inpatient Hospital
 - Room and board: 40% coinsurance after deductible (in-network)
 - ICU/CCU: 40% coinsurance after deductible
