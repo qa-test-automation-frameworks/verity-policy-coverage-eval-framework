@@ -13,6 +13,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - CI skeleton: `pr-gate.yml` (Tier 1 — lint, type, unit; no live calls)
 - Makefile with task entrypoints; `.env.example`
 
+### Added — M4 (Judge Calibration & Self-Bias)
+- `verity.calibration`: `CalibrationCase` Pydantic schema; `load_calibration()`; `AgreementReport` + `SelfBiasReport` frozen dataclasses; `compute_agreement()` (raw %, Cohen's kappa, per-metric MAE); `compute_self_bias()` (delta = E[judge−human | glm] − E[judge−human | other]); `build_scoring_prompt()`, `parse_judge_score()`, `score_case()`, `score_all()` for rubric-based scoring
+- `verity.metrics.rubrics`: added `FAITHFULNESS_RUBRIC` (calibration reuses all four Tier-2 rubrics)
+- `verity.judges`: `ProviderJudge` now propagates `cassette_mode` + `cassette_dir` into internal judge `Settings`, enabling calibration cassette replay
+- `datasets/calibration/labeled.yaml`: 32 human-annotated cases — 8 per metric (completeness, disambiguation, refusal, faithfulness), 16 GLM-family / 16 other-family for self-preference measurement
+- `datasets/calibration/cassettes/`: 32 SHA-256-keyed authored judge-score cassettes for hermetic replay with no API key
+- `scripts/run_calibration.py`: three-mode runner (author, record-live, replay); markdown report + JSON artifact output
+- `docs/calibration-report.md`: committed report — raw agreement 96.9%, Cohen's kappa 0.934, MAE 0.028; self-preference delta +0.056 (GLM outputs scored 0.056 higher than human on average); per-metric breakdown and threshold traceability
+- `Makefile`: `make calibrate` (hermetic, no key) and `make calibrate-live` (live recording) targets
+- 40 unit tests covering schema validation, loader, agreement/kappa/MAE, self-bias delta, prompt builder, and score parser edge cases
+
 ### Added — M3 (Semantic Tier)
 - `pyproject.toml`: optional `semantic` dependency group (`deepeval>=1.5.0`, `ragas>=0.2.0`); mypy overrides for third-party typed/untyped packages
 - `verity.judges`: `ProviderJudge` wraps `LLMProvider` for plug-and-play judge routing; `DeepEvalJudge` adapter (lazy `DeepEvalBaseLLM` subclass); `RagasJudge` duck-type LangChain shim (avoids `langchain_community` import error)

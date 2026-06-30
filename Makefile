@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam calibrate demo record clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam calibrate calibrate-live demo record clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -45,8 +45,13 @@ redteam:
 	@echo "Not yet implemented — see M5"
 
 calibrate:
-	@echo "Tier 3 — Judge calibration harness [M4]"
-	@echo "Not yet implemented — see M4"
+	@echo "Judge calibration — hermetic replay (authored cassettes; no API key required)"
+	PYTHONPATH=src uv run python scripts/run_calibration.py
+	@echo "Report written to docs/calibration-report.md"
+
+calibrate-live:
+	@echo "Judge calibration — live judge calls (requires API key)"
+	PYTHONPATH=src uv run python scripts/run_calibration.py --record
 
 # ---------------------------------------------------------------------------
 # SUT demo
