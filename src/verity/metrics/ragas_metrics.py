@@ -43,10 +43,10 @@ def ensure_ragas_compat() -> None:
                 "integration before using Vertex-backed RAGAS judges."
             )
 
-    setattr(module, "ChatVertexAI", ChatVertexAI)
+    module.ChatVertexAI = ChatVertexAI  # type: ignore[attr-defined]
     sys.modules[module_name] = module
     parent = importlib.import_module("langchain_community.chat_models")
-    setattr(parent, "vertexai", module)
+    parent.vertexai = module  # type: ignore[attr-defined]
 
 
 # Per-metric thresholds

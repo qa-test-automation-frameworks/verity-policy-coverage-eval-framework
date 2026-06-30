@@ -66,9 +66,11 @@ class TestToolExecutionFailure:
             settings=settings, retriever=retriever, provider=mock_provider
         )
 
-        with patch("sut.agent.run_coverage_calculator", side_effect=ValueError("bad input")):
-            with pytest.raises(ValueError, match="bad input"):
-                agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+        with (
+            patch("sut.agent.run_coverage_calculator", side_effect=ValueError("bad input")),
+            pytest.raises(ValueError, match="bad input"),
+        ):
+            agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
     def test_tool_runtime_error_propagates(self) -> None:
         settings = _make_settings()
@@ -86,9 +88,12 @@ class TestToolExecutionFailure:
             settings=settings, retriever=retriever, provider=mock_provider
         )
 
-        with patch("sut.agent.run_coverage_calculator", side_effect=RuntimeError("calculator failed")):
-            with pytest.raises(RuntimeError, match="calculator failed"):
-                agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+        exc = RuntimeError("calculator failed")
+        with (
+            patch("sut.agent.run_coverage_calculator", side_effect=exc),
+            pytest.raises(RuntimeError, match="calculator failed"),
+        ):
+            agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
 
 class TestProviderSecondTurnFailure:

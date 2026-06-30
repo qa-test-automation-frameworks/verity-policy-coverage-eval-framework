@@ -7,7 +7,7 @@ import logging
 import pytest
 
 from sut.guardrails import check_input, log_member_context, scrub_output
-from verity.checks import check_pii, scan_pii
+from verity.checks import scan_pii
 
 
 class TestInputGuardrail:
