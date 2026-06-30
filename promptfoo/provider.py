@@ -34,7 +34,7 @@ from verity.providers import LLMProvider  # noqa: E402
 def call_api(prompt: str, options: dict, context: dict) -> dict:
     """Promptfoo provider entry point."""
     member_id: str = (options.get("config") or {}).get("member_id", "MBR-001")
-    cassette_mode: str = os.environ.get("VERITY_CASSETTE_MODE", "passthrough")
+    cassette_mode: str = os.environ.get("VERITY_CASSETTE_MODE", "off")
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -52,9 +52,9 @@ def call_api(prompt: str, options: dict, context: dict) -> dict:
         return {
             "output": output,
             "tokenUsage": {
-                "total": tokens.get("total_tokens", 0),
-                "prompt": tokens.get("prompt_tokens", 0),
-                "completion": tokens.get("completion_tokens", 0),
+                "total": tokens.total_tokens,
+                "prompt": tokens.prompt_tokens,
+                "completion": tokens.completion_tokens,
             },
         }
     except Exception as exc:

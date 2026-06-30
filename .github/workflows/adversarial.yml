@@ -67,7 +67,7 @@ jobs:
       - name: Promptfoo live red-team eval
         env:
           VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
-          VERITY_CASSETTE_MODE: passthrough
+          VERITY_CASSETTE_MODE: off
         run: |
           mkdir -p reports/redteam
           npx --yes promptfoo@latest eval \
