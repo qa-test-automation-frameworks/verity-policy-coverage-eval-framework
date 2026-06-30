@@ -29,7 +29,8 @@ jobs:
       VERITY_OPENROUTER_API_KEY: ${{ secrets.VERITY_OPENROUTER_API_KEY }}
       VERITY_TOGETHER_API_KEY: ${{ secrets.VERITY_TOGETHER_API_KEY }}
       VERITY_PROVIDER: ${{ inputs.provider || 'zai' }}
-      VERITY_SEMANTIC_SAMPLES: ${{ github.event_name == 'schedule' && '3' || '1' }}
+      VERITY_SEMANTIC_SAMPLES: ${{ github.event_name == 'schedule' && '5' || '1' }}
+      VERITY_TEMPERATURE: ${{ github.event_name == 'schedule' && '0.6' || '0.0' }}
       DEEPEVAL_TELEMETRY_OPT_OUT: "1"
       DEEPEVAL_ERROR_REPORTING_OPT_OUT: "1"
       PYTHONPATH: src

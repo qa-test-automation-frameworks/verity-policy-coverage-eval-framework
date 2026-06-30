@@ -2,13 +2,10 @@
 
 > A structured, multi-tier evaluation framework for LLM applications — addressing non-determinism, cost, provider-coupling, and judge trust — demonstrated on a RAG + tool-use assistant.
 
-[![PR Gate](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
-[![Semantic Eval](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
-[![Adversarial](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml/badge.svg)](https://github.com/prayagv/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml)
 [![License: MIT with Attribution](https://img.shields.io/badge/License-MIT%20with%20Attribution-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 
-**Status:** Framework complete (M0–M8). Live Tier-2 semantic run not yet committed — see [Limitations](#limitations).
+**Status:** Hermetic Tier 1 is implemented and replayable. Live Tier-2/Tier-3 runs require a configured provider key and have no committed live-run artifacts yet — see [Limitations](#limitations).
 
 ---
 
@@ -101,15 +98,14 @@ make eval-semantic # full Tier-2 semantic suite (~$0.03 for 6 test files x N=3)
 | Report | Description | Link |
 |--------|-------------|------|
 | Defects Caught | Hermetic proof matrix — 4/8 defects caught deterministically (no API key); Tier-2 semantic coverage set up for defects 1–4 (requires live run) | [docs/defects-caught.md](docs/defects-caught.md) |
-| Calibration | Judge calibration pipeline — kappa=0.934, self-bias=+0.056 on synthetic labels (methodology demonstration; see report for details) | [docs/calibration-report.md](docs/calibration-report.md) |
+| Calibration | Judge calibration pipeline — synthetic-label methodology demonstration with kappa/self-bias example values; run live calibration before treating these as empirical results | [docs/calibration-report.md](docs/calibration-report.md) |
 | Thresholds | Per-metric threshold table with defect coverage map | [docs/thresholds.md](docs/thresholds.md) |
 | Observability | OTel span table, env vars, cost summary | [docs/observability.md](docs/observability.md) |
 | Architecture | Component walk-through, data flow, CI table | [docs/architecture.md](docs/architecture.md) |
 | ADRs | 5 design decisions with context and alternatives | [docs/adr/](docs/adr/) |
 | Extension guide | How to add providers, datasets, evaluators, and reports | [docs/extending.md](docs/extending.md) |
 
-The full report site (Allure + defects-caught landing + calibration + cost) is
-published to GitHub Pages on every push to `main` via `pages.yml`.
+The full report site (Allure + defects-caught landing + calibration + cost) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
 
 ---
 
@@ -129,7 +125,7 @@ tests/
   adversarial/    # Red-team hermetic suite (Tier 3)
 datasets/
   golden/         # Versioned test cases + ground truth
-  calibration/    # Human-labeled examples for judge calibration
+  calibration/    # Synthetic-label examples for judge calibration methodology
   cassettes/      # Recorded LLM responses for replay
   adversarial/    # Adversarial probe corpus + cassettes
 promptfoo/        # Promptfoo provider + red-team config (Tier 3 live)
@@ -137,7 +133,7 @@ scripts/          # Cassette authoring, calibration, trace demo, report generato
 docs/
   seeded-defects.md     # Living catalog of all 8 defects
   defects-caught.md     # Hermetic proof matrix (regenerate: make defects-report)
-  calibration-report.md # Committed judge calibration report
+  calibration-report.md # Synthetic-label calibration methodology report
   thresholds.md         # Per-metric threshold table
   observability.md      # OTel tracing and cost summary docs
   architecture.md       # Component walk-through and data flow

@@ -75,6 +75,10 @@ both wire a shared session accumulator and call `write_step_summary` on session 
 Even hermetic (cassette replay) runs produce the cost table, since recorded token
 counts are replayed through `RunAccumulator`.
 
+### Hermetic replay note
+
+Committed local report artifacts generated from cassette replay are useful for token and cost accounting, but replay latency is not representative of live provider latency.
+
 ---
 
 ## Installing the OTel Extra

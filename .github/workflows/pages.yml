@@ -40,7 +40,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies (all extras including report)
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-extras
 
       - name: Run hermetic test suites (unit + deterministic + adversarial)
         env:

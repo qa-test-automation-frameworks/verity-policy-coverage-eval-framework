@@ -35,7 +35,7 @@ make type              # mypy strict
 make test              # unit tests (no live calls)
 make test-deterministic  # Tier-1 deterministic eval (cassette replay; no API key)
 make record            # regenerate cassettes from authored YAML fixtures
-make smoke             # one live GLM-5.2 call (requires API key in .env)
+make smoke             # one live provider call (requires API key in .env)
 make demo QUERY="What is my Silver plan deductible?"
 ```
 
@@ -51,9 +51,7 @@ make redteam           # hermetic adversarial suite (no API key)
 make trace-demo        # one-shot OTel trace demo writing spans to reports/traces/
 ```
 
-The static site is published to GitHub Pages via `.github/workflows/pages.yml`
-on every push to `main`. Pages include the defects-caught matrix, calibration
-report, cost summary, and Allure test results.
+The static site is published to GitHub Pages via `.github/workflows/pages.yml` after Pages is enabled for the repository. Pages include the defects-caught matrix, calibration report, cost summary, and Allure test results.
 
 ### Running with a different provider
 
@@ -70,6 +68,17 @@ OPENROUTER_API_KEY=your-key-here
 - **mypy strict** — zero untyped functions; all ignores must be justified inline
 - No unnecessary comments; no docstrings beyond one-line function summaries
 - Tests: pytest; unit tests in `tests/unit/`; no mocking of internal logic
+
+### Live-tier flake policy
+
+Tier 1 should be deterministic and must not use retries to hide failures. For live Tier 2/Tier 3 tests, mark known provider-instability cases with `@pytest.mark.flaky` only after recording the failure mode in the test or linked issue. Use `@pytest.mark.quarantine` for tests that should keep running for signal but should not block merges until the owner removes the marker.
+
+### Troubleshooting
+
+- First `PolicyRetriever` use may download the local ONNX embedding model through Chroma; retry after the cache is populated if the network is interrupted.
+- Run commands through `make` or set `PYTHONPATH=src` manually when invoking modules directly.
+- Missing provider-key warnings are expected for Tier 1; live calls require `VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, or `VERITY_TOGETHER_API_KEY`.
+- Treat `.env.example` provider endpoints as templates and verify the model slug/base URL with your provider before live runs.
 
 ### CI
 
