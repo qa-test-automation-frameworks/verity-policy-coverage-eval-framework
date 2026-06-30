@@ -26,6 +26,10 @@ dev = [
     "pre-commit>=3.7.0",
     "types-PyYAML>=6.0.12",
 ]
+semantic = [
+    "deepeval>=1.5.0",
+    "ragas>=0.2.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/verity", "src/sut"]
@@ -41,6 +45,10 @@ dev = [
     "pytest-cov>=5.0.0",
     "pre-commit>=3.7.0",
     "types-PyYAML>=6.0.12",
+]
+semantic = [
+    "deepeval>=1.5.0",
+    "ragas>=0.2.0",
 ]
 
 # ---------------------------------------------------------------------------
@@ -77,6 +85,10 @@ files = ["src"]
 
 [[tool.mypy.overrides]]
 module = ["chromadb.*", "litellm.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["deepeval.*", "ragas.*", "langchain.*", "langchain_core.*", "datasets.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
