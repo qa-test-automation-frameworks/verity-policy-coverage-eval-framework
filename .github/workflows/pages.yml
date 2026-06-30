@@ -1,0 +1,106 @@
+name: Publish Evaluation Reports
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Semantic Eval (Tier 2 — DeepEval · RAGAS)", "Adversarial Red-Team"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build report site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies (all extras including report)
+        run: uv sync --all-extras
+
+      - name: Run hermetic test suites (unit + deterministic + adversarial)
+        env:
+          PYTHONPATH: src
+        run: |
+          uv run pytest tests/unit/ tests/deterministic/ tests/adversarial/ \
+            -m "not live" \
+            --alluredir reports/allure-results \
+            -v --tb=short
+
+      - name: Download latest semantic eval artifact
+        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
+        with:
+          workflow: semantic-eval.yml
+          name: semantic-eval-reports
+          path: reports/
+          if_no_artifact_found: warn
+
+      - name: Download latest adversarial report artifact
+        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
+        with:
+          workflow: adversarial.yml
+          name: adversarial-reports
+          path: reports/
+          if_no_artifact_found: warn
+
+      - name: Generate defects-caught report
+        env:
+          PYTHONPATH: src:.
+        run: uv run python scripts/defects_report.py
+
+      - name: Set up Java for Allure CLI
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Allure CLI
+        run: |
+          curl -sLo allure.tgz \
+            https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
+          tar -xzf allure.tgz
+          echo "$PWD/allure-2.27.0/bin" >> "$GITHUB_PATH"
+
+      - name: Generate Allure HTML report
+        run: allure generate reports/allure-results --clean -o reports/allure-report
+        continue-on-error: true
+
+      - name: Build static report site
+        env:
+          PYTHONPATH: src:.
+        run: uv run python scripts/build_report_site.py
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

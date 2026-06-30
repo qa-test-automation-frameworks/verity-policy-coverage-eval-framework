@@ -34,7 +34,17 @@ jobs:
         run: uv sync --frozen
 
       - name: Hermetic adversarial suite
-        run: PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+        run: |
+          mkdir -p reports/allure-results/adversarial
+          PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v \
+            --alluredir reports/allure-results/adversarial
+
+      - name: Upload adversarial reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: adversarial-reports
+          path: reports/allure-results/adversarial/
+          if-no-files-found: warn
 
   redteam-live:
     needs: key_check

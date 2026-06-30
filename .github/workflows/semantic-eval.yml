@@ -73,10 +73,25 @@ jobs:
 
       - name: Run semantic eval
         if: steps.key_check.outputs.has_key == 'true'
-        run: uv run pytest tests/semantic/ -m semantic -v --tb=short
+        run: |
+          mkdir -p reports/allure-results/semantic reports/semantic
+          uv run pytest tests/semantic/ -m semantic -v --tb=short \
+            --alluredir reports/allure-results/semantic
 
-      - name: Summarize cost
+      - name: Write cost summary to job summary
         if: steps.key_check.outputs.has_key == 'true'
         run: |
-          echo "Semantic eval run complete."
-          echo "Check individual test logs above for per-case scores."
+          if [ -f reports/cost-summary.md ]; then
+            cat reports/cost-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload semantic eval reports
+        if: steps.key_check.outputs.has_key == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-eval-reports
+          path: |
+            reports/allure-results/semantic/
+            reports/semantic/results.json
+            reports/cost-summary.md
+          if-no-files-found: warn
