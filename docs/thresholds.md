@@ -26,7 +26,9 @@ pipeline:
 See `verity/statistics.py` for the implementation.
 
 > **Measured judge calibration** (per-metric score drift quantification across
-> providers) is deferred to M4.
+> providers using a live judge and a genuine second model family) has not yet
+> been run. `docs/calibration-report.md` demonstrates the methodology pipeline
+> on synthetic labels. Run `make calibrate-live` to produce empirical numbers.
 
 ---
 
