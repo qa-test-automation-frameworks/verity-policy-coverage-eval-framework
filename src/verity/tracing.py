@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import sys
 from collections.abc import Generator
@@ -30,6 +31,8 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from verity.cost import CallRecord
@@ -144,8 +147,8 @@ def record_call_span(call_record: CallRecord) -> None:
         span.set_attribute("llm.completion_tokens", call_record.usage.completion_tokens)
         span.set_attribute("llm.total_tokens", call_record.usage.total_tokens)
         span.set_attribute("llm.cost_usd", call_record.cost.total_usd)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to set span attributes on call record: %s", exc)
 
 
 @contextlib.contextmanager
