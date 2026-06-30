@@ -59,12 +59,6 @@ exclusions document apply (see exclusions.md).
 - Outpatient/therapy: $20 copay per visit (unlimited visits)
 
 ### §3.7 Urgent Care
-<!-- SEEDED DEFECT #4 LOCATION (PART B): Gold plan states urgent care copay = $75, SAME as Silver.
-     This is a deliberate contradiction: Silver also charges $75 (silver.md §3.7) while Gold
-     charges the same $75 — there is no Gold discount for urgent care, which is counterintuitive
-     and inconsistent with the plan tier pricing logic. The correct answer for a Gold member asking
-     about urgent care copay is $75, but the SUT should surface the fact that Silver and Gold
-     share the same urgent care copay rather than assuming Gold is cheaper. -->
 - **In-network urgent care:** $75 copay per visit
 - **Out-of-network urgent care:** 10% coinsurance after deductible
 

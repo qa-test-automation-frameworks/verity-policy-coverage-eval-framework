@@ -5,7 +5,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sut.retriever import Chunk, FixtureRetriever, _chunk_text, _extract_section_heading, _stable_id
+from sut.retriever import (
+    Chunk,
+    FixtureRetriever,
+    _chunk_text,
+    _extract_section_heading,
+    _stable_id,
+    _strip_html_comments,
+)
 
 
 class TestChunkText:
@@ -28,6 +35,16 @@ class TestChunkText:
 
     def test_empty_text_returns_empty(self) -> None:
         assert _chunk_text("", chunk_size=100, overlap=10) == []
+
+
+class TestStripHtmlComments:
+    def test_removes_single_line_comment(self) -> None:
+        text = "Covered text\n<!-- internal note -->\nMore policy text"
+        assert _strip_html_comments(text) == "Covered text\n\nMore policy text"
+
+    def test_removes_multiline_comment(self) -> None:
+        text = "Before\n<!-- line one\nline two -->\nAfter"
+        assert "line one" not in _strip_html_comments(text)
 
 
 class TestExtractSectionHeading:

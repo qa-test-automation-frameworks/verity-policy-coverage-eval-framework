@@ -20,11 +20,6 @@ of tier. Members are solely responsible for the cost of excluded services.
    are excluded under all plans. Nutritional counseling for medically documented obesity is covered
    under Silver and Gold.
 
-<!-- SEEDED DEFECT #1: The procedure "bariatric surgery" is explicitly excluded here.
-     However, in bronze.md §3.4 it is listed under "Surgical Benefits" as a benefit item due to an
-     authoring error. The SUT may therefore claim bariatric surgery is covered on a Bronze plan,
-     which is a coverage hallucination. The ground truth is: excluded under all plans. -->
-
 4. **Dental care** — routine dental exams, cleanings, fillings, extractions, and orthodontia are
    excluded unless a separate dental rider is purchased.
 

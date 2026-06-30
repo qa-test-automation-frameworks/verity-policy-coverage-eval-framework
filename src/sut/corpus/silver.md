@@ -59,7 +59,6 @@ exclusions document apply (see exclusions.md).
 - Outpatient/therapy: $40 copay per visit (up to 52 visits per year)
 
 ### §3.7 Urgent Care
-<!-- SEEDED DEFECT #4 LOCATION (PART A): Silver plan states urgent care copay = $75 -->
 - **In-network urgent care:** $75 copay per visit
 - **Out-of-network urgent care:** 20% coinsurance after deductible
 
@@ -88,11 +87,3 @@ exclusions document apply (see exclusions.md).
 
 Up to **45 sessions per calendar year** at $40 copay per session.
 
-<!-- SEEDED DEFECT #3 LOCATION — PART A (MULTI-HOP):
-     The coinsurance for Silver is 20% (stated in §1).
-     The deductible for Silver is $2,000 (also §1).
-     To correctly calculate a member's total cost for a covered outpatient procedure, the agent must
-     combine BOTH values: first the remaining deductible from §1, then apply 20% coinsurance to the
-     remainder. The multi-hop defect is triggered when a member asks about their cost for an
-     outpatient procedure and the agent uses only the copay or only the coinsurance without
-     accounting for the deductible phase. See also: amendments.md §A3. -->

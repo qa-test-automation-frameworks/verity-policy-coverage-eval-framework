@@ -42,6 +42,11 @@ def _extract_section_heading(text: str) -> str:
     return match.group(1).strip() if match else ""
 
 
+def _strip_html_comments(text: str) -> str:
+    """Remove Markdown HTML comments before chunking indexed corpus files."""
+    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+
+
 def _chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
     """Split text into overlapping chunks by word count (markdown-aware)."""
     # Split on paragraph boundaries first, then by size
@@ -116,7 +121,7 @@ class PolicyRetriever:
         metadatas: list[dict[str, str]] = []
 
         for md_file in md_files:
-            raw = md_file.read_text(encoding="utf-8")
+            raw = _strip_html_comments(md_file.read_text(encoding="utf-8"))
             chunks = _chunk_text(raw, self._config.chunk_size, self._config.chunk_overlap)
             for chunk_text in chunks:
                 chunk_id = _stable_id(md_file.name, chunk_text)
