@@ -69,7 +69,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 |--------|---------------|
 | `corpus/` | 6 Markdown policy documents (bronze, silver, gold, definitions, exclusions, amendments) with 8 seeded defects baked in |
 | `data/members.yaml` | Synthetic member registry (MBR-001 through MBR-005) — fictional, no real PII |
-| `retriever.py` | `PolicyRetriever` (Chroma + ONNX embeddings, markdown-aware chunker); `FixtureRetriever` (drop-in from JSON files, no Chroma required for Tier 1) |
+| `retriever.py` | `PolicyRetriever` (Chroma + ONNX embeddings, markdown-aware chunker, 160-word chunks / top-3 default); `FixtureRetriever` (drop-in from JSON files, no Chroma required for Tier 1) |
 | `tools/coverage_calculator.py` | Deterministic Pydantic-typed cost calculator + `COVERAGE_CALCULATOR_SCHEMA`; tool arguments intentionally ambiguously named (seeded defect #5) |
 | `guardrails.py` | `check_input_scope()` (regex `_OUT_OF_SCOPE_PATTERNS`; gap = seeded defect #6); `scrub_output()` (masks member-id and date patterns); `log_member_context()` (naive DEBUG logging = seeded defect #8) |
 | `agent.py` | `CoverageAgent.answer()`: load member, check scope, retrieve chunks, first LLM turn, optional tool-use second turn, scrub output; wraps all spans via `traced()` |

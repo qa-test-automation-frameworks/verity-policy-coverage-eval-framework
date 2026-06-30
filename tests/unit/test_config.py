@@ -42,6 +42,9 @@ class TestSettings:
         assert s.model == "glm-5.2"
         assert s.temperature == 0.0
         assert s.semantic_samples == 1
+        assert s.retrieval.chunk_size == 160
+        assert s.retrieval.chunk_overlap == 30
+        assert s.retrieval.top_k == 3
 
     def test_invalid_temperature_raises(self) -> None:
         with pytest.raises(ValueError):

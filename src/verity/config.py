@@ -67,9 +67,9 @@ class RetrievalConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="VERITY_", extra="ignore")
 
     corpus_dir: Path = Path("src/sut/corpus")
-    chunk_size: int = 500
-    chunk_overlap: int = 50
-    top_k: int = 5
+    chunk_size: int = 160
+    chunk_overlap: int = 30
+    top_k: int = 3
     embedding_model: str = "all-MiniLM-L6-v2"
     persist_dir: Path = Path(".chroma")
 

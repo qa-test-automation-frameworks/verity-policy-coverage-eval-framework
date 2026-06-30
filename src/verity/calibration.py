@@ -258,23 +258,12 @@ _SCORE_PATTERN = re.compile(r"[Ss]core[:\s]+(\d+(?:\.\d+)?)")
 
 
 def parse_judge_score(text: str) -> float:
-    """Extract a 0-1 normalized score from judge response text.
-
-    Looks for 'Score: N' (case-insensitive). Falls back to the last integer found.
-    """
+    """Extract a 0-1 normalized score from strict `Score: N` judge text."""
     m = _SCORE_PATTERN.search(text)
-    if m:
-        raw = float(m.group(1))
-        return min(max(raw / 10.0, 0.0), 1.0)
-    # Fallback: last number in text
-    nums = re.findall(r"\b(\d+(?:\.\d+)?)\b", text)
-    if nums:
-        raw = float(nums[-1])
-        # Heuristic: if >1 assume it's 0-10 scale
-        if raw > 1.0:
-            return min(raw / 10.0, 1.0)
-        return min(raw, 1.0)
-    return 0.0
+    if not m:
+        return 0.0
+    raw = float(m.group(1))
+    return min(max(raw / 10.0, 0.0), 1.0)
 
 
 def score_case(case: CalibrationCase, judge: Any) -> float:
