@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live demo record clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo demo record clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -63,6 +63,11 @@ calibrate:
 calibrate-live:
 	@echo "Judge calibration — live judge calls (requires API key)"
 	PYTHONPATH=src uv run python scripts/run_calibration.py --record
+
+trace-demo:
+	@echo "Trace demo — one hermetic agent run with OTEL file exporter (no API key required)"
+	VERITY_TRACING=1 VERITY_TRACE_EXPORTER=file PYTHONPATH=src uv run python scripts/trace_demo.py
+	@echo "Spans written to reports/traces/"
 
 # ---------------------------------------------------------------------------
 # SUT demo
