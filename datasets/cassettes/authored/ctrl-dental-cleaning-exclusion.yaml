@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      A routine dental cleaning is **excluded** under the base health plan. The exclusion allows coverage only if the member purchased a separate dental rider.
+    prompt_tokens: 120
+    completion_tokens: 45

@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      The current Gold plan individual out-of-pocket maximum is **$3,800**, effective July 1, 2024, under Amendment §A2. That amendment supersedes the original $4,000 figure in the Gold plan overview.
+    prompt_tokens: 120
+    completion_tokens: 45

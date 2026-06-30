@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      For Bronze, MRI/CT/PET imaging is subject to **40% member coinsurance after the deductible**, and **prior authorization is required**. Failure to obtain PA may result in claim denial.
+    prompt_tokens: 120
+    completion_tokens: 45

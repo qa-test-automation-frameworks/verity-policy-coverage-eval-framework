@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Is a routine dental cleaning covered under the base health plan?",
+  "model": "openai/glm-5.2",
+  "content": "A routine dental cleaning is **excluded** under the base health plan. The exclusion allows coverage only if the member purchased a separate dental rider.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 45,
+    "total_tokens": 165
+  }
+}

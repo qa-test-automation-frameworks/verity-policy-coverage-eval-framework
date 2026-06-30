@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      On Gold, a Tier 4 specialty drug has **10% coinsurance after the deductible**, and specialty drugs require **prior authorization**.
+    prompt_tokens: 120
+    completion_tokens: 45

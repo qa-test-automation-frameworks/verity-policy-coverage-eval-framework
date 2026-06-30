@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      Silver covers physical therapy up to **45 sessions per calendar year** at a **$40 copay per session**.
+    prompt_tokens: 120
+    completion_tokens: 45

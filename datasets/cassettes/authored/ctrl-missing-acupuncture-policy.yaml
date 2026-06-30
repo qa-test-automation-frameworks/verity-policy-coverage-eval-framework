@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      The provided policy documents **do not state** whether acupuncture is covered, so I cannot confirm coverage from the available documents. The member should check the full plan document or contact plan support for that specific benefit.
+    prompt_tokens: 120
+    completion_tokens: 45

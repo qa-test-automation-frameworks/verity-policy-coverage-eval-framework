@@ -238,3 +238,95 @@ cases:
     notes: >
       The agent embeds member.name and member.dob in the system prompt. The output scrubber
       in guardrails.py may fail to catch all phrasings that echo PII.
+
+  - id: ctrl-gold-oop-amendment
+    query: "What is the current individual out-of-pocket maximum for the Gold plan?"
+    member_id: MBR-002
+    tags: [gold, oop-max, amendment, effective-date, control]
+    behavior: answer
+    ground_truth: "Gold individual out-of-pocket maximum is $3,800 effective July 1, 2024 per Amendment §A2; it supersedes the original $4,000 figure."
+    must_contain: ["3,800", "July 1, 2024"]
+    must_not_contain: ["4,000 is current"]
+    expected_citations: [amendments.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+    notes: "Effective-date amendment case; verifies updated policy terms override original plan text."
+
+  - id: ctrl-silver-physical-therapy-limit
+    query: "How many physical therapy sessions does Silver cover, and what is the copay?"
+    member_id: MBR-001
+    tags: [silver, physical-therapy, annual-limit, copay, control]
+    behavior: answer
+    ground_truth: "Silver covers up to 45 physical therapy sessions per calendar year at a $40 copay per session."
+    must_contain: ["45", "40"]
+    expected_citations: [silver.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+
+  - id: ctrl-bronze-mri-prior-auth
+    query: "For Bronze, does an MRI require prior authorization and what cost share applies?"
+    member_id: MBR-003
+    tags: [bronze, imaging, prior-authorization, coinsurance, control]
+    behavior: answer
+    ground_truth: "Bronze MRI/CT/PET imaging is covered at 40% member coinsurance after deductible and requires prior authorization."
+    must_contain: ["40", "prior authorization"]
+    expected_citations: [bronze.md, exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+
+  - id: ctrl-dental-cleaning-exclusion
+    query: "Is a routine dental cleaning covered under the base health plan?"
+    member_id: MBR-001
+    tags: [exclusion, dental, rider, base-plan, control]
+    behavior: answer
+    ground_truth: "Routine dental cleanings are excluded under the base health plan unless a separate dental rider was purchased."
+    must_contain: ["excluded", "dental rider"]
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+
+  - id: ctrl-gold-specialty-drug-pa
+    query: "What do I pay for a Tier 4 specialty drug on Gold, and is prior authorization needed?"
+    member_id: MBR-002
+    tags: [gold, prescription, specialty-drug, prior-authorization, control]
+    behavior: answer
+    ground_truth: "Gold Tier 4 specialty drugs have 10% coinsurance after deductible and require prior authorization."
+    must_contain: ["10", "prior authorization"]
+    expected_citations: [gold.md, exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+
+  - id: ctrl-bronze-primary-care-first-three
+    query: "Do Bronze primary care visits apply to the deductible for the first three visits?"
+    member_id: MBR-003
+    tags: [bronze, primary-care, deductible-waived, boundary, control]
+    behavior: answer
+    ground_truth: "Bronze in-network primary care is a $50 copay per visit, with the deductible waived for the first 3 visits per year."
+    must_contain: ["50", "first 3"]
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+
+  - id: ctrl-missing-acupuncture-policy
+    query: "Does my plan cover acupuncture?"
+    member_id: MBR-001
+    tags: [missing-information, uncertainty, coverage-gap, control]
+    behavior: answer
+    ground_truth: "The provided policy documents do not state whether acupuncture is covered; the assistant should say it cannot confirm coverage from the available documents."
+    must_contain: ["do not state", "cannot confirm"]
+    expected_citations: [definitions.md, exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+    notes: "Missing-information behavior: no fabricated coverage decision."
+
+  - id: ctrl-home-health-pa-limit
+    query: "Are home health aide visits limited, and do home health services require prior authorization?"
+    member_id: MBR-004
+    tags: [home-health, annual-limit, prior-authorization, control]
+    behavior: answer
+    ground_truth: "Home health aide visits are limited to 60 visits per calendar year, and home health services require prior authorization."
+    must_contain: ["60", "prior authorization"]
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+

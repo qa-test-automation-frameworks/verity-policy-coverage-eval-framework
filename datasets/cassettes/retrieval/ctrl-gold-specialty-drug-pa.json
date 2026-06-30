@@ -1,0 +1,12 @@
+[
+  {
+    "source": "gold.md",
+    "section": "\u00a74. Prescription Drugs",
+    "text": "## \u00a74. Prescription Drugs\n\nTier 4 (Specialty): 10% coinsurance. After deductible; PA required."
+  },
+  {
+    "source": "exclusions.md",
+    "section": "Prior Authorization Requirements",
+    "text": "## Prior Authorization Requirements\n\nSpecialty drugs (Tier 4+) require PA for all plans. Failure to obtain PA results in denial of the claim."
+  }
+]

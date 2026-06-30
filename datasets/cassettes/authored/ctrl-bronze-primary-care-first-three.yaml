@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      Bronze in-network primary care visits have a **$50 copay**. The deductible is waived for the **first 3 visits per year**.
+    prompt_tokens: 120
+    completion_tokens: 45

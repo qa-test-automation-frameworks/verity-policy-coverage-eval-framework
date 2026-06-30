@@ -1,0 +1,12 @@
+[
+  {
+    "source": "definitions.md",
+    "section": "Key Terms",
+    "text": "## Key Terms\n\nCovered Service: A health-care service, treatment, or prescription drug covered under your plan. Excluded Service: a service your plan does not cover."
+  },
+  {
+    "source": "exclusions.md",
+    "section": "Services Not Covered (All Plans)",
+    "text": "## Services Not Covered (All Plans)\n\nThe listed exclusions do not mention acupuncture. The provided plan benefit summaries also do not identify acupuncture as a covered benefit."
+  }
+]

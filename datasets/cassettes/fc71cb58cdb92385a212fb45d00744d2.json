@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Do Bronze primary care visits apply to the deductible for the first three visits",
+  "model": "openai/glm-5.2",
+  "content": "Bronze in-network primary care visits have a **$50 copay**. The deductible is waived for the **first 3 visits per year**.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 45,
+    "total_tokens": 165
+  }
+}
