@@ -81,6 +81,7 @@ cd verity-policy-coverage-eval-framework
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --all-extras
 make test          # unit + deterministic tests; zero live calls
+make defects-report  # regenerate docs/defects-caught.md (hermetic proof)
 ```
 
 **With an API key (Tier 2 demo):**
@@ -90,7 +91,24 @@ cp .env.example .env
 # Add ZAI_API_KEY= to .env
 make smoke         # one live GLM-5.2 call; prints tokens + cost
 make demo QUERY="Is bariatric surgery covered on my Bronze plan?"
+make eval-semantic # full Tier-2 semantic suite (~$0.03 for 6 test files x N=3)
 ```
+
+---
+
+## Reports
+
+| Report | Description | Link |
+|--------|-------------|------|
+| Defects Caught | Hermetic proof matrix — 4/8 defects caught with no API key; 8/8 with live semantic run | [docs/defects-caught.md](docs/defects-caught.md) |
+| Calibration | Judge agreement vs human labels: kappa=0.934, self-bias=+0.056 | [docs/calibration-report.md](docs/calibration-report.md) |
+| Thresholds | Per-metric threshold table with defect coverage map | [docs/thresholds.md](docs/thresholds.md) |
+| Observability | OTel span table, env vars, cost summary | [docs/observability.md](docs/observability.md) |
+| Architecture | Component walk-through, data flow, CI table | [docs/architecture.md](docs/architecture.md) |
+| ADRs | 5 design decisions with context and alternatives | [docs/adr/](docs/adr/) |
+
+The full report site (Allure + defects-caught landing + calibration + cost) is
+published to GitHub Pages on every push to `main` via `pages.yml`.
 
 ---
 
@@ -98,20 +116,36 @@ make demo QUERY="Is bariatric surgery covered on my Bronze plan?"
 
 ```
 src/
-  verity/         # The framework (config, providers, cost, metrics, judges…)
-  sut/            # Policy Coverage Copilot (corpus, retriever, tool, agent, guardrails)
+  verity/         # The framework (config, providers, cost, cassettes, checks,
+  |               #   statistics, metrics, judges, calibration, adversarial,
+  |               #   tracing, reporting)
+  sut/            # Policy Coverage Copilot (corpus, retriever, tool, agent,
+                  #   guardrails)
 tests/
   unit/           # Framework + SUT pure-function tests (Tier 1)
-  deterministic/  # Cassette replay + schema + guardrail checks (Tier 1) [M2]
-  semantic/       # DeepEval + RAGAS evals (Tier 2) [M3]
-  adversarial/    # Promptfoo / red-team (Tier 3) [M5]
+  deterministic/  # Cassette replay + schema + guardrail checks (Tier 1)
+  semantic/       # DeepEval + RAGAS evals (Tier 2)
+  adversarial/    # Red-team hermetic suite (Tier 3)
 datasets/
-  golden/         # Versioned test cases + ground truth [M2]
-  calibration/    # Human-labeled examples for judge calibration [M4]
-  cassettes/      # Recorded LLM responses for replay [M2]
+  golden/         # Versioned test cases + ground truth
+  calibration/    # Human-labeled examples for judge calibration
+  cassettes/      # Recorded LLM responses for replay
+  adversarial/    # Adversarial probe corpus + cassettes
+promptfoo/        # Promptfoo provider + red-team config (Tier 3 live)
+scripts/          # Cassette authoring, calibration, trace demo, report generators
 docs/
-  seeded-defects.md   # Living catalog of all 8 defects
-  adr/                # Architecture Decision Records [M8]
+  seeded-defects.md     # Living catalog of all 8 defects
+  defects-caught.md     # Hermetic proof matrix (regenerate: make defects-report)
+  calibration-report.md # Committed judge calibration report
+  thresholds.md         # Per-metric threshold table
+  observability.md      # OTel tracing and cost summary docs
+  architecture.md       # Component walk-through and data flow
+  adr/                  # Architecture Decision Records (5 ADRs)
+.github/workflows/
+  pr-gate.yml           # Tier 1 - every PR; blocks merge
+  semantic-eval.yml     # Tier 2 - push to main + nightly
+  adversarial.yml       # Tier 3 - weekly + on-demand
+  pages.yml             # Report site - push to main + workflow_run
 ```
 
 ---

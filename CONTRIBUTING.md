@@ -39,6 +39,22 @@ make smoke             # one live GLM-5.2 call (requires API key in .env)
 make demo QUERY="What is my Silver plan deductible?"
 ```
 
+### Reports & Pages
+
+```bash
+make defects-report    # regenerate docs/defects-caught.md (hermetic, no API key)
+make report-allure     # run hermetic suites with --alluredir; generate Allure HTML
+make report-site       # defects-report + build static site/ with all report pages
+make calibrate         # hermetic judge calibration replay (no API key)
+make calibrate-live    # live judge calibration recording (requires API key)
+make redteam           # hermetic adversarial suite (no API key)
+make trace-demo        # one-shot OTel trace demo writing spans to reports/traces/
+```
+
+The static site is published to GitHub Pages via `.github/workflows/pages.yml`
+on every push to `main`. Pages include the defects-caught matrix, calibration
+report, cost summary, and Allure test results.
+
 ### Running with a different provider
 
 Set `VERITY_PROVIDER` in `.env`:
