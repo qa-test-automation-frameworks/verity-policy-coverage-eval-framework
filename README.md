@@ -1,6 +1,6 @@
 # verity-policy-coverage-eval-framework
 
-> A production-grade evaluation framework for LLM applications — solving non-determinism, cost, provider-coupling, and judge trust — demonstrated on a high-stakes RAG + tool-use assistant.
+> A structured, multi-tier evaluation framework for LLM applications — addressing non-determinism, cost, provider-coupling, and judge trust — demonstrated on a RAG + tool-use assistant.
 
 [![PR Gate](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
 [![Semantic Eval](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/prayagvpv/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
@@ -42,7 +42,7 @@ The framework engineering is the portfolio artifact. The chatbot is the target.
 
 ---
 
-## The Seeded-Defect Catalog (proof, not claims)
+## The Seeded-Defect Catalog (hermetic + semantic coverage)
 
 The SUT is **intentionally imperfect**. The framework's job is to catch each defect.
 
@@ -64,9 +64,9 @@ The SUT is **intentionally imperfect**. The framework's job is to catch each def
 | Framework Feature | SDET Competency |
 |-------------------|-----------------|
 | Cassette replay (no live CI calls) | CI cost discipline; non-flaky deterministic gate |
-| Statistical thresholds over N samples | Flaky-test mastery applied to LLM non-determinism |
+| Configurable N-sample semantic runs | Flaky-test mastery applied to LLM non-determinism |
 | Judge calibration + self-bias report | Awareness that LLM judges are biased and unreliable |
-| Three-tier CI triggers | Production-grade pipeline design |
+| Three-tier CI triggers | Structured pipeline design (Tier 1 blocks merge; Tier 2/3 use API key) |
 | Seeded defects caught by suite | Eval-driven development; proves the suite can fail |
 | Provider abstraction (LiteLLM) | Decoupling from single-provider risk |
 | Pydantic-typed config + test schemas | Engineering rigour; zero magic strings |
@@ -147,6 +147,15 @@ docs/
   adversarial.yml       # Tier 3 - weekly + on-demand
   pages.yml             # Report site - push to main + workflow_run
 ```
+
+---
+
+## Limitations
+
+- **Tier 2 and Tier 3 require a live API key.** Hermetic Tier 1 needs no credentials. Semantic and adversarial evals require `VERITY_ZAI_API_KEY` (or `VERITY_OPENROUTER_API_KEY` / `VERITY_TOGETHER_API_KEY`).
+- **Golden dataset size.** The current dataset covers 25+ cases across policy plans and defect types. This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
+- **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record-cassettes` when the SUT changes.
+- **RAGAS is optional.** RAGAS faithfulness and context-precision metrics are importable but require compatible optional dependencies. They are included in `uv sync --group semantic` and conditionally enabled.
 
 ---
 
