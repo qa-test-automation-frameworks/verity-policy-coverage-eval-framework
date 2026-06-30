@@ -1,0 +1,82 @@
+name: Semantic Eval (Tier 2 — DeepEval · RAGAS)
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Nightly at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Provider to use (zai, openrouter, together)"
+        required: false
+        default: "zai"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semantic-eval:
+    name: Tier 2 — Semantic Evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # No-op when the required secret is absent (fork PRs, repos without key)
+    env:
+      ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+      VERITY_PROVIDER: ${{ inputs.provider || 'zai' }}
+      DEEPEVAL_TELEMETRY_OPT_OUT: "1"
+      DEEPEVAL_ERROR_REPORTING_OPT_OUT: "1"
+      PYTHONPATH: src
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies (with semantic extras)
+        run: uv sync --all-extras
+
+      - name: Check for API key
+        id: key_check
+        run: |
+          if [ -z "$ZAI_API_KEY" ] && [ -z "$OPENROUTER_API_KEY" ] && [ -z "$TOGETHER_API_KEY" ]; then
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No API key secret configured — skipping semantic eval"
+          else
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Index corpus
+        if: steps.key_check.outputs.has_key == 'true'
+        run: |
+          uv run python -c "
+          import warnings; warnings.filterwarnings('ignore')
+          from sut.retriever import PolicyRetriever
+          from verity.config import RetrievalConfig
+          r = PolicyRetriever(RetrievalConfig())
+          n = r.index_corpus()
+          print(f'Indexed {n} chunks')
+          "
+
+      - name: Run semantic eval
+        if: steps.key_check.outputs.has_key == 'true'
+        run: uv run pytest tests/semantic/ -m semantic -v --tb=short
+
+      - name: Summarize cost
+        if: steps.key_check.outputs.has_key == 'true'
+        run: |
+          echo "Semantic eval run complete."
+          echo "Check individual test logs above for per-case scores."
