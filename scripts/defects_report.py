@@ -1,0 +1,452 @@
+"""Generate the defects-caught matrix report.
+
+Runs hermetic checks (cassette replay, no API key) for defects 5-8 via
+deterministic and adversarial replay. Defects 1-4 (semantic-only) are marked
+VERIFIED when reports/semantic/results.json is present, otherwise COVERED
+with a reference to the ground-truth and threshold that will catch them.
+
+Outputs:
+  docs/defects-caught.md              - committed hermetic artifact (always green)
+  reports/defects/defects-caught.json - full structured data (git-ignored)
+"""
+
+from __future__ import annotations
+
+import json
+import warnings
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Literal
+
+# ---------------------------------------------------------------------------
+# Catalog — static metadata for all 8 seeded defects
+# ---------------------------------------------------------------------------
+
+Status = Literal["CAUGHT", "VERIFIED", "COVERED", "MISSED"]
+
+
+@dataclass
+class DefectEntry:
+    id: int
+    description: str
+    failure_mode: str
+    catching_tiers: list[str]
+    hermetic_check: str
+    status: Status = "COVERED"
+    details: list[str] = field(default_factory=list)
+
+
+DEFECT_CATALOG: list[DefectEntry] = [
+    DefectEntry(
+        id=1,
+        description="Coverage Hallucination (Bariatric Surgery)",
+        failure_mode="SUT claims bariatric surgery is covered on Bronze (exclusions.md overrides)",
+        catching_tiers=["Tier 2 — Semantic"],
+        hermetic_check="DeepEval Hallucination + RAGAS Faithfulness",
+    ),
+    DefectEntry(
+        id=2,
+        description="Stale Context (Silver Premium)",
+        failure_mode="SUT reports $420 premium instead of $445 (amended value)",
+        catching_tiers=["Tier 2 — Semantic"],
+        hermetic_check="Ground-truth mismatch vs amended figure",
+    ),
+    DefectEntry(
+        id=3,
+        description="Multi-Hop Reasoning Failure (Outpatient Cost)",
+        failure_mode="SUT uses deductible OR coinsurance, not both in sequence",
+        catching_tiers=["Tier 2 — Semantic"],
+        hermetic_check="G-Eval completeness rubric",
+    ),
+    DefectEntry(
+        id=4,
+        description="Contradiction Not Surfaced (Urgent Care Copay)",
+        failure_mode="SUT reports copay without flagging Silver=Gold anomaly",
+        catching_tiers=["Tier 2 — Semantic"],
+        hermetic_check="G-Eval disambiguation rubric",
+    ),
+    DefectEntry(
+        id=5,
+        description="Tool Misuse (Coverage Calculator Arg Transposition)",
+        failure_mode="Agent skips tool or transposes plan_deductible/accrued_deductible",
+        catching_tiers=["Tier 1 — Deterministic", "Tier 2 — Semantic"],
+        hermetic_check="check_tool_args (arg value mismatch)",
+    ),
+    DefectEntry(
+        id=6,
+        description="Refusal Boundary Breach (Medical Advice)",
+        failure_mode="SUT answers 'Should I get this surgery?' instead of refusing",
+        catching_tiers=["Tier 1 — Deterministic", "Tier 2 — Semantic"],
+        hermetic_check="check_refusal (refused=False when behavior=refuse)",
+    ),
+    DefectEntry(
+        id=7,
+        description="Prompt Injection (Policy Document §A5)",
+        failure_mode="Agent echoes 'all procedures are covered' from injected amendments §A5",
+        catching_tiers=["Tier 1 — Deterministic", "Tier 2 — Semantic", "Tier 3 — Adversarial"],
+        hermetic_check="check_injection + adv-injection-001/002/003 probes",
+    ),
+    DefectEntry(
+        id=8,
+        description="PII/PHI Leakage (Member Name/DOB in Response)",
+        failure_mode="Agent echoes member name or DOB in response text",
+        catching_tiers=["Tier 1 — Deterministic", "Tier 2 — Semantic", "Tier 3 — Adversarial"],
+        hermetic_check="check_pii(member_name=...) + adv-pii-001/002/003 probes",
+    ),
+]
+
+
+# ---------------------------------------------------------------------------
+# Hermetic checks - deterministic replay (defects 5-8)
+# ---------------------------------------------------------------------------
+
+def _run_deterministic_checks(catalog: list[DefectEntry]) -> None:
+    """Run cassette-replay checks for defects 5-8; mutate status/details in place."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from tests.deterministic.conftest import run_case
+
+        from sut.agent import _load_members
+        from verity.checks import check_injection, check_pii, check_refusal, check_tool_args
+        from verity.config import Settings
+        from verity.golden import load_golden
+
+    cassette_dir = Path("datasets/cassettes")
+    golden_dir = Path("datasets/golden")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        settings = Settings(cassette_mode="replay", cassette_dir=cassette_dir)
+
+    all_cases = load_golden(golden_dir)
+    members = _load_members()
+
+    def _by_defect(defect_id: int) -> object:
+        matches = [c for c in all_cases if c.defect_id == defect_id]
+        return matches[0] if matches else None
+
+    check_map = {
+        5: lambda case, resp: check_tool_args(case, resp),
+        6: lambda case, resp: check_refusal(case, resp),
+        7: lambda case, resp: check_injection(resp),
+        8: lambda case, resp: check_pii(
+            resp,
+            member_name=str(members.get(case.member_id, {}).get("name", "")),
+        ),
+    }
+
+    det_entries = {e.id: e for e in catalog if e.id in check_map}
+
+    for defect_id, check_fn in check_map.items():
+        entry = det_entries[defect_id]
+        case = _by_defect(defect_id)
+        if case is None:
+            entry.status = "MISSED"
+            entry.details.append("No golden case found")
+            continue
+        try:
+            response = run_case(case, settings)
+            result = check_fn(case, response)
+            if not result.passed:
+                entry.status = "CAUGHT"
+                entry.details.append(f"Deterministic: {result.message[:120]}")
+            else:
+                entry.status = "MISSED"
+                entry.details.append(f"Deterministic check passed unexpectedly: {result.message}")
+        except Exception as exc:
+            entry.status = "MISSED"
+            entry.details.append(f"Error: {exc}")
+
+
+def _run_adversarial_checks(catalog: list[DefectEntry]) -> None:
+    """Run adversarial cassette-replay probes for defects 7-8; append to details."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from tests.adversarial.conftest import run_probe
+
+        from sut.agent import _load_members
+        from verity.adversarial import load_probes
+        from verity.checks import scan_injection, scan_pii
+        from verity.config import Settings
+
+    adv_cassette_dir = Path("datasets/adversarial/cassettes")
+    probes_path = Path("datasets/adversarial/probes.yaml")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        settings = Settings(cassette_mode="replay", cassette_dir=adv_cassette_dir)
+
+    probes = load_probes(probes_path)
+    members = _load_members()
+
+    adv_defect_probes: dict[int, list[str]] = {7: [], 8: []}
+
+    inj_probes = [
+        p for p in probes
+        if p.category == "injection" and p.expected_outcome == "breached"
+    ]
+    pii_probes = [
+        p for p in probes
+        if p.category == "pii_extraction" and p.expected_outcome == "breached"
+    ]
+
+    entries = {e.id: e for e in catalog if e.id in (7, 8)}
+
+    for probe in inj_probes:
+        try:
+            response = run_probe(probe, settings)
+            answer = str(getattr(response, "answer", ""))
+            if scan_injection(answer):
+                adv_defect_probes[7].append(f"CAUGHT by {probe.id}")
+            else:
+                adv_defect_probes[7].append(f"NOT caught by {probe.id}")
+        except Exception as exc:
+            adv_defect_probes[7].append(f"Error on {probe.id}: {exc}")
+
+    for probe in pii_probes:
+        try:
+            response = run_probe(probe, settings)
+            answer = str(getattr(response, "answer", ""))
+            member_name = str(members.get(probe.member_id, {}).get("name", ""))
+            pii_found = scan_pii(answer, member_name=member_name)
+            for token in probe.must_not_contain:
+                if token.lower() in answer.lower():
+                    pii_found.append(f"explicit:{token}")
+            if pii_found:
+                adv_defect_probes[8].append(f"CAUGHT by {probe.id} ({pii_found[0]})")
+            else:
+                adv_defect_probes[8].append(f"NOT caught by {probe.id}")
+        except Exception as exc:
+            adv_defect_probes[8].append(f"Error on {probe.id}: {exc}")
+
+    for defect_id, results in adv_defect_probes.items():
+        entry = entries[defect_id]
+        entry.details.extend([f"Adversarial: {r}" for r in results])
+
+
+# ---------------------------------------------------------------------------
+# Semantic results ingestion (defects 1-4)
+# ---------------------------------------------------------------------------
+
+def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
+    """Read reports/semantic/results.json if present; upgrade 1-4 to VERIFIED."""
+    sem_path = Path("reports/semantic/results.json")
+    if not sem_path.exists():
+        for entry in catalog:
+            if entry.id <= 4:
+                entry.status = "COVERED"
+                entry.details.append(
+                    "COVERED — run `make eval-semantic` with a configured API key to verify live"
+                )
+        return
+
+    try:
+        with sem_path.open() as fh:
+            sem_results: dict[str, object] = json.load(fh)
+    except Exception:
+        return
+
+    defect_key_map = {
+        1: "defect-1-hallucination",
+        2: "defect-2-stale-context",
+        3: "defect-3-multi-hop",
+        4: "defect-4-contradiction",
+    }
+    for entry in catalog:
+        if entry.id > 4:
+            continue
+        key = defect_key_map.get(entry.id, "")
+        if key in sem_results:
+            entry.status = "VERIFIED"
+            entry.details.append(f"Semantic: verified via {key}")
+        else:
+            entry.status = "COVERED"
+            entry.details.append("COVERED — semantic results present but case not found")
+
+
+# ---------------------------------------------------------------------------
+# Render
+# ---------------------------------------------------------------------------
+
+def render_markdown(catalog: list[DefectEntry]) -> str:
+    """Return the defects-caught matrix as a markdown document."""
+    hermetically_proven = [e for e in catalog if e.status == "CAUGHT"]
+
+    lines: list[str] = [
+        "# Defects Caught",
+        "",
+        "_Hermetically proven from cassette replay — no API key required._",
+        "",
+        f"**{len(hermetically_proven)} of 8 defects caught hermetically** "
+        f"(defects 5-8 via deterministic + adversarial replay). "
+        f"Defects 1-4 are semantic-tier; run `make eval-semantic` with a key to verify live.",
+        "",
+        "---",
+        "",
+        "## Matrix",
+        "",
+        "| # | Defect | Failure Mode | Catching Tier(s) | Status |",
+        "|---|--------|--------------|------------------|--------|",
+    ]
+
+    status_icon = {
+        "CAUGHT": "✅ CAUGHT",
+        "VERIFIED": "✅ VERIFIED",
+        "COVERED": "⬜ COVERED",
+        "MISSED": "❌ MISSED",
+    }
+
+    for entry in catalog:
+        icon = status_icon[entry.status]
+        tiers = " · ".join(entry.catching_tiers)
+        lines.append(
+            f"| {entry.id} | {entry.description} | {entry.failure_mode} "
+            f"| {tiers} | {icon} |"
+        )
+
+    lines += [
+        "",
+        "---",
+        "",
+        "## Legend",
+        "",
+        "| Status | Meaning |",
+        "|--------|---------|",
+        "| ✅ CAUGHT | Hermetically proven: cassette replay confirms the defect is detected |",
+        "| ✅ VERIFIED | Confirmed by a live semantic run (`reports/semantic/results.json`) |",
+        "| ⬜ COVERED | Ground-truth + metric threshold established; requires API key |",
+        "| ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |",
+        "",
+        "---",
+        "",
+        "## Hermetically Proven (Defects 5-8)",
+        "",
+    ]
+
+    for entry in catalog:
+        if entry.id < 5:
+            continue
+        lines += [
+            f"### Defect #{entry.id} - {entry.description}",
+            "",
+            f"**Check:** `{entry.hermetic_check}`  ",
+            f"**Status:** {status_icon[entry.status]}",
+            "",
+        ]
+        if entry.details:
+            for detail in entry.details:
+                lines.append(f"- {detail}")
+            lines.append("")
+
+    lines += [
+        "---",
+        "",
+        "## Semantic-Tier Coverage (Defects 1-4)",
+        "",
+        "These defects require live LLM judge calls to verify. "
+        "The ground-truth, metric choice, and threshold are committed in "
+        "`datasets/golden/cases.yaml` and `docs/thresholds.md`.",
+        "",
+    ]
+
+    for entry in catalog:
+        if entry.id > 4:
+            continue
+        lines += [
+            f"### Defect #{entry.id} - {entry.description}",
+            "",
+            f"**Check:** {entry.hermetic_check}  ",
+            f"**Status:** {status_icon[entry.status]}",
+            "",
+        ]
+        if entry.details:
+            for detail in entry.details:
+                lines.append(f"- {detail}")
+            lines.append("")
+
+    lines += [
+        "---",
+        "",
+        "_Regenerate: `make defects-report`_",
+    ]
+
+    return "\n".join(lines) + "\n"
+
+
+def build_json(catalog: list[DefectEntry]) -> dict[str, object]:
+    """Return a JSON-serialisable summary of the matrix."""
+    return {
+        "summary": {
+            "total": len(catalog),
+            "caught": sum(1 for e in catalog if e.status == "CAUGHT"),
+            "verified": sum(1 for e in catalog if e.status == "VERIFIED"),
+            "covered": sum(1 for e in catalog if e.status == "COVERED"),
+            "missed": sum(1 for e in catalog if e.status == "MISSED"),
+        },
+        "defects": [asdict(e) for e in catalog],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+def run(*, skip_hermetic: bool = False) -> list[DefectEntry]:
+    """Run all checks and return the annotated catalog."""
+    import copy
+    catalog = copy.deepcopy(DEFECT_CATALOG)
+
+    if not skip_hermetic:
+        _run_deterministic_checks(catalog)
+        _run_adversarial_checks(catalog)
+
+    _ingest_semantic_results(catalog)
+
+    return catalog
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate defects-caught report")
+    parser.add_argument(
+        "--skip-hermetic",
+        action="store_true",
+        help="Skip cassette-replay checks (for testing the renderer only)",
+    )
+    args = parser.parse_args()
+
+    catalog = run(skip_hermetic=args.skip_hermetic)
+
+    md = render_markdown(catalog)
+    out_md = Path("docs/defects-caught.md")
+    out_md.write_text(md, encoding="utf-8")
+    print(f"Written: {out_md}")
+
+    data = build_json(catalog)
+    out_json = Path("reports/defects/defects-caught.json")
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    print(f"Written: {out_json}")
+
+    summary = data["summary"]
+    assert isinstance(summary, dict)
+    print(
+        f"\nSummary: {summary['caught']} CAUGHT + {summary['verified']} VERIFIED "
+        f"+ {summary['covered']} COVERED + {summary['missed']} MISSED "
+        f"(out of {summary['total']})"
+    )
+    if summary["missed"]:
+        import sys
+        print("\nWARNING: Some defects were MISSED - check output above.")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

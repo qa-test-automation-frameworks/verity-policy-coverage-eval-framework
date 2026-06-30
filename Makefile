@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo demo record clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo defects-report demo record clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -68,6 +68,11 @@ trace-demo:
 	@echo "Trace demo — one hermetic agent run with OTEL file exporter (no API key required)"
 	VERITY_TRACING=1 VERITY_TRACE_EXPORTER=file PYTHONPATH=src uv run python scripts/trace_demo.py
 	@echo "Spans written to reports/traces/"
+
+defects-report:
+	@echo "Defects-caught matrix — hermetic replay for defects 5-8; semantic ingestion when available"
+	PYTHONPATH=src:. uv run python scripts/defects_report.py
+	@echo "Report written to docs/defects-caught.md"
 
 # ---------------------------------------------------------------------------
 # SUT demo
