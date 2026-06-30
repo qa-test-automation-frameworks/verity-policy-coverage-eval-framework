@@ -3,34 +3,34 @@ benchmarks:
     query: "What is the current individual out-of-pocket maximum for the Gold plan?"
     expected_sources: [amendments.md]
     required_terms: ["$3,800", "effective July 1, 2024"]
-    min_context_precision: 0.5
+    min_source_precision: 0.5
 
   - case_id: ctrl-silver-physical-therapy-limit
     query: "How many physical therapy sessions does Silver cover, and what is the copay?"
     expected_sources: [silver.md]
     required_terms: ["45 sessions", "$40 copay"]
-    min_context_precision: 1.0
+    min_source_precision: 1.0
 
   - case_id: ctrl-bronze-mri-prior-auth
     query: "For Bronze, does an MRI require prior authorization and what cost share applies?"
     expected_sources: [bronze.md, exclusions.md]
     required_terms: ["40% coinsurance", "prior authorization"]
-    min_context_precision: 1.0
+    min_source_precision: 1.0
 
   - case_id: ctrl-dental-cleaning-exclusion
     query: "Is a routine dental cleaning covered under the base health plan?"
     expected_sources: [exclusions.md]
     required_terms: ["cleanings", "separate dental rider"]
-    min_context_precision: 1.0
+    min_source_precision: 1.0
 
   - case_id: ctrl-gold-specialty-drug-pa
     query: "What do I pay for a Tier 4 specialty drug on Gold, and is prior authorization needed?"
     expected_sources: [gold.md, exclusions.md]
     required_terms: ["10% coinsurance", "Specialty drugs"]
-    min_context_precision: 1.0
+    min_source_precision: 1.0
 
   - case_id: ctrl-missing-acupuncture-policy
     query: "Does my plan cover acupuncture?"
     expected_sources: [definitions.md, exclusions.md]
     required_terms: ["do not mention acupuncture", "covered benefit"]
-    min_context_precision: 1.0
+    min_source_precision: 1.0

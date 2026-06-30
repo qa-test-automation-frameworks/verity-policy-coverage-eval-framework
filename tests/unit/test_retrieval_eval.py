@@ -20,7 +20,7 @@ def test_score_retrieval_passes_when_sources_and_terms_match() -> None:
         query="q",
         expected_sources=["policy.md"],
         required_terms=["covered"],
-        min_context_precision=1.0,
+        min_source_precision=1.0,
     )
     chunks = [
         Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")
@@ -31,7 +31,7 @@ def test_score_retrieval_passes_when_sources_and_terms_match() -> None:
     assert score.passed
     assert score.source_recall == 1.0
     assert score.term_recall == 1.0
-    assert score.context_precision == 1.0
+    assert score.source_precision == 1.0
 
 
 def test_score_retrieval_fails_when_required_term_is_missing() -> None:
@@ -40,7 +40,7 @@ def test_score_retrieval_fails_when_required_term_is_missing() -> None:
         query="q",
         expected_sources=["policy.md"],
         required_terms=["excluded"],
-        min_context_precision=1.0,
+        min_source_precision=1.0,
     )
     chunks = [
         Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")

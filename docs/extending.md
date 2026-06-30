@@ -39,7 +39,7 @@ The framework routes all LLM calls through `src/verity/providers.py` via LiteLLM
 
 ### Adding a retrieval benchmark
 
-Add an entry to `datasets/retrieval/benchmarks.yaml`. Each entry specifies a `case_id`, `query`, `expected_sources`, `required_terms`, and `min_context_precision`. The deterministic benchmark test (`tests/deterministic/test_retrieval_benchmark.py`) will pick it up automatically.
+Add an entry to `datasets/retrieval/benchmarks.yaml`. Each entry specifies a `case_id`, `query`, `expected_sources`, `required_terms`, and `min_source_precision`. The deterministic benchmark test (`tests/deterministic/test_retrieval_benchmark.py`) will pick it up automatically.
 
 ### Adding an adversarial probe
 

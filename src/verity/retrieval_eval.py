@@ -18,7 +18,7 @@ class RetrievalBenchmark(BaseModel):
     query: str
     expected_sources: list[str] = Field(default_factory=list)
     required_terms: list[str] = Field(default_factory=list)
-    min_context_precision: float = Field(default=0.5, ge=0.0, le=1.0)
+    min_source_precision: float = Field(default=0.5, ge=0.0, le=1.0)
 
 
 class RetrievalScore(BaseModel):
@@ -27,7 +27,7 @@ class RetrievalScore(BaseModel):
     case_id: str
     source_recall: float
     term_recall: float
-    context_precision: float
+    source_precision: float
     passed: bool
     message: str
 
@@ -57,25 +57,25 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
     term_recall = len(found_terms) / len(required_terms) if required_terms else 1.0
 
     if chunks and expected_sources:
-        relevant_chunks = [chunk for chunk in chunks if chunk.source in expected_sources]
-        context_precision = len(relevant_chunks) / len(chunks)
+        relevant_source_chunks = [chunk for chunk in chunks if chunk.source in expected_sources]
+        source_precision = len(relevant_source_chunks) / len(chunks)
     else:
-        context_precision = 1.0 if not chunks and not expected_sources else 0.0
+        source_precision = 1.0 if not chunks and not expected_sources else 0.0
 
     passed = (
         source_recall == 1.0
         and term_recall == 1.0
-        and context_precision >= benchmark.min_context_precision
+        and source_precision >= benchmark.min_source_precision
     )
     message = (
         f"source_recall={source_recall:.2f}, term_recall={term_recall:.2f}, "
-        f"context_precision={context_precision:.2f}, sources={sorted(sources)}"
+        f"source_precision={source_precision:.2f}, sources={sorted(sources)}"
     )
     return RetrievalScore(
         case_id=benchmark.case_id,
         source_recall=source_recall,
         term_recall=term_recall,
-        context_precision=context_precision,
+        source_precision=source_precision,
         passed=passed,
         message=message,
     )
