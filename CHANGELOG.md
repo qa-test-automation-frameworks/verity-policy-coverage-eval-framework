@@ -13,6 +13,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - CI skeleton: `pr-gate.yml` (Tier 1 — lint, type, unit; no live calls)
 - Makefile with task entrypoints; `.env.example`
 
+### Added — M6 (Observability & Cost)
+- `verity.tracing`: `_ENABLED` flag gated on `VERITY_TRACING` env (default off); `init_tracing(service_name)` initialises SDK `TracerProvider` with console/file/OTLP exporters; `traced(name, **attrs)` context manager yielding a real span or `None` when disabled; `record_call_span(call_record)` attaches model/token/cost attributes to the current span; file exporter writes JSONL to `reports/traces/`
+- `verity.reporting`: `render_cost_summary(accumulator)` → per-label markdown table (calls, prompt tok, completion tok, total tok, cost USD + grand totals); `write_step_summary(text)` → `$GITHUB_STEP_SUMMARY` in CI, `reports/cost-summary.md` locally
+- `sut.agent.CoverageAgent.answer`: wrapped in `agent.answer` span with `retrieval` and `tool.coverage_calculator` child spans; no-op when tracing disabled
+- `verity.providers.LLMProvider.complete` + `_result_from_payload`: call `record_call_span()` after every `log_call()` to attach LLM attributes to the current span — covers both SUT and judge calls
+- `tests/adversarial/conftest.py` + `tests/semantic/conftest.py`: shared session `RunAccumulator` and `pytest_sessionfinish()` hook writing the cost summary; even cassette-replay runs produce a cost table
+- `scripts/trace_demo.py`: one-shot demo running hermetic agent with `VERITY_TRACING=1` and file exporter, producing `reports/traces/spans-<ts>.jsonl` — no API key required
+- `Makefile`: `make trace-demo` target
+- `pyproject.toml`: `otel` optional dependency group (`opentelemetry-api`, `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-grpc`); mypy override for `opentelemetry.*`
+- 5 unit tests in `tests/unit/test_tracing.py` covering no-op path, init, `record_call_span`, and real span + attribute propagation via in-memory exporter
+- `docs/observability.md`: tracing architecture, span table, env vars, cost summary, CI integration, OTel extra install
+- `.env.example`: tracing env vars added
+
 ### Added — M5 (Adversarial Tier / Tier 3)
 - `verity.adversarial`: `AdversarialProbe` Pydantic schema (id, category, prompt, member_id, defense, expected_outcome, must_not_contain, retrieval_fixture_id); `load_probes(path)` YAML loader
 - `datasets/adversarial/probes.yaml`: 14 probes across 5 categories — 3 injection, 3 jailbreak, 3 PII extraction, 3 harmful content, 2 coverage hallucination
