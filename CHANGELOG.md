@@ -5,6 +5,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Added — M8 (Documentation & Polish)
+- `docs/architecture.md`: full system overview replacing the stub — two-package monorepo layout, three-tier eval pyramid, component walk-through tables for all `verity/` and `sut/` modules, `agent.answer()` data flow with span points, CI tier/trigger table, ADR summary table, cross-links to all related docs
+- `docs/adr/`: 5 Architecture Decision Records (MADR-style with Context/Decision/Consequences/Alternatives):
+  - `0001-glm-5-2-model-choice.md` — GLM-5.2 via LiteLLM; cost, OpenAI-compat, multi-provider portability
+  - `0002-three-layer-eval-pyramid.md` — solves non-determinism, cost, and provider coupling
+  - `0003-cassette-replay-for-ci.md` — SHA-256 keyed VCR-style replay; zero live calls in PR gate
+  - `0004-judge-calibration-and-self-bias.md` — kappa=0.934, self-bias delta=+0.056 documented and justified
+  - `0005-statistical-thresholds.md` — distribution-over-N replaces brittle single-run assertions
+  - `docs/adr/README.md` — index table + MADR template
+- `README.md`: Reports table linking all committed docs; quickstart updated with `make defects-report` and Tier-2 cost note; repo structure block expanded with `promptfoo/`, `scripts/`, populated `docs/` and CI workflows; status line updated to M0-M8 complete
+- `CONTRIBUTING.md`: Reports & Pages subsection with all new make targets and Pages publishing note
+
+### Added — M7 (CI Orchestration & Reporting)
+- `scripts/defects_report.py`: hermetic defects-caught matrix generator — runs cassette-replay checks for defects 5-8 (deterministic + adversarial), ingests `reports/semantic/results.json` when present to upgrade defects 1-4 from COVERED to VERIFIED; emits committed `docs/defects-caught.md` and git-ignored `reports/defects/defects-caught.json`; `make defects-report`
+- `docs/defects-caught.md`: committed hermetic proof matrix (regenerable; always green for a fresh clone)
+- `tests/unit/test_defects_report.py`: 19 unit tests covering catalog structure, markdown rendering (all 8 rows, status icons, detail lines, regenerate hint), and JSON aggregation
+- `tests/semantic/conftest.py`: `pytest_runtest_makereport` hook collecting node id + outcome; `pytest_sessionfinish` writes `reports/semantic/results.json` for cross-tier ingestion
+- `pyproject.toml`: `report` optional extra (`allure-pytest>=2.13.0`, `markdown>=3.6`); mypy overrides for `markdown.*` and `allure.*`
+- `scripts/build_report_site.py`: assembles `site/` from committed Markdown artifacts — defects-caught → `index.html`, calibration → `calibration.html`, cost summary → `cost.html`, seeded-defects → `vulnerabilities.html`; copies Allure HTML to `site/allure/` when present; placeholder pages when artifacts are absent
+- `tests/unit/test_report_site.py`: 8 unit tests covering site dir creation, page generation routing, allure placeholder, nav link completeness
+- `.github/workflows/pages.yml`: triggers on push to main, `workflow_dispatch`, and `workflow_run` after Semantic/Adversarial; runs hermetic suites with `--alluredir`, downloads live artifacts via `dawidd6/action-download-artifact` (continue-on-error), generates defects-caught, builds Allure HTML, assembles `site/`, deploys to GitHub Pages
+- `semantic-eval.yml`: replaced placeholder "Summarize cost" step — pytest now runs with `--alluredir`; cost summary written to `$GITHUB_STEP_SUMMARY`; reports artifact uploaded
+- `adversarial.yml`: hermetic suite runs with `--alluredir`; Allure results artifact uploaded for Pages ingestion
+- `README.md`: PR Gate, Semantic Eval, and Adversarial CI badge row; MIT and Python 3.12 metadata badges
+- `.gitignore`: `site/` added
+
 ### Added — M0 (Foundation)
 - Repo scaffold: src layout, pyproject.toml, uv, ruff, mypy strict, pre-commit
 - `verity.config`: Pydantic-settings config for provider, judge, retrieval
