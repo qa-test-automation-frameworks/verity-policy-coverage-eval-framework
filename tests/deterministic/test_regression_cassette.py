@@ -39,7 +39,7 @@ def _first_turn_key(case: GoldenCase, settings: Settings) -> str:
     from sut.agent import _build_system_prompt
 
     members = _load_members()
-    member = members.get(case.member_id, next(iter(members.values())))
+    member = members[case.member_id]
     retriever = FixtureRetriever(case.id)
     chunks = retriever.retrieve(case.query)
     system_prompt = _build_system_prompt(member, chunks)

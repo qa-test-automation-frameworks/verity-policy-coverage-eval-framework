@@ -185,7 +185,9 @@ class CoverageAgent:
         with traced("agent.answer", member_id=member_id, query_len=len(query)):
             # 2. Load member
             members = _load_members()
-            member = members.get(member_id, next(iter(members.values())))
+            if member_id not in members:
+                raise KeyError(f"Unknown member_id: {member_id!r}")
+            member = members[member_id]
 
             # SEEDED DEFECT #8: log full member context to DEBUG
             log_member_context(member)
