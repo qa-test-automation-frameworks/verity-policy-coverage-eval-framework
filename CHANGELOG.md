@@ -13,6 +13,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - CI skeleton: `pr-gate.yml` (Tier 1 — lint, type, unit; no live calls)
 - Makefile with task entrypoints; `.env.example`
 
+### Added — M3 (Semantic Tier)
+- `pyproject.toml`: optional `semantic` dependency group (`deepeval>=1.5.0`, `ragas>=0.2.0`); mypy overrides for third-party typed/untyped packages
+- `verity.judges`: `ProviderJudge` wraps `LLMProvider` for plug-and-play judge routing; `DeepEvalJudge` adapter (lazy `DeepEvalBaseLLM` subclass); `RagasJudge` duck-type LangChain shim (avoids `langchain_community` import error)
+- `verity.metrics.rubrics`: three G-Eval rubric texts — completeness (#3 multi-hop), disambiguation (#4 contradiction), refusal-boundary (#6 medical advice)
+- `verity.metrics.deepeval_metrics`: six metric factory functions with per-metric thresholds; lazy deepeval import (only when metric is constructed); `make_hallucination`, `make_answer_relevancy`, `make_completeness`, `make_disambiguation`, `make_refusal_geval`, `make_tool_correctness`
+- `verity.metrics.ragas_metrics`: three RAGAS metric factories with per-metric thresholds — `make_faithfulness`, `make_context_precision`, `make_ragas_answer_relevancy`
+- `verity.statistics`: `StatResult` frozen dataclass; `run_n_samples(fn, n)` runs a scoring function N times; `aggregate(scores)` → mean/median/stdev/pass_rate; `threshold_pass(stat, threshold, mode)` — modes: mean, median, pass_rate, all
+- `tests/semantic/`: 6-file Tier-2 suite (conftest + faithfulness, completeness, disambiguation, tool-use, refusal, relevancy); all marked `semantic`+`live`; clean cases assert score ≥ threshold; defect cases assert score < threshold (defect detected = green test); auto-skips when no API key is configured
+- `.github/workflows/semantic-eval.yml`: triggers on push to main, nightly at 02:00 UTC, and `workflow_dispatch`; no-ops gracefully when no API key secret is set; installs semantic extras, indexes corpus, runs semantic suite
+- `docs/thresholds.md`: per-metric threshold table with defect coverage map, statistical method description, and rationale for each threshold value
+
 ### Added — M2 (Deterministic Tier)
 - `verity.golden`: typed `GoldenCase` Pydantic schema with `expects_defect` flag; `load_golden()` loader
 - `datasets/golden/cases.yaml`: 15 versioned cases — 7 clean controls + 8 defect cases (one per seeded defect)
