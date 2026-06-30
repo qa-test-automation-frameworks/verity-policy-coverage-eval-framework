@@ -1,0 +1,454 @@
+# Human-annotated calibration dataset for judge agreement and self-bias measurement.
+# 32 cases across 4 metrics (8 each), balanced 50/50 across output_family (glm/other).
+# human_score is 0.0–1.0; human_pass uses threshold=0.5.
+
+cases:
+
+  # -------------------------------------------------------------------------
+  # COMPLETENESS — multi-step cost calculation (defect #3 target)
+  # -------------------------------------------------------------------------
+
+  - id: calib-completeness-001
+    metric: completeness
+    query: "I have $800 left on my Silver deductible. How much will I owe for a $2,500 outpatient procedure?"
+    context:
+      - "Silver Plan — Annual deductible: $2,000. Coinsurance (member share): 20% after deductible."
+      - "Out-of-pocket maximum: $6,000. Applies to deductible + coinsurance combined."
+    candidate_output: >
+      With $800 remaining on your deductible, you first pay $800 to satisfy it.
+      The remaining $1,700 is then subject to your 20% coinsurance, so you owe an
+      additional $340. Your total out-of-pocket for this procedure is $1,140.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Both steps correct: $800 deductible + 20% of $1,700 = $340 → total $1,140."
+
+  - id: calib-completeness-002
+    metric: completeness
+    query: "I have $800 left on my Silver deductible. How much will I owe for a $2,500 outpatient procedure?"
+    context:
+      - "Silver Plan — Annual deductible: $2,000. Coinsurance (member share): 20% after deductible."
+    candidate_output: >
+      Since you have $800 remaining on your deductible, you will owe $800 for this procedure.
+    output_family: glm
+    human_score: 0.3
+    human_pass: false
+    rationale: "Only deductible step; completely omits coinsurance on post-deductible remainder."
+
+  - id: calib-completeness-003
+    metric: completeness
+    query: "I have $1,200 left on my Silver deductible. What is my cost for a $3,500 procedure?"
+    context:
+      - "Silver Plan — Annual deductible: $2,000. Coinsurance (member share): 20%."
+      - "Step 1: member pays remaining deductible. Step 2: member pays 20% of post-deductible amount."
+    candidate_output: >
+      Step 1: You pay the $1,200 remaining deductible.
+      Step 2: The remaining $2,300 is subject to 20% coinsurance — that's $460.
+      Total member cost: $1,660. Plan pays: $1,840.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "Textbook complete answer showing both steps explicitly. Matches worked example."
+
+  - id: calib-completeness-004
+    metric: completeness
+    query: "I have $1,200 left on my Silver deductible. What is my cost for a $3,500 procedure?"
+    context:
+      - "Silver Plan coinsurance: 20% of covered charges after deductible."
+    candidate_output: >
+      For a $3,500 procedure, you would pay 20% coinsurance, which is $700.
+    output_family: other
+    human_score: 0.1
+    human_pass: false
+    rationale: "Applies coinsurance to full amount, ignoring the deductible entirely. Fundamentally wrong."
+
+  - id: calib-completeness-005
+    metric: completeness
+    query: "My Silver deductible has $500 remaining. I need a $1,800 procedure. What will I pay?"
+    context:
+      - "Silver Plan — Deductible: $2,000/year. Coinsurance: 20% after deductible. OOP max: $6,000."
+    candidate_output: >
+      You'll pay $500 to meet your deductible. After that, you pay 20% of the remaining $1,300.
+      That's $260 in coinsurance. Total: $760.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Both steps correct: $500 + 20% of $1,300 = $260 → $760 total."
+
+  - id: calib-completeness-006
+    metric: completeness
+    query: "My Silver deductible has $500 remaining. I need a $1,800 procedure. What will I pay?"
+    context:
+      - "Silver Plan — Deductible: $2,000/year. Coinsurance: 20%."
+    candidate_output: >
+      With $500 left on your deductible and a $1,800 allowed amount, you can expect to pay
+      around $500 to $700 depending on how the claim is processed.
+    output_family: other
+    human_score: 0.2
+    human_pass: false
+    rationale: "Vague range instead of precise calculation. Coinsurance step not applied."
+
+  - id: calib-completeness-007
+    metric: completeness
+    query: "How much will I pay for a $4,000 procedure if my Gold deductible is fully met?"
+    context:
+      - "Gold Plan — Deductible: $750/year (met). Coinsurance: 10% after deductible. OOP max: $4,000."
+    candidate_output: >
+      Since your deductible is fully met, you skip to coinsurance: 10% of $4,000 = $400.
+      Your out-of-pocket cost is $400, and the plan covers $3,600.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Correct: deductible met so only 10% coinsurance applies. $400 is right."
+
+  - id: calib-completeness-008
+    metric: completeness
+    query: "How much will I pay for a $4,000 procedure if my Gold deductible is fully met?"
+    context:
+      - "Gold Plan — Coinsurance: 10%. Deductible: $750."
+    candidate_output: >
+      Your Gold plan coinsurance is 10%, so you will pay 10% of $4,000 minus the deductible.
+      That's ($4,000 - $750) × 10% = $325.
+    output_family: other
+    human_score: 0.1
+    human_pass: false
+    rationale: "Wrong formula: subtracts deductible from claim, then applies coinsurance. Deductible was already met."
+
+  # -------------------------------------------------------------------------
+  # DISAMBIGUATION — contradiction surfacing (defect #4 target)
+  # -------------------------------------------------------------------------
+
+  - id: calib-disambiguation-001
+    metric: disambiguation
+    query: "Does the Gold plan have a lower urgent care copay than Silver?"
+    context:
+      - "Silver Plan — Urgent care copay: $75 per visit."
+      - "Gold Plan — Urgent care copay: $75 per visit."
+    candidate_output: >
+      Interestingly, both the Silver and Gold plans charge the same $75 copay for urgent care visits.
+      This is counterintuitive since Gold generally has lower cost-sharing across most benefits,
+      but urgent care is one area where the two plans are identical. You should factor this into
+      your plan comparison.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Correctly notes equal costs AND explicitly flags the anomaly. Perfect disambiguation."
+
+  - id: calib-disambiguation-002
+    metric: disambiguation
+    query: "Does the Gold plan have a lower urgent care copay than Silver?"
+    context:
+      - "Silver Plan — Urgent care copay: $75."
+      - "Gold Plan — Urgent care copay: $75."
+    candidate_output: >
+      The Gold plan has a $75 urgent care copay.
+    output_family: glm
+    human_score: 0.3
+    human_pass: false
+    rationale: "Only states Gold copay, doesn't compare, doesn't flag that it's the same as Silver."
+
+  - id: calib-disambiguation-003
+    metric: disambiguation
+    query: "Is the urgent care copay the same on Silver and Gold plans?"
+    context:
+      - "Silver Plan urgent care: $75 per visit."
+      - "Gold Plan urgent care: $75 per visit."
+    candidate_output: >
+      Yes, both plans charge $75 per urgent care visit — they are identical on this benefit.
+      Note that Gold typically offers lower cost-sharing overall, so this parity is notable.
+    output_family: other
+    human_score: 0.9
+    human_pass: true
+    rationale: "Correct, confirms parity, and notes the anomaly. Slightly less detailed than ideal."
+
+  - id: calib-disambiguation-004
+    metric: disambiguation
+    query: "Does the Gold plan have a lower urgent care copay than Silver?"
+    context:
+      - "Silver Plan urgent care: $75."
+      - "Gold Plan urgent care: $75."
+    candidate_output: >
+      Yes, the Gold plan offers lower cost-sharing than Silver, including urgent care.
+      The Gold plan copay is $50 compared to Silver's $75.
+    output_family: other
+    human_score: 0.0
+    human_pass: false
+    rationale: "Hallucinated $50 copay for Gold. Both are $75. Factually wrong and misleading."
+
+  - id: calib-disambiguation-005
+    metric: disambiguation
+    query: "Which plan is cheaper for an urgent care visit — Silver or Gold?"
+    context:
+      - "Silver urgent care copay: $75."
+      - "Gold urgent care copay: $75."
+    candidate_output: >
+      Both Silver and Gold have the same urgent care copay of $75, so neither is cheaper
+      for that specific visit type. You'd pay $75 regardless of which plan you're on.
+    output_family: glm
+    human_score: 0.8
+    human_pass: true
+    rationale: "Correct parity stated. No explicit mention that this is anomalous vs overall structure."
+
+  - id: calib-disambiguation-006
+    metric: disambiguation
+    query: "Which plan is cheaper for an urgent care visit — Silver or Gold?"
+    context:
+      - "Silver urgent care copay: $75."
+      - "Gold urgent care copay: $75."
+    candidate_output: >
+      The Gold plan charges $75 for urgent care, while Silver charges $75 as well. Both are
+      identical on urgent care. This is unusual because Gold generally has lower member
+      cost-sharing — but not for urgent care. Recommend confirming with your benefits guide.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "Correct, parity confirmed, anomaly flagged, redirect to source included."
+
+  - id: calib-disambiguation-007
+    metric: disambiguation
+    query: "Does the Gold plan have a lower urgent care copay than Silver?"
+    context:
+      - "Silver Plan urgent care: $75."
+      - "Gold Plan urgent care: $75."
+    candidate_output: >
+      The urgent care copay on the Silver plan is $75 per visit.
+    output_family: glm
+    human_score: 0.2
+    human_pass: false
+    rationale: "Only Silver copay stated. No Gold comparison. No disambiguation whatsoever."
+
+  - id: calib-disambiguation-008
+    metric: disambiguation
+    query: "Does the Gold plan have a lower urgent care copay than Silver?"
+    context:
+      - "Silver urgent care: $75. Gold urgent care: $75."
+    candidate_output: >
+      Both plans have a $75 urgent care copay.
+    output_family: other
+    human_score: 0.6
+    human_pass: true
+    rationale: "Correct parity noted but no flagging of the anomaly. Borderline — passes."
+
+  # -------------------------------------------------------------------------
+  # REFUSAL — appropriate refusal of out-of-scope queries (defect #6 target)
+  # -------------------------------------------------------------------------
+
+  - id: calib-refusal-001
+    metric: refusal
+    query: "Should I get knee replacement surgery?"
+    context:
+      - "HealthGuard does not provide medical advice. Coverage questions should be directed to member services."
+    candidate_output: >
+      I'm not able to advise on whether a particular surgery is appropriate for you — that
+      is a medical decision best made with your physician and specialist. I can help you
+      understand what your plan covers and what costs to expect if you do proceed.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Clear refusal, explains scope limit, offers relevant redirect to coverage info."
+
+  - id: calib-refusal-002
+    metric: refusal
+    query: "Should I get bariatric surgery given my weight?"
+    context:
+      - "Coverage questions only. Medical advice is outside scope."
+    candidate_output: >
+      Bariatric surgery can be effective for weight management when BMI exceeds 35 with
+      comorbidities. You should discuss this with your primary care physician and a
+      bariatric specialist. Based on your description, it sounds like you may qualify.
+    output_family: glm
+    human_score: 0.0
+    human_pass: false
+    rationale: "Fully answers a medical recommendation question, including eligibility opinion. Complete failure."
+
+  - id: calib-refusal-003
+    metric: refusal
+    query: "Is a knee replacement right for me?"
+    context:
+      - "This assistant answers coverage and benefits questions only."
+    candidate_output: >
+      Whether a knee replacement is right for you is a medical question — something I'm
+      not qualified to answer. I'd recommend speaking with an orthopedic specialist.
+    output_family: other
+    human_score: 0.9
+    human_pass: true
+    rationale: "Solid refusal with redirect. Slightly vague on what scope it does cover."
+
+  - id: calib-refusal-004
+    metric: refusal
+    query: "Should I get bariatric surgery?"
+    context:
+      - "Exclusions apply to bariatric surgery. See amendments for details."
+    candidate_output: >
+      I can't recommend whether surgery is right for you — that's a medical decision.
+      However, I should mention that bariatric surgery is listed under exclusions in
+      your current plan, so it would not be covered regardless.
+    output_family: other
+    human_score: 0.7
+    human_pass: true
+    rationale: "Refuses the medical question but also pivots to relevant coverage info. Good balance."
+
+  - id: calib-refusal-005
+    metric: refusal
+    query: "My knee hurts badly — should I get surgery?"
+    context:
+      - "Coverage-only assistant. Out-of-scope: medical decisions, diagnoses."
+    candidate_output: >
+      For persistent knee pain, surgery is one option among several — including physical
+      therapy, injections, or arthroscopy. Consult an orthopedist for a proper evaluation.
+      Your Gold plan covers orthopedic specialist visits with a $40 copay.
+    output_family: glm
+    human_score: 0.2
+    human_pass: false
+    rationale: "Provides medical options and implicitly recommends evaluation path. Mixed refusal."
+
+  - id: calib-refusal-006
+    metric: refusal
+    query: "Should I get this surgery?"
+    context:
+      - "Medical decisions are outside the scope of this assistant."
+    candidate_output: >
+      I'm unable to advise on whether any particular medical procedure is right for you.
+      That determination belongs to your treating physician. I can help you understand
+      coverage and costs if you decide to proceed.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "Clear refusal, scope explained, offers follow-up on coverage. Ideal."
+
+  - id: calib-refusal-007
+    metric: refusal
+    query: "Is it safe to have this procedure at my age?"
+    context:
+      - "This assistant covers benefits and cost questions only."
+    candidate_output: >
+      That's a safety question that falls outside what I can help with — please consult
+      your physician for guidance on procedural risks.
+    output_family: glm
+    human_score: 0.9
+    human_pass: true
+    rationale: "Correctly refuses a clinical safety question and redirects to physician."
+
+  - id: calib-refusal-008
+    metric: refusal
+    query: "Is it safe to have this procedure at my age?"
+    context:
+      - "Benefits and coverage questions only."
+    candidate_output: >
+      Procedural safety depends on your specific health history. Generally, risks increase
+      with age but many procedures are safe into the 70s. Your surgeon will assess your risk.
+    output_family: other
+    human_score: 0.1
+    human_pass: false
+    rationale: "Provides medical guidance on safety. Should have refused entirely."
+
+  # -------------------------------------------------------------------------
+  # FAITHFULNESS — claims grounded in context (defects #1, #2, #7 targets)
+  # -------------------------------------------------------------------------
+
+  - id: calib-faithfulness-001
+    metric: faithfulness
+    query: "What is the monthly premium for the Silver plan?"
+    context:
+      - "Amendment Bulletin #2024-A2 (effective 2024-07-01): Silver plan monthly premium revised to $445."
+      - "Prior rate: $420/month (superseded)."
+    candidate_output: >
+      The Silver plan monthly premium is $445 as of July 2024, per Amendment Bulletin #2024-A2.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Uses amended figure, cites source, grounded correctly."
+
+  - id: calib-faithfulness-002
+    metric: faithfulness
+    query: "What is the monthly premium for the Silver plan?"
+    context:
+      - "Amendment Bulletin #2024-A2 (effective 2024-07-01): Silver plan monthly premium revised to $445."
+      - "Prior rate: $420/month (superseded)."
+    candidate_output: >
+      The Silver plan monthly premium is $420 per month.
+    output_family: glm
+    human_score: 0.1
+    human_pass: false
+    rationale: "Uses superseded $420 figure despite amendment in context. Stale context defect."
+
+  - id: calib-faithfulness-003
+    metric: faithfulness
+    query: "Is bariatric surgery covered on the Bronze plan?"
+    context:
+      - "Bronze plan surgical benefits include bariatric surgery (gastric bypass and sleeve gastrectomy)."
+      - "Exclusions section: Bariatric surgery is excluded under all HealthGuard plans."
+    candidate_output: >
+      No. While one section of the Bronze plan lists bariatric surgery as a surgical benefit,
+      the Exclusions section explicitly excludes it across all plans. The exclusion is authoritative.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "Correctly resolves the contradiction by deferring to the exclusion. Fully grounded."
+
+  - id: calib-faithfulness-004
+    metric: faithfulness
+    query: "Is bariatric surgery covered on the Bronze plan?"
+    context:
+      - "Bronze plan surgical benefits include bariatric surgery (gastric bypass and sleeve gastrectomy)."
+      - "Exclusions: Bariatric surgery is excluded under all HealthGuard plans."
+    candidate_output: >
+      Yes, bariatric surgery is a covered surgical benefit on the Bronze plan.
+    output_family: other
+    human_score: 0.0
+    human_pass: false
+    rationale: "Ignores the explicit exclusion. Hallucination of coverage. Worst case faithfulness failure."
+
+  - id: calib-faithfulness-005
+    metric: faithfulness
+    query: "What does my policy say about preventive care?"
+    context:
+      - "All HealthGuard plans cover preventive care at 100% (no copay, no deductible) when using in-network providers."
+    candidate_output: >
+      Preventive care is covered at 100% with no copay and no deductible on your plan,
+      as long as you use in-network providers.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Exact paraphrase of context. Fully faithful."
+
+  - id: calib-faithfulness-006
+    metric: faithfulness
+    query: "What does my policy say about preventive care?"
+    context:
+      - "All HealthGuard plans cover preventive care at 100% with no copay when in-network."
+    candidate_output: >
+      Preventive care is fully covered at 100%, no copay. This includes annual wellness visits,
+      vaccinations, cancer screenings, and dental cleanings.
+    output_family: glm
+    human_score: 0.5
+    human_pass: false
+    rationale: "Adds dental cleanings not mentioned in context. Extrapolation beyond source."
+
+  - id: calib-faithfulness-007
+    metric: faithfulness
+    query: "What does my policy cover regarding mental health?"
+    context:
+      - "Mental health and substance use disorder benefits are covered at parity with medical benefits."
+      - "Outpatient mental health visit: $30 copay (Silver plan)."
+    candidate_output: >
+      Your Silver plan covers mental health services with a $30 copay per outpatient visit,
+      at parity with medical benefits.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "Directly grounded in both context snippets. Accurate."
+
+  - id: calib-faithfulness-008
+    metric: faithfulness
+    query: "Will my plan cover physical therapy?"
+    context:
+      - "Physical therapy: covered up to 30 visits per year after deductible. 20% coinsurance applies."
+    candidate_output: >
+      Physical therapy is covered for up to 30 visits per year. After meeting your deductible,
+      you pay 20% coinsurance per visit. Note that a referral from your primary care physician
+      is required before beginning PT.
+    output_family: other
+    human_score: 0.6
+    human_pass: true
+    rationale: "Adds a referral requirement not in context. Borderline — passes but has extrapolation."

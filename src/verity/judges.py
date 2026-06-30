@@ -66,6 +66,8 @@ class ProviderJudge:
                 zai_api_base=self._settings.zai_api_base,
                 openrouter_api_base=self._settings.openrouter_api_base,
                 together_api_base=self._settings.together_api_base,
+                cassette_mode=self._settings.cassette_mode,
+                cassette_dir=self._settings.cassette_dir,
             )
         self._provider = LLMProvider(judge_settings, self._acc)
 
