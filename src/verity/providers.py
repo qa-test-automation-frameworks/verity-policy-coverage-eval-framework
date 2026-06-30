@@ -24,6 +24,7 @@ from verity.cassettes import (
 )
 from verity.config import Settings, get_settings
 from verity.cost import CallRecord, RunAccumulator, Usage, usage_from_litellm
+from verity.tracing import record_call_span
 
 
 @dataclass
@@ -115,6 +116,7 @@ class LLMProvider:
             latency_ms=latency_ms,
             label=label,
         )
+        record_call_span(record)
 
         choice = response.choices[0]
         message = choice.message
@@ -163,6 +165,7 @@ class LLMProvider:
             latency_ms=0.0,
             label=label,
         )
+        record_call_span(record)
         return CompletionResult(
             content=payload.content,
             tool_calls=payload.tool_calls,  # ReplayToolCall objects — same interface

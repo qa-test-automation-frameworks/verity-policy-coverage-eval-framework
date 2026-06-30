@@ -29,6 +29,7 @@ from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_covera
 from verity.config import Settings, get_settings
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
+from verity.tracing import traced
 
 logger = logging.getLogger(__name__)
 
@@ -180,72 +181,82 @@ class CoverageAgent:
                 estimated_cost_usd=0.0,
             )
 
-        # 2. Load member
-        members = _load_members()
-        member = members.get(member_id, next(iter(members.values())))
+        with traced("agent.answer", member_id=member_id, query_len=len(query)):
+            # 2. Load member
+            members = _load_members()
+            member = members.get(member_id, next(iter(members.values())))
 
-        # SEEDED DEFECT #8: log full member context to DEBUG
-        log_member_context(member)
+            # SEEDED DEFECT #8: log full member context to DEBUG
+            log_member_context(member)
 
-        # 3. Retrieve relevant policy chunks
-        chunks = self.retriever.retrieve(query, top_k=top_k)
+            # 3. Retrieve relevant policy chunks
+            with traced("retrieval", top_k=top_k or 0):
+                chunks = self.retriever.retrieve(query, top_k=top_k)
 
-        # 4. Build messages
-        system_prompt = _build_system_prompt(member, chunks)
-        messages: list[dict[str, Any]] = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query},
-        ]
+            # 4. Build messages
+            system_prompt = _build_system_prompt(member, chunks)
+            messages: list[dict[str, Any]] = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": query},
+            ]
 
-        # 5. First LLM call (may return tool_calls)
-        result = self.provider.complete(
-            messages=messages,
-            tools=[COVERAGE_CALCULATOR_SCHEMA],
-            label="agent-first-turn",
-        )
-
-        tool_invocations: list[ToolInvocation] = []
-
-        # 6. Handle tool calls (single round)
-        if result.tool_calls:
-            tool_results_msgs: list[dict[str, Any]] = []
-            messages.append({"role": "assistant", "content": result.content or "", "tool_calls": [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {"name": tc.function.name, "arguments": tc.function.arguments},
-                }
-                for tc in result.tool_calls
-            ]})
-
-            for tc in result.tool_calls:
-                fn_name = tc.function.name
-                try:
-                    args: dict[str, Any] = json.loads(tc.function.arguments)
-                except json.JSONDecodeError:
-                    args = {}
-
-                if fn_name == "coverage_calculator":
-                    tool_result = run_coverage_calculator(args)
-                else:
-                    tool_result = {"error": f"Unknown tool: {fn_name}"}
-
-                tool_invocations.append(
-                    ToolInvocation(tool_name=fn_name, args=args, result=tool_result)
-                )
-                tool_results_msgs.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": json.dumps(tool_result),
-                })
-
-            messages.extend(tool_results_msgs)
-
-            # 7. Second LLM call with tool results
+            # 5. First LLM call (may return tool_calls)
             result = self.provider.complete(
                 messages=messages,
-                label="agent-second-turn",
+                tools=[COVERAGE_CALCULATOR_SCHEMA],
+                label="agent-first-turn",
             )
+
+            tool_invocations: list[ToolInvocation] = []
+
+            # 6. Handle tool calls (single round)
+            if result.tool_calls:
+                tool_results_msgs: list[dict[str, Any]] = []
+                messages.append({
+                    "role": "assistant",
+                    "content": result.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                        for tc in result.tool_calls
+                    ],
+                })
+
+                for tc in result.tool_calls:
+                    fn_name = tc.function.name
+                    try:
+                        args: dict[str, Any] = json.loads(tc.function.arguments)
+                    except json.JSONDecodeError:
+                        args = {}
+
+                    with traced("tool.coverage_calculator"):
+                        if fn_name == "coverage_calculator":
+                            tool_result = run_coverage_calculator(args)
+                        else:
+                            tool_result = {"error": f"Unknown tool: {fn_name}"}
+
+                    tool_invocations.append(
+                        ToolInvocation(tool_name=fn_name, args=args, result=tool_result)
+                    )
+                    tool_results_msgs.append({
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": json.dumps(tool_result),
+                    })
+
+                messages.extend(tool_results_msgs)
+
+                # 7. Second LLM call with tool results
+                result = self.provider.complete(
+                    messages=messages,
+                    label="agent-second-turn",
+                )
 
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
