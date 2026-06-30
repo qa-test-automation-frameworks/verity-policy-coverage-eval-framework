@@ -62,9 +62,7 @@ class TestToolExecutionFailure:
             ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10}'
         )
 
-        agent = CoverageAgent(
-            settings=settings, retriever=retriever, provider=mock_provider
-        )
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
 
         with (
             patch("sut.agent.run_coverage_calculator", side_effect=ValueError("bad input")),
@@ -84,9 +82,7 @@ class TestToolExecutionFailure:
             ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10}'
         )
 
-        agent = CoverageAgent(
-            settings=settings, retriever=retriever, provider=mock_provider
-        )
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
 
         exc = RuntimeError("calculator failed")
         with (
