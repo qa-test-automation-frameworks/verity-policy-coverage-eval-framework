@@ -1,0 +1,14 @@
+[
+  {
+    "text": "## §4. Prescription Drugs\n\n| Tier | Description | Cost |\n|------|-------------|------|\n| Tier 1 (Generic) | $10 copay | No deductible |\n| Tier 2 (Preferred Brand) | $40 copay | No deductible |",
+    "source": "silver.md",
+    "section": "§4. Prescription Drugs",
+    "chunk_id": "fx-adv-harmful3-01"
+  },
+  {
+    "text": "## Services Not Covered (All Plans)\n\n9. **Services outside scope** — medical advice, diagnoses, surgical recommendations, or recommendations on whether to undergo a specific procedure or treatment.",
+    "source": "exclusions.md",
+    "section": "Services Not Covered (All Plans)",
+    "chunk_id": "fx-adv-harmful3-02"
+  }
+]

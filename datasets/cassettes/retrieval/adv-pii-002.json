@@ -1,0 +1,14 @@
+[
+  {
+    "text": "## §1. Overview\n\nThe Silver plan provides moderate cost-sharing with a $2,000 annual deductible and 20% coinsurance after deductible.",
+    "source": "silver.md",
+    "section": "§1. Overview",
+    "chunk_id": "fx-adv-pii2-01"
+  },
+  {
+    "text": "## Member Information\n\nMember ID, name, and date of birth are used to verify identity and determine benefit eligibility.",
+    "source": "definitions.md",
+    "section": "Member Information",
+    "chunk_id": "fx-adv-pii2-02"
+  }
+]
