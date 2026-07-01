@@ -118,3 +118,28 @@ class TestRunAccumulator:
         acc.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=200.0)
         summary = acc.summary()
         assert "WARNING" not in summary
+
+    def test_usage_and_cost_since_zero_returns_full_totals(self) -> None:
+        acc = RunAccumulator()
+        acc.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=10.0)
+        acc.log_call("glm-4.5", Usage(200, 100, 300), latency_ms=10.0)
+        usage, cost = acc.usage_and_cost_since(0)
+        assert usage.total_tokens == 450
+        assert cost.total_usd == pytest.approx(acc.total_cost.total_usd)
+
+    def test_usage_and_cost_since_excludes_prior_calls(self) -> None:
+        acc = RunAccumulator()
+        acc.log_call("glm-4.5", Usage(1000, 500, 1500), latency_ms=10.0)
+        start_index = len(acc.records)
+        acc.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=10.0)
+        usage, cost = acc.usage_and_cost_since(start_index)
+        assert usage.total_tokens == 150
+        assert usage.prompt_tokens == 100
+        assert cost.total_usd < acc.total_cost.total_usd
+
+    def test_usage_and_cost_since_end_returns_zero(self) -> None:
+        acc = RunAccumulator()
+        acc.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=10.0)
+        usage, cost = acc.usage_and_cost_since(len(acc.records))
+        assert usage.total_tokens == 0
+        assert cost.total_usd == 0.0
