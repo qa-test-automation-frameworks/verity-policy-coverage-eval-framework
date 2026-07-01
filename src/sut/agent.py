@@ -292,23 +292,32 @@ class CoverageAgent:
 
                 for tc in result.tool_calls:
                     fn_name = tc.function.name
+
+                    if fn_name != "coverage_calculator":
+                        logger.warning("Blocked call to unknown tool: %s", fn_name)
+                        return self._safe_failure_response(
+                            category="unknown_tool",
+                            tool_invocations=tool_invocations,
+                        )
+
                     try:
                         args: dict[str, Any] = json.loads(tc.function.arguments)
                     except json.JSONDecodeError:
-                        args = {}
+                        logger.exception("Malformed tool-call arguments for %s", fn_name)
+                        return self._safe_failure_response(
+                            category="tool_unavailable",
+                            tool_invocations=tool_invocations,
+                        )
 
                     with traced("tool.coverage_calculator"):
-                        if fn_name == "coverage_calculator":
-                            try:
-                                tool_result = run_coverage_calculator(args)
-                            except Exception:
-                                logger.exception("Coverage tool call failed")
-                                return self._safe_failure_response(
-                                    category="tool_unavailable",
-                                    tool_invocations=tool_invocations,
-                                )
-                        else:
-                            tool_result = {"error": f"Unknown tool: {fn_name}"}
+                        try:
+                            tool_result = run_coverage_calculator(args)
+                        except Exception:
+                            logger.exception("Coverage tool call failed")
+                            return self._safe_failure_response(
+                                category="tool_unavailable",
+                                tool_invocations=tool_invocations,
+                            )
 
                     tool_invocations.append(
                         ToolInvocation(tool_name=fn_name, args=args, result=tool_result)

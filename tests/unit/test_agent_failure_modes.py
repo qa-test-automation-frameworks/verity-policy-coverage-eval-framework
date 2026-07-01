@@ -154,3 +154,57 @@ class TestProviderFailure:
         response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
         _assert_safe_failure(response, "provider_unavailable")
+
+
+class TestToolArgumentContracts:
+    """Malformed or unrecognized tool calls return a safe structured response."""
+
+    def test_unknown_tool_name_returns_safe_response(self) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        tc = ReplayToolCall(
+            id="call_test_002",
+            function=ReplayFunction(name="delete_member_record", arguments="{}"),
+        )
+        mock_provider.complete.return_value = CompletionResult(content="", tool_calls=[tc])
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        _assert_safe_failure(response, "unknown_tool")
+
+    def test_malformed_tool_arguments_returns_safe_response(self) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.return_value = _tool_call_result(args_json="{not valid json")
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        _assert_safe_failure(response, "tool_unavailable")
+
+    def test_unexpected_tool_argument_returns_safe_response(self) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.return_value = _tool_call_result(
+            '{"claim_amount": 500.0, "plan_deductible": 750.0, "accrued_deductible": 200.0,'
+            ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10,'
+            ' "unexpected_field": "sneaky"}'
+        )
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        _assert_safe_failure(response, "tool_unavailable")

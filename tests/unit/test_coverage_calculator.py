@@ -163,6 +163,10 @@ class TestValidation:
         with pytest.raises(ValidationError):
             _inp(plan_oop_max=6000.0, accrued_oop=6001.0)
 
+    def test_unexpected_field_raises(self) -> None:
+        with pytest.raises(ValidationError):
+            _inp(unexpected_field=1.0)
+
 
 class TestRunCoverageCalculator:
     def test_round_trip_via_dict(self) -> None:
@@ -179,3 +183,23 @@ class TestRunCoverageCalculator:
         assert result["applied_to_deductible"] == pytest.approx(800.0)
         assert result["member_coinsurance"] == pytest.approx(540.0)
         assert result["member_total"] == pytest.approx(1340.0)
+
+    def test_unknown_argument_raises(self) -> None:
+        args = {
+            "claim_amount": 500.0,
+            "plan_deductible": 2000.0,
+            "accrued_deductible": 0.0,
+            "plan_oop_max": 6000.0,
+            "accrued_oop": 0.0,
+            "coinsurance_member": 0.20,
+            "unexpected_field": "sneaky",
+        }
+        with pytest.raises(ValidationError):
+            run_coverage_calculator(args)
+
+
+class TestToolSchema:
+    def test_schema_disallows_additional_properties(self) -> None:
+        from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA
+
+        assert COVERAGE_CALCULATOR_SCHEMA["function"]["parameters"]["additionalProperties"] is False
