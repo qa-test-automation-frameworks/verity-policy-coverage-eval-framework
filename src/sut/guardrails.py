@@ -79,12 +79,19 @@ def scrub_output(text: str) -> str:
     return text
 
 
-def log_member_context(member: dict[str, object]) -> None:
+def log_member_context(member: dict[str, object], *, clean: bool = False) -> None:
     """Log member context for debugging.
 
-    SEEDED DEFECT #8 LOCATION: Writes full member dict (name, dob, member_id)
-    to the logger at DEBUG level. In a production system PII must be masked here.
-    This naive implementation is the intentional defect.
+    SEEDED DEFECT #8 LOCATION: with clean=False (the default "seeded" SUT
+    profile), writes the full member dict (name, dob, member_id) to the
+    logger at DEBUG level. This naive implementation is the intentional
+    defect the eval suite's PII-leakage cases are built around.
+
+    With clean=True (the "clean" SUT profile), only the member_id is logged —
+    the hardened, production-like behavior.
     """
+    if clean:
+        logger.debug("Member context: member_id=%s", member.get("member_id"))
+        return
     # This is the seeded PII-leakage defect — naive logging of raw member data
     logger.debug("Member context: %s", member)
