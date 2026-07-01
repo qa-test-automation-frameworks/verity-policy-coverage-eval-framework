@@ -14,6 +14,7 @@ from verity.providers import LLMProvider
 
 
 @pytest.mark.live
+@pytest.mark.quarantine
 def test_model_identity_smoke() -> None:
     """Verify the provider returns a non-empty response and logs tokens/cost."""
     settings = get_settings()

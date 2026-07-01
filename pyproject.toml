@@ -106,7 +106,7 @@ markers = [
     "deterministic: marks Tier-1 deterministic tests (no live calls)",
     "semantic: marks Tier-2 semantic eval tests (requires live LLM)",
     "adversarial: marks Tier-3 adversarial/red-team tests",
-    "flaky: marks live tests with known provider instability and documented retry policy",
+    "flaky: marks live tests with known provider instability and documented retry policy (reserved: apply once a specific test has an observed instability history to document)",
     "quarantine: marks live tests that collect signal but should not block merges",
 ]
 addopts = "-v --tb=short"
