@@ -9,11 +9,7 @@ from scripts.check_module_coverage import check_module_coverage
 
 
 def _write_coverage_json(tmp_path: Path, files: dict[str, float]) -> Path:
-    data = {
-        "files": {
-            path: {"summary": {"percent_covered": pct}} for path, pct in files.items()
-        }
-    }
+    data = {"files": {path: {"summary": {"percent_covered": pct}} for path, pct in files.items()}}
     out = tmp_path / "coverage.json"
     out.write_text(json.dumps(data))
     return out

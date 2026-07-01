@@ -87,9 +87,7 @@ class TestRequestKeyIdempotency:
         from verity.cassettes import request_key
 
         messages = [{"role": "user", "content": "What does my plan cover?"}]
-        keys = {
-            request_key("glm-4.5", messages, None, 0.0, 512) for _ in range(5)
-        }
+        keys = {request_key("glm-4.5", messages, None, 0.0, 512) for _ in range(5)}
         assert len(keys) == 1
 
     def test_agent_replay_is_idempotent_across_repeated_answers(self) -> None:

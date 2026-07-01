@@ -87,9 +87,7 @@ def render_security_summary_markdown(summary: SecuritySummary) -> str:
         "|----------|---------:|---------:|------:|",
     ]
     for tally in summary.by_category:
-        lines.append(
-            f"| {tally.category} | {tally.defended} | {tally.breached} | {tally.total} |"
-        )
+        lines.append(f"| {tally.category} | {tally.defended} | {tally.breached} | {tally.total} |")
     lines += ["", "## Per-Probe Outcomes", "", "| Probe ID | Outcome |", "|----------|---------|"]
     for probe_id, outcome in sorted(summary.probe_outcomes.items()):
         marker = "✓ DEFENDED" if outcome == "DEFENDED" else "✗ BREACHED"

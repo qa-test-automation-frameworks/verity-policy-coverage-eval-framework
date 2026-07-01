@@ -22,15 +22,15 @@ _CASES = load_golden(Path("datasets/golden"))
 
 
 @pytest.mark.parametrize("case", _CASES, ids=[c.id for c in _CASES])
-def test_every_llm_call_conversation_is_well_formed(
-    case: GoldenCase, _settings: Settings
-) -> None:
+def test_every_llm_call_conversation_is_well_formed(case: GoldenCase, _settings: Settings) -> None:
     response, conversations = run_case_capturing_conversations(case, _settings)
     if not conversations:
         # The input guardrail can refuse before any LLM call is made at all
         # (see sut.guardrails.check_input) — that's a valid zero-call outcome,
         # not a broken conversation.
-        assert response.refused, f"{case.id}: no LLM calls were captured but response wasn't refused"
+        assert response.refused, (
+            f"{case.id}: no LLM calls were captured but response wasn't refused"
+        )
         return
     for i, messages in enumerate(conversations):
         result = validate_conversation(messages)
