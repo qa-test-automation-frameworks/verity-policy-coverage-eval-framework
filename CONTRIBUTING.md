@@ -86,6 +86,10 @@ Tier 1 should be deterministic and must not use retries to hide failures. For li
 - **Tier 2 (Semantic eval):** runs on merge to main; requires `ZAI_API_KEY` GitHub Secret.
 - **Tier 3 (Adversarial):** weekly scheduled; non-blocking but reports published.
 
+Only Tier 1 (`pr-gate.yml`'s `lint-type-test` job) is intended to gate merges — set it as
+a required status check under the repository's branch protection rules for `main`. Tier
+2/3 are informational and should not block a PR even if their optional secrets are unset.
+
 ### Cassette workflow
 
 Tier-1 (`tests/deterministic/`) runs against pre-recorded cassette JSON files so no API key is needed in CI. The cassettes are authored by hand and stored in `datasets/cassettes/`.
