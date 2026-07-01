@@ -81,9 +81,12 @@ jobs:
           java-version: "17"
 
       - name: Install Allure CLI
+        env:
+          ALLURE_SHA256: 81ab0e54308dc6e665c9e0db96857a88be830089c73c45c702f9df51fa23fa00
         run: |
           curl -sLo allure.tgz \
             https://github.com/allure-framework/allure2/releases/download/2.27.0/allure-2.27.0.tgz
+          echo "${ALLURE_SHA256}  allure.tgz" | sha256sum -c -
           tar -xzf allure.tgz
           echo "$PWD/allure-2.27.0/bin" >> "$GITHUB_PATH"
 
