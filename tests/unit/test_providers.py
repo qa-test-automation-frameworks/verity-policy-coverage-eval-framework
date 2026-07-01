@@ -98,6 +98,34 @@ class TestLLMProvider:
 
         assert mock_call.call_args.kwargs["temperature"] == 0.5
 
+    def test_none_tool_calls_normalized_to_empty_list(self, settings_no_key: Settings) -> None:
+        """litellm returns message.tool_calls=None (not []) when no tool was invoked.
+
+        This is a contract test against that actual response shape, not the
+        convenience default set by _mock_response() elsewhere in this file.
+        """
+        acc = RunAccumulator()
+        provider = LLMProvider(settings_no_key, acc)
+        mock_resp = _mock_response("no tool needed")
+        mock_resp.choices[0].message.tool_calls = None
+
+        with patch(_PATCH, return_value=mock_resp):
+            result = provider.complete([{"role": "user", "content": "hi"}])
+
+        assert result.tool_calls == []
+
+    def test_none_content_normalized_to_empty_string(self, settings_no_key: Settings) -> None:
+        """litellm returns message.content=None on tool-call-only turns."""
+        acc = RunAccumulator()
+        provider = LLMProvider(settings_no_key, acc)
+        mock_resp = _mock_response()
+        mock_resp.choices[0].message.content = None
+
+        with patch(_PATCH, return_value=mock_resp):
+            result = provider.complete([{"role": "user", "content": "hi"}])
+
+        assert result.content == ""
+
     def test_multiple_calls_accumulated(self, settings_no_key: Settings) -> None:
         acc = RunAccumulator()
         provider = LLMProvider(settings_no_key, acc)
