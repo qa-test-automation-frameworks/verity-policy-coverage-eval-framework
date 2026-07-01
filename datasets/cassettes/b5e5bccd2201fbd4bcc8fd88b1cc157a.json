@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-2] I have $1,500 of my $2,000 Silver deductible paid. What do I owe for a $500 clai",
+  "model": "openai/glm-4.5",
+  "content": "A $500 claim exactly uses up your remaining $500 Silver deductible. The entire $500 is applied to your deductible, so you pay **$500** and the plan pays **$0** for this claim; coinsurance does not apply since nothing remains after the deductible is met.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 165,
+    "completion_tokens": 50,
+    "total_tokens": 215
+  }
+}

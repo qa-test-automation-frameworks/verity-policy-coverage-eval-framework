@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What extra costs apply if I see an out-of-network provider?",
+  "model": "openai/glm-4.5",
+  "content": "Using an out-of-network (Tier 2) provider means you pay the difference between the provider's billed charge and HealthGuard's allowed amount, on top of standard out-of-network cost-sharing. Those costs do not count toward your in-network out-of-pocket maximum \u2014 a separate out-of-network OOP maximum of 2x your in-network amount applies instead (Administration \u2014 Network Tiers).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 46,
+    "total_tokens": 166
+  }
+}

@@ -372,7 +372,7 @@ cases:
     behavior: answer
     ground_truth: "Routine dental cleanings are excluded under the base health plan unless a separate dental rider was purchased."
     must_contain: ["excluded", "dental rider"]
-    expected_citations: [exclusions.md]
+    expected_citations: [administration.md]
     expects_defect: false
     semantic_metrics: [faithfulness, answer_relevancy]
     risk_weight: "medium"
@@ -527,3 +527,148 @@ cases:
     evidence_ids: [ev-ctrl-bronze-oop-cap-tool]
     expectation_categories: [tool_behavior, amount, evidence]
 
+
+  # ── Policy administration depth (waiting periods, riders, network, docs) ────
+
+  - id: ctrl-waiting-period-orthodontia
+    query: "If I buy the orthodontia rider today, when does braces coverage start?"
+    member_id: MBR-001
+    tags: [rider, orthodontia, waiting-period, control]
+    behavior: answer
+    ground_truth: "12-month waiting period from rider purchase date before orthodontic services are covered (Administration — Waiting Periods)."
+    must_contain: ["12-month", "waiting period"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — waiting period on an optional rider."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-waiting-period-orthodontia]
+    expectation_categories: [coverage_decision, evidence]
+
+  - id: ctrl-effective-date-no-retro
+    query: "My coverage starts next Monday — will it cover a visit I had last week?"
+    member_id: MBR-001
+    tags: [effective-date, control]
+    behavior: answer
+    ground_truth: "Coverage does not apply retroactively to services before the effective date (Administration — Effective and Expiration Dates)."
+    must_contain: ["retroactively"]
+    must_not_contain: ["yes, covered"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — effective-date boundary, must refuse to backdate coverage."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-effective-date-no-retro]
+    expectation_categories: [coverage_decision, evidence]
+
+  - id: ctrl-plan-year-reset
+    query: "I hit my Silver deductible in November — does that carry over into next year?"
+    member_id: MBR-001
+    tags: [plan-year, deductible, control]
+    behavior: answer
+    ground_truth: "Deductible and OOP accumulators reset to zero on January 1 each plan year (Administration — Plan-Year Changes)."
+    must_contain: ["January 1", "reset"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — plan-year accumulator reset."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-plan-year-reset]
+    expectation_categories: [coverage_decision, evidence]
+
+  - id: ctrl-required-docs-oon-claim
+    query: "What paperwork do I need to submit for an out-of-network claim?"
+    member_id: MBR-001
+    tags: [claims, documentation, network, control]
+    behavior: answer
+    ground_truth: "Itemized bill, proof of payment, and a completed member claim reimbursement form (Administration — Required Documents for Claims)."
+    must_contain: ["itemized bill", "reimbursement form"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — required claim documentation."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-required-docs-oon-claim]
+    expectation_categories: [coverage_decision, evidence]
+
+  - id: ctrl-network-tier-oon-cost
+    query: "What extra costs apply if I see an out-of-network provider?"
+    member_id: MBR-001
+    tags: [network-tier, out-of-network, control]
+    behavior: answer
+    ground_truth: >
+      Member pays the billed-vs-allowed-amount difference plus standard out-of-network
+      cost-sharing; a separate out-of-network OOP max of 2x the in-network amount applies
+      (Administration — Network Tiers).
+    must_contain: ["out-of-network", "2x"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — network-tier cost-sharing."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-network-tier-oon-cost]
+    expectation_categories: [coverage_decision, limits, evidence]
+
+  - id: ctrl-silver-deductible-exact-boundary
+    query: "I have $1,500 of my $2,000 Silver deductible paid. What do I owe for a $500 claim?"
+    member_id: MBR-001
+    tags: [silver, deductible, boundary, tool-use, control]
+    behavior: answer
+    ground_truth: "The $500 claim exactly exhausts the remaining deductible; member pays $500, plan pays $0."
+    must_contain: ["500"]
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 500.0
+        plan_deductible: 2000.0
+        accrued_deductible: 1500.0
+        plan_oop_max: 6000.0
+        accrued_oop: 1500.0
+        coinsurance_member: 0.20
+    expected_citations: [silver.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: "Numerical boundary case: claim amount exactly equals remaining deductible."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-silver-deductible-exact-boundary]
+    expectation_categories: [tool_behavior, amount, limits, evidence]
+
+  - id: ctrl-bronze-oop-exact-boundary
+    query: "I'm at $7,600 of my $8,000 Bronze out-of-pocket max, deductible met. What do I owe for a $1,000 claim?"
+    member_id: MBR-003
+    tags: [bronze, oop-max, boundary, tool-use, control]
+    behavior: answer
+    ground_truth: "40% coinsurance on $1,000 is $400, which brings accrued OOP to exactly $8,000 — at, not over, the cap."
+    must_contain: ["400", "8,000"]
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 1000.0
+        plan_deductible: 4000.0
+        accrued_deductible: 4000.0
+        plan_oop_max: 8000.0
+        accrued_oop: 7600.0
+        coinsurance_member: 0.40
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: "Numerical boundary case: member cost lands exactly at the OOP maximum (not over it)."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-bronze-oop-exact-boundary]
+    expectation_categories: [tool_behavior, amount, limits, evidence]

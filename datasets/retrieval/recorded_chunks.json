@@ -11,12 +11,8 @@
   ],
   "ctrl-dental-cleaning-exclusion": [
     {
-      "chunk_id": "540678fb4b9c105e",
-      "source": "exclusions.md"
-    },
-    {
-      "chunk_id": "c303c9671b041ff7",
-      "source": "exclusions.md"
+      "chunk_id": "98c149eae74bb855",
+      "source": "administration.md"
     }
   ],
   "ctrl-gold-oop-amendment": [
