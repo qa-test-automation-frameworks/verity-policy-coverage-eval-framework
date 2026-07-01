@@ -41,6 +41,9 @@ report = [
     "allure-pytest>=2.13.0",
     "markdown>=3.6",
 ]
+mutation = [
+    "mutmut>=3.2.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/verity", "src/sut"]
@@ -121,3 +124,17 @@ fail_under = 80
 
 [tool.bandit]
 skips = ["B101"]  # assert is intentional in framework internal guards
+
+# ---------------------------------------------------------------------------
+# mutmut (mutation testing) — scoped to the deterministic coverage-calculator
+# module: it's pure, has no I/O, already has 100% line coverage, and mutation
+# testing tells us whether that 100% actually exercises the arithmetic, not
+# just imports every line. Running mutmut over the whole src/ tree would take
+# far too long for a quality gate; this module is where mutation score is
+# most meaningful and cheapest to check. Run with: uv run --extra mutation
+# mutmut run && uv run --extra mutation mutmut results
+# ---------------------------------------------------------------------------
+[tool.mutmut]
+paths_to_mutate = ["src/sut/tools/coverage_calculator.py"]
+tests_dir = ["tests/unit/test_coverage_calculator.py"]
+runner = "python -m pytest -x -q"

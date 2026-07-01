@@ -164,3 +164,72 @@ def test_record_call_span_accumulates_usage_on_current_span(
     assert outer.attributes["gen_ai.usage.output_tokens"] == 60
     assert outer.attributes["gen_ai.usage.total_tokens"] == 185
     assert outer.attributes["gen_ai.usage.cost_usd"] == pytest.approx(0.00185)
+
+
+class TestInitTracing:
+    def test_init_tracing_console_exporter_sets_tracer(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        pytest.importorskip("opentelemetry.sdk")
+        from verity import tracing
+
+        monkeypatch.setattr(tracing, "_ENABLED", True)
+        monkeypatch.setattr(tracing, "_TRACER", None)
+        monkeypatch.setenv("VERITY_TRACE_EXPORTER", "console")
+        tracing.init_tracing("test-console-service")
+        assert tracing.get_tracer() is not None
+
+    def test_file_exporter_writes_span_file(self, tmp_path: object) -> None:
+        """Exercise _init_file_exporter's export() directly — OTel only allows one
+        global TracerProvider per process, so a second init_tracing() call in the
+        same test session can't be reliably asserted through the SDK's own API."""
+        pytest.importorskip("opentelemetry.sdk")
+        from pathlib import Path
+
+        from verity.tracing import _init_file_exporter
+
+        trace_dir = Path(str(tmp_path)) / "traces"
+        exporter = _init_file_exporter(trace_dir)
+
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+            InMemorySpanExporter,
+        )
+
+        capture = InMemorySpanExporter()
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(capture))
+        tracer = provider.get_tracer("file-export-test")
+        with tracer.start_as_current_span("file-export-test-span"):
+            pass
+
+        exporter.export(capture.get_finished_spans())
+        exporter.shutdown()
+
+        assert trace_dir.exists()
+        span_files = list(trace_dir.glob("spans-*.jsonl"))
+        assert span_files, "expected at least one spans-*.jsonl file to be written"
+        content = span_files[0].read_text()
+        assert "file-export-test-span" in content
+
+    def test_init_tracing_noop_leaves_tracer_none_when_flag_off(self) -> None:
+        from verity import tracing
+
+        tracing._ENABLED = False
+        tracing._TRACER = None
+        tracing.init_tracing("unused")
+        assert tracing.get_tracer() is None
+
+    def test_init_tracing_unknown_exporter_name_ignored(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        pytest.importorskip("opentelemetry.sdk")
+        from verity import tracing
+
+        monkeypatch.setattr(tracing, "_ENABLED", True)
+        monkeypatch.setattr(tracing, "_TRACER", None)
+        monkeypatch.setenv("VERITY_TRACE_EXPORTER", "nonexistent-exporter-name")
+        tracing.init_tracing("test-unknown-exporter")
+        # Tracer is still created even if the requested exporter name is unrecognized.
+        assert tracing.get_tracer() is not None

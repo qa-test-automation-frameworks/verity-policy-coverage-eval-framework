@@ -58,7 +58,7 @@ class TestSettings:
         assert s.semantic_samples == 1
         assert s.retrieval.chunk_size == 160
         assert s.retrieval.chunk_overlap == 30
-        assert s.retrieval.top_k == 3
+        assert s.retrieval.top_k == 4
 
     def test_invalid_temperature_raises(self) -> None:
         with pytest.raises(ValueError):

@@ -55,6 +55,44 @@ class TestGoldenCaseSchema:
         case = GoldenCase(id="refuse-test", query="Diagnose me", behavior="refuse")
         assert case.behavior == "refuse"
 
+    def test_metadata_defaults(self) -> None:
+        case = GoldenCase(id="meta-test", query="What is my deductible?")
+        assert case.dataset_version == "1.0.0"
+        assert case.policy_version == "2024"
+        assert case.evidence_ids == []
+        assert case.risk_weight == "medium"
+        assert case.owner == ""
+        assert case.last_reviewed == ""
+        assert case.expectation_categories == []
+
+    def test_metadata_overrides(self) -> None:
+        case = GoldenCase(
+            id="meta-test-2",
+            query="What is my deductible?",
+            dataset_version="1.1.0",
+            policy_version="2025",
+            evidence_ids=["ev-001", "ev-002"],
+            risk_weight="high",
+            owner="policy-team",
+            last_reviewed="2026-06-01",
+            expectation_categories=["amount", "evidence"],
+        )
+        assert case.dataset_version == "1.1.0"
+        assert case.policy_version == "2025"
+        assert case.evidence_ids == ["ev-001", "ev-002"]
+        assert case.risk_weight == "high"
+        assert case.owner == "policy-team"
+        assert case.last_reviewed == "2026-06-01"
+        assert case.expectation_categories == ["amount", "evidence"]
+
+    def test_invalid_risk_weight_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            GoldenCase(id="bad-risk", query="q", risk_weight="critical")
+
+    def test_invalid_expectation_category_rejected(self) -> None:
+        with pytest.raises(ValueError):
+            GoldenCase(id="bad-category", query="q", expectation_categories=["not_a_category"])
+
 
 class TestLoadGolden:
     def test_loads_cases_from_yaml(self) -> None:
@@ -109,3 +147,21 @@ class TestLoadGolden:
         cases = load_golden(_GOLDEN_DIR)
         found = [c for c in cases if c.defect_id == defect_id]
         assert found, f"No case found for defect #{defect_id}"
+
+
+class TestGoldenCaseMetadataCoverage:
+    def test_every_case_has_owner_and_last_reviewed(self) -> None:
+        for case in load_golden(_GOLDEN_DIR):
+            assert case.owner, f"Case {case.id!r} missing owner"
+            assert case.last_reviewed, f"Case {case.id!r} missing last_reviewed"
+
+    def test_every_case_has_at_least_one_expectation_category(self) -> None:
+        for case in load_golden(_GOLDEN_DIR):
+            assert case.expectation_categories, f"Case {case.id!r} missing expectation_categories"
+
+    def test_defect_cases_are_higher_risk_weight(self) -> None:
+        for case in load_golden(_GOLDEN_DIR):
+            if case.expects_defect:
+                assert case.risk_weight in ("medium", "high"), (
+                    f"Defect case {case.id!r} should not be low risk_weight"
+                )

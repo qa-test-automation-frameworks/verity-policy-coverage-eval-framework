@@ -1,0 +1,6 @@
+turns:
+  - content: >
+      For an out-of-network claim you need to submit: an itemized bill, proof of payment, and a
+      completed member claim reimbursement form (Administration — Required Documents for Claims).
+    prompt_tokens: 105
+    completion_tokens: 30

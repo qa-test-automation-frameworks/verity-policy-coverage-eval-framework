@@ -90,6 +90,9 @@ Only Tier 1 (`pr-gate.yml`'s `lint-type-test` job) is intended to gate merges �
 a required status check under the repository's branch protection rules for `main`. Tier
 2/3 are informational and should not block a PR even if their optional secrets are unset.
 
+See [`docs/ci-policy.md`](docs/ci-policy.md) for the full list of required checks, what each
+one enforces, and this project's release criteria.
+
 ### Cassette workflow
 
 Tier-1 (`tests/deterministic/`) runs against pre-recorded cassette JSON files so no API key is needed in CI. The cassettes are authored by hand and stored in `datasets/cassettes/`.
@@ -119,3 +122,19 @@ git add datasets/cassettes/ && git commit -m "chore(cassettes): update cassettes
 ```
 
 Note: changing any input to the agent (model, temperature, system prompt template, corpus chunks, or tool schema) changes the request hash and invalidates all downstream cassettes. The manifest test in `test_regression_cassette.py` will fail, telling you exactly which cases need to be re-recorded.
+
+### Mutation testing
+
+`src/sut/tools/coverage_calculator.py` (the pricing arithmetic) has a mutation-testing gate
+via [mutmut](https://mutmut.readthedocs.io/), scoped to that one module — it's pure, has no
+I/O, and is where a 100% line-coverage number is least trustworthy on its own (line coverage
+proves a line ran, not that its output was checked). Mutation testing proves the latter.
+
+```bash
+uv sync --extra mutation
+make mutation-test
+```
+
+This is a local/dev quality check, not part of the required CI gate (mutation testing is
+too slow to run on every PR) — see [`docs/ci-policy.md`](docs/ci-policy.md) for what actually
+gates merges.

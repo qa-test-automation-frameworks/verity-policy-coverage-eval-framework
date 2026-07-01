@@ -48,10 +48,15 @@ jobs:
         run: uv run mypy src
 
       - name: Unit + Deterministic tests (no live calls)
-        run: uv run pytest -m "not live" --cov=src --cov-report=term-missing --cov-fail-under=80
+        run: |
+          uv run pytest -m "not live" --cov=src --cov-report=term-missing \
+            --cov-report=json:reports/coverage.json --cov-fail-under=80
         env:
           # No API keys — live tests excluded via marker
           PYTHONPATH: src
+
+      - name: Module-sensitive coverage gate (agent, retrieval, metrics, tracing, reporting)
+        run: uv run python scripts/check_module_coverage.py reports/coverage.json
 
       - name: Dependency vulnerability scan
         run: |

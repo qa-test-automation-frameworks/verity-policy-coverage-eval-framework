@@ -1,0 +1,7 @@
+[
+  {
+    "source": "administration.md",
+    "section": "Network Tiers",
+    "text": "## Network Tiers\n\n**Tier 2 (Out-of-Network):** Non-contracted providers. Members pay the difference between the provider's billed charge and HealthGuard's allowed amount, in addition to standard out-of-network cost-sharing. Out-of-network costs do not count toward the in-network out-of-pocket maximum; a separate out-of-network OOP maximum of 2x the in-network amount applies on all plans."
+  }
+]

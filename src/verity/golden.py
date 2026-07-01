@@ -15,6 +15,17 @@ class ExpectedTool(BaseModel):
     expected_arg_values: dict[str, Any] = Field(default_factory=dict)
 
 
+ExpectationCategory = Literal[
+    "coverage_decision",
+    "amount",
+    "limits",
+    "refusal",
+    "uncertainty",
+    "evidence",
+    "tool_behavior",
+]
+
+
 class GoldenCase(BaseModel):
     id: str
     query: str
@@ -31,6 +42,18 @@ class GoldenCase(BaseModel):
     defect_id: int | None = None
     semantic_metrics: list[str] = Field(default_factory=list)
     notes: str = ""
+
+    # Case metadata (portfolio/evidence tracking) — optional, additive.
+    dataset_version: str = "1.0.0"
+    policy_version: str = "2024"
+    evidence_ids: list[str] = Field(default_factory=list)
+    risk_weight: Literal["low", "medium", "high"] = "medium"
+    owner: str = ""
+    last_reviewed: str = ""
+
+    # Normalized expectation categories this case exercises, e.g. what kind of
+    # claim is being checked (a dollar amount, a refusal, a tool call, ...).
+    expectation_categories: list[ExpectationCategory] = Field(default_factory=list)
 
 
 def load_golden(directory: Path | str | None = None) -> list[GoldenCase]:

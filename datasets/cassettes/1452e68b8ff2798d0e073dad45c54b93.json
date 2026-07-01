@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] I hit my Silver deductible in November \u2014 does that carry over into next year?",
+  "model": "openai/glm-4.5",
+  "content": "No. Your deductible and out-of-pocket accumulators reset to zero on January 1 each plan year, and amounts accrued under your prior plan tier do not carry over if you change plans mid-year (Administration \u2014 Plan-Year Changes).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 112,
+    "completion_tokens": 34,
+    "total_tokens": 146
+  }
+}

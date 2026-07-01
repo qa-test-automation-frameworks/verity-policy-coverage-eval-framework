@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What paperwork do I need to submit for an out-of-network claim?",
+  "model": "openai/glm-4.5",
+  "content": "For an out-of-network claim you need to submit: an itemized bill, proof of payment, and a completed member claim reimbursement form (Administration \u2014 Required Documents for Claims).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 105,
+    "completion_tokens": 30,
+    "total_tokens": 135
+  }
+}

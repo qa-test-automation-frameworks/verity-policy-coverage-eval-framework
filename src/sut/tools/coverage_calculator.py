@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ---------------------------------------------------------------------------
 # Input / output models (Pydantic v2)
@@ -27,6 +27,8 @@ class CoverageInput(BaseModel):
     All dollar amounts are in USD. Coinsurance is expressed as the MEMBER's
     share as a decimal (e.g. 0.20 for 20% member / 80% plan).
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     claim_amount: float = Field(gt=0, description="Allowed amount for the service in USD")
     plan_deductible: float = Field(ge=0, description="Member's annual plan deductible")
@@ -109,8 +111,6 @@ def calculate_coverage(inp: CoverageInput) -> CoverageResult:
         plan_pays_after_cap = inp.claim_amount - remaining_oop
     else:
         member_total_after_cap = member_total
-        plan_pays_after_cap = plan_total  # deductible goes to member, already subtracted
-        # Recalculate: plan pays = claim - member total
         plan_pays_after_cap = inp.claim_amount - member_total
 
     return CoverageResult(
@@ -185,6 +185,7 @@ COVERAGE_CALCULATOR_SCHEMA: dict[str, Any] = {
                 "accrued_oop",
                 "coinsurance_member",
             ],
+            "additionalProperties": False,
         },
     },
 }

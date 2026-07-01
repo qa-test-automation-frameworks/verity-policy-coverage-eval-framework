@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from typing import ClassVar
 
 import promptfoo.provider as promptfoo_provider
+import pytest
 
 
 class _FakeSettings:
@@ -77,3 +78,17 @@ def test_call_api_serializes_token_usage(monkeypatch) -> None:
 
     assert _FakeSettings.seen_modes == ["replay"]
     assert result["tokenUsage"] == {"total": 12, "prompt": 7, "completion": 5}
+
+
+def test_call_api_raises_agent_errors(monkeypatch) -> None:
+    class _FailingAgent(_FakeAgent):
+        def answer(self, prompt: str, member_id: str) -> SimpleNamespace:
+            raise RuntimeError("provider unavailable")
+
+    monkeypatch.setattr(promptfoo_provider, "Settings", _FakeSettings)
+    monkeypatch.setattr(promptfoo_provider, "PolicyRetriever", _FakeRetriever)
+    monkeypatch.setattr(promptfoo_provider, "LLMProvider", _FakeProvider)
+    monkeypatch.setattr(promptfoo_provider, "CoverageAgent", _FailingAgent)
+
+    with pytest.raises(RuntimeError, match="provider unavailable"):
+        promptfoo_provider.call_api("hello", {}, {})

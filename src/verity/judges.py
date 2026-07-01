@@ -92,7 +92,7 @@ class ProviderJudge:
 
     async def a_generate(self, prompt: str) -> str:
         """Async generation — used by async evaluation paths."""
-        return await asyncio.get_event_loop().run_in_executor(None, self.generate, prompt)
+        return await asyncio.get_running_loop().run_in_executor(None, self.generate, prompt)
 
 
 # ---------------------------------------------------------------------------
