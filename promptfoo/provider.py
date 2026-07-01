@@ -45,20 +45,17 @@ def call_api(prompt: str, options: dict, context: dict) -> dict:
     retriever = PolicyRetriever()
     agent = CoverageAgent(settings=settings, retriever=retriever, provider=provider)
 
-    try:
-        response = agent.answer(prompt, member_id=member_id)
-        output = str(getattr(response, "answer", "") or "")
-        tokens = accumulator.total_tokens
-        return {
-            "output": output,
-            "tokenUsage": {
-                "total": tokens.total_tokens,
-                "prompt": tokens.prompt_tokens,
-                "completion": tokens.completion_tokens,
-            },
-        }
-    except Exception as exc:
-        return {"error": str(exc)}
+    response = agent.answer(prompt, member_id=member_id)
+    output = str(getattr(response, "answer", "") or "")
+    tokens = accumulator.total_tokens
+    return {
+        "output": output,
+        "tokenUsage": {
+            "total": tokens.total_tokens,
+            "prompt": tokens.prompt_tokens,
+            "completion": tokens.completion_tokens,
+        },
+    }
 
 
 if __name__ == "__main__":
