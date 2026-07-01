@@ -82,7 +82,15 @@ class AgentResponse(BaseModel):
 
 
 def _requires_human_review(query: str, answer: str) -> bool:
-    """Flag plan comparison anomalies that should be surfaced for human review."""
+    """Flag Gold-vs-Silver cost-parity anomalies that should be surfaced for human review.
+
+    This is a narrow, targeted keyword heuristic scoped to the specific
+    contradiction seeded in this corpus (defect #4: Gold and Silver charge
+    identical urgent-care copay despite Gold's lower cost-sharing elsewhere).
+    It is not a general anomaly detector and will not catch other kinds of
+    plan contradictions or escalation triggers — extend the condition (or
+    replace it with a rubric-based check) if broader coverage is needed.
+    """
     combined = f"{query}\n{answer}".lower()
     compares_gold_silver = "gold" in combined and "silver" in combined
     asks_for_difference = any(
