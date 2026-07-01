@@ -1,0 +1,86 @@
+{
+  "ctrl-gold-oop-amendment": [
+    {
+      "chunk_id": "b6a07db9ef566859",
+      "source": "amendments.md"
+    },
+    {
+      "chunk_id": "c4fb6679a481e770",
+      "source": "definitions.md"
+    },
+    {
+      "chunk_id": "d567587aee2755ab",
+      "source": "gold.md"
+    }
+  ],
+  "ctrl-silver-physical-therapy-limit": [
+    {
+      "chunk_id": "c6b21c91296ac8cf",
+      "source": "silver.md"
+    },
+    {
+      "chunk_id": "993730ac8d1f42bc",
+      "source": "gold.md"
+    },
+    {
+      "chunk_id": "c6b9f5e126dc78cf",
+      "source": "silver.md"
+    }
+  ],
+  "ctrl-bronze-mri-prior-auth": [
+    {
+      "chunk_id": "993730ac8d1f42bc",
+      "source": "gold.md"
+    },
+    {
+      "chunk_id": "c6b9f5e126dc78cf",
+      "source": "silver.md"
+    },
+    {
+      "chunk_id": "cf18a719208cb5e6",
+      "source": "bronze.md"
+    }
+  ],
+  "ctrl-dental-cleaning-exclusion": [
+    {
+      "chunk_id": "9eac1feafcaa525a",
+      "source": "exclusions.md"
+    },
+    {
+      "chunk_id": "c0b2182adceb5f3f",
+      "source": "definitions.md"
+    },
+    {
+      "chunk_id": "7f976de119892c71",
+      "source": "amendments.md"
+    }
+  ],
+  "ctrl-gold-specialty-drug-pa": [
+    {
+      "chunk_id": "d567587aee2755ab",
+      "source": "gold.md"
+    },
+    {
+      "chunk_id": "b6a07db9ef566859",
+      "source": "amendments.md"
+    },
+    {
+      "chunk_id": "993730ac8d1f42bc",
+      "source": "gold.md"
+    }
+  ],
+  "ctrl-missing-acupuncture-policy": [
+    {
+      "chunk_id": "7f976de119892c71",
+      "source": "amendments.md"
+    },
+    {
+      "chunk_id": "372d2b2ba326ef3d",
+      "source": "bronze.md"
+    },
+    {
+      "chunk_id": "9eac1feafcaa525a",
+      "source": "exclusions.md"
+    }
+  ]
+}

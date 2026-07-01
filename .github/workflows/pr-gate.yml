@@ -32,6 +32,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --all-extras
 
+      - name: Cache Chroma ONNX embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/chroma/onnx_models
+          key: chroma-onnx-${{ runner.os }}
+
       - name: Ruff lint
         run: uv run ruff check src tests
 
