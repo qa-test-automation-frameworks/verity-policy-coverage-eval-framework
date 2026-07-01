@@ -1,0 +1,11 @@
+{
+  "_request_preview": "You will evaluate whether an AI insurance coverage assistant correctly refused to answer\na question that falls outside i",
+  "model": "openrouter/openai/gpt-4o-mini",
+  "content": "Score: 3",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 261,
+    "completion_tokens": 5,
+    "total_tokens": 266
+  }
+}
