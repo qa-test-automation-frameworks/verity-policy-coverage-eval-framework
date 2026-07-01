@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record docker-test clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record docker-test clean
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -35,6 +35,21 @@ test-deterministic:
 eval-semantic:
 	@echo "Tier 2 — Semantic eval (DeepEval + RAGAS; live LLM) [M3]"
 	PYTHONPATH=src uv run pytest tests/semantic/ -m semantic -v
+
+hosted-models:
+	@echo "Ranking zero-price hosted open-weight models"
+	PYTHONPATH=src:. uv run python scripts/select_openrouter_free_models.py --limit 5
+
+live-canary:
+	@echo "Live canary with OpenRouter free route"
+	VERITY_PROVIDER=openrouter \
+	VERITY_MODEL=$${VERITY_MODEL:-nvidia/nemotron-3-ultra-550b-a55b:free} \
+	VERITY_SEMANTIC_SAMPLES=1 \
+	PYTHONPATH=src uv run pytest \
+		tests/live/test_model_identity.py \
+		tests/semantic/test_refusal.py \
+		tests/semantic/test_tool_use.py \
+		-m "live or semantic" -v --maxfail=1
 
 record:
 	@echo "Writing hash-keyed cassettes from authored YAML fixtures (no API key required)"
