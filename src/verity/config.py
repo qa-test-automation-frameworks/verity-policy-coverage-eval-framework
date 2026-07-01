@@ -166,6 +166,13 @@ class Settings(BaseSettings):
     retries: int = 3
     semantic_samples: int = 1
 
+    # SUT profile: "seeded" (default) preserves the intentionally-defective
+    # behavior (ambiguous tool-arg guidance, unredacted PII logging) that the
+    # eval suite's defect-detection cases are built around. "clean" runs a
+    # hardened variant of the same agent so production-like behavior can be
+    # verified separately from the seeded-defect fixtures.
+    sut_profile: Literal["seeded", "clean"] = "seeded"
+
     # Nested configs. Constructed via default_factory so each Settings()
     # call reads the environment fresh at instantiation time — a bare
     # `JudgeConfig()` class-level default would be evaluated exactly once,
