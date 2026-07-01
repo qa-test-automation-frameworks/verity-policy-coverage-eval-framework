@@ -1,0 +1,11 @@
+{
+  "_request_preview": "You will evaluate whether an AI assistant correctly answered a multi-step cost-calculation\nquestion about health insuran",
+  "model": "openrouter/openai/gpt-4o-mini",
+  "content": "Score: 1",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 272,
+    "completion_tokens": 5,
+    "total_tokens": 277
+  }
+}

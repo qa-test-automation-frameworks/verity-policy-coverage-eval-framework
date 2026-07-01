@@ -1,0 +1,11 @@
+{
+  "_request_preview": "You will evaluate whether an AI assistant's response is factually grounded in the\nprovided context documents (retrieved ",
+  "model": "openrouter/openai/gpt-4o-mini",
+  "content": "Score: 1",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 328,
+    "completion_tokens": 5,
+    "total_tokens": 333
+  }
+}
