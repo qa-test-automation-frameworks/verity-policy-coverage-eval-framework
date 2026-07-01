@@ -90,6 +90,9 @@ Only Tier 1 (`pr-gate.yml`'s `lint-type-test` job) is intended to gate merges â€
 a required status check under the repository's branch protection rules for `main`. Tier
 2/3 are informational and should not block a PR even if their optional secrets are unset.
 
+See [`docs/ci-policy.md`](docs/ci-policy.md) for the full list of required checks, what each
+one enforces, and this project's release criteria.
+
 ### Cassette workflow
 
 Tier-1 (`tests/deterministic/`) runs against pre-recorded cassette JSON files so no API key is needed in CI. The cassettes are authored by hand and stored in `datasets/cassettes/`.
