@@ -142,6 +142,37 @@ class RunAccumulator:
             total_tokens=sum(r.usage.total_tokens for r in self.records),
         )
 
+    def usage_and_cost_since(self, start_index: int) -> tuple[Usage, Cost]:
+        """Usage/cost for only the calls logged since `start_index` records existed.
+
+        A shared accumulator (the common case when one CoverageAgent instance
+        serves many requests) makes `total_tokens`/`total_cost` a lifetime
+        running total across every call ever made through it — not what a
+        single response should report. Callers that want per-response
+        numbers should snapshot `len(accumulator.records)` before their call
+        and pass it here afterward, instead of reading the lifetime totals.
+        """
+        window = self.records[start_index:]
+        prompt_tokens = sum(r.usage.prompt_tokens for r in window)
+        completion_tokens = sum(r.usage.completion_tokens for r in window)
+        total_tokens = sum(r.usage.total_tokens for r in window)
+        prompt_usd = sum(r.cost.prompt_usd for r in window)
+        completion_usd = sum(r.cost.completion_usd for r in window)
+        all_priced = all(r.cost.priced for r in window)
+        return (
+            Usage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+            ),
+            Cost(
+                prompt_usd=prompt_usd,
+                completion_usd=completion_usd,
+                total_usd=prompt_usd + completion_usd,
+                priced=all_priced,
+            ),
+        )
+
     def summary(self) -> str:
         t = self.total_tokens
         c = self.total_cost

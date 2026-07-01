@@ -181,3 +181,55 @@ class TestFailurePathsDegradeSafely:
         assert response.refused
         assert len(response.tool_invocations) == 1
         assert response.tool_invocations[0].tool_name == "coverage_calculator"
+
+
+class TestPerResponseUsageTracking:
+    """A shared accumulator/agent serving multiple requests must report each
+    response's own token/cost usage, not the accumulator's running lifetime total."""
+
+    def test_second_response_reports_only_its_own_usage(self) -> None:
+        settings = Settings(cassette_mode="off")
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+        accumulator = RunAccumulator()
+
+        from verity.cost import Usage
+
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+
+        def _complete(**kwargs: object) -> CompletionResult:
+            accumulator.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=10.0)
+            return CompletionResult(content="Your plan covers this.", tool_calls=[])
+
+        mock_provider.complete.side_effect = _complete
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+
+        first = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+        second = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        # Each response used exactly one LLM call (100+50=150 tokens) — not the
+        # lifetime cumulative total across both calls (300 tokens).
+        assert first.total_tokens == 150
+        assert second.total_tokens == 150
+        assert accumulator.total_tokens.total_tokens == 300
+
+    def test_safe_failure_response_reports_only_its_own_usage(self) -> None:
+        settings = Settings(cassette_mode="off")
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+        accumulator = RunAccumulator()
+
+        from verity.cost import Usage
+
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        # Pre-populate the accumulator as if prior requests already ran through it.
+        accumulator.log_call("glm-4.5", Usage(1000, 500, 1500), latency_ms=10.0)
+
+        mock_provider.complete.side_effect = ConnectionError("provider down")
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        assert response.refused
+        assert response.total_tokens == 0  # this call made no successful LLM calls

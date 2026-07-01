@@ -290,11 +290,11 @@ class CoverageAgent:
         self,
         *,
         category: str,
+        start_index: int,
         tool_invocations: list[ToolInvocation] | None = None,
     ) -> AgentResponse:
         assert self.provider is not None
-        totals = self.provider.accumulator.total_tokens
-        total_cost = self.provider.accumulator.total_cost
+        totals, total_cost = self.provider.accumulator.usage_and_cost_since(start_index)
         return AgentResponse(
             answer=(
                 "I cannot complete this coverage response right now. "
@@ -322,6 +322,11 @@ class CoverageAgent:
         """Run the full agent loop for a coverage question."""
         assert self.retriever is not None
         assert self.provider is not None
+
+        # Snapshot the accumulator's record count so this response reports only
+        # the usage/cost from calls made during THIS answer(), not the shared
+        # accumulator's lifetime total across every request it has ever served.
+        start_index = len(self.provider.accumulator.records)
 
         # 1. Input guardrail
         refused, refusal_reason = check_input(query)
@@ -371,7 +376,9 @@ class CoverageAgent:
                 )
             except Exception:
                 logger.exception("Provider call failed before tool handling")
-                return self._safe_failure_response(category="provider_unavailable")
+                return self._safe_failure_response(
+                    category="provider_unavailable", start_index=start_index
+                )
 
             tool_invocations: list[ToolInvocation] = []
 
@@ -403,6 +410,7 @@ class CoverageAgent:
                         logger.warning("Blocked call to unknown tool: %s", fn_name)
                         return self._safe_failure_response(
                             category="unknown_tool",
+                            start_index=start_index,
                             tool_invocations=tool_invocations,
                         )
 
@@ -412,6 +420,7 @@ class CoverageAgent:
                         logger.exception("Malformed tool-call arguments for %s", fn_name)
                         return self._safe_failure_response(
                             category="tool_unavailable",
+                            start_index=start_index,
                             tool_invocations=tool_invocations,
                         )
 
@@ -422,6 +431,7 @@ class CoverageAgent:
                             logger.exception("Coverage tool call failed")
                             return self._safe_failure_response(
                                 category="tool_unavailable",
+                                start_index=start_index,
                                 tool_invocations=tool_invocations,
                             )
 
@@ -448,6 +458,7 @@ class CoverageAgent:
                     logger.exception("Provider call failed after tool handling")
                     return self._safe_failure_response(
                         category="provider_unavailable",
+                        start_index=start_index,
                         tool_invocations=tool_invocations,
                     )
 
@@ -459,10 +470,10 @@ class CoverageAgent:
             f"{c.source}: {c.section}" for c in _supporting_chunks(chunks, final_answer) if c.section
         ]
 
-        # 10. Collect token/cost info
+        # 10. Collect token/cost info for this response only (not the shared
+        # accumulator's lifetime total — see start_index above)
         acc = self.provider.accumulator
-        totals = acc.total_tokens
-        total_cost = acc.total_cost
+        totals, total_cost = acc.usage_and_cost_since(start_index)
 
         return AgentResponse(
             answer=final_answer,
