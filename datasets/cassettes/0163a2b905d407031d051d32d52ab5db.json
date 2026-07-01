@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] How much will I owe for a $1,000 diagnostic lab on my Gold plan?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "",
   "tool_calls": [
     {

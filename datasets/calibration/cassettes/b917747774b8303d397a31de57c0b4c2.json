@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-disambiguation-005 (disambiguation)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 9\n\nParity confirmed; anomaly noted relative to overall structure.",
   "tool_calls": [],
   "usage": {

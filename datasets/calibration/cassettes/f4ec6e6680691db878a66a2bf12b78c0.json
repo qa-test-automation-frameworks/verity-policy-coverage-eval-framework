@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-completeness-006 (completeness)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 2\n\nVague range rather than precise two-step calculation.",
   "tool_calls": [],
   "usage": {

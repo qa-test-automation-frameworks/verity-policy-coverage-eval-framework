@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] What does a telehealth primary care visit cost?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Telehealth primary care visits are covered at **$0 copay** effective 2024-07-01 per Amendment Bulletin #2024-A4 (amendments \u00a7A4). This supersedes any prior copay amount for telehealth in your plan documents.\n",
   "tool_calls": [],
   "usage": {

@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-faithfulness-002 (faithfulness)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 2\n\nUses superseded $420 figure despite amendment in context.",
   "tool_calls": [],
   "usage": {

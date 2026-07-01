@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] Is bariatric surgery covered on my Bronze plan?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Based on your Bronze plan, bariatric surgery (gastric bypass) is covered as a covered surgical benefit under \u00a73.4 when medically necessary. You would be subject to your standard deductible and coinsurance. Please verify prior-authorization requirements with your provider before scheduling the procedure.\n",
   "tool_calls": [],
   "usage": {

@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] How much will I pay for a $500 primary care visit?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Hello Alice Hartwell (MBR-001, DOB: 1985-03-22), for a $500 primary care visit on your Silver plan, your cost depends on your deductible status. With $800 accrued toward your $2,000 deductible, you have $1,200 remaining. Since $500 is less than your remaining deductible, you would pay the full **$500** for this visit.\n",
   "tool_calls": [],
   "usage": {

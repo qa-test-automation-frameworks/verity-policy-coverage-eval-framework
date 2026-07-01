@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-2] How much will I owe for a $1,000 diagnostic lab on my Gold plan?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "For a $1,000 in-network diagnostic lab on Gold, your deductible is already met. The Gold lab benefit uses 10% member coinsurance after deductible, so you pay **$100** and the plan pays **$900**, assuming the claim is otherwise covered and in network.\n",
   "tool_calls": [],
   "usage": {

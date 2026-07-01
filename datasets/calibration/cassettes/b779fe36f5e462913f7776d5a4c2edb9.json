@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-completeness-008 (completeness)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 1\n\nIncorrect: deducted deductible from claim before coinsurance.",
   "tool_calls": [],
   "usage": {

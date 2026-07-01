@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] For Bronze, does an MRI require prior authorization and what cost share applies?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "For Bronze, MRI/CT/PET imaging is subject to **40% member coinsurance after the deductible**, and **prior authorization is required**. Failure to obtain PA may result in claim denial.\n",
   "tool_calls": [],
   "usage": {

@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-completeness-001 (completeness)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 10\n\nBoth deductible and coinsurance steps correctly computed.",
   "tool_calls": [],
   "usage": {

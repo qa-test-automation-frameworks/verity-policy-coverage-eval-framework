@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-completeness-007 (completeness)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 10\n\nDeductible met, coinsurance only \u2014 correctly applied.",
   "tool_calls": [],
   "usage": {

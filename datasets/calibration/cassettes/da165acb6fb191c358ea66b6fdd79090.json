@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-disambiguation-004 (disambiguation)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 0\n\nClaims Gold is cheaper with fabricated value.",
   "tool_calls": [],
   "usage": {

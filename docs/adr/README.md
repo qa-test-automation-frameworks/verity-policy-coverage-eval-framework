@@ -4,7 +4,7 @@ Lightweight decision records in MADR style (Context / Decision / Consequences / 
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [0001](0001-glm-5-2-model-choice.md) | GLM-5.2 as the primary LLM | Accepted |
+| [0001](0001-glm-4-5-model-choice.md) | GLM-4.5 as the primary LLM | Accepted |
 | [0002](0002-three-layer-eval-pyramid.md) | Three-layer evaluation pyramid | Accepted |
 | [0003](0003-cassette-replay-for-ci.md) | SHA-256 cassette replay for CI | Accepted |
 | [0004](0004-judge-calibration-and-self-bias.md) | Judge calibration and self-bias measurement | Accepted |

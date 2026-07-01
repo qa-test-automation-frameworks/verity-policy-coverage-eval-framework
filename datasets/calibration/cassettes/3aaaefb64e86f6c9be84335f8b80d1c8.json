@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-completeness-002 (completeness)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 4\n\nDeductible step present but coinsurance step omitted.",
   "tool_calls": [],
   "usage": {

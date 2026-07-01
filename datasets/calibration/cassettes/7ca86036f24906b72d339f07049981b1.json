@@ -1,6 +1,6 @@
 {
   "_request_preview": "[judge] calib-faithfulness-005 (faithfulness)",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Score: 10\n\nExact paraphrase of context \u2014 fully faithful.",
   "tool_calls": [],
   "usage": {

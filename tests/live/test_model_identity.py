@@ -1,4 +1,4 @@
-"""Live smoke test — makes one real GLM-5.2 call and logs tokens/cost.
+"""Live smoke test — makes one real GLM-4.5 call and logs tokens/cost.
 
 Run with: make smoke
 Excluded from CI (requires ZAI_API_KEY or equivalent in .env).

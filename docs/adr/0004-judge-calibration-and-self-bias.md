@@ -4,7 +4,7 @@
 
 ## Context
 
-Tier-2 semantic evaluation uses GLM-5.2 as both the SUT runtime model and
+Tier-2 semantic evaluation uses GLM-4.5 as both the SUT runtime model and
 the judge model. This creates a **self-preference risk**: an LLM judge may
 systematically rate outputs from its own model family more favorably than
 outputs from other model families, inflating agreement numbers.

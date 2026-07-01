@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] What is the individual annual deductible for the Gold plan?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "The Gold plan has an individual annual deductible of **$750** (Gold \u00a71). Once you meet this amount, the plan begins sharing costs for covered non-preventive services through coinsurance.\n",
   "tool_calls": [],
   "usage": {

@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] Are home health aide visits limited, and do home health services require prior a",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "Home health aide visits are limited to **60 visits per calendar year**, and home health services require **prior authorization**.\n",
   "tool_calls": [],
   "usage": {

@@ -1,6 +1,6 @@
 {
   "_request_preview": "[turn-1] What is the current individual out-of-pocket maximum for the Gold plan?",
-  "model": "openai/glm-5.2",
+  "model": "openai/glm-4.5",
   "content": "The current Gold plan individual out-of-pocket maximum is **$3,800**, effective July 1, 2024, under Amendment \u00a7A2. That amendment supersedes the original $4,000 figure in the Gold plan overview.\n",
   "tool_calls": [],
   "usage": {

@@ -8,7 +8,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ### Added — M8 (Documentation & Polish)
 - `docs/architecture.md`: full system overview replacing the stub — two-package monorepo layout, three-tier eval pyramid, component walk-through tables for all `verity/` and `sut/` modules, `agent.answer()` data flow with span points, CI tier/trigger table, ADR summary table, cross-links to all related docs
 - `docs/adr/`: 5 Architecture Decision Records (MADR-style with Context/Decision/Consequences/Alternatives):
-  - `0001-glm-5-2-model-choice.md` — GLM-5.2 via LiteLLM; cost, OpenAI-compat, multi-provider portability
+  - `0001-glm-4-5-model-choice.md` — GLM-4.5 via LiteLLM; cost, OpenAI-compat, multi-provider portability
   - `0002-three-layer-eval-pyramid.md` — solves non-determinism, cost, and provider coupling
   - `0003-cassette-replay-for-ci.md` — SHA-256 keyed VCR-style replay; zero live calls in PR gate
   - `0004-judge-calibration-and-self-bias.md` — kappa=0.934, self-bias delta=+0.056 documented and justified

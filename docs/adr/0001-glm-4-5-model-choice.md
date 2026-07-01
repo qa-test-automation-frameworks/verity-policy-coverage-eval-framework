@@ -1,4 +1,4 @@
-# ADR-0001: GLM-5.2 as the Primary LLM
+# ADR-0001: GLM-4.5 as the Primary LLM
 
 **Status:** Accepted
 
@@ -21,7 +21,7 @@ Requirements:
 
 ## Decision
 
-Use **GLM-5.2** (THUDM ChatGLM) routed through **Z.ai** as the primary provider,
+Use **GLM-4.5** (Zhipu AI / Z.ai) routed through **Z.ai** as the primary provider,
 with **OpenRouter** and **Together AI** as documented fallback options.
 
 All provider routing goes through **LiteLLM**, which presents a single
@@ -36,8 +36,9 @@ API key — no code change.
 - `LLMProvider` in `verity/providers.py` is provider-agnostic; new backends
   can be added to the price table in `verity/cost.py` without changing any
   other module.
-- Cost is very low: GLM-5.2 is priced at $1.40/M prompt tokens and
-  $4.40/M completion tokens on Z.ai — a full semantic suite run costs under $0.05.
+- Cost is low relative to frontier models; see the price table in
+  `verity/cost.py` for the reference rate used by cost accounting, and
+  verify current pricing on Z.ai before treating a run's cost total as exact.
 
 **Harder:**
 - Performance on complex multi-hop reasoning (defects #3, #4) depends on

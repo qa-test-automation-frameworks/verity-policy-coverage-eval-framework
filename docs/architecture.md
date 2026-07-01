@@ -28,7 +28,7 @@ The SUT is the target; the framework is the portfolio artifact.
 ├─────────────────────────────────────────────────────────────────┤
 │  Tier 2 — Semantic (nightly / push to main)                     │
 │  DeepEval + RAGAS over versioned golden dataset                 │
-│  Statistical thresholds; GLM-5.2 judge; cost-tracked            │
+│  Statistical thresholds; GLM-4.5 judge; cost-tracked            │
 ├─────────────────────────────────────────────────────────────────┤
 │  Tier 1 — Deterministic (every PR)                              │
 │  Schema checks; guardrail assertions; cassette replay           │
@@ -123,7 +123,7 @@ See `docs/adr/` for full records. Summary:
 
 | ADR | Decision | Consequence |
 |-----|----------|-------------|
-| [0001](adr/0001-glm-5-2-model-choice.md) | GLM-5.2 via LiteLLM | OpenAI-compat; swap provider without code change |
+| [0001](adr/0001-glm-4-5-model-choice.md) | GLM-4.5 via LiteLLM | OpenAI-compat; swap provider without code change |
 | [0002](adr/0002-three-layer-eval-pyramid.md) | Three eval tiers | Cost/speed/signal balanced across PR/nightly/weekly cadence |
 | [0003](adr/0003-cassette-replay-for-ci.md) | SHA-256 cassette replay | Zero live calls in PR gate; deterministic; fast |
 | [0004](adr/0004-judge-calibration-and-self-bias.md) | Judge calibration + self-bias | Methodology demonstrated on synthetic labels; live measurement pending |
