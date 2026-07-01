@@ -65,6 +65,37 @@ def run_case(case: GoldenCase, settings: Settings) -> AgentResponse:
     return response
 
 
+def run_case_capturing_conversations(
+    case: GoldenCase, settings: Settings
+) -> tuple[AgentResponse, list[list[dict]]]:
+    """Like run_case, but also returns every messages list sent to provider.complete().
+
+    Lets a test assert structural properties (role ordering, tool_call_id
+    matching) of the exact conversation the real agent constructed for a
+    replayed golden case, not just its final answer.
+    """
+    lib = CassetteLibrary(_CASSETTE_DIR)
+    retriever = FixtureRetriever(case.id)
+    accumulator = RunAccumulator()
+    provider = LLMProvider(settings, accumulator, cassette_library=lib)
+
+    captured: list[list[dict]] = []
+    original_complete = provider.complete
+
+    def _capturing_complete(*args: object, **kwargs: object) -> object:
+        messages = kwargs.get("messages")
+        if messages is not None:
+            captured.append(list(messages))  # type: ignore[arg-type]
+        return original_complete(*args, **kwargs)  # type: ignore[arg-type]
+
+    provider.complete = _capturing_complete  # type: ignore[method-assign]
+
+    agent = CoverageAgent(settings=settings, retriever=retriever, provider=provider)
+    response = agent.answer(case.query, member_id=case.member_id)
+    _SESSION_ACCUMULATOR.records.extend(accumulator.records)
+    return response, captured
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]

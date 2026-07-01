@@ -29,6 +29,7 @@ from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scr
 from sut.retriever import Chunk, PolicyRetriever
 from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_coverage_calculator
 from verity.config import Settings, get_settings
+from verity.conversation import validate_conversation
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
 from verity.tracing import traced
@@ -447,6 +448,10 @@ class CoverageAgent:
                     )
 
                 messages.extend(tool_results_msgs)
+
+                conv_check = validate_conversation(messages)
+                if not conv_check.passed:
+                    logger.warning("Conversation structure check failed: %s", conv_check.message)
 
                 # 7. Second LLM call with tool results
                 try:
