@@ -82,12 +82,13 @@ def live_agent(settings: Settings) -> CoverageAgent:
 _NODE_RESULTS: dict[str, str] = {}
 
 
+@pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]
 ) -> Generator[None, pytest.TestReport, None]:
     outcome = yield
     if call.when == "call":
-        _NODE_RESULTS[item.nodeid] = outcome.outcome
+        _NODE_RESULTS[item.nodeid] = outcome.get_result().outcome
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:

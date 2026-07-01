@@ -26,7 +26,7 @@ test:
 
 smoke:
 	@echo "Running live model-identity smoke test (requires API key in .env)"
-	PYTHONPATH=src uv run pytest -m live -v -s
+	PYTHONPATH=src PYTHONUNBUFFERED=1 uv run pytest -m live -v -s
 
 test-deterministic:
 	@echo "Tier 1 — Deterministic eval (cassette replay; no live calls) [M2]"

@@ -98,8 +98,9 @@ class LLMProvider:
             "max_tokens": max_tok,
             "timeout": s.timeout,
             "num_retries": s.retries,
-            "api_base": api_base,
         }
+        if api_base:
+            kwargs["api_base"] = api_base
         if api_key:
             kwargs["api_key"] = api_key
         if tools:

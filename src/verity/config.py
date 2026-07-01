@@ -14,11 +14,16 @@ class Provider(StrEnum):
     zai = "zai"
     openrouter = "openrouter"
     together = "together"
+    nvidia = "nvidia"
+    google = "google"
 
 
 # ---------------------------------------------------------------------------
 # Per-provider routing table (litellm model string, default api_base)
 # ---------------------------------------------------------------------------
+# api_base is "" for providers whose litellm handler resolves its own endpoint
+# natively (e.g. gemini/*) and should not receive a custom api_base unless
+# explicitly overridden.
 _PROVIDER_DEFAULTS: dict[Provider, dict[str, str]] = {
     Provider.zai: {
         "litellm_model": "openai/glm-4.5",
@@ -31,6 +36,14 @@ _PROVIDER_DEFAULTS: dict[Provider, dict[str, str]] = {
     Provider.together: {
         "litellm_model": "together_ai/zai-org/GLM-4.5",
         "api_base": "https://api.together.xyz/v1",
+    },
+    Provider.nvidia: {
+        "litellm_model": "nvidia_nim/nvidia/nemotron-3-ultra-550b-a55b",
+        "api_base": "https://integrate.api.nvidia.com/v1",
+    },
+    Provider.google: {
+        "litellm_model": "gemini/gemini-3-flash",
+        "api_base": "",
     },
 }
 
@@ -49,6 +62,10 @@ def resolve_provider(
         litellm_model = f"openrouter/{model}"
     elif provider == Provider.together and model != "glm-4.5":
         litellm_model = f"together_ai/{model}"
+    elif provider == Provider.nvidia and model != "nvidia/nemotron-3-ultra-550b-a55b":
+        litellm_model = f"nvidia_nim/{model}"
+    elif provider == Provider.google and model != "gemini-3-flash":
+        litellm_model = f"gemini/{model}"
     api_base = api_base_override or defaults["api_base"]
     return litellm_model, api_base
 
@@ -56,11 +73,18 @@ def resolve_provider(
 class JudgeConfig(BaseSettings):
     """Configuration for the LLM-as-judge (swappable, pinned, temp=0)."""
 
-    model_config = SettingsConfigDict(env_prefix="VERITY_JUDGE_", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", env_prefix="VERITY_JUDGE_", extra="ignore"
+    )
 
     model: str = "glm-4.5"
     temperature: float = 0.0
     max_tokens: int = 1024
+    # Optional: run the judge on a different provider than the SUT model.
+    # Defaults to the SUT's provider when unset, so single-provider setups
+    # keep working unchanged; set this to avoid sharing one provider's rate
+    # limit between SUT calls and judge calls (e.g. RAGAS metrics).
+    provider: Provider | None = None
 
 
 class RetrievalConfig(BaseSettings):
@@ -104,6 +128,16 @@ class Settings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("VERITY_TOGETHER_API_KEY", "TOGETHER_API_KEY"),
     )
+    nvidia_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_NVIDIA_API_KEY", "NVIDIA_API_KEY"),
+    )
+    google_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "VERITY_GOOGLE_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"
+        ),
+    )
 
     # API base overrides
     zai_api_base: str | None = Field(
@@ -117,6 +151,14 @@ class Settings(BaseSettings):
     together_api_base: str | None = Field(
         default=None,
         validation_alias=AliasChoices("VERITY_TOGETHER_API_BASE", "TOGETHER_API_BASE"),
+    )
+    nvidia_api_base: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_NVIDIA_API_BASE", "NVIDIA_API_BASE"),
+    )
+    google_api_base: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_GOOGLE_API_BASE", "GOOGLE_API_BASE"),
     )
 
     # Generation defaults
@@ -171,6 +213,8 @@ class Settings(BaseSettings):
             Provider.zai: self.zai_api_key,
             Provider.openrouter: self.openrouter_api_key,
             Provider.together: self.together_api_key,
+            Provider.nvidia: self.nvidia_api_key,
+            Provider.google: self.google_api_key,
         }
         return mapping[self.provider]
 
@@ -179,6 +223,8 @@ class Settings(BaseSettings):
             Provider.zai: self.zai_api_base,
             Provider.openrouter: self.openrouter_api_base,
             Provider.together: self.together_api_base,
+            Provider.nvidia: self.nvidia_api_base,
+            Provider.google: self.google_api_base,
         }
         return mapping[self.provider]
 

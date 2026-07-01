@@ -74,14 +74,14 @@ class TestDeepEvalJudge:
 
     def test_get_model_name(self) -> None:
         judge = _make_provider_judge()
-        # model_name needs _settings; mock it
+        # model_name needs _judge_settings; mock it
         import warnings
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             from verity.config import Settings
 
-            judge._settings = Settings()  # type: ignore[attr-defined]
+            judge._judge_settings = Settings()  # type: ignore[attr-defined]
         dj = DeepEvalJudge(judge)
         name = dj.adapter.get_model_name()
         assert isinstance(name, str)
@@ -125,26 +125,34 @@ class TestRagasJudge:
         rj = RagasJudge(judge)
         assert rj.adapter is not None
 
-    def test_invoke_returns_ai_message(self) -> None:
+    def test_generate_returns_llm_result(self) -> None:
+        """Matches ragas.llms.base.BaseRagasLLM.generate: async, takes a
+        PromptValue (or plain string), returns an LLMResult with `n` generations."""
         judge = _make_provider_judge("ragas response text")
         rj = RagasJudge(judge)
-        result = rj.adapter.invoke("faithfulness prompt")
-        assert hasattr(result, "content")
-        assert result.content == "ragas response text"
+        result = asyncio.get_event_loop().run_until_complete(
+            rj.adapter.generate("faithfulness prompt")
+        )
+        assert hasattr(result, "generations")
+        assert len(result.generations) == 1
+        assert result.generations[0][0].text == "ragas response text"
 
-    def test_generate_returns_chat_result(self) -> None:
+    def test_generate_respects_n(self) -> None:
         judge = _make_provider_judge("chat result text")
         rj = RagasJudge(judge)
-        result = rj.adapter.generate(["some ragas prompt"])
-        assert hasattr(result, "generations")
-        assert len(result.generations) >= 1
+        result = asyncio.get_event_loop().run_until_complete(
+            rj.adapter.generate("some ragas prompt", n=3)
+        )
+        assert len(result.generations[0]) == 3
+        assert all(g.text == "chat result text" for g in result.generations[0])
 
-    def test_ainvoke_returns_ai_message(self) -> None:
+    def test_generate_accepts_prompt_value_with_to_string(self) -> None:
         judge = _make_provider_judge("async ragas")
         rj = RagasJudge(judge)
-        result = asyncio.get_event_loop().run_until_complete(rj.adapter.ainvoke("async prompt"))
-        assert hasattr(result, "content")
-        assert result.content == "async ragas"
+        prompt_value = MagicMock()
+        prompt_value.to_string.return_value = "async prompt"
+        result = asyncio.get_event_loop().run_until_complete(rj.adapter.generate(prompt_value))
+        assert result.generations[0][0].text == "async ragas"
 
     def test_adapter_cached_on_second_access(self) -> None:
         judge = _make_provider_judge()

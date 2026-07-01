@@ -55,25 +55,29 @@ class ProviderJudge:
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            judge_settings = Settings(
-                provider=self._settings.provider,
+            self._judge_settings = Settings(
+                provider=self._judge_cfg.provider or self._settings.provider,
                 model=self._judge_cfg.model,
                 temperature=self._judge_cfg.temperature,
                 max_tokens=self._judge_cfg.max_tokens,
                 zai_api_key=self._settings.zai_api_key,
                 openrouter_api_key=self._settings.openrouter_api_key,
                 together_api_key=self._settings.together_api_key,
+                nvidia_api_key=self._settings.nvidia_api_key,
+                google_api_key=self._settings.google_api_key,
                 zai_api_base=self._settings.zai_api_base,
                 openrouter_api_base=self._settings.openrouter_api_base,
                 together_api_base=self._settings.together_api_base,
+                nvidia_api_base=self._settings.nvidia_api_base,
+                google_api_base=self._settings.google_api_base,
                 cassette_mode=self._settings.cassette_mode,
                 cassette_dir=self._settings.cassette_dir,
             )
-        self._provider = LLMProvider(judge_settings, self._acc)
+        self._provider = LLMProvider(self._judge_settings, self._acc)
 
     @property
     def model_name(self) -> str:
-        litellm_model, _, _ = self._settings.resolved_provider()
+        litellm_model, _, _ = self._judge_settings.resolved_provider()
         return litellm_model
 
     @property
@@ -165,38 +169,34 @@ class RagasJudge:
     def _build_adapter(judge: ProviderJudge) -> Any:
         """Build the RAGAS-compatible shim at runtime."""
         try:
-            from langchain_core.messages import AIMessage
-            from langchain_core.outputs import ChatGeneration, ChatResult
+            from langchain_core.outputs import Generation, LLMResult
         except ImportError as exc:
             raise ImportError(
                 "langchain-core is required for RAGAS metrics. "
                 "Install with: uv sync --group semantic"
             ) from exc
 
-        class _LangChainShim:
-            """Minimal LangChain-style interface consumed by RAGAS."""
+        class _RagasLLMShim:
+            """Minimal ragas.llms.base.BaseRagasLLM-compatible adapter.
 
-            def invoke(self, prompt: Any) -> Any:
-                text = prompt if isinstance(prompt, str) else str(prompt)
-                content = judge.generate(text)
-                return AIMessage(content=content)
+            RAGAS's PydanticPrompt calls `await llm.generate(prompt_value, n=...)`
+            and expects an LLMResult with `n` Generations back -- not a LangChain
+            chat-messages interface.
+            """
 
-            async def ainvoke(self, prompt: Any) -> Any:
-                text = prompt if isinstance(prompt, str) else str(prompt)
-                content = await judge.a_generate(text)
-                return AIMessage(content=content)
-
-            def generate(
+            async def generate(
                 self,
-                messages: list[Any],
-                **kwargs: Any,
+                prompt: Any,
+                n: int = 1,
+                temperature: float | None = None,
+                stop: list[str] | None = None,
+                callbacks: Any = None,
             ) -> Any:
-                text = str(messages[0]) if messages else ""
-                content = judge.generate(text)
-                gen = ChatGeneration(message=AIMessage(content=content))
-                return ChatResult(generations=[gen])
+                text = prompt.to_string() if hasattr(prompt, "to_string") else str(prompt)
+                generations = [Generation(text=await judge.a_generate(text)) for _ in range(n)]
+                return LLMResult(generations=[generations])
 
-        return _LangChainShim()
+        return _RagasLLMShim()
 
     @property
     def adapter(self) -> Any:
