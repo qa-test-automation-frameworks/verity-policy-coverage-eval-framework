@@ -134,9 +134,7 @@ class Settings(BaseSettings):
     )
     google_api_key: SecretStr | None = Field(
         default=None,
-        validation_alias=AliasChoices(
-            "VERITY_GOOGLE_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"
-        ),
+        validation_alias=AliasChoices("VERITY_GOOGLE_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"),
     )
 
     # API base overrides
