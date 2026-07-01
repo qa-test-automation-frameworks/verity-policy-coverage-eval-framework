@@ -66,6 +66,7 @@ promptfoo/.cache/
 
 # Planning / internal docs (not for version control)
 docs/*-roadmap.md
+.claude/
 
 # Misc
 *.log
