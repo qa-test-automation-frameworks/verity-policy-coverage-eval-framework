@@ -138,3 +138,95 @@ class TestFixtureRetriever:
         cases = load_golden()
         missing = [c.id for c in cases if not (fixture_dir / f"{c.id}.json").exists()]
         assert not missing, f"Missing retrieval fixtures for cases: {missing}"
+
+
+class TestCorpusFingerprint:
+    """PolicyRetriever detects a changed corpus and rebuilds its index rather
+    than silently continuing to serve stale embeddings."""
+
+    def _make_corpus(self, tmp_path: Path, text: str) -> Path:
+        corpus_dir = tmp_path / "corpus"
+        corpus_dir.mkdir()
+        (corpus_dir / "policy.md").write_text(text)
+        return corpus_dir
+
+    def test_fingerprint_empty_before_indexing(self, tmp_path: Path) -> None:
+        from verity.config import RetrievalConfig
+
+        from sut.retriever import PolicyRetriever
+
+        corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        retriever = PolicyRetriever(config)
+        assert retriever.corpus_fingerprint() == ""
+
+    def test_fingerprint_set_after_indexing(self, tmp_path: Path) -> None:
+        from verity.config import RetrievalConfig
+
+        from sut.retriever import PolicyRetriever
+
+        corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        retriever = PolicyRetriever(config)
+        retriever.index_corpus()
+        assert retriever.corpus_fingerprint() != ""
+
+    def test_reindex_skipped_when_corpus_unchanged(self, tmp_path: Path) -> None:
+        from verity.config import RetrievalConfig
+
+        from sut.retriever import PolicyRetriever
+
+        corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        retriever = PolicyRetriever(config)
+        first = retriever.index_corpus()
+        second = retriever.index_corpus()
+        assert first > 0
+        assert second == 0  # no-op: fingerprint unchanged
+
+    def test_reindex_triggered_when_corpus_content_changes(self, tmp_path: Path) -> None:
+        from verity.config import RetrievalConfig
+
+        from sut.retriever import PolicyRetriever
+
+        corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        retriever = PolicyRetriever(config)
+        retriever.index_corpus()
+        fingerprint_before = retriever.corpus_fingerprint()
+
+        (corpus_dir / "policy.md").write_text("# Title\n\n## §1\nChanged content entirely.")
+        added = retriever.index_corpus()
+
+        assert added > 0
+        assert retriever.corpus_fingerprint() != fingerprint_before
+
+    def test_retrieved_chunks_carry_matching_corpus_fingerprint(self, tmp_path: Path) -> None:
+        from verity.config import RetrievalConfig
+
+        from sut.retriever import PolicyRetriever
+
+        corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nSome policy content here.")
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        retriever = PolicyRetriever(config)
+        retriever.index_corpus()
+
+        chunks = retriever.retrieve("policy content")
+        assert chunks
+        assert all(c.corpus_fingerprint == retriever.corpus_fingerprint() for c in chunks)
+
+    def test_retrieved_chunks_have_rank_and_score(self, tmp_path: Path) -> None:
+        from verity.config import RetrievalConfig
+
+        from sut.retriever import PolicyRetriever
+
+        corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nSome policy content here.")
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        retriever = PolicyRetriever(config)
+        retriever.index_corpus()
+
+        chunks = retriever.retrieve("policy content")
+        ranks = [c.rank for c in chunks]
+        assert ranks == sorted(ranks)
+        assert ranks[0] == 1
+        assert all(isinstance(c.score, float) for c in chunks)

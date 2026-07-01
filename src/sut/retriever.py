@@ -28,12 +28,15 @@ from verity.config import RetrievalConfig
 
 @dataclass(frozen=True)
 class Chunk:
-    """A retrieved text chunk with provenance metadata."""
+    """A retrieved text chunk with provenance and ranking metadata for evidence payloads."""
 
     text: str
     source: str  # filename (relative to corpus_dir)
     section: str  # detected heading, or ""
     chunk_id: str  # stable hash of (source, text)
+    rank: int = 0  # 1-based position in the returned result list
+    score: float = 0.0  # retrieval distance (lower is more relevant); 0.0 for fixtures
+    corpus_fingerprint: str = ""  # hash of the indexed corpus at retrieval time
 
 
 def _extract_section_heading(text: str) -> str:
@@ -105,6 +108,17 @@ def _split_into_sections(text: str) -> list[tuple[str, str]]:
 
 def _stable_id(source: str, text: str) -> str:
     return hashlib.sha256(f"{source}||{text}".encode()).hexdigest()[:16]
+
+
+def _corpus_fingerprint(corpus_dir: Path) -> str:
+    """Hash of every corpus file's name and contents, so a stale vector index
+    (built from an older version of the policy documents) can be detected and
+    rebuilt rather than silently serving outdated retrieval evidence."""
+    digest = hashlib.sha256()
+    for md_file in sorted(corpus_dir.glob("*.md")):
+        digest.update(md_file.name.encode())
+        digest.update(md_file.read_bytes())
+    return digest.hexdigest()[:16]
 
 
 _PLAN_TIER_NAMES = ("bronze", "silver", "gold")
@@ -202,9 +216,16 @@ class PolicyRetriever:
         )
         return self._collection
 
+    def _fingerprint_path(self) -> Path:
+        return Path(self._config.persist_dir) / ".corpus_fingerprint"
+
+    def corpus_fingerprint(self) -> str:
+        """Fingerprint of the corpus as currently indexed (empty if never indexed)."""
+        path = self._fingerprint_path()
+        return path.read_text().strip() if path.exists() else ""
+
     def index_corpus(self, force: bool = False) -> int:
         """Chunk and embed all markdown files in corpus_dir. Returns chunks added."""
-        collection = self._get_collection()
         corpus_dir = self._config.corpus_dir
 
         if not corpus_dir.is_dir():
@@ -214,8 +235,19 @@ class PolicyRetriever:
         if not md_files:
             raise FileNotFoundError(f"No markdown files found in {corpus_dir}")
 
-        if not force and collection.count() > 0:
-            return 0  # already indexed
+        current_fingerprint = _corpus_fingerprint(corpus_dir)
+        stale = current_fingerprint != self.corpus_fingerprint()
+
+        collection = self._get_collection()
+        if not force and not stale and collection.count() > 0:
+            return 0  # already indexed and up to date
+
+        if stale and collection.count() > 0:
+            # Policy documents changed since this index was built — rebuild
+            # from scratch rather than merging with now-outdated embeddings.
+            self._client.delete_collection(self._COLLECTION_NAME)
+            self._collection = None
+            collection = self._get_collection()
 
         ids: list[str] = []
         documents: list[str] = []
@@ -244,6 +276,9 @@ class PolicyRetriever:
 
         if ids:
             collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+
+        self._fingerprint_path().parent.mkdir(parents=True, exist_ok=True)
+        self._fingerprint_path().write_text(current_fingerprint)
 
         return len(ids)
 
@@ -304,14 +339,18 @@ class PolicyRetriever:
             best = candidates[0][2]
             candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
 
+        fingerprint = self.corpus_fingerprint()
         chunks: list[Chunk] = []
-        for doc, meta, _dist in candidates[:k]:
+        for rank, (doc, meta, dist) in enumerate(candidates[:k], start=1):
             chunks.append(
                 Chunk(
                     text=doc,
                     source=meta.get("source", ""),
                     section=meta.get("section", ""),
                     chunk_id=_stable_id(meta.get("source", ""), doc),
+                    rank=rank,
+                    score=dist,
+                    corpus_fingerprint=fingerprint,
                 )
             )
         return chunks
@@ -356,6 +395,7 @@ class FixtureRetriever:
                 source=item["source"],
                 section=item.get("section", ""),
                 chunk_id=item.get("chunk_id", _stable_id(item["source"], item["text"])),
+                rank=rank,
             )
-            for item in raw
+            for rank, item in enumerate(raw, start=1)
         ]
