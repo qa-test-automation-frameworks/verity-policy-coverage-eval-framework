@@ -80,13 +80,13 @@ def make_completeness(judge: ProviderJudge, threshold: float = THRESHOLD_COMPLET
     """G-Eval completeness — detects defect #3 (incomplete multi-hop cost calculation)."""
     try:
         from deepeval.metrics import GEval
-        from deepeval.test_case import LLMTestCaseParams
+        from deepeval.test_case import SingleTurnParams
     except ImportError as exc:
         raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
     return GEval(
         name="Completeness",
         criteria=COMPLETENESS_RUBRIC,
-        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.EXPECTED_OUTPUT],
+        evaluation_params=[SingleTurnParams.ACTUAL_OUTPUT, SingleTurnParams.EXPECTED_OUTPUT],
         model=_deepeval_judge(judge),
         threshold=threshold,
     )
@@ -96,13 +96,13 @@ def make_disambiguation(judge: ProviderJudge, threshold: float = THRESHOLD_DISAM
     """G-Eval disambiguation — detects defect #4 (contradiction not surfaced)."""
     try:
         from deepeval.metrics import GEval
-        from deepeval.test_case import LLMTestCaseParams
+        from deepeval.test_case import SingleTurnParams
     except ImportError as exc:
         raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
     return GEval(
         name="Disambiguation",
         criteria=DISAMBIGUATION_RUBRIC,
-        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.EXPECTED_OUTPUT],
+        evaluation_params=[SingleTurnParams.ACTUAL_OUTPUT, SingleTurnParams.EXPECTED_OUTPUT],
         model=_deepeval_judge(judge),
         threshold=threshold,
     )
@@ -112,13 +112,13 @@ def make_refusal_geval(judge: ProviderJudge, threshold: float = THRESHOLD_REFUSA
     """G-Eval refusal — detects defect #6 (refusal boundary breach)."""
     try:
         from deepeval.metrics import GEval
-        from deepeval.test_case import LLMTestCaseParams
+        from deepeval.test_case import SingleTurnParams
     except ImportError as exc:
         raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
     return GEval(
         name="RefusalBoundary",
         criteria=REFUSAL_RUBRIC,
-        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.INPUT],
+        evaluation_params=[SingleTurnParams.ACTUAL_OUTPUT, SingleTurnParams.INPUT],
         model=_deepeval_judge(judge),
         threshold=threshold,
     )

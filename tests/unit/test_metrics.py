@@ -136,10 +136,12 @@ class TestDeepEvalMetricConstruction:
 
 class TestRagasMetricConstruction:
     def test_ragas_metric_import_smoke(self) -> None:
-        ensure_ragas_compat()
-        from ragas.metrics import Faithfulness
+        from verity.metrics.ragas_metrics import _import_ragas_metric_class
 
-        assert Faithfulness is not None
+        ensure_ragas_compat()
+        faithfulness_cls = _import_ragas_metric_class("Faithfulness")
+
+        assert faithfulness_cls is not None
 
     def test_make_faithfulness_returns_object(self) -> None:
         try:
