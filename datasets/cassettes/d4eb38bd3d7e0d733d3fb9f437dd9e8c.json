@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What do I pay for a Tier 4 specialty drug on Gold, and is prior authorization ne",
+  "model": "openai/glm-4.5",
+  "content": "On Gold, a Tier 4 specialty drug has **10% coinsurance after the deductible**, and specialty drugs require **prior authorization**.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 45,
+    "total_tokens": 165
+  }
+}

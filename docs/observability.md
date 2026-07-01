@@ -9,7 +9,7 @@ This document describes the tracing and cost-reporting capabilities added in M6.
 ```
 agent.answer()          ← top-level span
   retrieval             ← child span (chunk_count via top_k attr)
-  llm.generate          ← attributes on current span (model, tokens, cost)
+  provider call         ← attributes on current span (model, tokens, cost)
   tool.coverage_calc    ← child span for tool execution (when called)
 ```
 
@@ -38,13 +38,12 @@ Each `agent.answer()` call produces one trace with the following spans:
 
 | Span Name | Attributes | Notes |
 |-----------|-----------|-------|
-| `agent.answer` | `member_id`, `query_len`, `llm.model`, `llm.label`, `llm.prompt_tokens`, `llm.completion_tokens`, `llm.total_tokens`, `llm.cost_usd` | Top-level; LLM attributes set by `record_call_span()` |
+| `agent.answer` | `member_id`, `query_len`, `gen_ai.request.model`, `gen_ai.operation.name`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.usage.total_tokens`, `gen_ai.usage.cost_usd` | Top-level; LLM attributes set by `record_call_span()` |
 | `retrieval` | `top_k` | Child of `agent.answer`; encloses retriever call |
 | `tool.coverage_calculator` | — | Child of `agent.answer`; only present on tool-use paths |
 
-If two LLM calls occur (first turn + second turn after tool use), both
-`record_call_span()` calls annotate the `agent.answer` span with the
-second call's attributes (last-write wins for repeated keys).
+If two provider calls occur (first turn + second turn after tool use), repeated
+`record_call_span()` calls sum token and cost fields on the `agent.answer` span.
 
 ---
 

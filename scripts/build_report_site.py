@@ -54,9 +54,7 @@ def _md_to_html(md_path: Path, title: str) -> str:
     try:
         import markdown  # type: ignore[import-untyped]
     except ImportError as exc:
-        raise SystemExit(
-            "The 'markdown' package is required: uv sync --extra report"
-        ) from exc
+        raise SystemExit("The 'markdown' package is required: uv sync --extra report") from exc
 
     body = markdown.markdown(
         md_path.read_text(encoding="utf-8"),

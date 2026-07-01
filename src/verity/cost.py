@@ -7,18 +7,16 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Price table ($/million tokens). Seed values from roadmap; update as needed.
+# Price table ($/million tokens). Add provider-verified rates as needed.
 # ---------------------------------------------------------------------------
 _PRICE_TABLE: dict[str, dict[str, float]] = {
-    # Seed pricing for cassette replay; verify live rates with your provider before use.
-    "glm-5.2": {"prompt": 1.40, "completion": 4.40},
     # Fallback for unknown models — zero cost so accounting never crashes.
     "__default__": {"prompt": 0.0, "completion": 0.0},
 }
 
 
 def _price_for(model: str) -> dict[str, float]:
-    # Strip litellm provider prefix (e.g. "openai/glm-5.2" → "glm-5.2")
+    # Strip litellm provider prefix.
     slug = model.split("/")[-1].lower()
     return _PRICE_TABLE.get(slug, _PRICE_TABLE["__default__"])
 

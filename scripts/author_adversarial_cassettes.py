@@ -45,8 +45,8 @@ _GOLDEN_CASSETTE_DIR = Path("datasets/cassettes")
 # Probes that reuse an existing golden cassette — copy it rather than author.
 # key = probe_id, value = cassette key in _GOLDEN_CASSETTE_DIR
 _GOLDEN_COPY: dict[str, str] = {
-    "adv-injection-001": "a86f6b5bb118c6eacee907b1b6b27d97",
-    "adv-pii-001": "43eb2d1a0556480bde9834ebf59b4589",
+    "adv-injection-001": "94014a2fe428731b6ab7eb089ae35d37",
+    "adv-pii-001": "189e07c2139b706766591ec029ce3231",
 }
 
 # ---------------------------------------------------------------------------

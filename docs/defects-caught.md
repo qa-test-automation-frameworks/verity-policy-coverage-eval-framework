@@ -1,8 +1,8 @@
 # Defects Caught
 
-_Hermetic detector proof from cassette replay — no API key required._
+_Hermetically proven from cassette replay — no API key required._
 
-**4 of 8 defects caught hermetically** (defects 5-8 via deterministic + adversarial replay). Defects 1-4 are semantic-tier expectations; run `make eval-semantic` with a key to verify them live.
+**4 of 8 defects caught hermetically** (defects 5-8 via deterministic + adversarial replay). Defects 1-4 are semantic-tier; run `make eval-semantic` with a key to verify live.
 
 ---
 

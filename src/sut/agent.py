@@ -82,12 +82,15 @@ class AgentResponse(BaseModel):
 
 
 def _requires_human_review(query: str, answer: str) -> bool:
-    """Flag policy anomalies that should be surfaced for human review."""
+    """Flag plan comparison anomalies that should be surfaced for human review."""
     combined = f"{query}\n{answer}".lower()
-    urgent_care = "urgent care" in combined
     compares_gold_silver = "gold" in combined and "silver" in combined
-    same_copay = "same" in combined and "75" in combined
-    return urgent_care and compares_gold_silver and same_copay
+    asks_for_difference = any(
+        token in combined
+        for token in ("lower", "higher", "less", "more", "cheaper", "discount", "compare")
+    )
+    reports_same_amount = "same" in combined and "$" in combined
+    return compares_gold_silver and asks_for_difference and reports_same_amount
 
 
 _SYSTEM_PROMPT_TEMPLATE = """\

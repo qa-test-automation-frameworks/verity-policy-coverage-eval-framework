@@ -60,7 +60,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `judges.py` | `ProviderJudge` (routes to `LLMProvider`); `DeepEvalJudge` adapter; `RagasJudge` LangChain duck-type shim |
 | `calibration.py` | `CalibrationCase` schema; `compute_agreement()` (raw %, Cohen's kappa, MAE); `compute_self_bias()` (GLM vs other delta); `score_all()` via rubric scoring prompt |
 | `adversarial.py` | `AdversarialProbe` Pydantic schema (category, defense, expected_outcome, must_not_contain, retrieval_fixture_id); `load_probes()` |
-| `tracing.py` | `_ENABLED` flag gated on `VERITY_TRACING` env; `init_tracing()` SDK TracerProvider; `traced(name, **attrs)` context manager (no-op when disabled); `record_call_span(call_record)` attaches llm.* attributes |
+| `tracing.py` | `_ENABLED` flag gated on `VERITY_TRACING` env; `init_tracing()` SDK TracerProvider; `traced(name, **attrs)` context manager (no-op when disabled); `record_call_span(call_record)` attaches gen_ai.* attributes |
 | `reporting.py` | `render_cost_summary(accumulator)` -> per-label markdown table; `write_step_summary(text)` -> `$GITHUB_STEP_SUMMARY` or `reports/cost-summary.md` |
 
 ### `src/sut/`
@@ -71,7 +71,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `data/members.yaml` | Synthetic member registry (MBR-001 through MBR-005) — fictional, no real PII |
 | `retriever.py` | `PolicyRetriever` (Chroma + ONNX embeddings, markdown-aware chunker, 160-word chunks / top-3 default); `FixtureRetriever` (drop-in from JSON files, no Chroma required for Tier 1) |
 | `tools/coverage_calculator.py` | Deterministic Pydantic-typed cost calculator + `COVERAGE_CALCULATOR_SCHEMA`; tool arguments intentionally ambiguously named (seeded defect #5) |
-| `guardrails.py` | `check_input_scope()` (regex `_OUT_OF_SCOPE_PATTERNS`; gap = seeded defect #6); `scrub_output()` (masks member-id and date patterns); `log_member_context()` (naive DEBUG logging = seeded defect #8) |
+| `guardrails.py` | `check_input()` (regex `_OUT_OF_SCOPE_PATTERNS`; gap = seeded defect #6); `scrub_output()` (masks member-id and date patterns); `log_member_context()` (naive DEBUG logging = seeded defect #8) |
 | `agent.py` | `CoverageAgent.answer()`: load member, check scope, retrieve chunks, first LLM turn, optional tool-use second turn, scrub output; wraps all spans via `traced()` |
 
 ---
@@ -82,7 +82,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 agent.answer(query, member_id)
 |
 +-- [span: agent.answer]
-|   +-- guardrails.check_input_scope(query)     # defect #6 gap here
+|   +-- guardrails.check_input(query)     # defect #6 gap here
 |   +-- [span: retrieval]
 |   |   \-- retriever.retrieve(query, top_k)   # returns Chunk list
 |   |

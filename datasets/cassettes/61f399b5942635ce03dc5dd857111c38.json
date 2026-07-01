@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What is the emergency room copay for Bronze?",
+  "model": "openai/glm-4.5",
+  "content": "The Bronze plan charges a **$350 copay** per emergency room visit (Bronze \u00a73.3). This copay is waived if you are subsequently admitted to the hospital as an inpatient.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 108,
+    "completion_tokens": 30,
+    "total_tokens": 138
+  }
+}

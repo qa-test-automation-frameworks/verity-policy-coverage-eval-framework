@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Does my plan cover acupuncture?",
+  "model": "openai/glm-4.5",
+  "content": "The provided policy documents **do not state** whether acupuncture is covered, so I cannot confirm coverage from the available documents. The member should check the full plan document or contact plan support for that specific benefit.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 45,
+    "total_tokens": 165
+  }
+}

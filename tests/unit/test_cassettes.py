@@ -22,7 +22,7 @@ def _payload(
     tool_calls: list[ReplayToolCall] | None = None,
     prompt: int = 10,
     completion: int = 5,
-    model: str = "openai/glm-5.2",
+    model: str = "openai/glm-4.5",
 ) -> CassettePayload:
     return CassettePayload(
         content=content,

@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from verity.golden import GoldenCase
+from verity.pii import PII_PATTERNS
 
 # ---------------------------------------------------------------------------
 # Result type
@@ -177,13 +178,6 @@ def check_tool_args(case: GoldenCase, response: Any) -> CheckResult:
 # PII scan (#8)
 # ---------------------------------------------------------------------------
 
-_PII_DETECT_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"\b\d{4}-\d{2}-\d{2}\b"), "date-of-birth"),
-    (re.compile(r"\bMBR-\d{3,6}\b", re.IGNORECASE), "member-id"),
-    (re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), "ssn-pattern"),
-    (re.compile(r"\b\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b"), "phone-pattern"),
-]
-
 
 def scan_pii(text: str, member_name: str = "") -> list[str]:
     """Return a list of PII tokens found in text.
@@ -192,10 +186,10 @@ def scan_pii(text: str, member_name: str = "") -> list[str]:
     phone numbers. Optionally checks for a specific member name.
     """
     found: list[str] = []
-    for pattern, label in _PII_DETECT_PATTERNS:
-        match = pattern.search(text)
+    for pii_pattern in PII_PATTERNS:
+        match = pii_pattern.pattern.search(text)
         if match:
-            found.append(f"{label}:{match.group()}")
+            found.append(f"{pii_pattern.label}:{match.group()}")
     if member_name and member_name.strip() and member_name.lower() in text.lower():
         found.append(f"name:{member_name}")
     return found

@@ -322,9 +322,13 @@ def render_report(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument("--author", action="store_true", help="Write authored cassettes (no key)")
+    mode_group.add_argument(
+        "--author", action="store_true", help="Write authored cassettes (no key)"
+    )
     mode_group.add_argument("--record", action="store_true", help="Record live judge calls")
     parser.add_argument("--out", default=str(_DEFAULT_REPORT_PATH), help="Report output path")
     args = parser.parse_args()

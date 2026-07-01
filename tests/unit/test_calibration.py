@@ -297,16 +297,18 @@ class TestParseJudgeScore:
     def test_clamps_above_ten(self) -> None:
         assert parse_judge_score("Score: 15") == pytest.approx(1.0)
 
-    def test_missing_score_prefix_returns_zero(self) -> None:
-        score = parse_judge_score("This response earns a 7.")
-        assert score == pytest.approx(0.0)
+    def test_missing_score_prefix_raises(self) -> None:
+        with pytest.raises(ValueError, match="Could not parse judge score"):
+            parse_judge_score("This response earns a 7.")
 
-    def test_no_number_returns_zero(self) -> None:
-        assert parse_judge_score("I cannot evaluate this.") == pytest.approx(0.0)
+    def test_no_number_raises(self) -> None:
+        with pytest.raises(ValueError, match="Could not parse judge score"):
+            parse_judge_score("I cannot evaluate this.")
 
-    def test_ambiguous_multiple_numbers_without_score_prefix_returns_zero(self) -> None:
+    def test_ambiguous_multiple_numbers_without_score_prefix_raises(self) -> None:
         text = "I'd rate this 8 out of 10, far better than the 3 it deserves."
-        assert parse_judge_score(text) == pytest.approx(0.0)
+        with pytest.raises(ValueError, match="Could not parse judge score"):
+            parse_judge_score(text)
 
 
 # ---------------------------------------------------------------------------

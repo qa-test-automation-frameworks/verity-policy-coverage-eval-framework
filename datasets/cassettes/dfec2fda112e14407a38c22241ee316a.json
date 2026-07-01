@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What do I pay for a generic prescription on my Silver plan?",
+  "model": "openai/glm-4.5",
+  "content": "On your Silver plan, Tier-1 generic prescriptions cost a **$10 copay** per fill at in-network pharmacies (Silver \u00a74). The deductible does not apply to Tier-1 generics \u2014 the copay is owed from the very first fill.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 112,
+    "completion_tokens": 36,
+    "total_tokens": 148
+  }
+}

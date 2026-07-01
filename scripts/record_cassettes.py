@@ -111,11 +111,13 @@ def _compute_second_turn_key(
             result: dict[str, Any] = run_coverage_calculator(args)
         except Exception:
             result = {"error": "tool error"}
-        tool_result_msgs.append({
-            "role": "tool",
-            "tool_call_id": tc.id,
-            "content": json.dumps(result),
-        })
+        tool_result_msgs.append(
+            {
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": json.dumps(result),
+            }
+        )
 
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": system_prompt},
@@ -141,7 +143,9 @@ def _authored_to_payload(turn: dict[str, Any], model: str) -> CassettePayload:
     tcs = [
         ReplayToolCall(
             id=tc["id"],
-            function=ReplayFunction(name=tc["function"]["name"], arguments=tc["function"]["arguments"]),
+            function=ReplayFunction(
+                name=tc["function"]["name"], arguments=tc["function"]["arguments"]
+            ),
         )
         for tc in raw_tcs
     ]
@@ -170,7 +174,9 @@ def run_author_mode(cases: list[GoldenCase]) -> None:
     for case in cases:
         turns = _load_authored(case.id)
         if not turns:
-            print(f"  SKIP  {case.id!r} — no authored file at {_AUTHORED_DIR / (case.id + '.yaml')}")
+            print(
+                f"  SKIP  {case.id!r} — no authored file at {_AUTHORED_DIR / (case.id + '.yaml')}"
+            )
             skipped += 1
             continue
 

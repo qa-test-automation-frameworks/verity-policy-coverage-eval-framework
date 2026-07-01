@@ -21,6 +21,8 @@ from __future__ import annotations
 import logging
 import re
 
+from verity.pii import PII_PATTERNS
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -53,17 +55,6 @@ REFUSAL_MESSAGE = (
 # PII patterns for output scrubbing (response text only — NOT logs; see §8)
 # ---------------------------------------------------------------------------
 
-_PII_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    # Date of birth (YYYY-MM-DD)
-    (re.compile(r"\b\d{4}-\d{2}-\d{2}\b"), "[DATE_REDACTED]"),
-    # Member IDs matching our synthetic format
-    (re.compile(r"\bMBR-\d{3,6}\b"), "[MEMBER_ID_REDACTED]"),
-    # SSN-like patterns
-    (re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), "[SSN_REDACTED]"),
-    # Phone numbers
-    (re.compile(r"\b\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b"), "[PHONE_REDACTED]"),
-]
-
 
 def check_input(user_query: str) -> tuple[bool, str]:
     """Check whether the input is within scope.
@@ -83,8 +74,8 @@ def scrub_output(text: str) -> str:
     The LLM was already passed the raw member context (including name, dob)
     in the prompt, and logs written by _log_member_context() are NOT scrubbed.
     """
-    for pattern, replacement in _PII_PATTERNS:
-        text = pattern.sub(replacement, text)
+    for pii_pattern in PII_PATTERNS:
+        text = pii_pattern.pattern.sub(pii_pattern.replacement, text)
     return text
 
 

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] I have $1,200 left on my Silver deductible. How much will I pay for a procedure ",
+  "model": "openai/glm-4.5",
+  "content": "With $1,200 remaining on your deductible, you would pay that $1,200 first. After that, your Silver plan covers 80% of the remaining cost. For a $3,500 procedure, your estimated out-of-pocket cost is roughly **$1,500 to $1,700** depending on your exact deductible status and any additional cost-sharing provisions.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 135,
+    "completion_tokens": 52,
+    "total_tokens": 187
+  }
+}

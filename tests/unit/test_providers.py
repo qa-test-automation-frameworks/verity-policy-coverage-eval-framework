@@ -47,7 +47,7 @@ def settings_no_key() -> Settings:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return Settings(provider=Provider.zai, model="glm-5.2")
+        return Settings(provider=Provider.zai, model="glm-4.5")
 
 
 class TestLLMProvider:
@@ -120,7 +120,7 @@ class TestCassetteReplay:
             warnings.simplefilter("ignore")
             return Settings(
                 provider=Provider.zai,
-                model="glm-5.2",
+                model="glm-4.5",
                 cassette_mode="replay",
                 cassette_dir=tmp_path,
             )
@@ -133,7 +133,7 @@ class TestCassetteReplay:
             warnings.simplefilter("ignore")
             return Settings(
                 provider=Provider.zai,
-                model="glm-5.2",
+                model="glm-4.5",
                 cassette_mode="record",
                 cassette_dir=tmp_path,
             )
@@ -145,7 +145,7 @@ class TestCassetteReplay:
             prompt_tokens=8,
             completion_tokens=4,
             total_tokens=12,
-            model="openai/glm-5.2",
+            model="openai/glm-4.5",
         )
 
     def test_replay_hit_returns_cassette_content(
@@ -158,7 +158,7 @@ class TestCassetteReplay:
         msgs: list[dict[str, Any]] = [{"role": "user", "content": "hi"}]
         from verity.cassettes import request_key
 
-        key = request_key("openai/glm-5.2", msgs, None, 0.0, 2048)
+        key = request_key("openai/glm-4.5", msgs, None, 0.0, 2048)
         lib.save(key, self._make_payload("cassette says hello"))
 
         result = provider.complete(msgs)
@@ -190,7 +190,7 @@ class TestCassetteReplay:
 
         from verity.cassettes import request_key
 
-        key = request_key("openai/glm-5.2", msgs, None, 0.0, 2048)
+        key = request_key("openai/glm-4.5", msgs, None, 0.0, 2048)
         assert lib.has(key), "Cassette should have been saved after record-mode call"
 
     def test_replay_with_tool_calls(self, replay_settings: Settings, tmp_path: Path) -> None:
@@ -200,7 +200,7 @@ class TestCassetteReplay:
         provider = LLMProvider(replay_settings, RunAccumulator(), cassette_library=lib)
 
         msgs: list[dict[str, Any]] = [{"role": "user", "content": "calc cost"}]
-        key = request_key("openai/glm-5.2", msgs, None, 0.0, 2048)
+        key = request_key("openai/glm-4.5", msgs, None, 0.0, 2048)
         tc = ReplayToolCall(
             id="call_fx_001",
             function=ReplayFunction(
@@ -208,7 +208,7 @@ class TestCassetteReplay:
                 arguments='{"claim_amount": 1000.0}',
             ),
         )
-        lib.save(key, CassettePayload("", [tc], 5, 3, 8, "openai/glm-5.2"))
+        lib.save(key, CassettePayload("", [tc], 5, 3, 8, "openai/glm-4.5"))
 
         result = provider.complete(msgs)
         assert len(result.tool_calls) == 1

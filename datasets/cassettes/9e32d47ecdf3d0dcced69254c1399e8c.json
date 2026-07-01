@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What is the specialist visit copay for the Silver plan?",
+  "model": "openai/glm-4.5",
+  "content": "Your Silver plan covers in-network specialist visits at a **$60 copay** per visit (Silver \u00a73.2). The annual deductible does not apply to specialist copays \u2014 you pay the $60 flat fee from your first visit.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 38,
+    "total_tokens": 158
+  }
+}

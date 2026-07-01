@@ -4124,29 +4124,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "types-pyyaml" },
-]
-otel = [
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-exporter-otlp-proto-grpc" },
-    { name = "opentelemetry-sdk" },
-]
-report = [
-    { name = "allure-pytest" },
-    { name = "markdown" },
-]
-semantic = [
-    { name = "deepeval" },
-    { name = "ragas" },
-]
-
-[package.dev-dependencies]
-dev = [
     { name = "bandit" },
     { name = "mypy" },
     { name = "pip-audit" },
@@ -4173,6 +4150,7 @@ semantic = [
 [package.metadata]
 requires-dist = [
     { name = "allure-pytest", marker = "extra == 'report'", specifier = ">=2.13.0" },
+    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "chromadb", specifier = ">=0.5.0" },
     { name = "deepeval", marker = "extra == 'semantic'", specifier = ">=1.5.0" },
     { name = "litellm", specifier = ">=1.45.0" },
@@ -4181,6 +4159,7 @@ requires-dist = [
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.25.0" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "extra == 'otel'", specifier = ">=1.25.0" },
     { name = "opentelemetry-sdk", marker = "extra == 'otel'", specifier = ">=1.25.0" },
+    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7.0" },
     { name = "pydantic", specifier = ">=2.7.0" },
     { name = "pydantic-settings", specifier = ">=2.3.0" },
@@ -4192,31 +4171,6 @@ requires-dist = [
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12" },
 ]
 provides-extras = ["dev", "semantic", "otel", "report"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "bandit", specifier = ">=1.7.0" },
-    { name = "mypy", specifier = ">=1.10.0" },
-    { name = "pip-audit", specifier = ">=2.7.0" },
-    { name = "pre-commit", specifier = ">=3.7.0" },
-    { name = "pytest", specifier = ">=8.2.0" },
-    { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "ruff", specifier = ">=0.5.0" },
-    { name = "types-pyyaml", specifier = ">=6.0.12" },
-]
-otel = [
-    { name = "opentelemetry-api", specifier = ">=1.25.0" },
-    { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = ">=1.25.0" },
-    { name = "opentelemetry-sdk", specifier = ">=1.25.0" },
-]
-report = [
-    { name = "allure-pytest", specifier = ">=2.13.0" },
-    { name = "markdown", specifier = ">=3.6" },
-]
-semantic = [
-    { name = "deepeval", specifier = ">=1.5.0" },
-    { name = "ragas", specifier = ">=0.2.0" },
-]
 
 [[package]]
 name = "virtualenv"

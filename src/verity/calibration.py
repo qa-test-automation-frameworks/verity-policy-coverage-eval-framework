@@ -261,7 +261,7 @@ def parse_judge_score(text: str) -> float:
     """Extract a 0-1 normalized score from strict `Score: N` judge text."""
     m = _SCORE_PATTERN.search(text)
     if not m:
-        return 0.0
+        raise ValueError(f"Could not parse judge score from response: {text[:120]!r}")
     raw = float(m.group(1))
     return min(max(raw / 10.0, 0.0), 1.0)
 

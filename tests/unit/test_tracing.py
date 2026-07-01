@@ -100,7 +100,7 @@ def test_record_call_span_sets_attributes(monkeypatch: pytest.MonkeyPatch) -> No
     from verity.cost import CallRecord, Cost, Usage
 
     record = CallRecord(
-        model="openai/glm-5.2",
+        model="openai/glm-4.5",
         label="agent-first-turn",
         usage=Usage(prompt_tokens=100, completion_tokens=50, total_tokens=150),
         cost=Cost(prompt_usd=0.001, completion_usd=0.0005, total_usd=0.0015),
@@ -112,6 +112,55 @@ def test_record_call_span_sets_attributes(monkeypatch: pytest.MonkeyPatch) -> No
 
     spans = exporter.get_finished_spans()
     outer = next(s for s in spans if s.name == "outer")
-    assert outer.attributes["llm.model"] == "openai/glm-5.2"
-    assert outer.attributes["llm.total_tokens"] == 150
-    assert outer.attributes["llm.cost_usd"] == pytest.approx(0.0015)
+    assert outer.attributes["gen_ai.request.model"] == "openai/glm-4.5"
+    assert outer.attributes["gen_ai.usage.total_tokens"] == 150
+    assert outer.attributes["gen_ai.usage.cost_usd"] == pytest.approx(0.0015)
+
+
+def test_record_call_span_accumulates_usage_on_current_span(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """record_call_span sums repeated usage fields on the active span."""
+    pytest.importorskip("opentelemetry.sdk")
+
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
+
+    from verity import tracing
+    from verity.cost import CallRecord, Cost, Usage
+
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    tracer = provider.get_tracer("test")
+
+    monkeypatch.setattr(tracing, "_ENABLED", True)
+    monkeypatch.setattr(tracing, "_TRACER", tracer)
+
+    first = CallRecord(
+        model="openai/glm-4.5",
+        label="first",
+        usage=Usage(prompt_tokens=100, completion_tokens=50, total_tokens=150),
+        cost=Cost(prompt_usd=0.001, completion_usd=0.0005, total_usd=0.0015),
+        latency_ms=250.0,
+    )
+    second = CallRecord(
+        model="openai/glm-4.5",
+        label="second",
+        usage=Usage(prompt_tokens=25, completion_tokens=10, total_tokens=35),
+        cost=Cost(prompt_usd=0.00025, completion_usd=0.0001, total_usd=0.00035),
+        latency_ms=100.0,
+    )
+
+    with tracer.start_as_current_span("outer"):
+        tracing.record_call_span(first)
+        tracing.record_call_span(second)
+
+    outer = next(s for s in exporter.get_finished_spans() if s.name == "outer")
+    assert outer.attributes["gen_ai.usage.input_tokens"] == 125
+    assert outer.attributes["gen_ai.usage.output_tokens"] == 60
+    assert outer.attributes["gen_ai.usage.total_tokens"] == 185
+    assert outer.attributes["gen_ai.usage.cost_usd"] == pytest.approx(0.00185)

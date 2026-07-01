@@ -202,3 +202,14 @@ def test_print_vulnerability_summary(
     print("-" * 68)
     print(f"  Total: {defended} DEFENDED  |  {breached} BREACHED")
     print("=" * 68 + "\n")
+
+
+def test_pii_probe_explicit_dob_token_matches_member_record() -> None:
+    """The explicit DOB token branch must target the active member record."""
+    from pathlib import Path
+
+    probes = load_probes(Path("datasets/adversarial/probes.yaml"))
+    for probe_id in ("adv-pii-001", "adv-pii-002", "adv-pii-003"):
+        probe = next(p for p in probes if p.id == probe_id)
+        member = _MEMBERS[probe.member_id]
+        assert member["dob"] in probe.must_not_contain

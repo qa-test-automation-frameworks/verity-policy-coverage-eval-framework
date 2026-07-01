@@ -100,9 +100,11 @@ DEFECT_CATALOG: list[DefectEntry] = [
 # Hermetic checks - deterministic replay (defects 5-8)
 # ---------------------------------------------------------------------------
 
+
 def _run_deterministic_checks(catalog: list[DefectEntry]) -> None:
     """Run cassette-replay checks for defects 5-8; mutate status/details in place."""
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
     with warnings.catch_warnings():
@@ -164,6 +166,7 @@ def _run_deterministic_checks(catalog: list[DefectEntry]) -> None:
 def _run_adversarial_checks(catalog: list[DefectEntry]) -> None:
     """Run adversarial cassette-replay probes for defects 7-8; append to details."""
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
     with warnings.catch_warnings():
@@ -188,12 +191,10 @@ def _run_adversarial_checks(catalog: list[DefectEntry]) -> None:
     adv_defect_probes: dict[int, list[str]] = {7: [], 8: []}
 
     inj_probes = [
-        p for p in probes
-        if p.category == "injection" and p.expected_outcome == "breached"
+        p for p in probes if p.category == "injection" and p.expected_outcome == "breached"
     ]
     pii_probes = [
-        p for p in probes
-        if p.category == "pii_extraction" and p.expected_outcome == "breached"
+        p for p in probes if p.category == "pii_extraction" and p.expected_outcome == "breached"
     ]
 
     entries = {e.id: e for e in catalog if e.id in (7, 8)}
@@ -233,6 +234,7 @@ def _run_adversarial_checks(catalog: list[DefectEntry]) -> None:
 # ---------------------------------------------------------------------------
 # Semantic results ingestion (defects 1-4)
 # ---------------------------------------------------------------------------
+
 
 def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
     """Read reports/semantic/results.json if present; upgrade 1-4 to VERIFIED."""
@@ -274,6 +276,7 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
 # Render
 # ---------------------------------------------------------------------------
 
+
 def render_markdown(catalog: list[DefectEntry]) -> str:
     """Return the defects-caught matrix as a markdown document."""
     hermetically_proven = [e for e in catalog if e.status == "CAUGHT"]
@@ -306,8 +309,7 @@ def render_markdown(catalog: list[DefectEntry]) -> str:
         icon = status_icon[entry.status]
         tiers = " · ".join(entry.catching_tiers)
         lines.append(
-            f"| {entry.id} | {entry.description} | {entry.failure_mode} "
-            f"| {tiers} | {icon} |"
+            f"| {entry.id} | {entry.description} | {entry.failure_mode} | {tiers} | {icon} |"
         )
 
     lines += [
@@ -397,9 +399,11 @@ def build_json(catalog: list[DefectEntry]) -> dict[str, object]:
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def run(*, skip_hermetic: bool = False) -> list[DefectEntry]:
     """Run all checks and return the annotated catalog."""
     import copy
+
     catalog = copy.deepcopy(DEFECT_CATALOG)
 
     if not skip_hermetic:
@@ -444,6 +448,7 @@ def main() -> None:
     )
     if summary["missed"]:
         import sys
+
         print("\nWARNING: Some defects were MISSED - check output above.")
         sys.exit(1)
 

@@ -9,23 +9,23 @@ from verity.config import Provider, Settings, get_settings, reset_settings, reso
 
 class TestResolveProvider:
     def test_zai_default(self) -> None:
-        model, base = resolve_provider(Provider.zai, "glm-5.2")
-        assert model == "openai/glm-5.2"
+        model, base = resolve_provider(Provider.zai, "glm-4.5")
+        assert model == "openai/glm-4.5"
         assert "z.ai" in base
 
     def test_openrouter(self) -> None:
-        model, base = resolve_provider(Provider.openrouter, "glm-5.2")
+        model, base = resolve_provider(Provider.openrouter, "glm-4.5")
         assert "openrouter" in model
         assert "openrouter.ai" in base
 
     def test_together(self) -> None:
-        model, base = resolve_provider(Provider.together, "glm-5.2")
+        model, base = resolve_provider(Provider.together, "glm-4.5")
         assert "together_ai" in model
         assert "together.xyz" in base
 
     def test_api_base_override(self) -> None:
         _, base = resolve_provider(
-            Provider.zai, "glm-5.2", api_base_override="https://custom.host/v1"
+            Provider.zai, "glm-4.5", api_base_override="https://custom.host/v1"
         )
         assert base == "https://custom.host/v1"
 
@@ -39,7 +39,7 @@ class TestSettings:
             warnings.simplefilter("ignore")
             s = Settings()
         assert s.provider == Provider.zai
-        assert s.model == "glm-5.2"
+        assert s.model == "glm-4.5"
         assert s.temperature == 0.0
         assert s.semantic_samples == 1
         assert s.retrieval.chunk_size == 160

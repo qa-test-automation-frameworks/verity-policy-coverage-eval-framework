@@ -47,7 +47,7 @@ def _first_turn_key(case: GoldenCase, settings: Settings) -> str:
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": case.query},
     ]
-    tools = None if case.behavior == "refuse" else [COVERAGE_CALCULATOR_SCHEMA]
+    tools = [COVERAGE_CALCULATOR_SCHEMA]
     litellm_model, _, _ = settings.resolved_provider()
     return request_key(litellm_model, messages, tools, settings.temperature, settings.max_tokens)
 

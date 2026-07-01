@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-faithfulness-006 (faithfulness)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 6\n\nAdds dental cleanings not present in context.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

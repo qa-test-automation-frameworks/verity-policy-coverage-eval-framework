@@ -141,12 +141,27 @@ def record_call_span(call_record: CallRecord) -> None:
         span = trace.get_current_span()
         if not span.is_recording():
             return
-        span.set_attribute("llm.model", call_record.model)
-        span.set_attribute("llm.label", call_record.label)
-        span.set_attribute("llm.prompt_tokens", call_record.usage.prompt_tokens)
-        span.set_attribute("llm.completion_tokens", call_record.usage.completion_tokens)
-        span.set_attribute("llm.total_tokens", call_record.usage.total_tokens)
-        span.set_attribute("llm.cost_usd", call_record.cost.total_usd)
+        attrs = dict(getattr(span, "attributes", {}) or {})
+        input_tokens = int(attrs.get("gen_ai.usage.input_tokens", 0))
+        output_tokens = int(attrs.get("gen_ai.usage.output_tokens", 0))
+        total_tokens = int(attrs.get("gen_ai.usage.total_tokens", 0))
+        cost_usd = float(attrs.get("gen_ai.usage.cost_usd", 0.0))
+
+        span.set_attribute("gen_ai.request.model", call_record.model)
+        span.set_attribute("gen_ai.operation.name", call_record.label)
+        span.set_attribute(
+            "gen_ai.usage.input_tokens",
+            input_tokens + call_record.usage.prompt_tokens,
+        )
+        span.set_attribute(
+            "gen_ai.usage.output_tokens",
+            output_tokens + call_record.usage.completion_tokens,
+        )
+        span.set_attribute(
+            "gen_ai.usage.total_tokens",
+            total_tokens + call_record.usage.total_tokens,
+        )
+        span.set_attribute("gen_ai.usage.cost_usd", cost_usd + call_record.cost.total_usd)
     except Exception as exc:
         logger.debug("Failed to set span attributes on call record: %s", exc)
 

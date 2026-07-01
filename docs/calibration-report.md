@@ -8,9 +8,9 @@
 > empirical results. Run `make calibrate-live` with a real API key and a genuine
 > second-model-family to produce a calibration report grounded in live data.
 
-**Generated:** 2026-06-30  
-**Judge model:** `openai/glm-5.2`  
-**Dataset:** `datasets/calibration/labeled.yaml` (32 cases — synthetic labels)  
+**Generated:** 2026-06-30
+**Judge model:** `openai/glm-4.5`
+**Dataset:** `datasets/calibration/labeled.yaml` (32 cases — synthetic labels)
 **Mode:** hermetic replay (methodology demonstration)
 
 ---
