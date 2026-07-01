@@ -8,9 +8,21 @@ from typing import Any
 
 # ---------------------------------------------------------------------------
 # Price table ($/million tokens). Add provider-verified rates as needed.
+#
+# Only models this repo actively routes to by default are priced here, and
+# only at a rate we can point to a public source for. Rates drift — verify
+# against the provider's current pricing page before treating a run's cost
+# total as exact; this table is a reference estimate, not a billing record.
+# Unlisted/unverified models (including free-tier routes such as OpenRouter's
+# `:free` slugs) fall back to __default__ and are reported as $0, which is
+# accurate for those routes.
 # ---------------------------------------------------------------------------
 _PRICE_TABLE: dict[str, dict[str, float]] = {
-    # Fallback for unknown models — zero cost so accounting never crashes.
+    # Z.ai GLM-4.5 standard pricing as of the reference calibration date
+    # (see docs/adr/0001-glm-4-5-model-choice.md). Verify current rates at
+    # https://docs.z.ai before relying on this for budgeting.
+    "glm-4.5": {"prompt": 0.60, "completion": 2.20},
+    # Fallback for unknown/unpriced models — zero cost so accounting never crashes.
     "__default__": {"prompt": 0.0, "completion": 0.0},
 }
 

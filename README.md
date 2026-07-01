@@ -88,7 +88,7 @@ cp .env.example .env
 # Add ZAI_API_KEY= to .env
 make smoke         # one live GLM-4.5 call; prints tokens + cost
 make demo QUERY="Is bariatric surgery covered on my Bronze plan?"
-make eval-semantic # full Tier-2 semantic suite (~$0.03 for 24 golden cases x configured N)
+make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1 on GLM-4.5 list pricing; see verity/cost.py)
 ```
 
 ---

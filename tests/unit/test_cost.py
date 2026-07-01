@@ -2,24 +2,28 @@
 
 from __future__ import annotations
 
+import pytest
+
 from verity.cost import Cost, RunAccumulator, Usage, estimate_cost
 
 
 class TestEstimateCost:
-    def test_unpriced_default_model_zero_cost(self) -> None:
+    def test_priced_model_computes_nonzero_cost(self) -> None:
         usage = Usage(prompt_tokens=1_000_000, completion_tokens=1_000_000, total_tokens=2_000_000)
         cost = estimate_cost(usage, "glm-4.5")
-        assert cost.total_usd == 0.0
+        assert cost.prompt_usd == pytest.approx(0.60)
+        assert cost.completion_usd == pytest.approx(2.20)
+        assert cost.total_usd == pytest.approx(2.80)
 
     def test_unknown_model_zero_cost(self) -> None:
         usage = Usage(prompt_tokens=1000, completion_tokens=500, total_tokens=1500)
         cost = estimate_cost(usage, "unknown-model-xyz")
         assert cost.total_usd == 0.0
 
-    def test_litellm_prefixed_unpriced_model_zero_cost(self) -> None:
+    def test_litellm_prefixed_model_strips_provider_for_pricing(self) -> None:
         usage = Usage(prompt_tokens=1_000_000, completion_tokens=0, total_tokens=1_000_000)
         cost = estimate_cost(usage, "openai/glm-4.5")
-        assert cost.total_usd == 0.0
+        assert cost.total_usd == 0.60
 
     def test_zero_tokens_zero_cost(self) -> None:
         usage = Usage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
