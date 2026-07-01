@@ -43,7 +43,7 @@ from verity.calibration import (  # noqa: E402
     score_all,
 )
 from verity.cassettes import CassetteLibrary, CassettePayload, request_key  # noqa: E402
-from verity.config import Settings, resolve_provider  # noqa: E402
+from verity.config import JudgeConfig, Provider, Settings, resolve_provider  # noqa: E402
 from verity.cost import RunAccumulator  # noqa: E402
 from verity.judges import ProviderJudge  # noqa: E402
 
@@ -179,16 +179,26 @@ def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
 
 
 def _run_hermetic(cases: list[CalibrationCase], settings: Settings) -> list[float]:
-    """Score all cases using pre-authored cassette replay (no API key needed)."""
+    """Score all cases using pre-authored cassette replay (no API key needed).
+
+    Pinned to the provider/model the committed cassettes were recorded
+    against (zai/glm-4.5), independent of the ambient `settings` passed in —
+    this mode must replay identically regardless of a developer's local
+    provider configuration.
+    """
     calib_settings = Settings(
-        provider=settings.provider,
-        model=settings.model,
-        zai_api_key=settings.zai_api_key,
-        openrouter_api_key=settings.openrouter_api_key,
-        together_api_key=settings.together_api_key,
+        _env_file=None,
+        provider=Provider.zai,
+        model="glm-4.5",
         cassette_mode="replay",
         cassette_dir=_CALIB_CASSETTE_DIR,
-        judge=settings.judge,
+        judge=JudgeConfig(
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            temperature=0.0,
+            max_tokens=1024,
+        ),
     )
     judge = ProviderJudge(settings=calib_settings)
     return score_all(cases, judge)
@@ -225,13 +235,26 @@ def render_report(
     from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    lines = [
-        "# Judge Calibration Report",
-        "",
+    is_hermetic = mode == "hermetic replay"
+    lines = ["# Judge Calibration Report", ""]
+    if is_hermetic:
+        lines += [
+            "> **Note:** This report is a **methodology demonstration on synthetic labels**.",
+            "> The dataset (`datasets/calibration/labeled.yaml`) uses hand-authored candidate",
+            '> outputs and author-written "human" reference scores — not outputs from a live',
+            "> judge or a second independent model family. The numbers below illustrate how",
+            "> the calibration pipeline works and what the metrics mean; they are not measured",
+            "> empirical results. Run `make calibrate-live` with a real API key and a genuine",
+            "> second-model-family to produce a calibration report grounded in live data.",
+            "",
+        ]
+    dataset_note = "cases — synthetic labels" if is_hermetic else "cases"
+    mode_note = f"{mode} (methodology demonstration)" if is_hermetic else mode
+    lines += [
         f"**Generated:** {now}  ",
         f"**Judge model:** `{judge_model}`  ",
-        f"**Dataset:** `datasets/calibration/labeled.yaml` ({agreement.n} cases)  ",
-        f"**Mode:** {mode}",
+        f"**Dataset:** `datasets/calibration/labeled.yaml` ({agreement.n} {dataset_note})  ",
+        f"**Mode:** {mode_note}",
         "",
         "---",
         "",
@@ -288,16 +311,37 @@ def render_report(
         "",
         "## Threshold Traceability",
         "",
-        "The semantic tier thresholds in `docs/thresholds.md` were set with this "
-        "calibration data in mind:",
-        "",
-        "- **Raw agreement ≥ 85%**: this judge's measured agreement is "
-        f"{agreement.raw_agreement:.1%}, which is within acceptable range.",
-        "- **Cohen's kappa ≥ 0.60** (substantial agreement): measured kappa = "
-        f"{agreement.cohen_kappa:.3f}.",
-        f"- **Self-preference delta**: {'+' if bias.self_preference_delta >= 0 else ''}"
-        f"{abs(bias.self_preference_delta):.3f} — see interpretation above.",
-        "",
+    ]
+    if is_hermetic:
+        lines += [
+            "The semantic tier thresholds in `docs/thresholds.md` are intentionally "
+            "conservative and not yet formally calibrated to a specific judge's score "
+            "distribution (calibrated thresholds are a planned future improvement — see "
+            "`docs/thresholds.md`). The numbers below illustrate what agreement levels "
+            "this methodology can measure once run against real judge outputs:",
+            "",
+            f"- **Raw agreement ≥ 85%**: target; this synthetic run shows "
+            f"{agreement.raw_agreement:.1%} on authored labels.",
+            f"- **Cohen's kappa ≥ 0.60** (substantial agreement): target; this synthetic "
+            f"run shows {agreement.cohen_kappa:.3f}.",
+            f"- **Self-preference delta**: {'+' if bias.self_preference_delta >= 0 else ''}"
+            f"{abs(bias.self_preference_delta):.3f} on synthetic data — see interpretation above.",
+            "",
+        ]
+    else:
+        lines += [
+            "The semantic tier thresholds in `docs/thresholds.md` were set with this "
+            "calibration data in mind:",
+            "",
+            "- **Raw agreement ≥ 85%**: this judge's measured agreement is "
+            f"{agreement.raw_agreement:.1%}, which is within acceptable range.",
+            "- **Cohen's kappa ≥ 0.60** (substantial agreement): measured kappa = "
+            f"{agreement.cohen_kappa:.3f}.",
+            f"- **Self-preference delta**: {'+' if bias.self_preference_delta >= 0 else ''}"
+            f"{abs(bias.self_preference_delta):.3f} — see interpretation above.",
+            "",
+        ]
+    lines += [
         "See [`docs/thresholds.md`](thresholds.md) for per-metric threshold values "
         "and the statistical method used.",
         "",
@@ -336,15 +380,33 @@ def main() -> None:
     cases = load_calibration(_LABELED_PATH)
     print(f"Loaded {len(cases)} calibration cases from {_LABELED_PATH}")
 
+    # Hermetic modes (default replay and --author) are pinned to the
+    # provider/model the committed cassettes were recorded against, isolated
+    # from any local .env, so they behave identically for every developer.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        settings = Settings()
+        hermetic_settings = Settings(
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            judge=JudgeConfig(
+                _env_file=None,
+                provider=Provider.zai,
+                model="glm-4.5",
+                temperature=0.0,
+                max_tokens=1024,
+            ),
+        )
 
     if args.author:
-        run_author_mode(cases, settings)
+        run_author_mode(cases, hermetic_settings)
         return
 
-    # Score cases
+    # --record uses the live, ambient provider configuration (.env honored).
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        settings = Settings() if args.record else hermetic_settings
+
     judge_model = _judge_litellm_model(settings)
     if args.record:
         print("Running live judge calls...")

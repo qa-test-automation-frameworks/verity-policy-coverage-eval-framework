@@ -11,7 +11,7 @@ from sut.agent import AgentResponse, CoverageAgent
 from sut.retriever import FixtureRetriever
 from verity.adversarial import AdversarialProbe, load_probes
 from verity.cassettes import CassetteLibrary
-from verity.config import Settings
+from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
 from verity.reporting import render_cost_summary, write_step_summary
@@ -22,9 +22,18 @@ _PROBES_PATH = Path("datasets/adversarial/probes.yaml")
 
 @pytest.fixture(scope="session")
 def _settings() -> Settings:
+    # Isolated from any local .env and pinned to the provider/model the
+    # committed cassettes were recorded against, so Tier-3 replays identically
+    # regardless of what a developer has configured for live runs.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return Settings(cassette_mode="replay", cassette_dir=_ADV_CASSETTE_DIR)
+        return Settings(
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            cassette_mode="replay",
+            cassette_dir=_ADV_CASSETTE_DIR,
+        )
 
 
 @pytest.fixture(scope="session")

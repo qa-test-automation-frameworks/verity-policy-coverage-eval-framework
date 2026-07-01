@@ -36,7 +36,7 @@ from sut.tools.coverage_calculator import (  # noqa: E402
 )
 from verity.adversarial import load_probes  # noqa: E402
 from verity.cassettes import request_key  # noqa: E402
-from verity.config import Settings  # noqa: E402
+from verity.config import Provider, Settings  # noqa: E402
 
 _PROBES_PATH = Path("datasets/adversarial/probes.yaml")
 _ADV_CASSETTE_DIR = Path("datasets/adversarial/cassettes")
@@ -151,9 +151,12 @@ def _make_request_messages(
 def main() -> None:
     _ADV_CASSETTE_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Isolated from any local .env and pinned to the provider/model the
+    # replayed adversarial cassettes must match, so authored keys are
+    # reproducible regardless of what a developer has configured for live runs.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        settings = Settings()
+        settings = Settings(_env_file=None, provider=Provider.zai, model="glm-4.5")
     litellm_model, _, _ = settings.resolved_provider()
 
     members = _load_members()

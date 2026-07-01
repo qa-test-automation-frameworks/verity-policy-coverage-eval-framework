@@ -45,12 +45,13 @@ class TestResolveProvider:
 
 class TestSettings:
     def test_defaults_do_not_raise(self) -> None:
-        # No .env present; should load with warnings but not crash
+        # Isolated from any local .env — verifies the hardcoded defaults, not
+        # whatever a developer happens to have configured on disk.
         import warnings
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            s = Settings()
+            s = Settings(_env_file=None)
         assert s.provider == Provider.zai
         assert s.model == "glm-4.5"
         assert s.temperature == 0.0
@@ -81,11 +82,14 @@ class TestSettings:
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            s = Settings(provider=Provider.zai)
+            # zai_api_key is pinned explicitly (not left to env/.env lookup):
+            # constructor kwargs take precedence over any real key a
+            # developer's environment or .env may happen to provide.
+            s = Settings(_env_file=None, provider=Provider.zai, zai_api_key=None)
         litellm_model, api_base, key = s.resolved_provider()
         assert litellm_model.startswith("openai/")
         assert isinstance(api_base, str)
-        assert key is None  # no key set in test env
+        assert key is None  # explicitly pinned to no key, regardless of ambient env
 
     def test_prefixed_provider_key_env_is_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
         import warnings

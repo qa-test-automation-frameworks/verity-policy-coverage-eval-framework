@@ -41,7 +41,7 @@ from verity.cassettes import (  # noqa: E402
     ReplayToolCall,
     request_key,
 )
-from verity.config import Settings  # noqa: E402
+from verity.config import Provider, Settings  # noqa: E402
 from verity.golden import GoldenCase, load_golden  # noqa: E402
 
 _AUTHORED_DIR = Path("datasets/cassettes/authored")
@@ -160,10 +160,17 @@ def _authored_to_payload(turn: dict[str, Any], model: str) -> CassettePayload:
 
 
 def run_author_mode(cases: list[GoldenCase]) -> None:
-    """Write cassettes from hand-authored YAML files (no API calls)."""
+    """Write cassettes from hand-authored YAML files (no API calls).
+
+    Pinned to zai/glm-4.5, isolated from any local .env: authored cassettes
+    must be keyed identically to the already-committed ones regardless of
+    what a developer has configured for live runs.
+    """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        settings = Settings(cassette_dir=_CASSETTE_DIR)
+        settings = Settings(
+            _env_file=None, provider=Provider.zai, model="glm-4.5", cassette_dir=_CASSETTE_DIR
+        )
     litellm_model, _, _ = settings.resolved_provider()
     temp = settings.temperature
     max_tok = settings.max_tokens

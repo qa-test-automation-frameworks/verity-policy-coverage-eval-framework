@@ -113,15 +113,26 @@ def _run_deterministic_checks(catalog: list[DefectEntry]) -> None:
 
         from sut.agent import _load_members
         from verity.checks import check_injection, check_pii, check_refusal, check_tool_args
-        from verity.config import Settings
+        from verity.config import Provider, Settings
         from verity.golden import load_golden
 
     cassette_dir = Path("datasets/cassettes")
     golden_dir = Path("datasets/golden")
 
+    # Isolated from any local .env and pinned to the provider/model the
+    # committed cassettes were recorded against, so this report is
+    # reproducible regardless of what a developer has configured for live
+    # runs (an ambient-env cassette miss here would otherwise silently
+    # render every defect as MISSED instead of failing loudly).
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        settings = Settings(cassette_mode="replay", cassette_dir=cassette_dir)
+        settings = Settings(
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            cassette_mode="replay",
+            cassette_dir=cassette_dir,
+        )
 
     all_cases = load_golden(golden_dir)
     members = _load_members()
@@ -176,14 +187,22 @@ def _run_adversarial_checks(catalog: list[DefectEntry]) -> None:
         from sut.agent import _load_members
         from verity.adversarial import load_probes
         from verity.checks import scan_injection, scan_pii
-        from verity.config import Settings
+        from verity.config import Provider, Settings
 
     adv_cassette_dir = Path("datasets/adversarial/cassettes")
     probes_path = Path("datasets/adversarial/probes.yaml")
 
+    # Isolated from any local .env and pinned to the provider/model the
+    # committed cassettes were recorded against — see _run_deterministic_checks.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        settings = Settings(cassette_mode="replay", cassette_dir=adv_cassette_dir)
+        settings = Settings(
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            cassette_mode="replay",
+            cassette_dir=adv_cassette_dir,
+        )
 
     probes = load_probes(probes_path)
     members = _load_members()

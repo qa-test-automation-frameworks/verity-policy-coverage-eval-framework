@@ -168,9 +168,13 @@ class Settings(BaseSettings):
     retries: int = 3
     semantic_samples: int = 1
 
-    # Nested configs (instantiated as defaults; env vars still apply)
-    judge: JudgeConfig = JudgeConfig()
-    retrieval: RetrievalConfig = RetrievalConfig()
+    # Nested configs. Constructed via default_factory so each Settings()
+    # call reads the environment fresh at instantiation time — a bare
+    # `JudgeConfig()` class-level default would be evaluated exactly once,
+    # at module-import time, permanently freezing whatever .env/environment
+    # happened to be present the first time this module was imported.
+    judge: JudgeConfig = Field(default_factory=JudgeConfig)
+    retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
 
     # Paths
     datasets_dir: Path = Path("datasets")

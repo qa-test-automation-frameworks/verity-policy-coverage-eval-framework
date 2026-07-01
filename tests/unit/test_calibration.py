@@ -371,9 +371,12 @@ class TestCalibrationJsonArtifact:
         sys.path.insert(0, str(Path("scripts")))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            from verity.config import Settings
+            from verity.config import Provider, Settings
 
-            settings = Settings()
+            # Isolated from any local .env: the committed calibration cassettes
+            # are keyed against zai/glm-4.5, so hermetic replay must not drift
+            # onto whatever provider/model a developer has configured locally.
+            settings = Settings(_env_file=None, provider=Provider.zai, model="glm-4.5")
 
         judge_scores = _run_hermetic(cases, settings)
         agreement = compute_agreement(cases, judge_scores)

@@ -11,7 +11,7 @@ import pytest
 from sut.agent import AgentResponse, CoverageAgent
 from sut.retriever import FixtureRetriever
 from verity.cassettes import CassetteLibrary
-from verity.config import Settings
+from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
 from verity.golden import GoldenCase, load_golden
 from verity.providers import LLMProvider
@@ -25,9 +25,18 @@ _GOLDEN_DIR = Path("datasets/golden")
 
 @pytest.fixture(scope="session")
 def _settings() -> Settings:
+    # Isolated from any local .env and pinned to the provider/model the
+    # committed cassettes were recorded against, so Tier-1 replays identically
+    # regardless of what a developer has configured for live runs.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return Settings(cassette_mode="replay", cassette_dir=_CASSETTE_DIR)
+        return Settings(
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            cassette_mode="replay",
+            cassette_dir=_CASSETTE_DIR,
+        )
 
 
 @pytest.fixture(scope="session")

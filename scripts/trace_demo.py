@@ -28,7 +28,7 @@ import warnings  # noqa: E402
 from sut.agent import CoverageAgent  # noqa: E402
 from sut.retriever import FixtureRetriever  # noqa: E402
 from verity.cassettes import CassetteLibrary  # noqa: E402
-from verity.config import Settings  # noqa: E402
+from verity.config import Provider, Settings  # noqa: E402
 from verity.cost import RunAccumulator  # noqa: E402
 from verity.providers import LLMProvider  # noqa: E402
 from verity.reporting import render_cost_summary  # noqa: E402
@@ -43,9 +43,18 @@ _MEMBER_ID = "MBR-001"
 def main() -> None:
     init_tracing("verity-trace-demo")
 
+    # Isolated from any local .env and pinned to the provider/model the
+    # committed cassette was recorded against, so this stays hermetic
+    # regardless of what a developer has configured for live runs.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        settings = Settings(cassette_mode="replay", cassette_dir=_CASSETTE_DIR)
+        settings = Settings(
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            cassette_mode="replay",
+            cassette_dir=_CASSETTE_DIR,
+        )
 
     lib = CassetteLibrary(_CASSETTE_DIR)
     accumulator = RunAccumulator()
