@@ -30,7 +30,11 @@ class TestBuildSecuritySummary:
             "p2": ("BREACHED", "leak"),
             "p3": ("DEFENDED", ""),
         }
-        probes = [_probe("p1", "pii_extraction"), _probe("p2", "injection"), _probe("p3", "jailbreak")]
+        probes = [
+            _probe("p1", "pii_extraction"),
+            _probe("p2", "injection"),
+            _probe("p3", "jailbreak"),
+        ]
         summary = build_security_summary(results, probes)
         assert summary.total == 3
         assert summary.defended == 2

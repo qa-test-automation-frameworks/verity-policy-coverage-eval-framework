@@ -67,7 +67,9 @@ def test_citations_match_expected_sources(case: GoldenCase, _settings: Settings)
 
 
 @pytest.mark.parametrize("case", _CASES, ids=[c.id for c in _CASES])
-def test_citations_never_reference_unretrieved_sources(case: GoldenCase, _settings: Settings) -> None:
+def test_citations_never_reference_unretrieved_sources(
+    case: GoldenCase, _settings: Settings
+) -> None:
     """Every citation must trace back to a chunk that was actually retrieved —
     the agent must not cite sources it never saw."""
     response = run_case(case, _settings)

@@ -234,7 +234,9 @@ Cite the source document and section for any coverage claim you make.
 """
 
 
-def _build_system_prompt(member: dict[str, Any], chunks: list[Chunk], *, clean: bool = False) -> str:
+def _build_system_prompt(
+    member: dict[str, Any], chunks: list[Chunk], *, clean: bool = False
+) -> str:
     plan = member["plan"].lower()
     params = _PLAN_PARAMS.get(plan, _PLAN_PARAMS["silver"])
     context_parts = [f"[{c.source} — {c.section}]\n{c.text}" for c in chunks]
@@ -471,9 +473,8 @@ class CoverageAgent:
         final_answer = scrub_output(result.content)
 
         # 9. Extract citations only for chunks the answer actually draws on
-        citations = [
-            f"{c.source}: {c.section}" for c in _supporting_chunks(chunks, final_answer) if c.section
-        ]
+        supporting = _supporting_chunks(chunks, final_answer)
+        citations = [f"{c.source}: {c.section}" for c in supporting if c.section]
 
         # 10. Collect token/cost info for this response only (not the shared
         # accumulator's lifetime total — see start_index above)

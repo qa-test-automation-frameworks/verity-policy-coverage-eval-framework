@@ -49,9 +49,7 @@ def validate_conversation(messages: list[dict[str, Any]]) -> ConversationCheckRe
         if role == "assistant" and msg.get("tool_calls"):
             tool_calls = msg["tool_calls"]
             if not tool_calls:
-                return ConversationCheckResult(
-                    False, "assistant message has empty tool_calls list"
-                )
+                return ConversationCheckResult(False, "assistant message has empty tool_calls list")
             turn_ids = [tc["id"] for tc in tool_calls]
             if len(turn_ids) != len(set(turn_ids)):
                 return ConversationCheckResult(

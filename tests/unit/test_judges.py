@@ -130,9 +130,7 @@ class TestRagasJudge:
         PromptValue (or plain string), returns an LLMResult with `n` generations."""
         judge = _make_provider_judge("ragas response text")
         rj = RagasJudge(judge)
-        result = asyncio.run(
-            rj.adapter.generate("faithfulness prompt")
-        )
+        result = asyncio.run(rj.adapter.generate("faithfulness prompt"))
         assert hasattr(result, "generations")
         assert len(result.generations) == 1
         assert result.generations[0][0].text == "ragas response text"
@@ -140,9 +138,7 @@ class TestRagasJudge:
     def test_generate_respects_n(self) -> None:
         judge = _make_provider_judge("chat result text")
         rj = RagasJudge(judge)
-        result = asyncio.run(
-            rj.adapter.generate("some ragas prompt", n=3)
-        )
+        result = asyncio.run(rj.adapter.generate("some ragas prompt", n=3))
         assert len(result.generations[0]) == 3
         assert all(g.text == "chat result text" for g in result.generations[0])
 

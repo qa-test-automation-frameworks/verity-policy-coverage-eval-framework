@@ -61,7 +61,7 @@ class TestTrendPersistence:
 
     def test_multiple_appends_accumulate_history(self, tmp_path: Path) -> None:
         acc = RunAccumulator()
-        for i in range(3):
+        for _ in range(3):
             record = compute_trend_record(
                 "deterministic", {"t1": "passed"}, acc, latency_budget_ms=50.0
             )

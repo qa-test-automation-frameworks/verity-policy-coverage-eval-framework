@@ -151,9 +151,8 @@ class TestCorpusFingerprint:
         return corpus_dir
 
     def test_fingerprint_empty_before_indexing(self, tmp_path: Path) -> None:
-        from verity.config import RetrievalConfig
-
         from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
         config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
@@ -161,9 +160,8 @@ class TestCorpusFingerprint:
         assert retriever.corpus_fingerprint() == ""
 
     def test_fingerprint_set_after_indexing(self, tmp_path: Path) -> None:
-        from verity.config import RetrievalConfig
-
         from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
         config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
@@ -172,9 +170,8 @@ class TestCorpusFingerprint:
         assert retriever.corpus_fingerprint() != ""
 
     def test_reindex_skipped_when_corpus_unchanged(self, tmp_path: Path) -> None:
-        from verity.config import RetrievalConfig
-
         from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
         config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
@@ -185,9 +182,8 @@ class TestCorpusFingerprint:
         assert second == 0  # no-op: fingerprint unchanged
 
     def test_reindex_triggered_when_corpus_content_changes(self, tmp_path: Path) -> None:
-        from verity.config import RetrievalConfig
-
         from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
         config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
@@ -202,9 +198,8 @@ class TestCorpusFingerprint:
         assert retriever.corpus_fingerprint() != fingerprint_before
 
     def test_retrieved_chunks_carry_matching_corpus_fingerprint(self, tmp_path: Path) -> None:
-        from verity.config import RetrievalConfig
-
         from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nSome policy content here.")
         config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
@@ -216,9 +211,8 @@ class TestCorpusFingerprint:
         assert all(c.corpus_fingerprint == retriever.corpus_fingerprint() for c in chunks)
 
     def test_retrieved_chunks_have_rank_and_score(self, tmp_path: Path) -> None:
-        from verity.config import RetrievalConfig
-
         from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nSome policy content here.")
         config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
