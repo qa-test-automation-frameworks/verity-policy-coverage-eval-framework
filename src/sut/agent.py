@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -82,6 +83,55 @@ class AgentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # System prompt builder
 # ---------------------------------------------------------------------------
+
+
+_STOPWORDS = frozenset(
+    {
+        "this",
+        "that",
+        "with",
+        "from",
+        "your",
+        "have",
+        "will",
+        "plan",
+        "covers",
+        "coverage",
+        "member",
+        "would",
+        "into",
+        "after",
+        "before",
+        "roughly",
+        "estimated",
+        "depending",
+        "additional",
+        "provisions",
+        "status",
+    }
+)
+
+_NUMERIC_TOKEN_RE = re.compile(r"\$?\d[\d,]*(?:\.\d+)?%?")
+_WORD_TOKEN_RE = re.compile(r"[a-z]{4,}")
+
+
+def _significant_tokens(text: str) -> set[str]:
+    """Distinctive numeric and word tokens used to detect whether a chunk's
+    content is actually reflected in the final answer, so citations point to
+    chunks that support the response rather than every chunk retrieved."""
+    lowered = text.lower()
+    numbers = set(_NUMERIC_TOKEN_RE.findall(lowered))
+    words = {w for w in _WORD_TOKEN_RE.findall(lowered) if w not in _STOPWORDS}
+    return numbers | words
+
+
+def _supporting_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
+    """Filter retrieved chunks down to those whose content is reflected in the
+    final answer, instead of blindly citing every chunk that was retrieved."""
+    answer_tokens = _significant_tokens(answer)
+    if not answer_tokens:
+        return []
+    return [chunk for chunk in chunks if _significant_tokens(chunk.text) & answer_tokens]
 
 
 def _requires_human_review(query: str, answer: str) -> bool:
@@ -348,8 +398,10 @@ class CoverageAgent:
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
 
-        # 9. Extract citations from chunks
-        citations = [f"{c.source}: {c.section}" for c in chunks if c.section]
+        # 9. Extract citations only for chunks the answer actually draws on
+        citations = [
+            f"{c.source}: {c.section}" for c in _supporting_chunks(chunks, final_answer) if c.section
+        ]
 
         # 10. Collect token/cost info
         acc = self.provider.accumulator
