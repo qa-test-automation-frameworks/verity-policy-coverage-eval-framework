@@ -35,6 +35,10 @@ htmlcov/
 coverage.xml
 *.cover
 
+# mutmut mutation-testing artifacts
+.mutmut-cache
+mutants/
+
 # Chroma vector store
 .chroma/
 *.sqlite3

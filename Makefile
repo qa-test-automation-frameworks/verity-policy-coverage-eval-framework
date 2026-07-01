@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record docker-test clean
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record docker-test clean mutation-test
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -83,6 +83,11 @@ calibrate-live:
 trace-demo:
 	@echo "Trace demo — one hermetic agent run with OTEL file exporter (no API key required)"
 	VERITY_TRACING=1 VERITY_TRACE_EXPORTER=file PYTHONPATH=src uv run python scripts/trace_demo.py
+
+mutation-test:
+	@echo "Mutation testing — src/sut/tools/coverage_calculator.py (requires: uv sync --extra mutation)"
+	uv run mutmut run || true
+	uv run mutmut results
 	@echo "Spans written to reports/traces/"
 
 defects-report:
