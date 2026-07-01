@@ -24,10 +24,11 @@ Implement **VCR-style SHA-256 keyed cassette record/replay** in `verity/cassette
 - `LLMProvider` integrates cassette mode (`record` | `replay` | `off`) via
   `verity.config.Settings`. Tests set `cassette_mode="replay"`.
 
-Cassettes are **hand-authored** for the 15 golden cases and 14 adversarial
-probes. The `scripts/record_cassettes.py` and `scripts/author_adversarial_cassettes.py`
-scripts reproduce them without an API key. Committing cassettes makes the test
-suite self-contained and forkable.
+Cassettes are **hand-authored** for the golden cases and adversarial probes
+(see `datasets/golden/cases.yaml` and `datasets/adversarial/probes.yaml` for
+current counts). The `scripts/record_cassettes.py` and
+`scripts/author_adversarial_cassettes.py` scripts reproduce them without an
+API key. Committing cassettes makes the test suite self-contained and forkable.
 
 ## Consequences
 
@@ -39,8 +40,8 @@ suite self-contained and forkable.
 **Harder:**
 - When the SUT prompt template changes, cassettes must be re-authored to match
   the new request hash. The `--author` flag in `record_cassettes.py` automates this.
-- Cassette files add size to the repository (each is ~2-5 KB; 29 cassettes total
-  at launch).
+- Cassette files add size to the repository (each is ~2-5 KB, and the count
+  grows with the dataset).
 - Two-turn interactions (first turn + tool-call + second turn) require two
   cassette entries keyed to different hashes.
 

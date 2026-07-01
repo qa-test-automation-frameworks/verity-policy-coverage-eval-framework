@@ -14,7 +14,8 @@ once and hoping the draw was representative, the framework uses the following
 pipeline:
 
 1. **N samples** — run the same query N times via `VERITY_SEMANTIC_SAMPLES`
-   (default N=1 for local and push runs; scheduled semantic runs set N=3).
+   (default N=1 for local and push runs; the nightly scheduled semantic run
+   sets N=5 — see `semantic-eval.yml`).
 2. **Aggregate** — compute mean, median, stdev, and pass-rate (fraction of
    individual runs that exceeded the threshold).
 3. **Threshold mode** — the comparison is made at the distribution level:
