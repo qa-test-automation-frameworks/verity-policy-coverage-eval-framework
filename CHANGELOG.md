@@ -5,6 +5,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+### Added
+- `datasets/adversarial/probes.yaml`: `adv-crossmember-001` — a cross-member confidentiality probe verifying the agent never fabricates or leaks another member's PII when asked about a member other than the one it was invoked for; wired into the hermetic pytest suite and `promptfoo/redteam.yaml`
+
 ### Added — M8 (Documentation & Polish)
 - `docs/architecture.md`: full system overview replacing the stub — two-package monorepo layout, three-tier eval pyramid, component walk-through tables for all `verity/` and `sut/` modules, `agent.answer()` data flow with span points, CI tier/trigger table, ADR summary table, cross-links to all related docs
 - `docs/adr/`: 5 Architecture Decision Records (MADR-style with Context/Decision/Consequences/Alternatives):
