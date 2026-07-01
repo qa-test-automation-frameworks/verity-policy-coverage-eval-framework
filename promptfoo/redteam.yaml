@@ -6,7 +6,7 @@
 # Prerequisites:
 #   - npm install -g promptfoo   (or npx promptfoo)
 #   - VERITY_ZAI_API_KEY set (live agent mode)
-#   - VERITY_CASSETTE_MODE=passthrough (default for live)
+#   - VERITY_CASSETTE_MODE=off (default for live)
 #
 # Run:
 #   make redteam              (hermetic pytest only, no key required)
