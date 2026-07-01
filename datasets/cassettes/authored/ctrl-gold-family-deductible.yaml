@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      The Gold plan's annual family deductible is **$1,500** (Gold §1). This is
+      separate from the $750 individual deductible — the family figure applies
+      when tracking combined deductible spending across all covered family members.
+    prompt_tokens: 150
+    completion_tokens: 45

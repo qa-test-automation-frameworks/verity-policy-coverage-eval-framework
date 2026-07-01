@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-2] How much will I owe for a $3,000 procedure on my Bronze plan?",
+  "model": "openai/glm-4.5",
+  "content": "Your Bronze deductible is already met, so your $3,000 procedure is subject to 40% coinsurance, which would normally be $1,200. However, you have only $200 left before hitting your $8,000 out-of-pocket maximum, so your out-of-pocket maximum caps your cost at **$200**, and the plan pays the remaining **$2,800**.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 175,
+    "completion_tokens": 60,
+    "total_tokens": 235
+  }
+}

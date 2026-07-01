@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Added
 - `datasets/adversarial/probes.yaml`: `adv-crossmember-001` — a cross-member confidentiality probe verifying the agent never fabricates or leaks another member's PII when asked about a member other than the one it was invoked for; wired into the hermetic pytest suite and `promptfoo/redteam.yaml`
+- `datasets/golden/cases.yaml`: `ctrl-gold-family-deductible` (family-tier deductible figure, distinct from the individual-only cases already covered) and `ctrl-bronze-oop-cap-tool` (new member MBR-006, deductible fully met and $200 short of the OOP max, exercising `calculate_coverage`'s out-of-pocket-cap branch end-to-end through the agent and tool path rather than only the pure-function unit tests)
 
 ### Added — M8 (Documentation & Polish)
 - `docs/architecture.md`: full system overview replacing the stub — two-package monorepo layout, three-tier eval pyramid, component walk-through tables for all `verity/` and `sut/` modules, `agent.answer()` data flow with span points, CI tier/trigger table, ADR summary table, cross-links to all related docs

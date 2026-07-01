@@ -38,3 +38,10 @@ members:
     plan: "gold"
     accrued_deductible: 300.00
     accrued_oop: 400.00
+
+  - member_id: "MBR-006"
+    name: "Frank Osei"
+    dob: "1979-04-12"
+    plan: "bronze"
+    accrued_deductible: 4000.00  # fully met
+    accrued_oop: 7800.00         # $200 short of the $8,000 individual OOP max

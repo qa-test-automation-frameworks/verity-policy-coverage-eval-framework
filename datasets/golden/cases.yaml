@@ -356,3 +356,44 @@ cases:
     semantic_metrics: [task_completion]
     notes: "Clean positive tool-use case; deterministic Tier-1 should pass tool argument checks."
 
+  - id: ctrl-gold-family-deductible
+    query: "What is the family annual deductible for the Gold plan?"
+    member_id: MBR-002
+    tags: [gold, deductible, family-tier, control]
+    behavior: answer
+    ground_truth: "$1,500 annual family deductible (Gold §1)"
+    must_contain: ["1,500"]
+    expected_citations: [gold.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Family-tier figure, distinct from the individual deductible already covered by ctrl-gold-deductible."
+
+  - id: ctrl-bronze-oop-cap-tool
+    query: "How much will I owe for a $3,000 procedure on my Bronze plan?"
+    member_id: MBR-006
+    tags: [bronze, cost-calculation, tool-use, oop-cap, boundary, control]
+    behavior: answer
+    ground_truth: >
+      MBR-006 Bronze has fully met the $4,000 deductible and has $200 remaining before
+      the $8,000 individual out-of-pocket maximum. Without the cap, 40% coinsurance on
+      the full $3,000 would be $1,200, but the out-of-pocket maximum limits the member's
+      cost to the $200 remaining. Member pays $200; plan pays $2,800.
+    must_contain: ["200", "2,800"]
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 3000.0
+        plan_deductible: 4000.0
+        accrued_deductible: 4000.0
+        plan_oop_max: 8000.0
+        accrued_oop: 7800.0
+        coinsurance_member: 0.40
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: >
+      End-to-end out-of-pocket-maximum cap case: exercises calculate_coverage's
+      oop_cap_applied branch through the full agent -> tool -> response path,
+      not just the pure-function unit tests in test_coverage_calculator.py.
+

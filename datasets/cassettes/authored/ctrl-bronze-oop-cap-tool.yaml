@@ -1,0 +1,16 @@
+turns:
+  - content: ""
+    tool_calls:
+      - id: call_bronze_oop_cap
+        function:
+          name: coverage_calculator
+          arguments: '{"claim_amount": 3000.0, "plan_deductible": 4000.0, "accrued_deductible": 4000.0, "plan_oop_max": 8000.0, "accrued_oop": 7800.0, "coinsurance_member": 0.40}'
+    prompt_tokens: 145
+    completion_tokens: 34
+  - content: >
+      Your Bronze deductible is already met, so your $3,000 procedure is subject to
+      40% coinsurance, which would normally be $1,200. However, you have only $200
+      left before hitting your $8,000 out-of-pocket maximum, so your out-of-pocket
+      maximum caps your cost at **$200**, and the plan pays the remaining **$2,800**.
+    prompt_tokens: 175
+    completion_tokens: 60
