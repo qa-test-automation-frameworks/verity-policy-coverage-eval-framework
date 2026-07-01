@@ -58,6 +58,15 @@ VERITY_TRACING=1 VERITY_TRACE_EXPORTER=console PYTHONPATH=src uv run python scri
 Spans are written to `reports/traces/spans-<timestamp>.jsonl` (one JSON object per line).
 Each line includes name, trace_id, span_id, start_ns, end_ns, attributes, and status.
 
+A real example, generated hermetically (cassette replay, no API key) and committed at
+[`docs/samples/sample-trace.jsonl`](samples/sample-trace.jsonl), so the span shape and
+`gen_ai.*` attributes are visible without running the demo first:
+
+```json
+{"name": "retrieval", "trace_id": "a1b83aeac8b9b2dcd21587ea49998b35", "span_id": "1ece86c7db986912", "start_ns": 1782915007067599126, "end_ns": 1782915007067806609, "attributes": {"top_k": 0}, "status": "UNSET"}
+{"name": "agent.answer", "trace_id": "a1b83aeac8b9b2dcd21587ea49998b35", "span_id": "0e22a373696d75db", "start_ns": 1782915007059497393, "end_ns": 1782915007068142214, "attributes": {"member_id": "MBR-001", "query_len": 34, "gen_ai.request.model": "openai/glm-4.5", "gen_ai.operation.name": "agent-first-turn", "gen_ai.usage.input_tokens": 130, "gen_ai.usage.output_tokens": 58, "gen_ai.usage.total_tokens": 188, "gen_ai.usage.cost_usd": 0.0002056}, "status": "UNSET"}
+```
+
 ---
 
 ## Per-Run Cost Summary
