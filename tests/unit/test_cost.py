@@ -14,11 +14,36 @@ class TestEstimateCost:
         assert cost.prompt_usd == pytest.approx(0.60)
         assert cost.completion_usd == pytest.approx(2.20)
         assert cost.total_usd == pytest.approx(2.80)
+        assert cost.priced is True
 
     def test_unknown_model_zero_cost(self) -> None:
         usage = Usage(prompt_tokens=1000, completion_tokens=500, total_tokens=1500)
         cost = estimate_cost(usage, "unknown-model-xyz")
         assert cost.total_usd == 0.0
+
+    def test_unknown_model_flagged_as_unpriced(self) -> None:
+        usage = Usage(prompt_tokens=1000, completion_tokens=500, total_tokens=1500)
+        cost = estimate_cost(usage, "unknown-model-xyz")
+        assert cost.priced is False
+
+    def test_unknown_model_logs_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+        import logging
+
+        usage = Usage(prompt_tokens=1000, completion_tokens=500, total_tokens=1500)
+        with caplog.at_level(logging.WARNING, logger="verity.cost"):
+            estimate_cost(usage, "unknown-model-xyz")
+        assert "unknown-model-xyz" in caplog.text
+        assert "No price entry" in caplog.text
+
+    def test_str_flags_unpriced_model_distinctly(self) -> None:
+        usage = Usage(prompt_tokens=1000, completion_tokens=500, total_tokens=1500)
+        cost = estimate_cost(usage, "unknown-model-xyz")
+        assert "UNPRICED MODEL" in str(cost)
+
+    def test_str_does_not_flag_priced_model(self) -> None:
+        usage = Usage(prompt_tokens=1000, completion_tokens=500, total_tokens=1500)
+        cost = estimate_cost(usage, "glm-4.5")
+        assert "UNPRICED" not in str(cost)
 
     def test_litellm_prefixed_model_strips_provider_for_pricing(self) -> None:
         usage = Usage(prompt_tokens=1_000_000, completion_tokens=0, total_tokens=1_000_000)
@@ -66,3 +91,30 @@ class TestRunAccumulator:
     def test_cost_str(self) -> None:
         c = Cost(prompt_usd=0.001, completion_usd=0.002, total_usd=0.003)
         assert "$0.003000" in str(c)
+
+    def test_unpriced_models_empty_when_all_priced(self) -> None:
+        acc = RunAccumulator()
+        acc.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=200.0)
+        assert acc.unpriced_models == []
+        assert acc.total_cost.priced is True
+
+    def test_unpriced_models_lists_distinct_unpriced_model(self) -> None:
+        acc = RunAccumulator()
+        acc.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=200.0)
+        acc.log_call("mystery-model", Usage(100, 50, 150), latency_ms=200.0)
+        acc.log_call("mystery-model", Usage(100, 50, 150), latency_ms=200.0)
+        assert acc.unpriced_models == ["mystery-model"]
+        assert acc.total_cost.priced is False
+
+    def test_summary_warns_when_unpriced_model_present(self) -> None:
+        acc = RunAccumulator()
+        acc.log_call("mystery-model", Usage(100, 50, 150), latency_ms=200.0)
+        summary = acc.summary()
+        assert "WARNING" in summary
+        assert "mystery-model" in summary
+
+    def test_summary_no_warning_when_all_priced(self) -> None:
+        acc = RunAccumulator()
+        acc.log_call("glm-4.5", Usage(100, 50, 150), latency_ms=200.0)
+        summary = acc.summary()
+        assert "WARNING" not in summary
