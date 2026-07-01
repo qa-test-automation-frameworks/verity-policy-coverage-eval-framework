@@ -23,6 +23,19 @@ class TestResolveProvider:
         assert "together_ai" in model
         assert "together.xyz" in base
 
+    def test_openrouter_custom_model(self) -> None:
+        model, base = resolve_provider(
+            Provider.openrouter,
+            "nvidia/nemotron-3-ultra-550b-a55b:free",
+        )
+        assert model == "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free"
+        assert "openrouter.ai" in base
+
+    def test_together_custom_model(self) -> None:
+        model, base = resolve_provider(Provider.together, "zai-org/GLM-4.5")
+        assert model == "together_ai/zai-org/GLM-4.5"
+        assert "together.xyz" in base
+
     def test_api_base_override(self) -> None:
         _, base = resolve_provider(
             Provider.zai, "glm-4.5", api_base_override="https://custom.host/v1"

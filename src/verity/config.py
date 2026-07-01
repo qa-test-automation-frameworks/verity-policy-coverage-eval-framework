@@ -43,10 +43,12 @@ def resolve_provider(
     """Return (litellm_model_string, api_base) for a given provider + model."""
     defaults = _PROVIDER_DEFAULTS[provider]
     litellm_model = defaults["litellm_model"]
-    # For Z.ai/OpenRouter, the model name is embedded in the route above.
-    # If caller supplies a non-default model, swap in just the trailing slug.
     if provider == Provider.zai and model != "glm-4.5":
         litellm_model = f"openai/{model}"
+    elif provider == Provider.openrouter and model != "glm-4.5":
+        litellm_model = f"openrouter/{model}"
+    elif provider == Provider.together and model != "glm-4.5":
+        litellm_model = f"together_ai/{model}"
     api_base = api_base_override or defaults["api_base"]
     return litellm_model, api_base
 
