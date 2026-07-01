@@ -111,8 +111,6 @@ def calculate_coverage(inp: CoverageInput) -> CoverageResult:
         plan_pays_after_cap = inp.claim_amount - remaining_oop
     else:
         member_total_after_cap = member_total
-        plan_pays_after_cap = plan_total  # deductible goes to member, already subtracted
-        # Recalculate: plan pays = claim - member total
         plan_pays_after_cap = inp.claim_amount - member_total
 
     return CoverageResult(
