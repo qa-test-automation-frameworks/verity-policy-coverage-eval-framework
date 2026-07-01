@@ -42,6 +42,7 @@ hosted-models:
 
 live-canary:
 	@echo "Live canary with OpenRouter free route"
+	@echo "(free-model slugs rotate — run 'make hosted-models' and pass VERITY_MODEL=<slug> to override the default below)"
 	VERITY_PROVIDER=openrouter \
 	VERITY_MODEL=$${VERITY_MODEL:-nvidia/nemotron-3-ultra-550b-a55b:free} \
 	VERITY_SEMANTIC_SAMPLES=1 \
