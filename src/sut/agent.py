@@ -19,6 +19,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel
@@ -74,6 +75,8 @@ class AgentResponse(BaseModel):
     completion_tokens: int
     total_tokens: int
     estimated_cost_usd: float
+    failure_category: str = ""
+    trace_id: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -179,6 +182,33 @@ class CoverageAgent:
             accumulator = RunAccumulator()
             self.provider = LLMProvider(self.settings, accumulator)
 
+    def _safe_failure_response(
+        self,
+        *,
+        category: str,
+        tool_invocations: list[ToolInvocation] | None = None,
+    ) -> AgentResponse:
+        assert self.provider is not None
+        totals = self.provider.accumulator.total_tokens
+        total_cost = self.provider.accumulator.total_cost
+        return AgentResponse(
+            answer=(
+                "I cannot complete this coverage response right now. "
+                "Please try again later or contact member services for help."
+            ),
+            citations=[],
+            tool_invocations=tool_invocations or [],
+            refused=True,
+            refusal_reason=category,
+            requires_human_review=True,
+            prompt_tokens=totals.prompt_tokens,
+            completion_tokens=totals.completion_tokens,
+            total_tokens=totals.total_tokens,
+            estimated_cost_usd=total_cost.total_usd,
+            failure_category=category,
+            trace_id=uuid4().hex,
+        )
+
     def answer(
         self,
         query: str,
@@ -227,11 +257,15 @@ class CoverageAgent:
             ]
 
             # 5. First LLM call (may return tool_calls)
-            result = self.provider.complete(
-                messages=messages,
-                tools=[COVERAGE_CALCULATOR_SCHEMA],
-                label="agent-first-turn",
-            )
+            try:
+                result = self.provider.complete(
+                    messages=messages,
+                    tools=[COVERAGE_CALCULATOR_SCHEMA],
+                    label="agent-first-turn",
+                )
+            except Exception:
+                logger.exception("Provider call failed before tool handling")
+                return self._safe_failure_response(category="provider_unavailable")
 
             tool_invocations: list[ToolInvocation] = []
 
@@ -265,7 +299,14 @@ class CoverageAgent:
 
                     with traced("tool.coverage_calculator"):
                         if fn_name == "coverage_calculator":
-                            tool_result = run_coverage_calculator(args)
+                            try:
+                                tool_result = run_coverage_calculator(args)
+                            except Exception:
+                                logger.exception("Coverage tool call failed")
+                                return self._safe_failure_response(
+                                    category="tool_unavailable",
+                                    tool_invocations=tool_invocations,
+                                )
                         else:
                             tool_result = {"error": f"Unknown tool: {fn_name}"}
 
@@ -283,10 +324,17 @@ class CoverageAgent:
                 messages.extend(tool_results_msgs)
 
                 # 7. Second LLM call with tool results
-                result = self.provider.complete(
-                    messages=messages,
-                    label="agent-second-turn",
-                )
+                try:
+                    result = self.provider.complete(
+                        messages=messages,
+                        label="agent-second-turn",
+                    )
+                except Exception:
+                    logger.exception("Provider call failed after tool handling")
+                    return self._safe_failure_response(
+                        category="provider_unavailable",
+                        tool_invocations=tool_invocations,
+                    )
 
         # 8. Output guardrail
         final_answer = scrub_output(result.content)

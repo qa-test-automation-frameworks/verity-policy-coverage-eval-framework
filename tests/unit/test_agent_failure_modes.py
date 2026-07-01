@@ -1,21 +1,9 @@
-"""Tests for agent failure-mode paths.
-
-Documents how CoverageAgent responds when downstream components fail:
-- run_coverage_calculator raises during tool execution
-- provider.complete raises on the second LLM turn (e.g. after a tool result)
-
-These tests prove the current behavior (exceptions propagate uncaught), which
-is a documented gap. The SUT's tool is read-only cost math, so no irreversible
-action occurs on failure, but the agent does not degrade to a safe fallback
-response — it raises.
-"""
+"""Tests for structured agent failure responses."""
 
 from __future__ import annotations
 
 from typing import Any
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from sut.agent import CoverageAgent
 from sut.retriever import FixtureRetriever
@@ -34,7 +22,6 @@ def _no_op_accumulator() -> RunAccumulator:
 
 
 def _tool_call_result(args_json: str = '{"claim_amount": 500.0}') -> CompletionResult:
-    """A CompletionResult that carries one coverage_calculator tool call."""
     tc = ReplayToolCall(
         id="call_test_001",
         function=ReplayFunction(name="coverage_calculator", arguments=args_json),
@@ -42,21 +29,25 @@ def _tool_call_result(args_json: str = '{"claim_amount": 500.0}') -> CompletionR
     return CompletionResult(content="", tool_calls=[tc])
 
 
-def _text_result(text: str = "Your coverage is as follows.") -> CompletionResult:
-    return CompletionResult(content=text, tool_calls=[])
+def _assert_safe_failure(response: Any, category: str) -> None:
+    assert response.refused
+    assert response.requires_human_review
+    assert response.refusal_reason == category
+    assert response.failure_category == category
+    assert response.trace_id
+    assert "cannot complete this coverage response right now" in response.answer
 
 
 class TestToolExecutionFailure:
-    """When run_coverage_calculator raises, the exception propagates from agent.answer()."""
+    """Tool execution failures return a safe structured response."""
 
-    def test_tool_value_error_propagates(self) -> None:
+    def test_tool_value_error_returns_safe_response(self) -> None:
         settings = _make_settings()
         accumulator = _no_op_accumulator()
         retriever = FixtureRetriever("ctrl-gold-deductible")
 
         mock_provider = MagicMock()
         mock_provider.accumulator = accumulator
-        # First turn returns a tool call; tool then raises
         mock_provider.complete.return_value = _tool_call_result(
             '{"claim_amount": 500.0, "plan_deductible": 750.0, "accrued_deductible": 750.0,'
             ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10}'
@@ -64,13 +55,12 @@ class TestToolExecutionFailure:
 
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
 
-        with (
-            patch("sut.agent.run_coverage_calculator", side_effect=ValueError("bad input")),
-            pytest.raises(ValueError, match="bad input"),
-        ):
-            agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+        with patch("sut.agent.run_coverage_calculator", side_effect=ValueError("bad input")):
+            response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
-    def test_tool_runtime_error_propagates(self) -> None:
+        _assert_safe_failure(response, "tool_unavailable")
+
+    def test_tool_runtime_error_returns_safe_response(self) -> None:
         settings = _make_settings()
         accumulator = _no_op_accumulator()
         retriever = FixtureRetriever("ctrl-gold-deductible")
@@ -84,16 +74,17 @@ class TestToolExecutionFailure:
 
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
 
-        exc = RuntimeError("calculator failed")
-        with (
-            patch("sut.agent.run_coverage_calculator", side_effect=exc),
-            pytest.raises(RuntimeError, match="calculator failed"),
+        with patch(
+            "sut.agent.run_coverage_calculator",
+            side_effect=RuntimeError("calculator failed"),
         ):
-            agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+            response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        _assert_safe_failure(response, "tool_unavailable")
 
 
-class TestProviderSecondTurnFailure:
-    """When provider.complete raises on the second LLM turn, the exception propagates."""
+class TestProviderFailure:
+    """Provider failures return safe structured responses."""
 
     def _make_failing_second_turn_provider(
         self,
@@ -114,7 +105,21 @@ class TestProviderSecondTurnFailure:
         mock.complete.side_effect = _complete
         return mock
 
-    def test_second_turn_connection_error_propagates(self) -> None:
+    def test_first_turn_connection_error_returns_safe_response(self) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        provider = MagicMock()
+        provider.accumulator = accumulator
+        provider.complete.side_effect = ConnectionError("provider unreachable")
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=provider)
+
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        _assert_safe_failure(response, "provider_unavailable")
+
+    def test_second_turn_connection_error_returns_safe_response(self) -> None:
         settings = _make_settings()
         accumulator = _no_op_accumulator()
         retriever = FixtureRetriever("ctrl-gold-deductible")
@@ -128,10 +133,11 @@ class TestProviderSecondTurnFailure:
         )
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=provider)
 
-        with pytest.raises(ConnectionError, match="provider unreachable"):
-            agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
-    def test_second_turn_timeout_propagates(self) -> None:
+        _assert_safe_failure(response, "provider_unavailable")
+
+    def test_second_turn_timeout_returns_safe_response(self) -> None:
         settings = _make_settings()
         accumulator = _no_op_accumulator()
         retriever = FixtureRetriever("ctrl-gold-deductible")
@@ -141,9 +147,10 @@ class TestProviderSecondTurnFailure:
             ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10}'
         )
         provider = self._make_failing_second_turn_provider(
-            accumulator, TimeoutError("LLM call timed out"), args_json
+            accumulator, TimeoutError("call timed out"), args_json
         )
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=provider)
 
-        with pytest.raises(TimeoutError, match="LLM call timed out"):
-            agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        _assert_safe_failure(response, "provider_unavailable")
