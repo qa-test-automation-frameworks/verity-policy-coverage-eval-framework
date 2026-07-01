@@ -95,7 +95,7 @@ class RetrievalConfig(BaseSettings):
     corpus_dir: Path = Path("src/sut/corpus")
     chunk_size: int = 160
     chunk_overlap: int = 30
-    top_k: int = 3
+    top_k: int = 4
     embedding_model: str = "all-MiniLM-L6-v2"
     persist_dir: Path = Path(".chroma")
 

@@ -1,86 +1,70 @@
 {
-  "ctrl-gold-oop-amendment": [
-    {
-      "chunk_id": "b6a07db9ef566859",
-      "source": "amendments.md"
-    },
-    {
-      "chunk_id": "c4fb6679a481e770",
-      "source": "definitions.md"
-    },
-    {
-      "chunk_id": "d567587aee2755ab",
-      "source": "gold.md"
-    }
-  ],
-  "ctrl-silver-physical-therapy-limit": [
-    {
-      "chunk_id": "c6b21c91296ac8cf",
-      "source": "silver.md"
-    },
-    {
-      "chunk_id": "993730ac8d1f42bc",
-      "source": "gold.md"
-    },
-    {
-      "chunk_id": "c6b9f5e126dc78cf",
-      "source": "silver.md"
-    }
-  ],
   "ctrl-bronze-mri-prior-auth": [
     {
-      "chunk_id": "993730ac8d1f42bc",
-      "source": "gold.md"
-    },
-    {
-      "chunk_id": "c6b9f5e126dc78cf",
-      "source": "silver.md"
-    },
-    {
-      "chunk_id": "cf18a719208cb5e6",
+      "chunk_id": "128bf5e64c42b021",
       "source": "bronze.md"
+    },
+    {
+      "chunk_id": "5d8dd0261313d35b",
+      "source": "exclusions.md"
     }
   ],
   "ctrl-dental-cleaning-exclusion": [
     {
-      "chunk_id": "9eac1feafcaa525a",
+      "chunk_id": "540678fb4b9c105e",
       "source": "exclusions.md"
     },
     {
-      "chunk_id": "c0b2182adceb5f3f",
-      "source": "definitions.md"
+      "chunk_id": "c303c9671b041ff7",
+      "source": "exclusions.md"
+    }
+  ],
+  "ctrl-gold-oop-amendment": [
+    {
+      "chunk_id": "cb3a5e172227f983",
+      "source": "amendments.md"
     },
     {
-      "chunk_id": "7f976de119892c71",
-      "source": "amendments.md"
+      "chunk_id": "42e61873969f59bb",
+      "source": "gold.md"
     }
   ],
   "ctrl-gold-specialty-drug-pa": [
     {
-      "chunk_id": "d567587aee2755ab",
+      "chunk_id": "9d4eab09b05e0d02",
       "source": "gold.md"
     },
     {
-      "chunk_id": "b6a07db9ef566859",
-      "source": "amendments.md"
+      "chunk_id": "26587dc2ad8befb6",
+      "source": "gold.md"
     },
     {
-      "chunk_id": "993730ac8d1f42bc",
-      "source": "gold.md"
+      "chunk_id": "5d8dd0261313d35b",
+      "source": "exclusions.md"
     }
   ],
   "ctrl-missing-acupuncture-policy": [
     {
-      "chunk_id": "7f976de119892c71",
-      "source": "amendments.md"
-    },
-    {
-      "chunk_id": "372d2b2ba326ef3d",
+      "chunk_id": "128bf5e64c42b021",
       "source": "bronze.md"
     },
     {
-      "chunk_id": "9eac1feafcaa525a",
+      "chunk_id": "52fc2c4f8c59e9cd",
+      "source": "bronze.md"
+    },
+    {
+      "chunk_id": "aa8fb39e547bd431",
+      "source": "silver.md"
+    },
+    {
+      "chunk_id": "c303c9671b041ff7",
       "source": "exclusions.md"
+    }
+  ],
+  "ctrl-silver-physical-therapy-limit": [
+    {
+      "chunk_id": "4f03e8e36500c946",
+      "source": "silver.md"
     }
   ]
 }
