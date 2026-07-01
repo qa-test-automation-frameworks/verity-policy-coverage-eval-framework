@@ -1,0 +1,16 @@
+turns:
+  - content: ""
+    tool_calls:
+      - id: call_bronze_oop_boundary
+        function:
+          name: coverage_calculator
+          arguments: '{"claim_amount": 1000.0, "plan_deductible": 4000.0, "accrued_deductible": 4000.0, "plan_oop_max": 8000.0, "accrued_oop": 7600.0, "coinsurance_member": 0.40}'
+    prompt_tokens: 140
+    completion_tokens: 32
+  - content: >
+      Your Bronze deductible is already met, so this $1,000 claim is subject to 40%
+      member coinsurance: you owe **$400**. That brings your accumulated
+      out-of-pocket to exactly **$8,000** — right at your out-of-pocket maximum, but
+      not over it, so this claim is not capped and you pay the full $400.
+    prompt_tokens: 168
+    completion_tokens: 58

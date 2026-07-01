@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] If I buy the orthodontia rider today, when does braces coverage start?",
+  "model": "openai/glm-4.5",
+  "content": "The Orthodontia Rider has a **12-month waiting period** from the rider purchase date before orthodontic services are covered (Administration \u2014 Waiting Periods). Once active, braces and orthodontic treatment are covered at 50% coinsurance up to a $2,000 lifetime maximum (Administration \u2014 Riders).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 118,
+    "completion_tokens": 42,
+    "total_tokens": 160
+  }
+}

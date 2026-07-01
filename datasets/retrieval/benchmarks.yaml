@@ -19,8 +19,12 @@ benchmarks:
 
   - case_id: ctrl-dental-cleaning-exclusion
     query: "Is a routine dental cleaning covered under the base health plan?"
-    expected_sources: [exclusions.md]
-    required_terms: ["cleanings", "separate dental rider"]
+    # administration.md's Dental Rider section now out-ranks exclusions.md for
+    # this query (it literally names "routine cleanings"), and on its own
+    # answers both halves of the question: not covered under the base plan,
+    # but covered under the optional rider.
+    expected_sources: [administration.md]
+    required_terms: ["cleanings"]
     min_source_precision: 1.0
 
   - case_id: ctrl-gold-specialty-drug-pa

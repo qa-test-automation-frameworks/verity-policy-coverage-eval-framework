@@ -1,0 +1,9 @@
+turns:
+  - content: >
+      Using an out-of-network (Tier 2) provider means you pay the difference between the
+      provider's billed charge and HealthGuard's allowed amount, on top of standard
+      out-of-network cost-sharing. Those costs do not count toward your in-network
+      out-of-pocket maximum — a separate out-of-network OOP maximum of 2x your in-network
+      amount applies instead (Administration — Network Tiers).
+    prompt_tokens: 120
+    completion_tokens: 46
