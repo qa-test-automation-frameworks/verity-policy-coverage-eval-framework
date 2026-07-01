@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      No. Your deductible and out-of-pocket accumulators reset to zero on January 1 each plan
+      year, and amounts accrued under your prior plan tier do not carry over if you change plans
+      mid-year (Administration — Plan-Year Changes).
+    prompt_tokens: 112
+    completion_tokens: 34

@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      No. Coverage begins on your enrollment effective date shown on your ID card and does not
+      apply retroactively to services received before that date (Administration — Effective and
+      Expiration Dates).
+    prompt_tokens: 108
+    completion_tokens: 30

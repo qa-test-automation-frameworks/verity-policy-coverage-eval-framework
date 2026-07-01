@@ -163,6 +163,10 @@ class TestValidation:
         with pytest.raises(ValidationError):
             _inp(plan_oop_max=6000.0, accrued_oop=6001.0)
 
+    def test_unexpected_field_raises(self) -> None:
+        with pytest.raises(ValidationError):
+            _inp(unexpected_field=1.0)
+
 
 class TestRunCoverageCalculator:
     def test_round_trip_via_dict(self) -> None:
@@ -179,3 +183,90 @@ class TestRunCoverageCalculator:
         assert result["applied_to_deductible"] == pytest.approx(800.0)
         assert result["member_coinsurance"] == pytest.approx(540.0)
         assert result["member_total"] == pytest.approx(1340.0)
+
+    def test_unknown_argument_raises(self) -> None:
+        args = {
+            "claim_amount": 500.0,
+            "plan_deductible": 2000.0,
+            "accrued_deductible": 0.0,
+            "plan_oop_max": 6000.0,
+            "accrued_oop": 0.0,
+            "coinsurance_member": 0.20,
+            "unexpected_field": "sneaky",
+        }
+        with pytest.raises(ValidationError):
+            run_coverage_calculator(args)
+
+
+class TestToolSchema:
+    def test_schema_disallows_additional_properties(self) -> None:
+        from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA
+
+        assert COVERAGE_CALCULATOR_SCHEMA["function"]["parameters"]["additionalProperties"] is False
+
+
+class TestPlanPaysExplicit:
+    """Mutation-testing-driven: earlier tests asserted member-side fields but
+    left plan_pays/plan_pays_after_oop_cap unchecked for several branches,
+    letting arithmetic mutants in the coinsurance and copay paths survive."""
+
+    def test_coinsurance_plan_pays_matches_member_share(self) -> None:
+        result = calculate_coverage(
+            _inp(
+                claim_amount=1000.0,
+                accrued_deductible=2000.0,
+                plan_deductible=2000.0,
+                plan_oop_max=6000.0,
+                accrued_oop=0.0,
+                coinsurance_member=0.20,
+            )
+        )
+        assert result.plan_pays == pytest.approx(800.0)
+        assert result.plan_pays_after_oop_cap == pytest.approx(800.0)
+
+    def test_copay_fractional_boundary_uses_copay_branch(self) -> None:
+        """copay=0.5 (between 0 and 1) must still take the copay branch, not
+        fall through to coinsurance — catches `copay > 0` vs `copay > 1` mutants."""
+        result = calculate_coverage(
+            _inp(
+                claim_amount=100.0,
+                accrued_deductible=2000.0,
+                plan_deductible=2000.0,
+                copay=0.5,
+                coinsurance_member=0.20,
+            )
+        )
+        assert result.member_copay == pytest.approx(0.5)
+        assert result.member_coinsurance == 0.0
+        assert result.plan_pays == pytest.approx(99.5)
+
+    def test_oop_cap_boundary_exactly_at_max_is_not_capped(self) -> None:
+        """member_total exactly equal to remaining_oop must NOT be treated as
+        over the cap — catches a `>` vs `>=` mutant on oop_cap_applied."""
+        result = calculate_coverage(
+            _inp(
+                claim_amount=1000.0,
+                plan_deductible=4000.0,
+                accrued_deductible=4000.0,
+                plan_oop_max=8000.0,
+                accrued_oop=7600.0,
+                coinsurance_member=0.40,
+            )
+        )
+        assert result.member_total == pytest.approx(400.0)
+        assert result.oop_cap_applied is False
+        assert result.plan_pays_after_oop_cap == pytest.approx(600.0)
+
+    def test_oop_cap_applied_plan_pays_after_cap(self) -> None:
+        result = calculate_coverage(
+            _inp(
+                claim_amount=10000.0,
+                plan_deductible=2000.0,
+                accrued_deductible=2000.0,
+                plan_oop_max=6000.0,
+                accrued_oop=5800.0,
+                coinsurance_member=0.20,
+            )
+        )
+        assert result.oop_cap_applied is True
+        assert result.plan_pays_after_oop_cap == pytest.approx(9800.0)

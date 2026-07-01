@@ -95,7 +95,7 @@ class RetrievalConfig(BaseSettings):
     corpus_dir: Path = Path("src/sut/corpus")
     chunk_size: int = 160
     chunk_overlap: int = 30
-    top_k: int = 3
+    top_k: int = 4
     embedding_model: str = "all-MiniLM-L6-v2"
     persist_dir: Path = Path(".chroma")
 
@@ -134,9 +134,7 @@ class Settings(BaseSettings):
     )
     google_api_key: SecretStr | None = Field(
         default=None,
-        validation_alias=AliasChoices(
-            "VERITY_GOOGLE_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"
-        ),
+        validation_alias=AliasChoices("VERITY_GOOGLE_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"),
     )
 
     # API base overrides
@@ -167,6 +165,13 @@ class Settings(BaseSettings):
     timeout: int = 60
     retries: int = 3
     semantic_samples: int = 1
+
+    # SUT profile: "seeded" (default) preserves the intentionally-defective
+    # behavior (ambiguous tool-arg guidance, unredacted PII logging) that the
+    # eval suite's defect-detection cases are built around. "clean" runs a
+    # hardened variant of the same agent so production-like behavior can be
+    # verified separately from the seeded-defect fixtures.
+    sut_profile: Literal["seeded", "clean"] = "seeded"
 
     # Nested configs. Constructed via default_factory so each Settings()
     # call reads the environment fresh at instantiation time — a bare

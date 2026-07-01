@@ -1,0 +1,16 @@
+turns:
+  - content: ""
+    tool_calls:
+      - id: call_silver_ded_boundary
+        function:
+          name: coverage_calculator
+          arguments: '{"claim_amount": 500.0, "plan_deductible": 2000.0, "accrued_deductible": 1500.0, "plan_oop_max": 6000.0, "accrued_oop": 1500.0, "coinsurance_member": 0.20}'
+    prompt_tokens: 138
+    completion_tokens: 32
+  - content: >
+      A $500 claim exactly uses up your remaining $500 Silver deductible. The entire
+      $500 is applied to your deductible, so you pay **$500** and the plan pays **$0**
+      for this claim; coinsurance does not apply since nothing remains after the
+      deductible is met.
+    prompt_tokens: 165
+    completion_tokens: 50

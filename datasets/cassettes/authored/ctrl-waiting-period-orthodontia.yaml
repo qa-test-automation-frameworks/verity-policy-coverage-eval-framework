@@ -1,0 +1,8 @@
+turns:
+  - content: >
+      The Orthodontia Rider has a **12-month waiting period** from the rider purchase date
+      before orthodontic services are covered (Administration — Waiting Periods). Once active,
+      braces and orthodontic treatment are covered at 50% coinsurance up to a $2,000 lifetime
+      maximum (Administration — Riders).
+    prompt_tokens: 118
+    completion_tokens: 42

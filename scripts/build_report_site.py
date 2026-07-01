@@ -8,7 +8,8 @@ Pages produced:
   site/index.html          - defects-caught landing (the money screenshot)
   site/calibration.html    - judge calibration report
   site/cost.html           - token + cost summary (when present)
-  site/vulnerabilities.html - adversarial vulnerability summary
+  site/vulnerabilities.html - seeded-defect adversarial design catalog
+  site/security.html       - measured adversarial run summary (reports/security/summary.md)
   site/allure/             - Allure HTML report copy (when present)
 """
 
@@ -27,6 +28,7 @@ _NAV = """
   <a href="calibration.html" style="color:#90cdf4;text-decoration:none;">Calibration</a>
   <a href="cost.html" style="color:#90cdf4;text-decoration:none;">Cost</a>
   <a href="vulnerabilities.html" style="color:#90cdf4;text-decoration:none;">Vulnerabilities</a>
+  <a href="security.html" style="color:#90cdf4;text-decoration:none;">Security Summary</a>
   <a href="allure/index.html" style="color:#90cdf4;text-decoration:none;">Allure</a>
 </nav>
 """
@@ -149,7 +151,7 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
         )
         generated["cost.html"] = False
 
-    # vulnerabilities.html — prefer the generated run artifact over the design catalog
+    # vulnerabilities.html — seeded-defect design catalog (what the corpus is built to test)
     defects_caught_md = Path("docs/defects-caught.md")
     if defects_caught_md.exists():
         (site_dir / "vulnerabilities.html").write_text(
@@ -167,6 +169,25 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
             encoding="utf-8",
         )
         generated["vulnerabilities.html"] = False
+
+    # security.html — measured DEFENDED/BREACHED outcome from an actual adversarial test run
+    security_md = Path("reports/security/summary.md")
+    if security_md.exists():
+        (site_dir / "security.html").write_text(
+            _md_to_html(security_md, "Adversarial Security Summary"),
+            encoding="utf-8",
+        )
+        generated["security.html"] = True
+    else:
+        (site_dir / "security.html").write_text(
+            _placeholder_html(
+                "Adversarial Security Summary",
+                "Run `make redteam` (tests/adversarial) to generate reports/security/summary.md "
+                "with per-probe DEFENDED/BREACHED outcomes from a real test run.",
+            ),
+            encoding="utf-8",
+        )
+        generated["security.html"] = False
 
     # allure/  - copy if already built
     allure_src = Path("reports/allure-report")

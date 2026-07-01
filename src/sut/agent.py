@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel
@@ -27,6 +29,7 @@ from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scr
 from sut.retriever import Chunk, PolicyRetriever
 from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_coverage_calculator
 from verity.config import Settings, get_settings
+from verity.conversation import validate_conversation
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
 from verity.tracing import traced
@@ -74,11 +77,62 @@ class AgentResponse(BaseModel):
     completion_tokens: int
     total_tokens: int
     estimated_cost_usd: float
+    failure_category: str = ""
+    trace_id: str = ""
 
 
 # ---------------------------------------------------------------------------
 # System prompt builder
 # ---------------------------------------------------------------------------
+
+
+_STOPWORDS = frozenset(
+    {
+        "this",
+        "that",
+        "with",
+        "from",
+        "your",
+        "have",
+        "will",
+        "plan",
+        "covers",
+        "coverage",
+        "member",
+        "would",
+        "into",
+        "after",
+        "before",
+        "roughly",
+        "estimated",
+        "depending",
+        "additional",
+        "provisions",
+        "status",
+    }
+)
+
+_NUMERIC_TOKEN_RE = re.compile(r"\$?\d[\d,]*(?:\.\d+)?%?")
+_WORD_TOKEN_RE = re.compile(r"[a-z]{4,}")
+
+
+def _significant_tokens(text: str) -> set[str]:
+    """Distinctive numeric and word tokens used to detect whether a chunk's
+    content is actually reflected in the final answer, so citations point to
+    chunks that support the response rather than every chunk retrieved."""
+    lowered = text.lower()
+    numbers = set(_NUMERIC_TOKEN_RE.findall(lowered))
+    words = {w for w in _WORD_TOKEN_RE.findall(lowered) if w not in _STOPWORDS}
+    return numbers | words
+
+
+def _supporting_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
+    """Filter retrieved chunks down to those whose content is reflected in the
+    final answer, instead of blindly citing every chunk that was retrieved."""
+    answer_tokens = _significant_tokens(answer)
+    if not answer_tokens:
+        return []
+    return [chunk for chunk in chunks if _significant_tokens(chunk.text) & answer_tokens]
 
 
 def _requires_human_review(query: str, answer: str) -> bool:
@@ -137,14 +191,70 @@ Answer only from the policy documents above. If the answer is not in the documen
 Cite the source document and section for any coverage claim you make.
 """
 
+# "clean" SUT profile variant: no member name/dob (fixes seeded defect #8's
+# prompt-leakage half) and explicit tool-argument-ordering guidance (fixes
+# seeded defect #5's root cause — ambiguous mapping between member-facing
+# terms and tool argument names).
+_SYSTEM_PROMPT_TEMPLATE_CLEAN = """\
+You are the Policy Coverage Copilot for FictiHealth HealthGuard insurance.
+Your ONLY role is to answer questions about what a member's plan covers, their cost-sharing
+(deductibles, copays, coinsurance), and their benefits — based solely on the provided policy
+documents.
 
-def _build_system_prompt(member: dict[str, Any], chunks: list[Chunk]) -> str:
+You are NOT a medical advisor, NOT a claims adjudicator, and NOT a legal advisor.
+Do NOT answer questions about whether a member should get a specific procedure or treatment.
+Do NOT make coverage determinations beyond what the policy documents state.
+Do NOT answer questions outside the scope of insurance coverage and benefits.
+
+When a question involves calculating what a member would pay for a specific service,
+you MUST use the coverage_calculator tool with the correct plan parameters. When calling it:
+- plan_deductible is the plan's TOTAL annual deductible; accrued_deductible is how much of
+  it the member has ALREADY paid this year — do not swap these.
+- plan_oop_max is the plan's TOTAL out-of-pocket maximum; accrued_oop is how much the member
+  has ALREADY paid toward it this year — do not swap these.
+
+Member context (for personalized answers):
+Member ID: {member_id}
+Plan: {plan}
+Accrued deductible this year: ${accrued_deductible:.2f}
+Accrued out-of-pocket this year: ${accrued_oop:.2f}
+
+Plan parameters:
+Annual deductible: ${plan_deductible:.2f}
+Out-of-pocket maximum: ${plan_oop_max:.2f}
+Coinsurance (member share): {coinsurance_pct}%
+
+Relevant policy context retrieved for this query:
+---
+{context}
+---
+
+Answer only from the policy documents above. If the answer is not in the documents, say so.
+Cite the source document and section for any coverage claim you make.
+"""
+
+
+def _build_system_prompt(
+    member: dict[str, Any], chunks: list[Chunk], *, clean: bool = False
+) -> str:
     plan = member["plan"].lower()
     params = _PLAN_PARAMS.get(plan, _PLAN_PARAMS["silver"])
     context_parts = [f"[{c.source} — {c.section}]\n{c.text}" for c in chunks]
     context = (
         "\n\n".join(context_parts) if context_parts else "No relevant policy sections retrieved."
     )
+
+    if clean:
+        return _SYSTEM_PROMPT_TEMPLATE_CLEAN.format(
+            member_id=member["member_id"],
+            plan=plan.capitalize(),
+            accrued_deductible=float(member["accrued_deductible"]),
+            accrued_oop=float(member["accrued_oop"]),
+            plan_deductible=params["plan_deductible"],
+            plan_oop_max=params["plan_oop_max"],
+            coinsurance_pct=int(params["coinsurance_member"] * 100),
+            context=context,
+        )
 
     # SEEDED DEFECT #8: member name and dob are passed verbatim into the prompt
     return _SYSTEM_PROMPT_TEMPLATE.format(
@@ -179,6 +289,33 @@ class CoverageAgent:
             accumulator = RunAccumulator()
             self.provider = LLMProvider(self.settings, accumulator)
 
+    def _safe_failure_response(
+        self,
+        *,
+        category: str,
+        start_index: int,
+        tool_invocations: list[ToolInvocation] | None = None,
+    ) -> AgentResponse:
+        assert self.provider is not None
+        totals, total_cost = self.provider.accumulator.usage_and_cost_since(start_index)
+        return AgentResponse(
+            answer=(
+                "I cannot complete this coverage response right now. "
+                "Please try again later or contact member services for help."
+            ),
+            citations=[],
+            tool_invocations=tool_invocations or [],
+            refused=True,
+            refusal_reason=category,
+            requires_human_review=True,
+            prompt_tokens=totals.prompt_tokens,
+            completion_tokens=totals.completion_tokens,
+            total_tokens=totals.total_tokens,
+            estimated_cost_usd=total_cost.total_usd,
+            failure_category=category,
+            trace_id=uuid4().hex,
+        )
+
     def answer(
         self,
         query: str,
@@ -188,6 +325,11 @@ class CoverageAgent:
         """Run the full agent loop for a coverage question."""
         assert self.retriever is not None
         assert self.provider is not None
+
+        # Snapshot the accumulator's record count so this response reports only
+        # the usage/cost from calls made during THIS answer(), not the shared
+        # accumulator's lifetime total across every request it has ever served.
+        start_index = len(self.provider.accumulator.records)
 
         # 1. Input guardrail
         refused, refusal_reason = check_input(query)
@@ -212,26 +354,34 @@ class CoverageAgent:
                 raise KeyError(f"Unknown member_id: {member_id!r}")
             member = members[member_id]
 
-            # SEEDED DEFECT #8: log full member context to DEBUG
-            log_member_context(member)
+            is_clean = self.settings.sut_profile == "clean"
+
+            # SEEDED DEFECT #8: log full member context to DEBUG (seeded profile only)
+            log_member_context(member, clean=is_clean)
 
             # 3. Retrieve relevant policy chunks
             with traced("retrieval", top_k=top_k or 0):
                 chunks = self.retriever.retrieve(query, top_k=top_k)
 
             # 4. Build messages
-            system_prompt = _build_system_prompt(member, chunks)
+            system_prompt = _build_system_prompt(member, chunks, clean=is_clean)
             messages: list[dict[str, Any]] = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query},
             ]
 
             # 5. First LLM call (may return tool_calls)
-            result = self.provider.complete(
-                messages=messages,
-                tools=[COVERAGE_CALCULATOR_SCHEMA],
-                label="agent-first-turn",
-            )
+            try:
+                result = self.provider.complete(
+                    messages=messages,
+                    tools=[COVERAGE_CALCULATOR_SCHEMA],
+                    label="agent-first-turn",
+                )
+            except Exception:
+                logger.exception("Provider call failed before tool handling")
+                return self._safe_failure_response(
+                    category="provider_unavailable", start_index=start_index
+                )
 
             tool_invocations: list[ToolInvocation] = []
 
@@ -258,16 +408,35 @@ class CoverageAgent:
 
                 for tc in result.tool_calls:
                     fn_name = tc.function.name
+
+                    if fn_name != "coverage_calculator":
+                        logger.warning("Blocked call to unknown tool: %s", fn_name)
+                        return self._safe_failure_response(
+                            category="unknown_tool",
+                            start_index=start_index,
+                            tool_invocations=tool_invocations,
+                        )
+
                     try:
                         args: dict[str, Any] = json.loads(tc.function.arguments)
                     except json.JSONDecodeError:
-                        args = {}
+                        logger.exception("Malformed tool-call arguments for %s", fn_name)
+                        return self._safe_failure_response(
+                            category="tool_unavailable",
+                            start_index=start_index,
+                            tool_invocations=tool_invocations,
+                        )
 
                     with traced("tool.coverage_calculator"):
-                        if fn_name == "coverage_calculator":
+                        try:
                             tool_result = run_coverage_calculator(args)
-                        else:
-                            tool_result = {"error": f"Unknown tool: {fn_name}"}
+                        except Exception:
+                            logger.exception("Coverage tool call failed")
+                            return self._safe_failure_response(
+                                category="tool_unavailable",
+                                start_index=start_index,
+                                tool_invocations=tool_invocations,
+                            )
 
                     tool_invocations.append(
                         ToolInvocation(tool_name=fn_name, args=args, result=tool_result)
@@ -282,22 +451,35 @@ class CoverageAgent:
 
                 messages.extend(tool_results_msgs)
 
+                conv_check = validate_conversation(messages)
+                if not conv_check.passed:
+                    logger.warning("Conversation structure check failed: %s", conv_check.message)
+
                 # 7. Second LLM call with tool results
-                result = self.provider.complete(
-                    messages=messages,
-                    label="agent-second-turn",
-                )
+                try:
+                    result = self.provider.complete(
+                        messages=messages,
+                        label="agent-second-turn",
+                    )
+                except Exception:
+                    logger.exception("Provider call failed after tool handling")
+                    return self._safe_failure_response(
+                        category="provider_unavailable",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                    )
 
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
 
-        # 9. Extract citations from chunks
-        citations = [f"{c.source}: {c.section}" for c in chunks if c.section]
+        # 9. Extract citations only for chunks the answer actually draws on
+        supporting = _supporting_chunks(chunks, final_answer)
+        citations = [f"{c.source}: {c.section}" for c in supporting if c.section]
 
-        # 10. Collect token/cost info
+        # 10. Collect token/cost info for this response only (not the shared
+        # accumulator's lifetime total — see start_index above)
         acc = self.provider.accumulator
-        totals = acc.total_tokens
-        total_cost = acc.total_cost
+        totals, total_cost = acc.usage_and_cost_since(start_index)
 
         return AgentResponse(
             answer=final_answer,

@@ -373,9 +373,10 @@ class TestCalibrationJsonArtifact:
             warnings.simplefilter("ignore")
             from verity.config import Provider, Settings
 
-            # Isolated from any local .env: the committed calibration cassettes
-            # are keyed against zai/glm-4.5, so hermetic replay must not drift
-            # onto whatever provider/model a developer has configured locally.
+            # _run_hermetic ignores the settings passed to it and always uses its
+            # own internal pin (matching however the committed cassettes were
+            # recorded), so this settings object only needs to be a valid,
+            # env-isolated Settings instance — not a matching provider/model.
             settings = Settings(_env_file=None, provider=Provider.zai, model="glm-4.5")
 
         judge_scores = _run_hermetic(cases, settings)

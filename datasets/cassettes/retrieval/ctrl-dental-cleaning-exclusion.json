@@ -1,7 +1,7 @@
 [
   {
-    "source": "exclusions.md",
-    "section": "Services Not Covered (All Plans)",
-    "text": "## Services Not Covered (All Plans)\n\nDental care \u2014 routine dental exams, cleanings, fillings, extractions, and orthodontia are excluded unless a separate dental rider is purchased."
+    "source": "administration.md",
+    "section": "Riders",
+    "text": "## Riders\n\n**Dental Rider:** Adds coverage for routine cleanings/exams (100%, no deductible), fillings (80% after $50 deductible), and major services (50% after deductible and waiting period). The base plan excludes routine dental exams, cleanings, fillings, extractions, and orthodontia unless this rider is purchased (see exclusions.md)."
   }
 ]

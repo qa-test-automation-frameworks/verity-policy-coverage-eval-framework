@@ -63,10 +63,20 @@ class TestBuildSite:
             "calibration.html",
             "cost.html",
             "vulnerabilities.html",
+            "security.html",
             "allure/",
         )
         for page in expected:
             assert page in result, f"{page!r} missing from build_site() return value"
+
+    def test_security_placeholder_when_no_summary(self, tmp_path: Path) -> None:
+        summary = Path("reports/security/summary.md")
+        if summary.exists():
+            return  # skip if artifact already generated
+        result = self._make_site(tmp_path)
+        assert result.get("security.html") is False
+        content = (tmp_path / "security.html").read_text()
+        assert "make redteam" in content
 
 
 class TestNavContent:
@@ -79,6 +89,7 @@ class TestNavContent:
             "calibration.html",
             "cost.html",
             "vulnerabilities.html",
+            "security.html",
             "allure/index.html",
         )
         for href in expected_hrefs:

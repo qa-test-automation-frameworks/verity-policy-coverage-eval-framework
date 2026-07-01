@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] My coverage starts next Monday \u2014 will it cover a visit I had last week?",
+  "model": "openai/glm-4.5",
+  "content": "No. Coverage begins on your enrollment effective date shown on your ID card and does not apply retroactively to services received before that date (Administration \u2014 Effective and Expiration Dates).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 108,
+    "completion_tokens": 30,
+    "total_tokens": 138
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "_request_preview": "[turn-1] I'm at $7,600 of my $8,000 Bronze out-of-pocket max, deductible met. What do I o",
+  "model": "openai/glm-4.5",
+  "content": "",
+  "tool_calls": [
+    {
+      "id": "call_bronze_oop_boundary",
+      "function": {
+        "name": "coverage_calculator",
+        "arguments": "{\"claim_amount\": 1000.0, \"plan_deductible\": 4000.0, \"accrued_deductible\": 4000.0, \"plan_oop_max\": 8000.0, \"accrued_oop\": 7600.0, \"coinsurance_member\": 0.40}"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 140,
+    "completion_tokens": 32,
+    "total_tokens": 172
+  }
+}

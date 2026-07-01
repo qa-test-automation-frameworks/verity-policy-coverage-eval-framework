@@ -48,7 +48,7 @@ class TestProviderJudge:
 
     def test_a_generate_returns_same_as_generate(self) -> None:
         judge = _make_provider_judge("async response")
-        result = asyncio.get_event_loop().run_until_complete(judge.a_generate("prompt"))
+        result = asyncio.run(judge.a_generate("prompt"))
         assert result == "async response"
 
     def test_accumulator_property(self) -> None:
@@ -95,7 +95,7 @@ class TestDeepEvalJudge:
     def test_a_generate_via_adapter(self) -> None:
         judge = _make_provider_judge("async judge response")
         dj = DeepEvalJudge(judge)
-        result = asyncio.get_event_loop().run_until_complete(dj.adapter.a_generate("async prompt"))
+        result = asyncio.run(dj.adapter.a_generate("async prompt"))
         assert result == "async judge response"
 
     def test_load_model_returns_self(self) -> None:
@@ -130,9 +130,7 @@ class TestRagasJudge:
         PromptValue (or plain string), returns an LLMResult with `n` generations."""
         judge = _make_provider_judge("ragas response text")
         rj = RagasJudge(judge)
-        result = asyncio.get_event_loop().run_until_complete(
-            rj.adapter.generate("faithfulness prompt")
-        )
+        result = asyncio.run(rj.adapter.generate("faithfulness prompt"))
         assert hasattr(result, "generations")
         assert len(result.generations) == 1
         assert result.generations[0][0].text == "ragas response text"
@@ -140,9 +138,7 @@ class TestRagasJudge:
     def test_generate_respects_n(self) -> None:
         judge = _make_provider_judge("chat result text")
         rj = RagasJudge(judge)
-        result = asyncio.get_event_loop().run_until_complete(
-            rj.adapter.generate("some ragas prompt", n=3)
-        )
+        result = asyncio.run(rj.adapter.generate("some ragas prompt", n=3))
         assert len(result.generations[0]) == 3
         assert all(g.text == "chat result text" for g in result.generations[0])
 
@@ -151,7 +147,7 @@ class TestRagasJudge:
         rj = RagasJudge(judge)
         prompt_value = MagicMock()
         prompt_value.to_string.return_value = "async prompt"
-        result = asyncio.get_event_loop().run_until_complete(rj.adapter.generate(prompt_value))
+        result = asyncio.run(rj.adapter.generate(prompt_value))
         assert result.generations[0][0].text == "async ragas"
 
     def test_adapter_cached_on_second_access(self) -> None:
