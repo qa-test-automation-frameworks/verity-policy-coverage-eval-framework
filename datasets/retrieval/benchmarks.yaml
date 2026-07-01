@@ -31,6 +31,12 @@ benchmarks:
 
   - case_id: ctrl-missing-acupuncture-policy
     query: "Does my plan cover acupuncture?"
+    # The corpus never mentions acupuncture at all — that silence is the whole
+    # point of this case. required_terms here checks for corpus language that
+    # actually exists (the "Covered Service" definition and the exclusions
+    # list's "excluded" framing) rather than fixture-only phrasing that
+    # doesn't appear in the real policy documents; the agent must reason from
+    # this that acupuncture is not an affirmatively covered benefit.
     expected_sources: [definitions.md, exclusions.md]
-    required_terms: ["do not mention acupuncture", "covered benefit"]
+    required_terms: ["Covered Service", "excluded"]
     min_source_precision: 1.0
