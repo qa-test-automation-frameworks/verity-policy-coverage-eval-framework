@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Generator
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -14,13 +15,21 @@ from verity.cassettes import CassetteLibrary
 from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
 from verity.golden import GoldenCase, load_golden
+from verity.latency import DETERMINISTIC_BUDGET_MS
 from verity.providers import LLMProvider
+from verity.trends import append_trend, compute_trend_record
 
 if TYPE_CHECKING:
     pass
 
 _CASSETTE_DIR = Path("datasets/cassettes")
 _GOLDEN_DIR = Path("datasets/golden")
+
+# Session-wide accumulator purely for latency/cost trend tracking — each
+# run_case() call also uses its own fresh accumulator so per-response usage
+# stays correctly scoped (see verity.cost.RunAccumulator.usage_and_cost_since).
+_SESSION_ACCUMULATOR = RunAccumulator()
+_NODE_RESULTS: dict[str, str] = {}
 
 
 @pytest.fixture(scope="session")
@@ -51,4 +60,27 @@ def run_case(case: GoldenCase, settings: Settings) -> AgentResponse:
     accumulator = RunAccumulator()
     provider = LLMProvider(settings, accumulator, cassette_library=lib)
     agent = CoverageAgent(settings=settings, retriever=retriever, provider=provider)
-    return agent.answer(case.query, member_id=case.member_id)
+    response = agent.answer(case.query, member_id=case.member_id)
+    _SESSION_ACCUMULATOR.records.extend(accumulator.records)
+    return response
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(
+    item: pytest.Item, call: pytest.CallInfo[None]
+) -> Generator[None, pytest.TestReport, None]:
+    outcome = yield
+    if call.when == "call":
+        _NODE_RESULTS[item.nodeid] = outcome.get_result().outcome
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    if not _NODE_RESULTS:
+        return
+    record = compute_trend_record(
+        "deterministic",
+        _NODE_RESULTS,
+        _SESSION_ACCUMULATOR,
+        latency_budget_ms=DETERMINISTIC_BUDGET_MS,
+    )
+    append_trend(record)

@@ -22,8 +22,10 @@ from verity.config import Settings
 from verity.cost import RunAccumulator
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
+from verity.latency import LIVE_BUDGET_MS
 from verity.providers import LLMProvider
 from verity.reporting import render_cost_summary, write_step_summary
+from verity.trends import append_trend, compute_trend_record
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
 
@@ -98,3 +100,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         out = Path("reports/semantic/results.json")
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(_NODE_RESULTS, indent=2), encoding="utf-8")
+
+        record = compute_trend_record(
+            "semantic", _NODE_RESULTS, _SESSION_ACCUMULATOR, latency_budget_ms=LIVE_BUDGET_MS
+        )
+        append_trend(record)
