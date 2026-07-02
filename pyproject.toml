@@ -7,8 +7,19 @@ name = "verity-policy-coverage-eval-framework"
 version = "0.1.0"
 description = "A structured, multi-tier evaluation framework for LLM applications — demonstrated on a policy coverage RAG + tool-use assistant."
 license = { text = "MIT" }
+authors = [{ name = "Verity contributors" }]
 requires-python = ">=3.12"
 readme = "README.md"
+keywords = ["evaluation", "rag", "testing", "quality", "policy", "guardrails"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Typing :: Typed",
+]
 dependencies = [
     "litellm>=1.45.0",
     "pydantic>=2.7.0",
@@ -45,6 +56,11 @@ report = [
 mutation = [
     "mutmut>=3.2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/vyaspc/verity-policy-coverage-eval-framework"
+Repository = "https://github.com/vyaspc/verity-policy-coverage-eval-framework"
+Issues = "https://github.com/vyaspc/verity-policy-coverage-eval-framework/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/verity", "src/sut"]
