@@ -62,6 +62,7 @@ def ensure_ragas_compat() -> None:
 # Per-metric thresholds
 THRESHOLD_FAITHFULNESS: float = 0.7  # defects #1, #2, #7 fall below
 THRESHOLD_CONTEXT_PRECISION: float = 0.6
+THRESHOLD_CONTEXT_RECALL: float = 0.6
 THRESHOLD_ANSWER_RELEVANCY: float = 0.7
 
 
@@ -110,6 +111,15 @@ def make_context_precision(
     ensure_ragas_compat()
     context_precision_cls = _import_ragas_metric_class("ContextPrecision")
     metric = context_precision_cls()
+    metric.llm = _ragas_judge(judge)
+    return metric
+
+
+def make_context_recall(judge: ProviderJudge, threshold: float = THRESHOLD_CONTEXT_RECALL) -> Any:
+    """RAGAS ContextRecall — measures whether required supporting context was retrieved."""
+    ensure_ragas_compat()
+    context_recall_cls = _import_ragas_metric_class("ContextRecall")
+    metric = context_recall_cls()
     metric.llm = _ragas_judge(judge)
     return metric
 

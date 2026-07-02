@@ -22,9 +22,11 @@ from verity.metrics.deepeval_metrics import (
     make_tool_correctness,
 )
 from verity.metrics.ragas_metrics import (
+    THRESHOLD_CONTEXT_RECALL,
     THRESHOLD_FAITHFULNESS,
     ensure_ragas_compat,
     make_context_precision,
+    make_context_recall,
     make_faithfulness,
     make_ragas_answer_relevancy,
 )
@@ -74,6 +76,7 @@ class TestThresholds:
             ("THRESHOLD_REFUSAL", THRESHOLD_REFUSAL),
             ("THRESHOLD_TOOL_CORRECTNESS", THRESHOLD_TOOL_CORRECTNESS),
             ("THRESHOLD_FAITHFULNESS", THRESHOLD_FAITHFULNESS),
+            ("THRESHOLD_CONTEXT_RECALL", THRESHOLD_CONTEXT_RECALL),
         ]:
             assert 0.0 <= value <= 1.0, f"{name} = {value} out of [0, 1]"
 
@@ -153,6 +156,13 @@ class TestRagasMetricConstruction:
     def test_make_context_precision_returns_object(self) -> None:
         try:
             m = make_context_precision(_mock_judge())
+            assert m is not None
+        except ImportError:
+            pytest.skip("ragas not available")
+
+    def test_make_context_recall_returns_object(self) -> None:
+        try:
+            m = make_context_recall(_mock_judge())
             assert m is not None
         except ImportError:
             pytest.skip("ragas not available")
