@@ -20,7 +20,6 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel
@@ -32,7 +31,7 @@ from verity.config import Settings, get_settings
 from verity.conversation import validate_conversation
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
-from verity.tracing import traced
+from verity.tracing import trace_id_hex, traced
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +294,7 @@ class CoverageAgent:
         category: str,
         start_index: int,
         tool_invocations: list[ToolInvocation] | None = None,
+        trace_id: str = "",
     ) -> AgentResponse:
         assert self.provider is not None
         totals, total_cost = self.provider.accumulator.usage_and_cost_since(start_index)
@@ -313,7 +313,7 @@ class CoverageAgent:
             total_tokens=totals.total_tokens,
             estimated_cost_usd=total_cost.total_usd,
             failure_category=category,
-            trace_id=uuid4().hex,
+            trace_id=trace_id,
         )
 
     def answer(
@@ -347,7 +347,9 @@ class CoverageAgent:
                 estimated_cost_usd=0.0,
             )
 
-        with traced("agent.answer", member_id=member_id, query_len=len(query)):
+        with traced("agent.answer", member_id=member_id, query_len=len(query)) as span:
+            trace_id = trace_id_hex(span)
+
             # 2. Load member
             members = _load_members()
             if member_id not in members:
@@ -380,7 +382,7 @@ class CoverageAgent:
             except Exception:
                 logger.exception("Provider call failed before tool handling")
                 return self._safe_failure_response(
-                    category="provider_unavailable", start_index=start_index
+                    category="provider_unavailable", start_index=start_index, trace_id=trace_id
                 )
 
             tool_invocations: list[ToolInvocation] = []
@@ -415,6 +417,7 @@ class CoverageAgent:
                             category="unknown_tool",
                             start_index=start_index,
                             tool_invocations=tool_invocations,
+                            trace_id=trace_id,
                         )
 
                     try:
@@ -425,6 +428,7 @@ class CoverageAgent:
                             category="tool_unavailable",
                             start_index=start_index,
                             tool_invocations=tool_invocations,
+                            trace_id=trace_id,
                         )
 
                     with traced("tool.coverage_calculator"):
@@ -436,6 +440,7 @@ class CoverageAgent:
                                 category="tool_unavailable",
                                 start_index=start_index,
                                 tool_invocations=tool_invocations,
+                                trace_id=trace_id,
                             )
 
                     tool_invocations.append(
@@ -467,6 +472,7 @@ class CoverageAgent:
                         category="provider_unavailable",
                         start_index=start_index,
                         tool_invocations=tool_invocations,
+                        trace_id=trace_id,
                     )
 
         # 8. Output guardrail
@@ -492,6 +498,7 @@ class CoverageAgent:
             completion_tokens=totals.completion_tokens,
             total_tokens=totals.total_tokens,
             estimated_cost_usd=total_cost.total_usd,
+            trace_id=trace_id,
         )
 
 

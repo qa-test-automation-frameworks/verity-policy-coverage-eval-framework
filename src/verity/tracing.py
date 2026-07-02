@@ -130,6 +130,13 @@ def traced(name: str, **attributes: Any) -> Generator[Any, None, None]:
         yield span
 
 
+def trace_id_hex(span: Any) -> str:
+    """Return the 32-hex-char trace id of a span yielded by traced(), or "" if absent."""
+    if span is None:
+        return ""
+    return format(span.context.trace_id, "032x")
+
+
 def record_call_span(call_record: CallRecord) -> None:
     """Add model/token/cost attributes from a CallRecord to the current span."""
     if not _ENABLED:
