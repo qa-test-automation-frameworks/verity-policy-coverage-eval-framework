@@ -59,9 +59,9 @@ mutation = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/vyaspc/verity-policy-coverage-eval-framework"
-Repository = "https://github.com/vyaspc/verity-policy-coverage-eval-framework"
-Issues = "https://github.com/vyaspc/verity-policy-coverage-eval-framework/issues"
+Homepage = "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework"
+Repository = "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework"
+Issues = "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/verity", "src/sut"]
