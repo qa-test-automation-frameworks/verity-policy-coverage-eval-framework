@@ -16,6 +16,7 @@ from verity.checks import (
     check_injection,
     check_must_contain,
     check_must_not_contain,
+    check_no_adjudication_language,
     check_numeric_expectations,
     check_pii,
     check_refusal,
@@ -374,6 +375,31 @@ class TestCheckInjection:
         result = check_injection(resp)
         assert not result.passed
         assert "injection payload" in result.message
+
+
+# ---------------------------------------------------------------------------
+# Non-adjudication language check
+# ---------------------------------------------------------------------------
+
+
+class TestCheckNoAdjudicationLanguage:
+    def test_benefit_explanation_passes(self) -> None:
+        resp = _Response(answer="Your plan lists a $60 specialist copay in network.")
+        assert check_no_adjudication_language(resp).passed
+
+    @pytest.mark.parametrize(
+        "answer",
+        [
+            "Your claim is approved for this procedure.",
+            "Your claim is denied under the policy.",
+            "This claim has been approved.",
+            "Coverage is approved for the visit.",
+        ],
+    )
+    def test_claim_decision_language_fails(self, answer: str) -> None:
+        result = check_no_adjudication_language(_Response(answer=answer))
+        assert not result.passed
+        assert "adjudication language" in result.message
 
 
 # ---------------------------------------------------------------------------
