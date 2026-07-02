@@ -315,12 +315,71 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Risk-weight breakdown
+# ---------------------------------------------------------------------------
+
+_PASS_STATUSES = {"CAUGHT", "VERIFIED", "FIXED"}
+_RISK_WEIGHTS = ("high", "medium", "low")
+
+
+def _risk_weight_breakdown(
+    catalog: list[DefectEntry], defect_risk_weights: dict[int, str]
+) -> dict[str, dict[str, int]]:
+    """Group defect-catalog entries by their golden case's risk_weight,
+    counting pass (CAUGHT/VERIFIED/FIXED), pending (COVERED — not yet run),
+    and fail (MISSED) per weight. Defects with no matching golden case are
+    omitted rather than guessed at."""
+    breakdown: dict[str, dict[str, int]] = {
+        w: {"pass": 0, "pending": 0, "fail": 0} for w in _RISK_WEIGHTS
+    }
+    for entry in catalog:
+        weight = defect_risk_weights.get(entry.id)
+        if weight not in breakdown:
+            continue
+        if entry.status in _PASS_STATUSES:
+            breakdown[weight]["pass"] += 1
+        elif entry.status == "MISSED":
+            breakdown[weight]["fail"] += 1
+        else:
+            breakdown[weight]["pending"] += 1
+    return breakdown
+
+
+def _load_defect_risk_weights() -> dict[int, str]:
+    """Map defect_id -> risk_weight from the first golden case carrying that
+    defect_id. Returns an empty map (breakdown omits all rows) if the
+    dataset can't be loaded, rather than raising."""
+    try:
+        import sys
+
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+        from verity.golden import load_golden
+
+        cases = load_golden(Path("datasets/golden"))
+    except Exception:
+        return {}
+
+    result: dict[int, str] = {}
+    for case in cases:
+        if case.defect_id is not None and case.defect_id not in result:
+            result[case.defect_id] = case.risk_weight
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Render
 # ---------------------------------------------------------------------------
 
 
-def render_markdown(catalog: list[DefectEntry]) -> str:
-    """Return the defects-caught matrix as a markdown document."""
+def render_markdown(
+    catalog: list[DefectEntry], defect_risk_weights: dict[int, str] | None = None
+) -> str:
+    """Return the defects-caught matrix as a markdown document.
+
+    defect_risk_weights maps defect_id -> risk_weight (from the golden
+    dataset) and drives the Risk Weight Breakdown section; omitted or empty
+    when not provided, rather than guessing at weights.
+    """
     hermetically_proven = [e for e in catalog if e.status == "CAUGHT"]
 
     lines: list[str] = [
@@ -363,6 +422,28 @@ def render_markdown(catalog: list[DefectEntry]) -> str:
         lines.append(
             f"| {entry.id} | {entry.description} | {entry.failure_mode} | {tiers} | {icon} |"
         )
+
+    if defect_risk_weights:
+        breakdown = _risk_weight_breakdown(catalog, defect_risk_weights)
+        lines += [
+            "",
+            "---",
+            "",
+            "## Risk Weight Breakdown",
+            "",
+            "Defect-catalog status grouped by the risk_weight of its golden case "
+            "(pending = ⬜ COVERED, not yet run).",
+            "",
+            "| Risk Weight | Pass | Pending | Fail |",
+            "|-------------|-----:|--------:|-----:|",
+        ]
+        for weight in _RISK_WEIGHTS:
+            counts = breakdown[weight]
+            if counts["pass"] + counts["pending"] + counts["fail"] == 0:
+                continue
+            lines.append(
+                f"| {weight} | {counts['pass']} | {counts['pending']} | {counts['fail']} |"
+            )
 
     lines += [
         "",
@@ -482,7 +563,7 @@ def main() -> None:
 
     catalog = run(skip_hermetic=args.skip_hermetic)
 
-    md = render_markdown(catalog)
+    md = render_markdown(catalog, defect_risk_weights=_load_defect_risk_weights())
     out_md = Path("docs/defects-caught.md")
     out_md.write_text(md, encoding="utf-8")
     print(f"Written: {out_md}")

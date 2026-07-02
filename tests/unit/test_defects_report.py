@@ -122,6 +122,45 @@ class TestRenderMarkdown:
 
 
 # ---------------------------------------------------------------------------
+# Risk weight breakdown
+# ---------------------------------------------------------------------------
+
+
+class TestRiskWeightBreakdown:
+    def _weights(self) -> dict[int, str]:
+        # One defect per weight, covering pass (CAUGHT)/pending (COVERED)/fail (MISSED).
+        return {1: "high", 5: "medium", 6: "low"}
+
+    def test_breakdown_counts_by_weight(self) -> None:
+        from scripts.defects_report import _risk_weight_breakdown
+
+        catalog = _catalog_with_statuses({1: "CAUGHT", 5: "COVERED", 6: "MISSED"})
+        breakdown = _risk_weight_breakdown(catalog, self._weights())
+        assert breakdown["high"] == {"pass": 1, "pending": 0, "fail": 0}
+        assert breakdown["medium"] == {"pass": 0, "pending": 1, "fail": 0}
+        assert breakdown["low"] == {"pass": 0, "pending": 0, "fail": 1}
+
+    def test_defects_without_weight_mapping_are_omitted(self) -> None:
+        from scripts.defects_report import _risk_weight_breakdown
+
+        catalog = _catalog_with_statuses({1: "CAUGHT"})
+        breakdown = _risk_weight_breakdown(catalog, {})
+        empty = {"pass": 0, "pending": 0, "fail": 0}
+        assert breakdown == {"high": empty, "medium": dict(empty), "low": dict(empty)}
+
+    def test_section_rendered_when_weights_provided(self) -> None:
+        catalog = _catalog_with_statuses({1: "CAUGHT"})
+        md = render_markdown(catalog, defect_risk_weights=self._weights())
+        assert "## Risk Weight Breakdown" in md
+        assert "| high | 1 | 0 | 0 |" in md
+
+    def test_section_omitted_when_no_weights_provided(self) -> None:
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        md = render_markdown(catalog)
+        assert "## Risk Weight Breakdown" not in md
+
+
+# ---------------------------------------------------------------------------
 # build_json
 # ---------------------------------------------------------------------------
 
