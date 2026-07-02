@@ -71,9 +71,10 @@ def test_real_retrieval_matches_recorded_snapshot(case_id: str, real_retriever: 
 
     if case_id in _ORDER_UNSTABLE_CASES:
         pytest.xfail(
-            f"{case_id}: embedding distances are near-tied with no distinguishing lexical "
+            f"KI-2: {case_id}: embedding distances are near-tied with no distinguishing lexical "
             "signal, so which chunks even make the cut (not just their order) varies "
-            "between process runs. Not a useful regression signal for this case."
+            "between process runs. Not a useful regression signal for this case. "
+            "(see docs/known-issues.md)"
         )
 
     assert actual == expected, (
