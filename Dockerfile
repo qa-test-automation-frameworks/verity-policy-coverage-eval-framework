@@ -1,9 +1,12 @@
-FROM python:3.12-slim
+# Pinned by digest for reproducible/auditable builds; refresh both the tag
+# and digest together (e.g. via Dependabot/Renovate) rather than editing the
+# digest alone.
+FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf
 
 WORKDIR /app
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:latest@sha256:3d868e555f8f1dbc324afa005066cd11e1053fc4743b9808ca8025283e65efa5 /uv /usr/local/bin/uv
 
 # Copy dependency manifests first for layer caching
 COPY pyproject.toml uv.lock ./
