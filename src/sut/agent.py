@@ -425,6 +425,19 @@ class CoverageAgent:
                         trace_id=trace_id,
                     )
 
+                # This agent only handles one round of tool calls. A second
+                # round in the post-tool response is unsupported — reject it
+                # rather than silently using its (unvalidated) content as the
+                # final answer.
+                if result.tool_calls:
+                    logger.warning("Second-turn tool_calls ignored; treating as tool_unavailable")
+                    return self._safe_failure_response(
+                        category="tool_unavailable",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
 
