@@ -66,3 +66,20 @@ assert threshold_pass(stat, THRESHOLD_FAITHFULNESS, mode="mean"), (
 | `pytest-rerunfailures` retry | Retries mask flakiness instead of modelling it statistically |
 | Fixed random seed | LLM providers do not expose or guarantee a usable inference seed |
 | Property-based testing (Hypothesis) | Does not map naturally to LLM metric scoring |
+
+## Amendment (2026-07-02): default N lowered from 3 to 1 for local/push runs
+
+The original default of N=3 for every Tier-2 run was never adopted in
+practice: `VERITY_SEMANTIC_SAMPLES` defaults to `1` (`.env.example`,
+`Settings.semantic_samples` in `verity/config.py`) for local runs and pushes
+to `main`, and `.github/workflows/semantic-eval.yml` explicitly sets `N=5`
+for the nightly scheduled run instead of the ADR's N=3. The reasoning above
+for why N>1 matters is unchanged, but N=3 was cost/latency-prohibitive to
+run on every push once the golden dataset grew past its original size.
+
+Current behavior: N=1 on local runs and pushes (cheap, catches gross
+regressions immediately; the mean/median/pass_rate machinery in
+`verity/statistics.py` degenerates to a single-sample read at N=1), N=5 on
+the nightly schedule (the run that actually exercises the distribution-over-N
+statistics this ADR describes). See `docs/thresholds.md` for the current
+per-metric N and threshold values.
