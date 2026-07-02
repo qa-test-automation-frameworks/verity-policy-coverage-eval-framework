@@ -5,6 +5,7 @@
 [![PR Gate (Tier 1)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
 [![Semantic Eval (Tier 2)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
 [![Adversarial Red-Team (Tier 3)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml)
+[![Mutation Testing](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/mutation.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/mutation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12 | 3.13](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
 
