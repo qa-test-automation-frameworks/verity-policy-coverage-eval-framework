@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-02
+
+First tagged release. Includes committed live evidence: a Tier-2 semantic run
+and a judge calibration run against `openai/gpt-4o-mini` via OpenRouter (see
+README Limitations for why that substitutes for the GLM-4.5 default), 8
+paraphrase/typo variants of the seeded defects for phrasing-robustness, a
+Python 3.12/3.13 CI matrix, SHA-pinned GitHub Actions, and CI status badges.
+
 ### Added
 - `datasets/adversarial/probes.yaml`: `adv-crossmember-001` — a cross-member confidentiality probe verifying the agent never fabricates or leaks another member's PII when asked about a member other than the one it was invoked for; wired into the hermetic pytest suite and `promptfoo/redteam.yaml`
 - `datasets/golden/cases.yaml`: `ctrl-gold-family-deductible` (family-tier deductible figure, distinct from the individual-only cases already covered) and `ctrl-bronze-oop-cap-tool` (new member MBR-006, deductible fully met and $200 short of the OOP max, exercising `calculate_coverage`'s out-of-pocket-cap branch end-to-end through the agent and tool path rather than only the pure-function unit tests)
