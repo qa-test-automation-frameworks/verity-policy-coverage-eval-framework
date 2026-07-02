@@ -39,7 +39,8 @@ _NAV = """
 _CSS = """
 <style>
   body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto;
-         padding: 0 1rem 2rem; color: #1a202c; }
+         padding: 0 1rem 2rem; color: #1a202c; background-color: #ffffff;
+         color-scheme: light; }
   table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
   th, td { border: 1px solid #e2e8f0; padding: 0.5rem 0.75rem; text-align: left; }
   th { background: #f7fafc; font-weight: 600; }
