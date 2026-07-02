@@ -24,6 +24,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel
 
+from sut.citations import resolve_citations
 from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scrub_output
 from sut.retriever import Chunk, PolicyRetriever, Retriever
 from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_coverage_calculator
@@ -83,83 +84,6 @@ class AgentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # System prompt builder
 # ---------------------------------------------------------------------------
-
-
-# Filters generic filler from *answer* text when matching it against retrieved
-# chunk text for citation resolution. Deliberately kept separate from
-# sut.retriever._QUERY_STOPWORDS, which filters *user query* terms for
-# lexical-overlap retrieval scoring — different domain (answer prose vs.
-# short queries), so tuning one should not silently change the other.
-_STOPWORDS = frozenset(
-    {
-        "this",
-        "that",
-        "with",
-        "from",
-        "your",
-        "have",
-        "will",
-        "plan",
-        "covers",
-        "coverage",
-        "member",
-        "would",
-        "into",
-        "after",
-        "before",
-        "roughly",
-        "estimated",
-        "depending",
-        "additional",
-        "provisions",
-        "status",
-    }
-)
-
-_NUMERIC_TOKEN_RE = re.compile(r"\$?\d[\d,]*(?:\.\d+)?%?")
-_WORD_TOKEN_RE = re.compile(r"[a-z]{4,}")
-
-
-def _significant_tokens(text: str) -> set[str]:
-    """Distinctive numeric and word tokens used to detect whether a chunk's
-    content is actually reflected in the final answer, so citations point to
-    chunks that support the response rather than every chunk retrieved."""
-    lowered = text.lower()
-    numbers = set(_NUMERIC_TOKEN_RE.findall(lowered))
-    words = {w for w in _WORD_TOKEN_RE.findall(lowered) if w not in _STOPWORDS}
-    return numbers | words
-
-
-def _supporting_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
-    """Filter retrieved chunks down to those whose content is reflected in the
-    final answer, instead of blindly citing every chunk that was retrieved."""
-    answer_tokens = _significant_tokens(answer)
-    if not answer_tokens:
-        return []
-    return [chunk for chunk in chunks if _significant_tokens(chunk.text) & answer_tokens]
-
-
-# The system prompt instructs the model to "cite the source document and
-# section for any coverage claim you make." In practice it does so inline as
-# "(<Document> §<section>)", e.g. "(Bronze §3.3)" or "(Amendment §A2)".
-_MODEL_CITATION_RE = re.compile(r"\(([A-Za-z][A-Za-z ]*?)\s*§\s*([\w.]+)\)")
-
-
-def _model_cited_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
-    """Resolve the model's own inline citations to the chunks it actually
-    retrieved, so citations reflect what the model said it used rather than
-    a lexical-overlap guess. Only matches against retrieved chunks — a
-    citation naming a document that wasn't retrieved resolves to nothing."""
-    matched: list[Chunk] = []
-    for name, _section in _MODEL_CITATION_RE.findall(answer):
-        stem = name.strip().lower()
-        for chunk in chunks:
-            source_stem = chunk.source.removesuffix(".md").lower()
-            if source_stem.startswith(stem) or stem.startswith(source_stem):
-                if chunk not in matched:
-                    matched.append(chunk)
-                break
-    return matched
 
 
 _DOLLAR_AMOUNT_RE = re.compile(r"\$\d[\d,]*(?:\.\d+)?")
@@ -526,9 +450,7 @@ class CoverageAgent:
 
         # 9. Prefer citations the model itself named; fall back to lexical
         # overlap only when the model didn't cite anything resolvable.
-        supporting = _model_cited_chunks(chunks, final_answer) or _supporting_chunks(
-            chunks, final_answer
-        )
+        supporting = resolve_citations(chunks, final_answer)
         citations = [f"{c.source}: {c.section}" for c in supporting if c.section]
 
         # 10. Collect token/cost info for this response only (not the shared
