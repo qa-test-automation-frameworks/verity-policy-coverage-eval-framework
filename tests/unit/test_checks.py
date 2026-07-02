@@ -336,6 +336,16 @@ class TestMustContain:
         resp = _Response(answer="SILVER plan details...")
         assert check_must_contain(case, resp).passed
 
+    def test_comma_free_token_matches_comma_formatted_answer(self) -> None:
+        case = _case(must_contain=["1660"])
+        resp = _Response(answer="Total member cost is $1,660.")
+        assert check_must_contain(case, resp).passed
+
+    def test_comma_formatted_token_matches_comma_free_answer(self) -> None:
+        case = _case(must_contain=["1,660"])
+        resp = _Response(answer="Total member cost is $1660.")
+        assert check_must_contain(case, resp).passed
+
 
 class TestMustNotContain:
     def test_no_forbidden_tokens_passes(self) -> None:
