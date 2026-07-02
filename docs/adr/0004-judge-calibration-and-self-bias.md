@@ -1,6 +1,6 @@
 # ADR-0004: Judge Calibration and Self-Bias Measurement
 
-**Status:** Accepted as methodology; empirical live calibration pending
+**Status:** Accepted; live calibration measured 2026-07-02 (see below)
 
 ## Context
 
@@ -33,16 +33,25 @@ Implement a **judge calibration suite** in `verity/calibration.py` with:
 - **Committed report** at `docs/calibration-report.md` (mirrors the cassette-report
   precedent of `docs/defects-caught.md`).
 
-### Synthetic Replay Results (committed report)
+### Live Calibration Results (committed report)
+
+Measured 2026-07-02 with `VERITY_JUDGE_PROVIDER=openrouter VERITY_JUDGE_MODEL=openai/gpt-4o-mini`
+(not the GLM-4.5 default in this ADR's original context — see `docs/calibration-report.md` and
+the README Limitations section for why):
 
 | Metric | Value |
 |--------|-------|
-| Raw agreement | 96.9% on synthetic labels |
-| Cohen's kappa | 0.934 on synthetic labels |
-| Per-metric MAE | 0.028 |
-| Self-preference delta | +0.056 on synthetic labels |
+| Raw agreement | 93.8% |
+| Cohen's kappa | 0.870 |
+| Per-metric MAE | 0.125 |
+| Self-preference delta | -0.037 (own family = "other", i.e. non-GLM) |
 
-These values demonstrate that the calibration code path, reporting, and replay fixtures work. They are not evidence that the live judge is reliable; run `make calibrate-live` with a real judge and a genuine second model family before using the numbers to justify thresholds.
+These are real measurements against live judge calls, not synthetic replay — see
+`docs/calibration-report.md` for the full per-case breakdown. Cohen's kappa (0.870) and raw
+agreement (93.8%) both clear this ADR's original acceptance bar (kappa ≥ 0.60, agreement ≥ 85%).
+The self-preference delta is small and negative for this judge/family pairing; re-run
+`make calibrate-live` with a GLM-4.5 judge key to measure genuine GLM self-preference, which
+this run could not — the judge here was gpt-4o-mini, not GLM.
 
 ## Consequences
 
