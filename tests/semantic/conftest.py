@@ -84,6 +84,7 @@ def live_agent(settings: Settings) -> CoverageAgent:
 
 _NODE_RESULTS: dict[str, str] = {}
 _SEMANTIC_MEASUREMENTS: dict[str, dict[str, object]] = {}
+_NODE_FAILURE_DETAILS: dict[str, str] = {}
 
 
 def record_defect_measurement(
@@ -126,7 +127,10 @@ def pytest_runtest_makereport(
 ) -> Generator[None, pytest.TestReport, None]:
     outcome = yield
     if call.when == "call":
-        _NODE_RESULTS[item.nodeid] = outcome.get_result().outcome
+        report = outcome.get_result()
+        _NODE_RESULTS[item.nodeid] = report.outcome
+        if report.failed:
+            _NODE_FAILURE_DETAILS[item.nodeid] = str(report.longrepr)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
@@ -138,8 +142,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         payload = {
             "outcomes": _NODE_RESULTS,
             "measurements": _SEMANTIC_MEASUREMENTS,
+            "failure_details": _NODE_FAILURE_DETAILS,
         }
-        payload.update(_NODE_RESULTS)
         out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
         record = compute_trend_record(
