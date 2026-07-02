@@ -224,15 +224,11 @@ def _run_hermetic(cases: list[CalibrationCase], settings: Settings) -> list[floa
 
 def _run_live(cases: list[CalibrationCase], settings: Settings) -> list[float]:
     """Score cases with real judge calls and save cassettes for future replay."""
-    record_settings = Settings(
-        provider=settings.provider,
-        model=settings.model,
-        zai_api_key=settings.zai_api_key,
-        openrouter_api_key=settings.openrouter_api_key,
-        together_api_key=settings.together_api_key,
-        cassette_mode="record",
-        cassette_dir=_CALIB_CASSETTE_DIR,
-        judge=settings.judge,
+    # Copy the full ambient settings (all provider keys/base overrides, not
+    # just a hand-picked subset) so nvidia/google credentials and custom API
+    # bases configured via VERITY_* env vars aren't silently dropped.
+    record_settings = settings.model_copy(
+        update={"cassette_mode": "record", "cassette_dir": _CALIB_CASSETTE_DIR}
     )
     accumulator = RunAccumulator()
     judge = ProviderJudge(settings=record_settings, accumulator=accumulator)
