@@ -8,7 +8,7 @@ Key exports:
     CalibrationCase   - typed schema for a single labeled item
     load_calibration  - loader for datasets/calibration/labeled.yaml
     AgreementReport   - raw %, Cohen's kappa, MAE vs human labels
-    SelfBiasReport    - self_preference_delta = E[delta | glm] - E[delta | other]
+    SelfBiasReport    - self_preference_delta = E[delta | judge_family] - E[delta | other]
     compute_agreement - compute AgreementReport from labels + judge scores
     compute_self_bias - compute SelfBiasReport from labels + judge scores
     build_scoring_prompt - deterministic rubric-based scoring prompt
@@ -91,20 +91,22 @@ class AgreementReport:
 class SelfBiasReport:
     """Quantifies self-preference: does the judge inflate scores for its own family?
 
-    self_preference_delta > 0 means the judge is more lenient on GLM-family outputs.
+    self_preference_delta > 0 means the judge is more lenient on outputs from its
+    own model family (the family passed as `judge_family` to compute_self_bias).
     """
 
+    judge_family: str  # the output_family treated as "own" for this report
     self_preference_delta: float  # mean_delta_own - mean_delta_other
-    mean_delta_own_family: float  # mean(judge - human) for output_family="glm"
-    mean_delta_other_family: float  # mean(judge - human) for output_family="other"
+    mean_delta_own_family: float  # mean(judge - human) for output_family == judge_family
+    mean_delta_other_family: float  # mean(judge - human) for all other output_family values
     n_own: int
     n_other: int
 
     def __str__(self) -> str:
         sign = "+" if self.self_preference_delta >= 0 else ""
         return (
-            f"Self-Bias Report\n"
-            f"  GLM-family outputs   (n={self.n_own}): "
+            f"Self-Bias Report (judge family: {self.judge_family})\n"
+            f"  Own-family outputs   (n={self.n_own}): "
             f"mean delta = {self.mean_delta_own_family:+.3f}\n"
             f"  Other-family outputs (n={self.n_other}): "
             f"mean delta = {self.mean_delta_other_family:+.3f}\n"
@@ -175,18 +177,27 @@ def compute_agreement(
 def compute_self_bias(
     cases: list[CalibrationCase],
     judge_scores: list[float],
+    judge_family: str = "glm",
 ) -> SelfBiasReport:
     """Quantify self-preference bias.
 
     delta = judge_score - human_score per case.
-    self_preference_delta = mean(delta on glm outputs) - mean(delta on other outputs).
+    self_preference_delta = mean(delta on judge_family outputs) - mean(delta on other outputs).
     A positive delta means the judge is more lenient on its own family's outputs.
+
+    `judge_family` must match the `output_family` value of the model actually
+    running as the judge for this result to measure genuine self-preference —
+    "own family" is meaningless unless it names the judge's own family.
     """
     if len(cases) != len(judge_scores):
         raise ValueError("cases and judge_scores must have the same length")
 
-    own = [(c, s) for c, s in zip(cases, judge_scores, strict=True) if c.output_family == "glm"]
-    other = [(c, s) for c, s in zip(cases, judge_scores, strict=True) if c.output_family == "other"]
+    own = [
+        (c, s) for c, s in zip(cases, judge_scores, strict=True) if c.output_family == judge_family
+    ]
+    other = [
+        (c, s) for c, s in zip(cases, judge_scores, strict=True) if c.output_family != judge_family
+    ]
 
     def _mean_delta(pairs: list[tuple[CalibrationCase, float]]) -> float:
         if not pairs:
@@ -197,6 +208,7 @@ def compute_self_bias(
     mean_other = _mean_delta(other)
 
     return SelfBiasReport(
+        judge_family=judge_family,
         self_preference_delta=mean_own - mean_other,
         mean_delta_own_family=mean_own,
         mean_delta_other_family=mean_other,
