@@ -145,3 +145,24 @@ make mutation-test
 This is a local/dev quality check, not part of the required CI gate (mutation testing is
 too slow to run on every PR) — see [`docs/ci-policy.md`](docs/ci-policy.md) for what actually
 gates merges.
+
+### Pre-publish checklist
+
+Before making this repository public or sharing it externally, work through this list:
+
+- **Rotate any real provider keys used during local development.** A local `.env` is
+  gitignored and never committed, but keys typed into it during development (Z.ai,
+  OpenRouter, Together, etc.) should still be rotated or revoked before the repo is
+  broadcast publicly — treat any key that ever touched a local `.env` as exposed to
+  whoever had access to that machine.
+- **Verify no secret-shaped strings are in tracked files.** `git grep` for provider key
+  prefixes (`sk-`, `nvapi-`, etc.) across the full history, not just the working tree —
+  the gitleaks pre-commit hook covers new commits but not history predating it.
+- **Confirm a known-working live provider route.** `.env.example`'s default model slug and
+  base URL are templates, not guarantees. Run `scripts/select_openrouter_free_models.py` (or
+  the equivalent for your provider) to confirm a specific model slug and base URL currently
+  work, and note the exact slug and the date it was verified in `.env.example` or the README
+  so a first-time contributor's `make smoke` doesn't fail on a stale default.
+- **Double-check recordings/screenshots/logs** made during development don't echo a real key
+  in a terminal prompt, environment dump, or trace file before including them in any
+  write-up.
