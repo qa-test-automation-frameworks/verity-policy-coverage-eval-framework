@@ -10,7 +10,9 @@ uv sync --all-extras
 PYTHONPATH=src uv run pytest tests/unit -q -p no:cacheprovider
 ```
 
-Expect ~530 passed in under 30s, no API key required. Then read, in order:
+Expect all of them to pass in well under a minute, no API key required — the exact count
+drifts as cases are added, so treat "all green" as the signal, not a specific number. Then
+read, in order:
 
 1. `README.md` — "What This Proves" and "Limitations" sections. Limitations are stated
    plainly, not buried; that's the thing to notice.
