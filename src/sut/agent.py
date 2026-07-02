@@ -493,6 +493,13 @@ class CoverageAgent:
                 conv_check = validate_conversation(messages)
                 if not conv_check.passed:
                     logger.warning("Conversation structure check failed: %s", conv_check.message)
+                    if is_clean:
+                        return self._safe_failure_response(
+                            category="invalid_conversation_structure",
+                            start_index=start_index,
+                            tool_invocations=tool_invocations,
+                            trace_id=trace_id,
+                        )
 
                 # 7. Second LLM call with tool results
                 try:
