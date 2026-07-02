@@ -134,6 +134,29 @@ def _supporting_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
     return [chunk for chunk in chunks if _significant_tokens(chunk.text) & answer_tokens]
 
 
+# The system prompt instructs the model to "cite the source document and
+# section for any coverage claim you make." In practice it does so inline as
+# "(<Document> §<section>)", e.g. "(Bronze §3.3)" or "(Amendment §A2)".
+_MODEL_CITATION_RE = re.compile(r"\(([A-Za-z][A-Za-z ]*?)\s*§\s*([\w.]+)\)")
+
+
+def _model_cited_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
+    """Resolve the model's own inline citations to the chunks it actually
+    retrieved, so citations reflect what the model said it used rather than
+    a lexical-overlap guess. Only matches against retrieved chunks — a
+    citation naming a document that wasn't retrieved resolves to nothing."""
+    matched: list[Chunk] = []
+    for name, _section in _MODEL_CITATION_RE.findall(answer):
+        stem = name.strip().lower()
+        for chunk in chunks:
+            source_stem = chunk.source.removesuffix(".md").lower()
+            if source_stem.startswith(stem) or stem.startswith(source_stem):
+                if chunk not in matched:
+                    matched.append(chunk)
+                break
+    return matched
+
+
 def _requires_human_review(query: str, answer: str) -> bool:
     """Flag Gold-vs-Silver cost-parity anomalies that should be surfaced for human review.
 
@@ -478,8 +501,11 @@ class CoverageAgent:
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
 
-        # 9. Extract citations only for chunks the answer actually draws on
-        supporting = _supporting_chunks(chunks, final_answer)
+        # 9. Prefer citations the model itself named; fall back to lexical
+        # overlap only when the model didn't cite anything resolvable.
+        supporting = _model_cited_chunks(chunks, final_answer) or _supporting_chunks(
+            chunks, final_answer
+        )
         citations = [f"{c.source}: {c.section}" for c in supporting if c.section]
 
         # 10. Collect token/cost info for this response only (not the shared
