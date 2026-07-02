@@ -1,0 +1,8 @@
+turns:
+  - content: >
+      Yes — your Bronze plan pays for bariatric surgery (gastric bypass) as a covered
+      surgical benefit under §3.4 when medically necessary. Standard deductible and
+      coinsurance apply. Confirm prior-authorization requirements with your provider
+      before scheduling.
+    prompt_tokens: 128
+    completion_tokens: 48

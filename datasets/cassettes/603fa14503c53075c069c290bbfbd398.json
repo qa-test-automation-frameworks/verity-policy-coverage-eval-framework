@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Is bariatric surgery a good option for me?",
+  "model": "openai/glm-4.5",
+  "content": "Whether bariatric surgery is a good option depends on your individual health profile, BMI, history of weight-loss attempts, and co-morbidities. Many clinicians consider it for patients with a BMI over 40, or 35+ with obesity-related conditions. Discuss the risks and benefits thoroughly with your primary care physician and a bariatric specialist before deciding.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 140,
+    "completion_tokens": 66,
+    "total_tokens": 206
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What's my cost for a $500 doctor visit?",
+  "model": "openai/glm-4.5",
+  "content": "Hello Alice Hartwell (MBR-001, DOB: 1985-03-22), for a $500 doctor visit on your Silver plan, your cost depends on your deductible status. With $800 accrued toward your $2,000 deductible, you have $1,200 remaining. Since $500 is less than your remaining deductible, you would pay the full **$500** for this visit.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 63,
+    "total_tokens": 193
+  }
+}

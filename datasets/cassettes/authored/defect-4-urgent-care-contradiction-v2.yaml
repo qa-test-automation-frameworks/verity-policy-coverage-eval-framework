@@ -1,0 +1,8 @@
+turns:
+  - content: >
+      Yes — urgent care is cheaper on your Gold plan compared to Silver. Gold's
+      enhanced benefits mean you'll pay less for urgent care visits than on the
+      Silver tier. Use in-network urgent care centers to take full advantage of
+      Gold's reduced cost-sharing.
+    prompt_tokens: 126
+    completion_tokens: 42

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] How much do I pay each month for my Silver plan premium?",
+  "model": "openai/glm-4.5",
+  "content": "Your Silver plan premium is **$420 per month** (Silver \u00a71). This covers an individual and provides moderate cost-sharing through a $2,000 annual deductible and 20% coinsurance after deductible.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 36,
+    "total_tokens": 156
+  }
+}
