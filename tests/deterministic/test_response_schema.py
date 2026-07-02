@@ -8,7 +8,15 @@ import pytest
 
 from sut.retriever import FixtureRetriever
 from tests.deterministic.conftest import run_case
-from verity.checks import check_citations, check_human_review, validate_response_schema
+from verity.checks import (
+    check_citations,
+    check_date_expectations,
+    check_human_review,
+    check_must_contain,
+    check_must_not_contain,
+    check_numeric_expectations,
+    validate_response_schema,
+)
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 
@@ -77,3 +85,47 @@ def test_citations_never_reference_unretrieved_sources(
     cited_sources = {c.split(":")[0].strip() for c in response.citations}
     unsupported = cited_sources - retrieved_sources
     assert not unsupported, f"{case.id} cited sources never retrieved: {unsupported}"
+
+
+@pytest.mark.parametrize(
+    "case",
+    [c for c in _CASES if c.must_contain and not c.expects_defect],
+    ids=[c.id for c in _CASES if c.must_contain and not c.expects_defect],
+)
+def test_must_contain_tokens_present(case: GoldenCase, _settings: Settings) -> None:
+    response = run_case(case, _settings)
+    result = check_must_contain(case, response)
+    assert result.passed, result.message
+
+
+@pytest.mark.parametrize(
+    "case",
+    [c for c in _CASES if c.must_not_contain and not c.expects_defect],
+    ids=[c.id for c in _CASES if c.must_not_contain and not c.expects_defect],
+)
+def test_must_not_contain_tokens_absent(case: GoldenCase, _settings: Settings) -> None:
+    response = run_case(case, _settings)
+    result = check_must_not_contain(case, response)
+    assert result.passed, result.message
+
+
+@pytest.mark.parametrize(
+    "case",
+    [c for c in _CASES if c.numeric_expectations and not c.expects_defect],
+    ids=[c.id for c in _CASES if c.numeric_expectations and not c.expects_defect],
+)
+def test_numeric_expectations_satisfied(case: GoldenCase, _settings: Settings) -> None:
+    response = run_case(case, _settings)
+    result = check_numeric_expectations(case, response)
+    assert result.passed, result.message
+
+
+@pytest.mark.parametrize(
+    "case",
+    [c for c in _CASES if c.date_expectations and not c.expects_defect],
+    ids=[c.id for c in _CASES if c.date_expectations and not c.expects_defect],
+)
+def test_date_expectations_satisfied(case: GoldenCase, _settings: Settings) -> None:
+    response = run_case(case, _settings)
+    result = check_date_expectations(case, response)
+    assert result.passed, result.message

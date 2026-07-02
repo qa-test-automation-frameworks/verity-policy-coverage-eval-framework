@@ -10,10 +10,12 @@ import pytest
 from verity.checks import (
     CheckResult,
     check_citations,
+    check_date_expectations,
     check_human_review,
     check_injection,
     check_must_contain,
     check_must_not_contain,
+    check_numeric_expectations,
     check_pii,
     check_refusal,
     check_tool_args,
@@ -21,7 +23,7 @@ from verity.checks import (
     scan_pii,
     validate_response_schema,
 )
-from verity.golden import ExpectedTool, GoldenCase
+from verity.golden import DateExpectation, ExpectedTool, GoldenCase, NumericExpectation
 
 # ---------------------------------------------------------------------------
 # Minimal stub for AgentResponse (avoids importing sut from verity tests)
@@ -462,3 +464,105 @@ class TestCheckCitations:
         resp = _Response(citations=["phantom.md: §99"])
         result = check_citations(case, resp, retrieved_sources=["gold.md", "silver.md"])
         assert not result.passed
+
+
+# ---------------------------------------------------------------------------
+# Numeric expectations
+# ---------------------------------------------------------------------------
+
+
+class TestCheckNumericExpectations:
+    def test_no_expectations_passes(self) -> None:
+        case = _case()
+        assert check_numeric_expectations(case, _Response(answer="anything")).passed
+
+    def test_gte_satisfied(self) -> None:
+        exp = NumericExpectation(description="oop max", comparator="gte", value=3800)
+        case = _case(numeric_expectations=[exp])
+        resp = _Response(answer="Your out-of-pocket maximum is $3,800.")
+        assert check_numeric_expectations(case, resp).passed
+
+    def test_gte_not_satisfied(self) -> None:
+        exp = NumericExpectation(description="oop max", comparator="gte", value=3800)
+        case = _case(numeric_expectations=[exp])
+        resp = _Response(answer="Your out-of-pocket maximum is $3,000.")
+        result = check_numeric_expectations(case, resp)
+        assert not result.passed
+        assert "oop max" in result.message
+
+    def test_eq_with_tolerance(self) -> None:
+        exp = NumericExpectation(description="deductible", comparator="eq", value=750, tolerance=1)
+        case = _case(numeric_expectations=[exp])
+        resp = _Response(answer="The deductible is $750.50.")
+        assert check_numeric_expectations(case, resp).passed
+
+    def test_eq_outside_tolerance_fails(self) -> None:
+        exp = NumericExpectation(description="deductible", comparator="eq", value=750, tolerance=1)
+        case = _case(numeric_expectations=[exp])
+        resp = _Response(answer="The deductible is $760.")
+        assert not check_numeric_expectations(case, resp).passed
+
+    def test_range_satisfied(self) -> None:
+        exp = NumericExpectation(
+            description="coinsurance", comparator="range", min_value=0.0, max_value=0.5
+        )
+        case = _case(numeric_expectations=[exp])
+        resp = _Response(answer="Coinsurance is 20% for this service.")
+        assert check_numeric_expectations(case, resp).passed
+
+    def test_lt_satisfied(self) -> None:
+        exp = NumericExpectation(description="copay", comparator="lt", value=100)
+        case = _case(numeric_expectations=[exp])
+        resp = _Response(answer="Your copay is $60.")
+        assert check_numeric_expectations(case, resp).passed
+
+    def test_no_numbers_in_answer_fails(self) -> None:
+        exp = NumericExpectation(description="deductible", comparator="gte", value=750)
+        case = _case(numeric_expectations=[exp])
+        resp = _Response(answer="I don't have that information.")
+        assert not check_numeric_expectations(case, resp).passed
+
+
+# ---------------------------------------------------------------------------
+# Date expectations
+# ---------------------------------------------------------------------------
+
+
+class TestCheckDateExpectations:
+    def test_no_expectations_passes(self) -> None:
+        case = _case()
+        assert check_date_expectations(case, _Response(answer="anything")).passed
+
+    def test_iso_date_within_range(self) -> None:
+        exp = DateExpectation(description="amendment effective", on_or_after="2024-01-01")
+        case = _case(date_expectations=[exp])
+        resp = _Response(answer="This changed effective 2024-07-01 per the amendment.")
+        assert check_date_expectations(case, resp).passed
+
+    def test_month_day_year_format_within_range(self) -> None:
+        exp = DateExpectation(
+            description="amendment effective", on_or_after="2024-01-01", on_or_before="2024-12-31"
+        )
+        case = _case(date_expectations=[exp])
+        resp = _Response(answer="Effective July 1, 2024, the limit changed to $3,800.")
+        assert check_date_expectations(case, resp).passed
+
+    def test_date_outside_range_fails(self) -> None:
+        exp = DateExpectation(description="amendment effective", on_or_after="2025-01-01")
+        case = _case(date_expectations=[exp])
+        resp = _Response(answer="Effective July 1, 2024, the limit changed.")
+        result = check_date_expectations(case, resp)
+        assert not result.passed
+        assert "amendment effective" in result.message
+
+    def test_month_day_only_resolved_against_year_in_text(self) -> None:
+        exp = DateExpectation(description="plan year reset", on_or_after="2024-01-01")
+        case = _case(date_expectations=[exp])
+        resp = _Response(answer="Deductibles reset on January 1 each year (2024-07-01 amendment).")
+        assert check_date_expectations(case, resp).passed
+
+    def test_no_dates_in_answer_fails(self) -> None:
+        exp = DateExpectation(description="effective date", on_or_after="2024-01-01")
+        case = _case(date_expectations=[exp])
+        resp = _Response(answer="I don't have that information.")
+        assert not check_date_expectations(case, resp).passed

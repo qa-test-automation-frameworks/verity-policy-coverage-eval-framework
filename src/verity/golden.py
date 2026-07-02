@@ -6,13 +6,58 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ExpectedTool(BaseModel):
     name: str
     required_args: list[str] = Field(default_factory=list)
     expected_arg_values: dict[str, Any] = Field(default_factory=dict)
+
+
+NumericComparator = Literal["eq", "gte", "lte", "gt", "lt", "range"]
+
+
+class NumericExpectation(BaseModel):
+    """A numeric value the answer must state, checked by comparison rather than
+    literal substring match — catches a correct amount stated with different
+    rounding/formatting that a must_contain token would miss.
+
+    "eq" allows `tolerance` (absolute); "range" requires both min_value and
+    max_value; the other comparators only need value.
+    """
+
+    description: str
+    comparator: NumericComparator
+    value: float | None = None
+    tolerance: float = 0.0
+    min_value: float | None = None
+    max_value: float | None = None
+
+    @model_validator(mode="after")
+    def _required_bounds_present_for_comparator(self) -> NumericExpectation:
+        if self.comparator == "range":
+            if self.min_value is None or self.max_value is None:
+                raise ValueError("comparator 'range' requires both min_value and max_value")
+        elif self.value is None:
+            raise ValueError(f"comparator {self.comparator!r} requires 'value'")
+        return self
+
+
+class DateExpectation(BaseModel):
+    """A date the answer must state, within an inclusive [on_or_after, on_or_before]
+    range. Either bound may be omitted for an open-ended range. Dates are ISO
+    (YYYY-MM-DD)."""
+
+    description: str
+    on_or_after: str | None = None
+    on_or_before: str | None = None
+
+    @model_validator(mode="after")
+    def _at_least_one_bound_set(self) -> DateExpectation:
+        if self.on_or_after is None and self.on_or_before is None:
+            raise ValueError("DateExpectation requires on_or_after and/or on_or_before")
+        return self
 
 
 ExpectationCategory = Literal[
@@ -35,6 +80,8 @@ class GoldenCase(BaseModel):
     ground_truth: str = ""
     must_contain: list[str] = Field(default_factory=list)
     must_not_contain: list[str] = Field(default_factory=list)
+    numeric_expectations: list[NumericExpectation] = Field(default_factory=list)
+    date_expectations: list[DateExpectation] = Field(default_factory=list)
     expected_citations: list[str] = Field(default_factory=list)
     requires_human_review: bool = False
     expected_tool: ExpectedTool | None = None
