@@ -132,6 +132,17 @@ _AUTHORED_RATIONALES: dict[str, str] = {
 }
 
 
+def _judge_family(settings: Settings) -> str:
+    """Return the output_family label matching the judge's own model family.
+
+    `compute_self_bias` treats this family as "own" for the self-preference
+    calculation, so it must reflect whichever model is actually configured
+    as the judge (settings.judge.model, falling back to the SUT model).
+    """
+    judge_model = (settings.judge.model or settings.model).lower()
+    return "glm" if "glm" in judge_model else "other"
+
+
 def _judge_litellm_model(settings: Settings) -> str:
     """Resolve the litellm model string for the judge (mirrors ProviderJudge internals).
 
@@ -189,13 +200,10 @@ def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
 def _run_hermetic(cases: list[CalibrationCase], settings: Settings) -> list[float]:
     """Score all cases using cassette replay (no API key needed).
 
-    Pinned to the provider/model the committed cassettes were recorded
-    against, independent of the ambient `settings` passed in — this mode must
-    replay identically regardless of a developer's local provider
-    configuration. As of the 2026-07-01 live calibration run, the committed
-    cassettes are keyed to openrouter/gpt-4o-mini (see docs/calibration-report.md);
-    regenerate them with `--record` under a different judge and update this
-    pin if the judge model changes.
+    Pinned to the provider/model the committed authored cassettes were written
+    against (zai/glm-4.5, see run_author_mode), independent of the ambient
+    `settings` passed in — this mode must replay identically regardless of a
+    developer's local provider configuration.
     """
     calib_settings = Settings(
         _env_file=None,
@@ -205,10 +213,10 @@ def _run_hermetic(cases: list[CalibrationCase], settings: Settings) -> list[floa
         cassette_dir=_CALIB_CASSETTE_DIR,
         judge=JudgeConfig(
             _env_file=None,
-            provider=Provider.openrouter,
-            model="openai/gpt-4o-mini",
+            provider=Provider.zai,
+            model="glm-4.5",
             temperature=0.0,
-            max_tokens=4096,
+            max_tokens=1024,
         ),
     )
     judge = ProviderJudge(settings=calib_settings)
@@ -246,17 +254,18 @@ def render_report(
     from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    is_hermetic = mode == "hermetic replay"
+    is_synthetic = mode != f"live (recorded to {_CALIB_CASSETTE_DIR})"
     lines = ["# Judge Calibration Report", ""]
-    if is_hermetic:
+    if is_synthetic:
         lines += [
-            "> **Note:** This report replays committed cassettes recorded from a real",
-            "> `--record` run against a live judge — the scores below are measured, not",
-            "> synthetic. The candidate outputs and human reference scores in",
-            "> `datasets/calibration/labeled.yaml` are still hand-authored (there is no",
-            "> live-agent-output pipeline feeding this dataset yet); only the judge's",
-            "> scoring of them is live-derived. Run `make calibrate --author` for a",
-            "> zero-cost, fully synthetic methodology demonstration instead.",
+            "> **Note:** This report replays committed cassettes containing",
+            "> hand-authored judge scores — it is a synthetic demonstration of the",
+            "> calibration methodology (dataset, agreement statistics, self-bias",
+            "> calculation, and report rendering), not a measurement of a live judge.",
+            "> Both the candidate outputs/human labels in",
+            "> `datasets/calibration/labeled.yaml` and the judge scores replayed here",
+            "> are hand-authored. Run `make calibrate-live` with a configured API key",
+            "> to produce a report against a real judge.",
             "",
         ]
     dataset_note = "cases"
@@ -294,11 +303,13 @@ def render_report(
         "## Self-Preference Bias",
         "",
         "Self-preference delta measures whether the judge inflates scores for outputs "
-        "from its own model family (GLM) compared to outputs from other families.",
+        f"from its own model family ({bias.judge_family.upper()}) compared to outputs "
+        "from other families.",
         "",
         "| Family | N | Mean Δ (judge − human) |",
         "|--------|---|------------------------|",
-        f"| GLM (own family) | {bias.n_own} | **{bias.mean_delta_own_family:+.3f}** |",
+        f"| {bias.judge_family.upper()} (own family) | {bias.n_own} "
+        f"| **{bias.mean_delta_own_family:+.3f}** |",
         f"| Other family | {bias.n_other} | **{bias.mean_delta_other_family:+.3f}** |",
         f"| **Self-preference delta** | — | **{bias.self_preference_delta:+.3f}** |",
         "",
@@ -323,15 +334,15 @@ def render_report(
         "## Threshold Traceability",
         "",
     ]
-    if is_hermetic:
+    if is_synthetic:
         lines += [
-            "The semantic tier thresholds in `docs/thresholds.md` were set with this "
-            "measured calibration data in mind (replayed here from committed cassettes, "
-            "not re-run live):",
+            "The semantic tier thresholds in `docs/thresholds.md` are informed by this "
+            "synthetic methodology demonstration; they are not yet backed by a measured "
+            "live judge distribution:",
             "",
-            f"- **Raw agreement ≥ 85%**: this measured run shows "
+            f"- **Raw agreement ≥ 85%**: this synthetic run shows "
             f"{agreement.raw_agreement:.1%}.",
-            f"- **Cohen's kappa ≥ 0.60** (substantial agreement): measured kappa = "
+            f"- **Cohen's kappa ≥ 0.60** (substantial agreement): synthetic kappa = "
             f"{agreement.cohen_kappa:.3f}.",
             f"- **Self-preference delta**: {'+' if bias.self_preference_delta >= 0 else ''}"
             f"{abs(bias.self_preference_delta):.3f} — see interpretation above.",
@@ -410,9 +421,9 @@ def main() -> None:
         run_author_mode(cases, author_settings)
         return
 
-    # Default replay is pinned to the provider/model the committed live
-    # cassettes were recorded against (see _run_hermetic), also isolated from
-    # any local .env, so it replays identically for every developer.
+    # Default replay is pinned to the same judge the authored cassettes were
+    # written against (see run_author_mode / _run_hermetic), also isolated
+    # from any local .env, so it replays identically for every developer.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         default_replay_settings = Settings(
@@ -421,10 +432,10 @@ def main() -> None:
             model="glm-4.5",
             judge=JudgeConfig(
                 _env_file=None,
-                provider=Provider.openrouter,
-                model="openai/gpt-4o-mini",
+                provider=Provider.zai,
+                model="glm-4.5",
                 temperature=0.0,
-                max_tokens=4096,
+                max_tokens=1024,
             ),
         )
 
@@ -434,17 +445,18 @@ def main() -> None:
         settings = Settings() if args.record else default_replay_settings
 
     judge_model = _judge_litellm_model(settings)
+    judge_family = _judge_family(settings)
     if args.record:
         print("Running live judge calls...")
         judge_scores = _run_live(cases, settings)
         mode_label = f"live (recorded to {_CALIB_CASSETTE_DIR})"
     else:
-        print("Running hermetic calibration (cassette replay)...")
+        print("Running synthetic calibration (authored-score cassette replay)...")
         judge_scores = _run_hermetic(cases, settings)
-        mode_label = "hermetic replay"
+        mode_label = "synthetic replay (authored scores)"
 
     agreement = compute_agreement(cases, judge_scores)
-    bias = compute_self_bias(cases, judge_scores)
+    bias = compute_self_bias(cases, judge_scores, judge_family=judge_family)
 
     print("\n" + str(agreement))
     print("\n" + str(bias))
