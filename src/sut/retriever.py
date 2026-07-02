@@ -329,11 +329,10 @@ class PolicyRetriever:
         if collection.count() == 0:
             self.index_corpus()
 
-        # Fetch the whole collection rather than a small top-N slice: with a
-        # corpus this size the cost is negligible, and truncating the ANN
-        # candidate pool before re-ranking makes the margin cutoff below
-        # sensitive to tiny embedding-order jitter near the truncation boundary.
-        fetch_n = collection.count()
+        # Fetch a bounded candidate pool before local re-ranking. The lower bound
+        # preserves margin-cutoff stability for this small corpus while avoiding
+        # O(corpus) work as the demo data grows.
+        fetch_n = min(collection.count(), max(50, 4 * k))
         results = collection.query(
             query_texts=[query],
             n_results=fetch_n,
