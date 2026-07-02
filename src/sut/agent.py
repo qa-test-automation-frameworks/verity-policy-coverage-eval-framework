@@ -27,7 +27,12 @@ from sut.auth import member_token_valid
 from sut.citations import resolve_citations
 from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scrub_output
 from sut.retriever import Chunk, PolicyRetriever, Retriever
-from sut.review_triggers import any_requires_human_review
+from sut.review_triggers import (
+    ReviewItem,
+    ReviewQueue,
+    any_requires_human_review,
+    can_finalize_response,
+)
 from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_coverage_calculator
 from verity.config import Settings, get_settings
 from verity.conversation import validate_conversation
@@ -56,6 +61,12 @@ _PLAN_PARAMS: dict[str, dict[str, float]] = {
     "gold": {"plan_deductible": 750.0, "plan_oop_max": 4000.0, "coinsurance_member": 0.10},
 }
 
+
+class PendingReviewError(Exception):
+    """Raised by CoverageAgent.deliver() when a review-required response
+    has not yet been approved — the answer cannot be released to the member."""
+
+
 # ---------------------------------------------------------------------------
 # Response model
 # ---------------------------------------------------------------------------
@@ -80,6 +91,13 @@ class AgentResponse(BaseModel):
     estimated_cost_usd: float
     failure_category: str = ""
     trace_id: str = ""
+    # Set when requires_human_review is True: the id of the ReviewQueue entry
+    # this answer was submitted to. answer/citations/etc. above are still
+    # fully populated (evaluation and audit tooling need the draft content
+    # regardless of approval state) — CoverageAgent.deliver() is the actual
+    # member-facing boundary that withholds the answer until this item is
+    # approved; see review_triggers.py and CoverageAgent.deliver/approve_review.
+    review_item_id: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +230,7 @@ class CoverageAgent:
     settings: Settings = field(default_factory=get_settings)
     retriever: Retriever | None = None
     provider: LLMProvider | None = None
+    review_queue: ReviewQueue = field(default_factory=ReviewQueue)
 
     def __post_init__(self) -> None:
         if self.retriever is None:
@@ -219,6 +238,28 @@ class CoverageAgent:
         if self.provider is None:
             accumulator = RunAccumulator()
             self.provider = LLMProvider(self.settings, accumulator)
+
+    def deliver(self, response: AgentResponse) -> str:
+        """Return the member-facing answer, enforcing the review gate.
+
+        Unlike `response.answer` (populated immediately for evaluation/audit
+        tooling regardless of approval state), this is the actual delivery
+        boundary: a review-required response cannot be delivered until its
+        review_item_id has been approved via approve_review().
+        """
+        if not response.requires_human_review:
+            return response.answer
+        item = self.review_queue.items.get(response.review_item_id)
+        if not can_finalize_response(requires_human_review=True, review_item=item):
+            raise PendingReviewError(
+                f"Response requires human review and has not been approved "
+                f"(review_item_id={response.review_item_id!r})"
+            )
+        return response.answer
+
+    def approve_review(self, review_item_id: str, reviewer: str) -> ReviewItem:
+        """Approve a queued review item, unblocking deliver() for its response."""
+        return self.review_queue.approve(review_item_id, reviewer)
 
     @property
     def _llm_provider(self) -> LLMProvider:
@@ -465,18 +506,24 @@ class CoverageAgent:
         acc = self._llm_provider.accumulator
         totals, total_cost = acc.usage_and_cost_since(start_index)
 
+        needs_review = any_requires_human_review(chunks)
+        review_item_id = ""
+        if needs_review:
+            review_item_id = self.review_queue.submit(query, final_answer, chunks).id
+
         return AgentResponse(
             answer=final_answer,
             citations=citations,
             tool_invocations=tool_invocations,
             refused=False,
             refusal_reason="",
-            requires_human_review=any_requires_human_review(chunks),
+            requires_human_review=needs_review,
             prompt_tokens=totals.prompt_tokens,
             completion_tokens=totals.completion_tokens,
             total_tokens=totals.total_tokens,
             estimated_cost_usd=total_cost.total_usd,
             trace_id=trace_id,
+            review_item_id=review_item_id,
         )
 
 
