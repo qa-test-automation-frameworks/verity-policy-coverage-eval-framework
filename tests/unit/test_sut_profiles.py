@@ -99,3 +99,67 @@ class TestCleanProfileEndToEnd:
         system_prompt = sent_messages[0]["content"]
         assert str(member["name"]) not in system_prompt
         assert str(member["dob"]) not in system_prompt
+
+
+class TestConversationStructureEnforcement:
+    """A structurally invalid conversation is only a hard failure in the clean profile."""
+
+    def _agent_with_duplicate_tool_call_ids(self, *, sut_profile: str) -> object:
+        from unittest.mock import MagicMock
+
+        from sut.agent import CoverageAgent
+        from sut.retriever import FixtureRetriever
+        from verity.cassettes import ReplayFunction, ReplayToolCall
+        from verity.cost import RunAccumulator
+        from verity.providers import CompletionResult
+
+        settings = Settings(cassette_mode="off", sut_profile=sut_profile)
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        # Two tool_calls sharing the same id is a structural violation that
+        # validate_conversation() rejects (duplicate tool_call ids in one turn).
+        duplicate_calls = [
+            ReplayToolCall(
+                id="call_dup",
+                function=ReplayFunction(
+                    name="coverage_calculator",
+                    arguments=(
+                        '{"claim_amount": 500.0, "plan_deductible": 750.0,'
+                        ' "accrued_deductible": 0.0, "plan_oop_max": 4000.0,'
+                        ' "accrued_oop": 0.0, "coinsurance_member": 0.10}'
+                    ),
+                ),
+            ),
+            ReplayToolCall(
+                id="call_dup",
+                function=ReplayFunction(
+                    name="coverage_calculator",
+                    arguments=(
+                        '{"claim_amount": 500.0, "plan_deductible": 750.0,'
+                        ' "accrued_deductible": 0.0, "plan_oop_max": 4000.0,'
+                        ' "accrued_oop": 0.0, "coinsurance_member": 0.10}'
+                    ),
+                ),
+            ),
+        ]
+        mock_provider = MagicMock()
+        mock_provider.accumulator = RunAccumulator()
+        mock_provider.complete.return_value = CompletionResult(
+            content="", tool_calls=duplicate_calls
+        )
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        return agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+    def test_seeded_profile_warns_but_continues(self, caplog: pytest.LogCaptureFixture) -> None:
+        with caplog.at_level(logging.WARNING, logger="sut.agent"):
+            response = self._agent_with_duplicate_tool_call_ids(sut_profile="seeded")
+        assert "Conversation structure check failed" in caplog.text
+        assert not response.refused  # type: ignore[attr-defined]
+
+    def test_clean_profile_fails_closed(self, caplog: pytest.LogCaptureFixture) -> None:
+        with caplog.at_level(logging.WARNING, logger="sut.agent"):
+            response = self._agent_with_duplicate_tool_call_ids(sut_profile="clean")
+        assert "Conversation structure check failed" in caplog.text
+        assert response.refused  # type: ignore[attr-defined]
+        assert response.failure_category == "invalid_conversation_structure"  # type: ignore[attr-defined]
