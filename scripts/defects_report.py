@@ -386,6 +386,75 @@ def _load_defect_risk_weights() -> dict[int, str]:
 # ---------------------------------------------------------------------------
 
 
+def _control_case_outcomes(sem_results: dict[str, object]) -> list[tuple[str, str]]:
+    """Return (node_id, outcome) pairs for control-case semantic tests.
+
+    A "control case" here is any test node whose parametrized case id does not
+    start with "defect-" — i.e. the clean/boundary cases that assert good
+    behavior rather than measuring whether a seeded defect reproduced. Their
+    pass/fail status is a real signal (unlike a defect's NOT_REPRODUCED,
+    which reflects model quality, not test health) and belongs in the
+    committed report rather than sitting unexplained in the raw JSON.
+    """
+    outcomes_raw = sem_results.get("outcomes", {})
+    outcomes = outcomes_raw if isinstance(outcomes_raw, dict) else {}
+    control: list[tuple[str, str]] = []
+    for node_id, outcome in outcomes.items():
+        case_id = node_id.split("[", 1)[-1].rstrip("]") if "[" in node_id else ""
+        if case_id.startswith("defect-"):
+            continue
+        control.append((node_id, str(outcome)))
+    return sorted(control)
+
+
+def _render_control_case_section(sem_path: Path) -> list[str]:
+    """Render a markdown section summarizing control-case pass/fail counts.
+
+    Returns an empty list when no committed semantic evidence exists, so the
+    section only appears once a live run has actually happened.
+    """
+    if not sem_path.exists():
+        return []
+    try:
+        with sem_path.open() as fh:
+            sem_results: dict[str, object] = json.load(fh)
+    except Exception:
+        return []
+
+    control = _control_case_outcomes(sem_results)
+    if not control:
+        return []
+
+    passed = sum(1 for _, outcome in control if outcome == "passed")
+    failed = [node_id for node_id, outcome in control if outcome == "failed"]
+    other = len(control) - passed - len(failed)
+
+    lines = [
+        "---",
+        "",
+        "## Control-Case Results (Committed Live Run)",
+        "",
+        f"The committed semantic run also exercises clean control cases — {len(control)} "
+        f"control-tier test nodes ran, {passed} passed"
+        + (f", {other} other" if other else "")
+        + f", {len(failed)} failed.",
+        "",
+    ]
+    if failed:
+        lines += [
+            "Failing control nodes from this run (see `docs/thresholds.md` for the metric "
+            "this provider/judge pairing is weakest on):",
+            "",
+        ]
+        lines += [f"- `{node_id}`" for node_id in failed]
+        lines.append("")
+    lines.append(
+        "Re-run `make eval-semantic` with a configured key to refresh this section; a clean "
+        "run should show 0 failed here."
+    )
+    return lines
+
+
 def render_markdown(
     catalog: list[DefectEntry], defect_risk_weights: dict[int, str] | None = None
 ) -> str:
@@ -427,6 +496,12 @@ def render_markdown(
         "ground truth and thresholds are committed, but nothing has executed against "
         "them. See `docs/architecture.md` and the Limitations section of `README.md` "
         "for the full evidence caveat.",
+        "",
+    ]
+
+    lines += _render_control_case_section(Path("reports/semantic/results.json"))
+
+    lines += [
         "",
         "---",
         "",

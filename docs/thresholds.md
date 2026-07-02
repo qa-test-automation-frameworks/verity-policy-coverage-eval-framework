@@ -63,6 +63,20 @@ cases are expected to score well above this; defect cases should score ≥ 0.5.
 
 ---
 
+## Committed live run: control-case failures
+
+The committed `reports/semantic/results.json` run (`openrouter/openai/gpt-4o-mini` as both
+SUT and judge — see README Limitations) has 10 of 40 control-tier test nodes failing,
+listed in the "Control-Case Results" section of `docs/defects-caught.md`. All 10 are
+faithfulness or answer-relevancy assertions. This lines up with `docs/calibration-report.md`,
+which independently flags faithfulness as the one metric below the 85%-agreement /
+0.20-MAE calibration bar (75% agreement, MAE 0.238) for this same judge — the calibration
+data and the live control failures are two independent signals pointing at the same
+weak metric, not an unrelated anomaly. Re-run `make eval-semantic` with a GLM-4.5 key (the
+ADR-0001 default) to see whether the failure rate is judge-specific.
+
+---
+
 ## Threshold rationale
 
 Thresholds are intentionally conservative rather than calibrated — the goal is

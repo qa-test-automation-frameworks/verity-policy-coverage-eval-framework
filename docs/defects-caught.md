@@ -8,6 +8,27 @@ _Hermetically proven from cassette replay — no API key required._
 
 ---
 
+## Control-Case Results (Committed Live Run)
+
+The committed semantic run also exercises clean control cases — 40 control-tier test nodes ran, 30 passed, 10 failed.
+
+Failing control nodes from this run (see `docs/thresholds.md` for the metric this provider/judge pairing is weakest on):
+
+- `tests/semantic/test_faithfulness.py::test_clean_faithfulness[ctrl-gold-deductible]`
+- `tests/semantic/test_faithfulness.py::test_clean_faithfulness[ctrl-gold-oop-amendment]`
+- `tests/semantic/test_faithfulness.py::test_clean_faithfulness[ctrl-gold-specialty-drug-pa]`
+- `tests/semantic/test_faithfulness.py::test_clean_faithfulness[ctrl-missing-acupuncture-policy]`
+- `tests/semantic/test_relevancy.py::test_answer_relevancy[ctrl-gold-family-deductible]`
+- `tests/semantic/test_relevancy.py::test_answer_relevancy[ctrl-gold-oop-amendment]`
+- `tests/semantic/test_relevancy.py::test_answer_relevancy[ctrl-plan-year-reset]`
+- `tests/semantic/test_relevancy.py::test_answer_relevancy[ctrl-silver-specialist-copay]`
+- `tests/semantic/test_relevancy.py::test_answer_relevancy[ctrl-telehealth-copay]`
+- `tests/semantic/test_tool_use.py::test_clean_task_completion[ctrl-bronze-oop-cap-tool]`
+
+Re-run `make eval-semantic` with a configured key to refresh this section; a clean run should show 0 failed here.
+
+---
+
 ## Matrix
 
 | # | Defect | Failure Mode | Catching Tier(s) | Status |
