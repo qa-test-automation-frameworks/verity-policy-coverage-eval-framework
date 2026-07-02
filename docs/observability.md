@@ -63,9 +63,18 @@ A real example, generated hermetically (cassette replay, no API key) and committ
 `gen_ai.*` attributes are visible without running the demo first:
 
 ```json
-{"name": "retrieval", "trace_id": "a1b83aeac8b9b2dcd21587ea49998b35", "span_id": "1ece86c7db986912", "start_ns": 1782915007067599126, "end_ns": 1782915007067806609, "attributes": {"top_k": 0}, "status": "UNSET"}
-{"name": "agent.answer", "trace_id": "a1b83aeac8b9b2dcd21587ea49998b35", "span_id": "0e22a373696d75db", "start_ns": 1782915007059497393, "end_ns": 1782915007068142214, "attributes": {"member_id": "MBR-001", "query_len": 34, "gen_ai.request.model": "openai/glm-4.5", "gen_ai.operation.name": "agent-first-turn", "gen_ai.usage.input_tokens": 130, "gen_ai.usage.output_tokens": 58, "gen_ai.usage.total_tokens": 188, "gen_ai.usage.cost_usd": 0.0002056}, "status": "UNSET"}
+{"name": "retrieval", "trace_id": "f9dd04fae71243a004af403f5ed5b08c", "span_id": "e7c5c8dfd0611af0", "start_ns": 1782995718788599931, "end_ns": 1782995718789313667, "attributes": {"top_k": 0}, "status": "UNSET"}
+{"name": "agent.answer", "trace_id": "f9dd04fae71243a004af403f5ed5b08c", "span_id": "bf7832c05452c2c6", "start_ns": 1782995718785514820, "end_ns": 1782995718790087910, "attributes": {"member_id_hash": "5757dbffa1fefe96", "query_len": 34, "gen_ai.request.model": "openai/glm-4.5", "gen_ai.operation.name": "agent-first-turn", "gen_ai.usage.input_tokens": 130, "gen_ai.usage.output_tokens": 58, "gen_ai.usage.total_tokens": 188, "gen_ai.usage.cost_usd": 0.0002056}, "status": "UNSET"}
 ```
+
+### Identifier redaction
+
+`agent.answer` traces `member_id_hash` (a truncated SHA-256 of the raw member ID via
+`verity.tracing.hash_identifier`), not the raw member ID. Spans and their exports may reach
+a wider audience than the request itself (observability backends, log aggregators), so the
+raw identifier never leaves the process on this path. The hash is deterministic within a
+process, so spans for the same member can still be correlated across a trace without
+exposing the identifier itself.
 
 ---
 

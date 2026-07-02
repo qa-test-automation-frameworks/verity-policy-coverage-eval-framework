@@ -33,7 +33,7 @@ from verity.config import Settings, get_settings
 from verity.conversation import validate_conversation
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
-from verity.tracing import trace_id_hex, traced
+from verity.tracing import hash_identifier, trace_id_hex, traced
 
 logger = logging.getLogger(__name__)
 
@@ -302,7 +302,9 @@ class CoverageAgent:
                 estimated_cost_usd=0.0,
             )
 
-        with traced("agent.answer", member_id=member_id, query_len=len(query)) as span:
+        with traced(
+            "agent.answer", member_id_hash=hash_identifier(member_id), query_len=len(query)
+        ) as span:
             trace_id = trace_id_hex(span)
 
             # 2. Load member
