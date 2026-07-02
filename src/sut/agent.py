@@ -25,7 +25,7 @@ import yaml
 from pydantic import BaseModel
 
 from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scrub_output
-from sut.retriever import Chunk, PolicyRetriever
+from sut.retriever import Chunk, PolicyRetriever, Retriever
 from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_coverage_calculator
 from verity.config import Settings, get_settings
 from verity.conversation import validate_conversation
@@ -312,7 +312,7 @@ def _build_system_prompt(
 @dataclass
 class CoverageAgent:
     settings: Settings = field(default_factory=get_settings)
-    retriever: PolicyRetriever | None = None
+    retriever: Retriever | None = None
     provider: LLMProvider | None = None
 
     def __post_init__(self) -> None:

@@ -18,7 +18,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
@@ -191,6 +191,19 @@ def _keyword_overlap_bonus(query: str, text: str) -> float:
     lowered = text.lower()
     hits = sum(1 for term in query_terms if term in lowered)
     return hits / len(query_terms)
+
+
+class Retriever(Protocol):
+    """Structural interface shared by PolicyRetriever and FixtureRetriever.
+
+    Lets callers (e.g. CoverageAgent) type against "a retriever" without
+    committing to a base class, since the two implementations have
+    intentionally different constructors and internals.
+    """
+
+    def index_corpus(self, force: bool = False) -> int: ...
+
+    def retrieve(self, query: str, top_k: int | None = None) -> list[Chunk]: ...
 
 
 class PolicyRetriever:
