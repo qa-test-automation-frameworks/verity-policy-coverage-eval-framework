@@ -8,6 +8,10 @@ cases:
     behavior: answer
     ground_truth: "$60 per specialist visit in-network (Silver §3.2)"
     must_contain: ["60"]
+    numeric_expectations:
+      - description: "specialist copay is exactly $60"
+        comparator: eq
+        value: 60
     expected_citations: [silver.md]
     expects_defect: false
     semantic_metrics: [answer_relevancy, context_precision]
@@ -338,6 +342,14 @@ cases:
     ground_truth: "Gold individual out-of-pocket maximum is $3,800 effective July 1, 2024 per Amendment §A2; it supersedes the original $4,000 figure."
     must_contain: ["3,800", "July 1, 2024"]
     must_not_contain: ["4,000 is current"]
+    numeric_expectations:
+      - description: "current OOP max is exactly $3,800, not the superseded $4,000"
+        comparator: eq
+        value: 3800
+    date_expectations:
+      - description: "amendment effective date is in 2024, on or after the amendment quarter"
+        on_or_after: "2024-01-01"
+        on_or_before: "2024-12-31"
     expected_citations: [amendments.md]
     expects_defect: false
     semantic_metrics: [faithfulness, answer_relevancy]
@@ -685,6 +697,14 @@ cases:
     behavior: answer
     ground_truth: "40% coinsurance on $1,000 is $400, which brings accrued OOP to exactly $8,000 — at, not over, the cap."
     must_contain: ["400", "8,000"]
+    numeric_expectations:
+      - description: "member owes exactly $400 (40% coinsurance on $1,000)"
+        comparator: eq
+        value: 400
+      - description: "resulting accrued OOP is at the $8,000 cap, not over it"
+        comparator: range
+        min_value: 8000
+        max_value: 8000
     expected_tool:
       name: coverage_calculator
       required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
