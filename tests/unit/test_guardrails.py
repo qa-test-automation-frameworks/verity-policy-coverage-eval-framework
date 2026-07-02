@@ -80,6 +80,32 @@ class TestOutputScrubber:
         assert "1972-11-08" not in result
 
 
+class TestOutputScrubberPreservesNonPiiDates:
+    """A bare ISO date is not automatically a date of birth — the scrubber and
+    scan_pii must not flag/redact a policy effective date that carries no
+    birth-context wording nearby."""
+
+    def test_policy_effective_date_not_redacted(self) -> None:
+        text = "The Silver premium is $445, effective 2024-07-01 per Amendment A1."
+        result = scrub_output(text)
+        assert "2024-07-01" in result
+        assert "[DATE_REDACTED]" not in result
+
+    def test_policy_effective_date_not_flagged_as_pii(self) -> None:
+        text = "The Silver premium is $445, effective 2024-07-01 per Amendment A1."
+        assert scan_pii(text) == []
+
+    def test_dob_still_redacted_with_context(self) -> None:
+        text = "Your date of birth on file is 1985-03-22."
+        result = scrub_output(text)
+        assert "1985-03-22" not in result
+        assert "[DATE_REDACTED]" in result
+
+    def test_dob_still_flagged_as_pii_with_context(self) -> None:
+        text = "I have your information: date of birth on file is 1985-03-22."
+        assert any("date-of-birth" in hit for hit in scan_pii(text))
+
+
 class TestPIILogLeak:
     """Defect #8 — log_member_context writes raw PII to DEBUG log (the real leak site)."""
 
