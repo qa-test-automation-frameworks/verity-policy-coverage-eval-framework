@@ -53,3 +53,22 @@ API key — no code change.
 | GPT-4o / GPT-4-turbo | 10-50x higher cost; harder to self-host or reproduce at zero cost |
 | Local Llama 3 via Ollama | No hosted API; CI runners cannot run 8B+ parameter models reliably |
 | Single provider (Z.ai only) | Tight coupling; if Z.ai pricing or availability changes the whole suite breaks |
+
+## Amendment (2026-07-02): default path unvalidated live, substitute path is the verified one
+
+`VERITY_PROVIDER=zai` / `VERITY_MODEL=glm-4.5` remains the default in
+`Settings` and `.env.example` for the reasons above, and hermetic Tier-1/
+Tier-3 tests pin GLM-4.5 internally regardless of this setting. However, at
+the time of this amendment the live Tier-2 route to GLM-4.5 (via both Z.ai
+and NVIDIA NIM) had not been successfully exercised end-to-end — see the
+Limitations section of `README.md` and `docs/calibration-report.md` for the
+specific errors hit. The committed live Tier-2 evidence and calibration
+report both use `VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini`
+instead, which is currently the only provider/model combination with a
+verified, reproducible live run in this repo.
+
+Anyone re-validating the default should run `make eval-semantic` and
+`make calibrate-live` with a working GLM-4.5 key and, if it succeeds,
+update `docs/calibration-report.md` and `docs/defects-caught.md` in place;
+if it does not, capture the failure mode here rather than silently
+substituting a different model.
