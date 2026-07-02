@@ -24,6 +24,7 @@ import yaml
 from pydantic import BaseModel
 
 from sut.citations import resolve_citations
+from sut.auth import member_token_valid
 from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scrub_output
 from sut.retriever import Chunk, PolicyRetriever, Retriever
 from sut.review_triggers import any_requires_human_review
@@ -267,12 +268,23 @@ class CoverageAgent:
         query: str,
         member_id: str = "MBR-001",
         top_k: int | None = None,
+        member_token: str | None = None,
     ) -> AgentResponse:
         """Run the full agent loop for a coverage question."""
         # Snapshot the accumulator's record count so this response reports only
         # the usage/cost from calls made during THIS answer(), not the shared
         # accumulator's lifetime total across every request it has ever served.
         start_index = len(self._llm_provider.accumulator.records)
+
+        if not member_token_valid(
+            member_id,
+            member_token,
+            required=self.settings.member_auth_required,
+            tokens_json=self.settings.member_tokens_json,
+        ):
+            return self._safe_failure_response(
+                category="member_auth_required", start_index=start_index
+            )
 
         # 1. Input guardrail
         refused, refusal_reason = check_input(query)
