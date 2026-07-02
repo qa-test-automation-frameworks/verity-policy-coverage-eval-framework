@@ -10,11 +10,13 @@ Pages produced:
   site/cost.html           - token + cost summary (when present)
   site/vulnerabilities.html - seeded-defect adversarial design catalog
   site/security.html       - measured adversarial run summary (reports/security/summary.md)
+  site/trends.html         - local/CI trend history from reports/trends/*.jsonl
   site/allure/             - Allure HTML report copy (when present)
 """
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -29,6 +31,7 @@ _NAV = """
   <a href="cost.html" style="color:#90cdf4;text-decoration:none;">Cost</a>
   <a href="vulnerabilities.html" style="color:#90cdf4;text-decoration:none;">Vulnerabilities</a>
   <a href="security.html" style="color:#90cdf4;text-decoration:none;">Security Summary</a>
+  <a href="trends.html" style="color:#90cdf4;text-decoration:none;">Trends</a>
   <a href="allure/index.html" style="color:#90cdf4;text-decoration:none;">Allure</a>
 </nav>
 """
@@ -90,6 +93,57 @@ def _placeholder_html(title: str, message: str) -> str:
 {_NAV}
 <h1>{title}</h1>
 <p><em>{message}</em></p>
+</body>
+</html>
+"""
+
+
+def _trends_html(trends_dir: Path = Path("reports/trends")) -> str | None:
+    """Render trend JSONL files into a compact HTML table."""
+    if not trends_dir.exists():
+        return None
+
+    rows: list[str] = []
+    for path in sorted(trends_dir.glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            rows.append(
+                "<tr>"
+                f"<td>{record.get('tier', path.stem)}</td>"
+                f"<td>{record.get('total', '')}</td>"
+                f"<td>{record.get('passed', '')}</td>"
+                f"<td>{record.get('failed', '')}</td>"
+                f"<td>{float(record.get('pass_rate', 0.0)):.1%}</td>"
+                f"<td>{float(record.get('latency_p95_ms', 0.0)):.1f}</td>"
+                f"<td>{float(record.get('total_cost_usd', 0.0)):.4f}</td>"
+                "</tr>"
+            )
+
+    if not rows:
+        return None
+
+    table = "".join(rows)
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Trends | verity eval</title>
+  {_CSS}
+</head>
+<body>
+{_NAV}
+<h1>Trends</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Tier</th><th>Total</th><th>Passed</th><th>Failed</th>
+      <th>Pass rate</th><th>P95 ms</th><th>Cost USD</th>
+    </tr>
+  </thead>
+  <tbody>{table}</tbody>
+</table>
 </body>
 </html>
 """
@@ -163,8 +217,9 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
         (site_dir / "vulnerabilities.html").write_text(
             _placeholder_html(
                 "Adversarial Vulnerability Summary",
-                "Run `make defects-report` to generate docs/defects-caught.md from cassette replay. "
-                "The seeded-defect design catalog is at docs/seeded-defects.md.",
+                "Run `make defects-report` to generate docs/defects-caught.md from "
+                "cassette replay. The seeded-defect design catalog is at "
+                "docs/seeded-defects.md.",
             ),
             encoding="utf-8",
         )
@@ -188,6 +243,18 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
             encoding="utf-8",
         )
         generated["security.html"] = False
+
+    # trends.html
+    trends_html = _trends_html()
+    if trends_html is not None:
+        (site_dir / "trends.html").write_text(trends_html, encoding="utf-8")
+        generated["trends.html"] = True
+    else:
+        (site_dir / "trends.html").write_text(
+            _placeholder_html("Trends", "Run an eval suite to append reports/trends/*.jsonl"),
+            encoding="utf-8",
+        )
+        generated["trends.html"] = False
 
     # allure/  - copy if already built
     allure_src = Path("reports/allure-report")

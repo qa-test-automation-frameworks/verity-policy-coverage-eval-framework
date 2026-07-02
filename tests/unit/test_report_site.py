@@ -64,10 +64,18 @@ class TestBuildSite:
             "cost.html",
             "vulnerabilities.html",
             "security.html",
+            "trends.html",
             "allure/",
         )
         for page in expected:
             assert page in result, f"{page!r} missing from build_site() return value"
+
+    def test_trends_placeholder_when_no_history(self, tmp_path: Path, monkeypatch) -> None:
+        monkeypatch.chdir(tmp_path)
+        result = self._make_site(tmp_path / "site")
+        assert result.get("trends.html") is False
+        content = (tmp_path / "site" / "trends.html").read_text()
+        assert "reports/trends" in content
 
     def test_security_placeholder_when_no_summary(self, tmp_path: Path) -> None:
         summary = Path("reports/security/summary.md")
@@ -90,6 +98,7 @@ class TestNavContent:
             "cost.html",
             "vulnerabilities.html",
             "security.html",
+            "trends.html",
             "allure/index.html",
         )
         for href in expected_hrefs:
@@ -155,3 +164,27 @@ class TestVulnerabilitiesPage:
         assert result.get("vulnerabilities.html") is False
         content = (tmp_path / "vulnerabilities.html").read_text()
         assert "defects-report" in content
+
+
+class TestTrendsPage:
+    def test_trends_html_renders_jsonl_rows(self, tmp_path: Path, monkeypatch) -> None:
+        import importlib
+
+        import scripts.build_report_site as mod
+
+        importlib.reload(mod)
+        trends_dir = tmp_path / "reports" / "trends"
+        trends_dir.mkdir(parents=True)
+        (trends_dir / "semantic.jsonl").write_text(
+            '{"tier":"semantic","total":2,"passed":1,"failed":1,"pass_rate":0.5,'
+            '"latency_p95_ms":123.4,"total_cost_usd":0.0123}\n',
+            encoding="utf-8",
+        )
+        monkeypatch.chdir(tmp_path)
+
+        result = mod.build_site(site_dir=tmp_path / "site")
+
+        assert result["trends.html"] is True
+        content = (tmp_path / "site" / "trends.html").read_text()
+        assert "semantic" in content
+        assert "50.0%" in content
