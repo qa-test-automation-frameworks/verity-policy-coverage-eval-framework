@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from sut.agent import _load_members
+from sut.agent import ToolInvocation, _load_members
 from tests.deterministic.conftest import run_case
 from verity.checks import (
     check_injection,
@@ -19,6 +19,7 @@ from verity.checks import (
     check_pii,
     check_refusal,
     check_tool_args,
+    scan_injection,
 )
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
@@ -112,6 +113,79 @@ class TestDefect8PiiLeakage:
         response = run_case(case, _settings)
         result = check_must_not_contain(case, response)
         assert not result.passed, "Defect #8: forbidden PII tokens not found in response"
+
+
+class TestDefect5NonCircularToolArgCheck:
+    """Defect #5, independent of the authored cassette.
+
+    Constructs a transposed tool call directly from the case's own
+    expected_arg_values (swapping plan_deductible/accrued_deductible) rather
+    than relying on an authored model response, so the assertion exercises
+    check_tool_args against an input the case author did not hand-write to
+    match the check.
+    """
+
+    def test_check_tool_args_flags_transposed_arguments(self) -> None:
+        case = _by_defect(5)
+        expected = case.expected_tool
+        assert expected is not None
+        correct_args = dict(expected.expected_arg_values)
+        transposed_args = dict(correct_args)
+        transposed_args["plan_deductible"], transposed_args["accrued_deductible"] = (
+            correct_args["accrued_deductible"],
+            correct_args["plan_deductible"],
+        )
+
+        class _Response:
+            def __init__(self, invocations: list[ToolInvocation]) -> None:
+                self.tool_invocations = invocations
+
+        response = _Response(
+            [ToolInvocation(tool_name="coverage_calculator", args=transposed_args, result={})]
+        )
+        result = check_tool_args(case, response)
+        assert not result.passed, (
+            "check_tool_args did not flag a genuinely transposed deductible pair "
+            f"(args={transposed_args})"
+        )
+
+    def test_check_tool_args_flags_a_skipped_call(self) -> None:
+        case = _by_defect(5)
+
+        class _Response:
+            def __init__(self) -> None:
+                self.tool_invocations: list[ToolInvocation] = []
+
+        result = check_tool_args(case, _Response())
+        assert not result.passed, "check_tool_args did not flag a missing tool call"
+
+
+class TestDefect7NonCircularInjectionCheck:
+    """Defect #7, independent of the authored cassette.
+
+    Asserts scan_injection() fires directly against the §A5 payload text as
+    it exists in the corpus file, rather than only against the authored
+    cassette response engineered to match the same regexes.
+    """
+
+    def test_corpus_contains_the_seeded_injection_payload(self) -> None:
+        amendments = Path("src/sut/corpus/amendments.md").read_text()
+        assert "§A5" in amendments, "Seeded injection section §A5 missing from corpus"
+        assert scan_injection(amendments), (
+            "scan_injection() did not fire against the corpus's own §A5 payload text"
+        )
+
+    def test_check_injection_flags_a_response_quoting_the_corpus_payload(self) -> None:
+        section = Path("src/sut/corpus/amendments.md").read_text().split("§A5", 1)[1]
+
+        class _Response:
+            answer = section
+
+        result = check_injection(_Response())
+        assert not result.passed, (
+            "check_injection did not flag a response that quotes the corpus's own "
+            "§A5 payload verbatim"
+        )
 
 
 class TestDefectCaughtSummary:
