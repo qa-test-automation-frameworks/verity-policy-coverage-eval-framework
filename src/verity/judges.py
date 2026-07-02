@@ -116,7 +116,7 @@ class DeepEvalJudge:
             from deepeval.models.base_model import DeepEvalBaseLLM
         except ImportError as exc:
             raise ImportError(
-                "deepeval is required for Tier-2 evaluation. Install with: uv sync --group semantic"
+                "deepeval is required for Tier-2 evaluation. Install with: uv sync --extra semantic"
             ) from exc
 
         class _Adapter(DeepEvalBaseLLM):  # type: ignore[no-untyped-call]
@@ -173,7 +173,7 @@ class RagasJudge:
         except ImportError as exc:
             raise ImportError(
                 "langchain-core is required for RAGAS metrics. "
-                "Install with: uv sync --group semantic"
+                "Install with: uv sync --extra semantic"
             ) from exc
 
         class _RagasLLMShim:

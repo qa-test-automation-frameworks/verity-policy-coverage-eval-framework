@@ -53,7 +53,7 @@ def make_hallucination(judge: ProviderJudge, threshold: float = THRESHOLD_HALLUC
     try:
         from deepeval.metrics import HallucinationMetric
     except ImportError as exc:
-        raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
+        raise ImportError("deepeval is required. Install with: uv sync --extra semantic") from exc
     return HallucinationMetric(
         threshold=threshold,
         model=_deepeval_judge(judge),
@@ -68,7 +68,7 @@ def make_answer_relevancy(
     try:
         from deepeval.metrics import AnswerRelevancyMetric
     except ImportError as exc:
-        raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
+        raise ImportError("deepeval is required. Install with: uv sync --extra semantic") from exc
     return AnswerRelevancyMetric(
         threshold=threshold,
         model=_deepeval_judge(judge),
@@ -82,7 +82,7 @@ def make_completeness(judge: ProviderJudge, threshold: float = THRESHOLD_COMPLET
         from deepeval.metrics import GEval
         from deepeval.test_case import SingleTurnParams
     except ImportError as exc:
-        raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
+        raise ImportError("deepeval is required. Install with: uv sync --extra semantic") from exc
     return GEval(
         name="Completeness",
         criteria=COMPLETENESS_RUBRIC,
@@ -98,7 +98,7 @@ def make_disambiguation(judge: ProviderJudge, threshold: float = THRESHOLD_DISAM
         from deepeval.metrics import GEval
         from deepeval.test_case import SingleTurnParams
     except ImportError as exc:
-        raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
+        raise ImportError("deepeval is required. Install with: uv sync --extra semantic") from exc
     return GEval(
         name="Disambiguation",
         criteria=DISAMBIGUATION_RUBRIC,
@@ -114,7 +114,7 @@ def make_refusal_geval(judge: ProviderJudge, threshold: float = THRESHOLD_REFUSA
         from deepeval.metrics import GEval
         from deepeval.test_case import SingleTurnParams
     except ImportError as exc:
-        raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
+        raise ImportError("deepeval is required. Install with: uv sync --extra semantic") from exc
     return GEval(
         name="RefusalBoundary",
         criteria=REFUSAL_RUBRIC,
@@ -135,5 +135,5 @@ def make_tool_correctness(
     try:
         from deepeval.metrics import ToolCorrectnessMetric
     except ImportError as exc:
-        raise ImportError("deepeval is required. Install with: uv sync --group semantic") from exc
+        raise ImportError("deepeval is required. Install with: uv sync --extra semantic") from exc
     return ToolCorrectnessMetric(threshold=threshold, include_reason=True)
