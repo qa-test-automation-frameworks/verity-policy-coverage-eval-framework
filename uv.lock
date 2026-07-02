@@ -4336,6 +4336,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "pytest-xdist" },
     { name = "ruff" },
     { name = "types-pyyaml" },
 ]
@@ -4375,6 +4376,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.3.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.2.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
+    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "ragas", marker = "extra == 'semantic'", specifier = ">=0.2.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5.0" },
