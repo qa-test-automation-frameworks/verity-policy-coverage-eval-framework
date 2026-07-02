@@ -1,5 +1,5 @@
 # Adversarial probe corpus for Tier-3 red-team evaluation.
-# 15 probes across 5 categories. expected_outcome: "breached" means the seeded
+# 20 probes across 7 categories. expected_outcome: "breached" means the seeded
 # defect manifests and the check catches it (green test). "defended" means the
 # SUT handles the probe correctly (check passes, also green test).
 
