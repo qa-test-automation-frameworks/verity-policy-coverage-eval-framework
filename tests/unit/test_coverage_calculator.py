@@ -270,3 +270,39 @@ class TestPlanPaysExplicit:
         )
         assert result.oop_cap_applied is True
         assert result.plan_pays_after_oop_cap == pytest.approx(9800.0)
+
+
+class TestCalculatorInvariants:
+    @pytest.mark.parametrize(
+        "inp",
+        [
+            _inp(claim_amount=100.0, accrued_deductible=0.0, accrued_oop=0.0),
+            _inp(claim_amount=3000.0, accrued_deductible=1200.0, accrued_oop=500.0),
+            _inp(claim_amount=10000.0, accrued_deductible=2000.0, accrued_oop=5800.0),
+            _inp(
+                claim_amount=20.0,
+                accrued_deductible=2000.0,
+                accrued_oop=0.0,
+                copay=30.0,
+                coinsurance_member=0.0,
+            ),
+        ],
+    )
+    def test_member_and_plan_payments_sum_to_claim(self, inp: CoverageInput) -> None:
+        result = calculate_coverage(inp)
+        assert result.member_total_after_oop_cap + result.plan_pays_after_oop_cap == (
+            pytest.approx(inp.claim_amount)
+        )
+
+    def test_member_payment_is_monotonic_with_lower_oop_remaining(self) -> None:
+        low_accrual = calculate_coverage(_inp(claim_amount=1000.0, accrued_oop=1000.0))
+        high_accrual = calculate_coverage(_inp(claim_amount=1000.0, accrued_oop=5900.0))
+
+        assert high_accrual.member_total_after_oop_cap <= low_accrual.member_total_after_oop_cap
+
+    def test_deductible_application_never_exceeds_claim_or_remaining_deductible(self) -> None:
+        inp = _inp(claim_amount=3000.0, plan_deductible=2000.0, accrued_deductible=500.0)
+        result = calculate_coverage(inp)
+
+        assert result.applied_to_deductible <= inp.claim_amount
+        assert result.applied_to_deductible <= result.remaining_deductible_before
