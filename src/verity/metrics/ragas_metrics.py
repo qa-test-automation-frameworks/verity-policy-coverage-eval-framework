@@ -91,11 +91,15 @@ def _import_ragas_metric_class(name: str) -> Any:
         raise ImportError("ragas is required. Install with: uv sync --extra semantic") from exc
 
 
-def make_faithfulness(judge: ProviderJudge, threshold: float = THRESHOLD_FAITHFULNESS) -> Any:
+def make_faithfulness(judge: ProviderJudge) -> Any:
     """RAGAS Faithfulness — detects hallucination, stale context, injection compliance.
 
     Primary targets: defect #1 (bariatric hallucination), defect #2 (stale premium),
     defect #7 (injection compliance language not grounded in authoritative corpus).
+
+    Callers compare the returned metric's score against THRESHOLD_FAITHFULNESS
+    (this factory does not take a threshold — RAGAS metrics score, they don't
+    pass/fail on their own).
     """
     ensure_ragas_compat()
     faithfulness_cls = _import_ragas_metric_class("Faithfulness")
@@ -104,10 +108,11 @@ def make_faithfulness(judge: ProviderJudge, threshold: float = THRESHOLD_FAITHFU
     return metric
 
 
-def make_context_precision(
-    judge: ProviderJudge, threshold: float = THRESHOLD_CONTEXT_PRECISION
-) -> Any:
-    """RAGAS ContextPrecision — measures retrieval precision (relevant chunks retrieved)."""
+def make_context_precision(judge: ProviderJudge) -> Any:
+    """RAGAS ContextPrecision — measures retrieval precision (relevant chunks retrieved).
+
+    Compare the returned metric's score against THRESHOLD_CONTEXT_PRECISION.
+    """
     ensure_ragas_compat()
     context_precision_cls = _import_ragas_metric_class("ContextPrecision")
     metric = context_precision_cls()
@@ -115,8 +120,11 @@ def make_context_precision(
     return metric
 
 
-def make_context_recall(judge: ProviderJudge, threshold: float = THRESHOLD_CONTEXT_RECALL) -> Any:
-    """RAGAS ContextRecall — measures whether required supporting context was retrieved."""
+def make_context_recall(judge: ProviderJudge) -> Any:
+    """RAGAS ContextRecall — measures whether required supporting context was retrieved.
+
+    Compare the returned metric's score against THRESHOLD_CONTEXT_RECALL.
+    """
     ensure_ragas_compat()
     context_recall_cls = _import_ragas_metric_class("ContextRecall")
     metric = context_recall_cls()
@@ -124,10 +132,11 @@ def make_context_recall(judge: ProviderJudge, threshold: float = THRESHOLD_CONTE
     return metric
 
 
-def make_ragas_answer_relevancy(
-    judge: ProviderJudge, threshold: float = THRESHOLD_ANSWER_RELEVANCY
-) -> Any:
-    """RAGAS AnswerRelevancy — penalizes incomplete or off-topic answers."""
+def make_ragas_answer_relevancy(judge: ProviderJudge) -> Any:
+    """RAGAS AnswerRelevancy — penalizes incomplete or off-topic answers.
+
+    Compare the returned metric's score against THRESHOLD_ANSWER_RELEVANCY.
+    """
     ensure_ragas_compat()
     answer_relevancy_cls = _import_ragas_metric_class("AnswerRelevancy")
     metric = answer_relevancy_cls()
