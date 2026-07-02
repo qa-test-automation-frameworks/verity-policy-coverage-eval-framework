@@ -23,6 +23,9 @@ pipeline:
    - `median`: resistant to outlier runs
    - `pass_rate`: `stat.pass_rate >= threshold` (useful for high-variance judges)
    - `all`: mean AND median AND pass_rate all ≥ threshold (strictest)
+4. **Pass-rate interval** — callers that gate on pass-rate can report
+   `pass_rate_wilson_interval(stat)` beside the point estimate, which is especially
+   useful for scheduled runs with small sample counts.
 
 See `verity/statistics.py` for the implementation.
 
@@ -89,8 +92,9 @@ ADR-0001 default) to see whether the failure rate is judge-specific.
 
 Thresholds are intentionally conservative rather than calibrated — the goal is
 to detect large regressions (catching baked-in defects) rather than micro-tune
-precision. Calibrated thresholds based on a specific judge model's measured
-score distribution are a planned M4 deliverable.
+precision. The next threshold-hardening step is to replace these convention-based
+defaults with calibrated values from the configured judge model's measured score
+distribution.
 
 - **0.50 for hallucination** — the metric is fraction of unsupported claims;
   a clean answer on a simple coverage question should score ≤ 0.1 (very low

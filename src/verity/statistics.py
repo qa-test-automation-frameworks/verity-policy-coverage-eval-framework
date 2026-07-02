@@ -12,9 +12,13 @@ Typical usage:
 
 from __future__ import annotations
 
+import math
 import statistics
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Literal
+
+ThresholdMode = Literal["mean", "median", "pass_rate", "all"]
 
 
 @dataclass(frozen=True)
@@ -92,10 +96,28 @@ def aggregate(
     )
 
 
+def pass_rate_wilson_interval(stat: StatResult, confidence_z: float = 1.96) -> tuple[float, float]:
+    """Return a Wilson score interval for the observed pass rate."""
+    if stat.n < 1:
+        raise ValueError("stat.n must be >= 1")
+    if confidence_z <= 0:
+        raise ValueError("confidence_z must be positive")
+
+    z2 = confidence_z * confidence_z
+    denominator = 1 + z2 / stat.n
+    center = (stat.pass_rate + z2 / (2 * stat.n)) / denominator
+    margin = (
+        confidence_z
+        * math.sqrt((stat.pass_rate * (1 - stat.pass_rate) + z2 / (4 * stat.n)) / stat.n)
+        / denominator
+    )
+    return max(0.0, center - margin), min(1.0, center + margin)
+
+
 def threshold_pass(
     stat: StatResult,
     threshold: float,
-    mode: str = "mean",
+    mode: ThresholdMode = "mean",
 ) -> bool:
     """Return True if the stat result passes the threshold under the given mode.
 

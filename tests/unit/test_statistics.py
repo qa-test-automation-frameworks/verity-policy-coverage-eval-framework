@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from verity.statistics import StatResult, aggregate, run_n_samples, threshold_pass
+from verity.statistics import (
+    StatResult,
+    aggregate,
+    pass_rate_wilson_interval,
+    run_n_samples,
+    threshold_pass,
+)
 
 
 class TestAggregate:
@@ -95,6 +101,24 @@ class TestRunNSamples:
 
         stat = run_n_samples(fn, n=4, score_threshold=0.5)
         assert stat.pass_rate == pytest.approx(0.5)
+
+
+class TestPassRateWilsonInterval:
+    def test_interval_bounds_pass_rate(self) -> None:
+        stat = aggregate([1.0, 1.0, 0.0, 1.0, 0.0], score_threshold=0.5)
+        lower, upper = pass_rate_wilson_interval(stat)
+        assert 0.0 <= lower < stat.pass_rate < upper <= 1.0
+
+    def test_all_passes_still_has_uncertainty(self) -> None:
+        stat = aggregate([1.0] * 5, score_threshold=0.5)
+        lower, upper = pass_rate_wilson_interval(stat)
+        assert 0.0 < lower < 1.0
+        assert upper == 1.0
+
+    def test_invalid_confidence_raises(self) -> None:
+        stat = aggregate([1.0], score_threshold=0.5)
+        with pytest.raises(ValueError, match="confidence_z"):
+            pass_rate_wilson_interval(stat, confidence_z=0.0)
 
 
 class TestThresholdPass:
