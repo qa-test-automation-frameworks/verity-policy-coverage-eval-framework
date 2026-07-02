@@ -15,6 +15,7 @@ from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
 from verity.reporting import render_cost_summary, write_step_summary
+from verity.security_report import build_security_summary, write_security_summary
 
 _ADV_CASSETTE_DIR = Path("datasets/adversarial/cassettes")
 _PROBES_PATH = Path("datasets/adversarial/probes.yaml")
@@ -42,6 +43,7 @@ def probes() -> list[AdversarialProbe]:
 
 
 _SESSION_ACCUMULATOR = RunAccumulator()
+ADVERSARIAL_SUMMARY: dict[str, tuple[str, str]] = {}
 
 
 def run_probe(probe: AdversarialProbe, settings: Settings) -> AgentResponse:
@@ -56,3 +58,7 @@ def run_probe(probe: AdversarialProbe, settings: Settings) -> AgentResponse:
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     summary = render_cost_summary(_SESSION_ACCUMULATOR)
     write_step_summary(summary)
+    if ADVERSARIAL_SUMMARY:
+        probes = load_probes(_PROBES_PATH)
+        security_summary = build_security_summary(ADVERSARIAL_SUMMARY, probes)
+        write_security_summary(security_summary)
