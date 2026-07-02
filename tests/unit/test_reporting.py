@@ -10,9 +10,15 @@ from verity.cost import RunAccumulator, Usage
 from verity.reporting import render_cost_summary, write_step_summary
 
 
-def _log(acc: RunAccumulator, label: str, prompt: int = 100, completion: int = 50) -> None:
+def _log(
+    acc: RunAccumulator,
+    label: str,
+    prompt: int = 100,
+    completion: int = 50,
+    model: str = "fake/model",
+) -> None:
     acc.log_call(
-        model="fake/model",
+        model=model,
         usage=Usage(
             prompt_tokens=prompt,
             completion_tokens=completion,
@@ -60,9 +66,24 @@ class TestRenderCostSummary:
 
     def test_cost_appears_in_table(self) -> None:
         acc = RunAccumulator()
-        _log(acc, "x")
+        _log(acc, "x", model="glm-4.5")
         result = render_cost_summary(acc)
         assert "$" in result
+
+    def test_unpriced_model_renders_as_unpriced_not_zero(self) -> None:
+        acc = RunAccumulator()
+        _log(acc, "x", model="fake/model")
+        result = render_cost_summary(acc)
+        assert "unpriced" in result
+        assert "$0.000000" not in result
+
+    def test_mixed_priced_and_unpriced_labels_render_independently(self) -> None:
+        acc = RunAccumulator()
+        _log(acc, "priced", model="glm-4.5")
+        _log(acc, "unpriced", model="fake/model")
+        result = render_cost_summary(acc)
+        assert "unpriced" in result
+        assert "$0.000000" not in result
 
 
 class TestWriteStepSummary:
