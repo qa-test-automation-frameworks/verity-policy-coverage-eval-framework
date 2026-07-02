@@ -9,7 +9,10 @@ rolling local/CI log a report-site step can chart.
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import time
+import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -17,6 +20,24 @@ from verity.cost import RunAccumulator
 from verity.latency import LatencyReport, check_latency_budget
 
 _TRENDS_DIR = Path("reports/trends")
+
+
+def _current_git_sha() -> str:
+    """Best-effort git SHA for the current checkout, so a trend record can be
+    traced back to the exact commit that produced it. CI sets GITHUB_SHA;
+    local runs fall back to `git rev-parse HEAD`; either failing yields
+    "unknown" rather than raising, since trend recording must not fail a
+    test run over a missing git binary."""
+    env_sha = os.environ.get("GITHUB_SHA")
+    if env_sha:
+        return env_sha
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5, check=True
+        )
+        return result.stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        return "unknown"
 
 
 @dataclass(frozen=True)
@@ -33,6 +54,8 @@ class TrendRecord:
     total_cost_usd: float
     retrieval_quality: float | None = None
     extra: dict[str, float] = field(default_factory=dict)
+    run_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
+    git_sha: str = field(default_factory=_current_git_sha)
 
 
 def compute_trend_record(

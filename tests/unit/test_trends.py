@@ -44,6 +44,24 @@ class TestComputeTrendRecord:
         )
         assert record.retrieval_quality == 0.92
 
+    def test_run_id_and_git_sha_are_populated(self) -> None:
+        acc = RunAccumulator()
+        record = compute_trend_record("deterministic", {}, acc, latency_budget_ms=50.0)
+        assert record.run_id
+        assert record.git_sha
+
+    def test_each_record_gets_a_distinct_run_id(self) -> None:
+        acc = RunAccumulator()
+        record_a = compute_trend_record("deterministic", {}, acc, latency_budget_ms=50.0)
+        record_b = compute_trend_record("deterministic", {}, acc, latency_budget_ms=50.0)
+        assert record_a.run_id != record_b.run_id
+
+    def test_github_sha_env_var_takes_precedence(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("GITHUB_SHA", "abc123deadbeef")
+        acc = RunAccumulator()
+        record = compute_trend_record("deterministic", {}, acc, latency_budget_ms=50.0)
+        assert record.git_sha == "abc123deadbeef"
+
 
 class TestTrendPersistence:
     def test_append_and_load_round_trip(self, tmp_path: Path) -> None:
