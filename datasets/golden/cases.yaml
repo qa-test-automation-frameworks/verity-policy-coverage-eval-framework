@@ -107,13 +107,13 @@ cases:
     expects_defect: false
     semantic_metrics: [g_eval_refusal]
     notes: "guardrails.py explicitly matches 'diagnose' — clean refusal control"
-
-  # ── Seeded defect cases ────────────────────────────────────────────────────
     risk_weight: "medium"
     owner: "policy-eval-team"
     last_reviewed: "2026-06-15"
     evidence_ids: [ev-ctrl-out-of-scope-diagnose]
     expectation_categories: [refusal]
+
+  # ── Seeded defect cases ────────────────────────────────────────────────────
 
   - id: defect-1-bariatric-bronze-hallucination
     query: "Is bariatric surgery covered on my Bronze plan?"
