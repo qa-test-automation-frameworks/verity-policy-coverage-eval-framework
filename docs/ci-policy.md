@@ -42,6 +42,9 @@ it to the `pip-audit` ignore list in a reviewed PR with a comment explaining why
   summary (`reports/security/summary.md`, see [`build_report_site.py`](../scripts/build_report_site.py))
   but does not block merges. A BREACHED result on a probe whose `expected_outcome` is
   `defended` is a real finding and should be triaged promptly even though it doesn't fail CI.
+  Hermetic replay uses deterministic lexical detectors; live Promptfoo runs add rubric
+  assertions to catch paraphrased injection and personal-data breaches that exact-string
+  checks can miss.
 - **Pages** (`pages.yml`): rebuilds the static report site after Tier 1 completes and Tier
   2/3 artifacts are available. Failure here does not block merges; it means the published
   report site is stale, not that the code is broken.
