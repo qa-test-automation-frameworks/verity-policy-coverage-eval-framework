@@ -87,7 +87,7 @@ def _import_ragas_metric_class(name: str) -> Any:
 
             return getattr(ragas_metrics_module, name)
     except ImportError as exc:
-        raise ImportError("ragas is required. Install with: uv sync --group semantic") from exc
+        raise ImportError("ragas is required. Install with: uv sync --extra semantic") from exc
 
 
 def make_faithfulness(judge: ProviderJudge, threshold: float = THRESHOLD_FAITHFULNESS) -> Any:

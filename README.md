@@ -85,7 +85,7 @@ make defects-report  # regenerate docs/defects-caught.md (hermetic proof)
 
 ```bash
 cp .env.example .env
-# Add ZAI_API_KEY= to .env
+# Add VERITY_ZAI_API_KEY= to .env
 make smoke         # one live GLM-4.5 call; prints tokens + cost
 make demo QUERY="Is bariatric surgery covered on my Bronze plan?"
 make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1 on GLM-4.5 list pricing; see verity/cost.py)
@@ -155,7 +155,7 @@ docs/
 - **Calibration on synthetic labels.** The committed calibration report uses hand-authored labels and candidate outputs to demonstrate the methodology pipeline. Run `make calibrate-live` to produce a report against a real judge.
 - **Provider endpoint unverified.** The default `VERITY_MODEL=glm-4.5` and provider base URL in `.env.example` are configuration templates; verify the exact model slug and base URL for your provider before running live evals.
 - **Golden dataset size.** The current dataset covers 33 cases across policy plans and defect types. This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
-- **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record-cassettes` when the SUT changes.
+- **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record` when the SUT changes.
 - **RAGAS is optional.** RAGAS faithfulness and context-precision metrics are importable but require compatible optional dependencies. They are included in `uv sync --extra semantic` and conditionally enabled.
 
 ---
