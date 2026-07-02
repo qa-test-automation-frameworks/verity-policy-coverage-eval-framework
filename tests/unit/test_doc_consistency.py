@@ -41,8 +41,15 @@ class TestProbeCorpusCounts:
 
 class TestCalibrationReportConsistency:
     def test_report_headline_numbers_match_a_fresh_synthetic_run(self) -> None:
+        """When the committed report is a synthetic replay, its headline
+        numbers must exactly match a fresh hermetic re-run (the report is
+        fully reproducible in that mode)."""
         if not _LABELED_PATH.exists():
             pytest.skip("calibration dataset not found")
+
+        report_text = _CALIBRATION_REPORT_PATH.read_text()
+        if "**Mode:** synthetic replay" not in report_text:
+            pytest.skip("committed report is a live run, not a synthetic replay")
 
         sys.path.insert(0, str(Path("scripts")))
         from run_calibration import _judge_family, _run_hermetic
@@ -69,10 +76,64 @@ class TestCalibrationReportConsistency:
         agreement = compute_agreement(cases, judge_scores)
         bias = compute_self_bias(cases, judge_scores, judge_family=_judge_family(settings))
 
-        report_text = _CALIBRATION_REPORT_PATH.read_text()
         assert f"**{agreement.raw_agreement:.1%}**" in report_text
         assert f"**{agreement.cohen_kappa:.3f}**" in report_text
         assert f"**{bias.self_preference_delta:+.3f}**" in report_text
+        traceability_match = re.search(
+            r"- \*\*Self-preference delta\*\*: ([+-][\d.]+)", report_text
+        )
+        assert traceability_match, "no Self-preference delta bullet found in report"
+        assert float(traceability_match.group(1)) == pytest.approx(
+            bias.self_preference_delta, abs=5e-4
+        )
+
+    def test_report_headline_numbers_are_derived_from_its_own_case_table(self) -> None:
+        """Regardless of synthetic vs. live mode, the report's headline
+        agreement/kappa/self-bias numbers must be exactly what
+        compute_agreement/compute_self_bias produce from the report's own
+        embedded per-case score table — catching rendering bugs (e.g. a
+        dropped sign) independent of whether the underlying judge run is
+        reproducible."""
+        if not _LABELED_PATH.exists():
+            pytest.skip("calibration dataset not found")
+
+        report_text = _CALIBRATION_REPORT_PATH.read_text()
+
+        from verity.calibration import compute_agreement, compute_self_bias, load_calibration
+
+        cases_by_id = {c.id: c for c in load_calibration(_LABELED_PATH)}
+
+        row_re = re.compile(
+            r"\|\s*`([^`]+)`\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|"
+        )
+        ordered_cases = []
+        judge_scores = []
+        for case_id, _metric, family, _human, judge in row_re.findall(report_text):
+            case = cases_by_id.get(case_id)
+            if case is None:
+                continue
+            assert case.output_family == family, f"{case_id}: family mismatch in table"
+            ordered_cases.append(case)
+            judge_scores.append(float(judge))
+
+        assert ordered_cases, "no parseable rows found in the Individual Case Scores table"
+
+        judge_model_match = re.search(r"\*\*Judge model:\*\*\s*`([^`]+)`", report_text)
+        assert judge_model_match, "no Judge model line found in report"
+        judge_family = "glm" if "glm" in judge_model_match.group(1).lower() else "other"
+        agreement = compute_agreement(ordered_cases, judge_scores)
+        bias = compute_self_bias(ordered_cases, judge_scores, judge_family=judge_family)
+
+        assert f"**{agreement.raw_agreement:.1%}**" in report_text
+        assert f"**{agreement.cohen_kappa:.3f}**" in report_text
+        assert f"**{bias.self_preference_delta:+.3f}**" in report_text
+        traceability_match = re.search(
+            r"- \*\*Self-preference delta\*\*: ([+-][\d.]+)", report_text
+        )
+        assert traceability_match, "no Self-preference delta bullet found in report"
+        assert float(traceability_match.group(1)) == pytest.approx(
+            bias.self_preference_delta, abs=5e-4
+        )
 
 
 class TestPlanParameterConsistency:

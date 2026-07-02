@@ -344,8 +344,8 @@ def render_report(
             f"{agreement.raw_agreement:.1%}.",
             f"- **Cohen's kappa ≥ 0.60** (substantial agreement): synthetic kappa = "
             f"{agreement.cohen_kappa:.3f}.",
-            f"- **Self-preference delta**: {'+' if bias.self_preference_delta >= 0 else ''}"
-            f"{abs(bias.self_preference_delta):.3f} — see interpretation above.",
+            f"- **Self-preference delta**: {bias.self_preference_delta:+.3f} — "
+            "see interpretation above.",
             "",
         ]
     else:
@@ -357,8 +357,8 @@ def render_report(
             f"{agreement.raw_agreement:.1%}, which is within acceptable range.",
             "- **Cohen's kappa ≥ 0.60** (substantial agreement): measured kappa = "
             f"{agreement.cohen_kappa:.3f}.",
-            f"- **Self-preference delta**: {'+' if bias.self_preference_delta >= 0 else ''}"
-            f"{abs(bias.self_preference_delta):.3f} — see interpretation above.",
+            f"- **Self-preference delta**: {bias.self_preference_delta:+.3f} — "
+            "see interpretation above.",
             "",
         ]
     lines += [
