@@ -355,6 +355,36 @@ def check_citations(
     return CheckResult(True)
 
 
+def check_claim_numbers_grounded(response: Any, retrieved_chunks: list[Any]) -> CheckResult:
+    """Verify every number the answer states also appears in some retrieved chunk's text.
+
+    check_citations only proves the *source file* was retrieved; it says nothing about
+    whether the specific amount cited actually appears in that (or any) retrieved chunk.
+    A model can cite the right document while stating a number found nowhere in the
+    retrieved context — a claim/citation-level groundedness gap, not a source-level one.
+
+    Not meaningful for cases whose answer is a computed value (e.g. coverage_calculator
+    output) rather than a direct lookup — callers should skip those (typically:
+    case.expected_tool is set).
+    """
+    answer = str(getattr(response, "answer", ""))
+    claimed_numbers = _extract_numbers(answer)
+    if not claimed_numbers:
+        return CheckResult(True, "No numeric claims to ground")
+
+    chunk_numbers: set[float] = set()
+    for chunk in retrieved_chunks:
+        chunk_numbers.update(_extract_numbers(str(getattr(chunk, "text", ""))))
+
+    ungrounded = [n for n in claimed_numbers if not any(abs(n - cn) < 1e-6 for cn in chunk_numbers)]
+    if ungrounded:
+        return CheckResult(
+            False,
+            f"Answer states number(s) not found in any retrieved chunk: {ungrounded}",
+        )
+    return CheckResult(True)
+
+
 _THOUSANDS_SEP_RE = re.compile(r"(?<=\d),(?=\d{3}(?:\D|$))")
 
 
@@ -397,7 +427,10 @@ def check_must_not_contain(case: GoldenCase, response: Any) -> CheckResult:
 # "must contain the exact string X".
 # ---------------------------------------------------------------------------
 
-_DOLLAR_NUMBER_RE = re.compile(r"-?\$?\s*\d[\d,]*(?:\.\d+)?%?")
+# A leading '-' only counts as a negative sign when it is not itself preceded
+# by a letter/digit, so "Tier-1" (a section label, not "negative one") is not
+# misread as -1 while "-$50" and " -50" still are.
+_DOLLAR_NUMBER_RE = re.compile(r"(?<![A-Za-z0-9])-?\$?\s*\d[\d,]*(?:\.\d+)?%?")
 
 _MONTHS = {
     "january": 1,
