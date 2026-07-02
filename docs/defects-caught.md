@@ -23,12 +23,23 @@ _Hermetically proven from cassette replay — no API key required._
 
 ---
 
+## Risk Weight Breakdown
+
+Defect-catalog status grouped by the risk_weight of its golden case (pending = ⬜ COVERED, not yet run).
+
+| Risk Weight | Pass | Pending | Fail |
+|-------------|-----:|--------:|-----:|
+| high | 4 | 4 | 0 |
+
+---
+
 ## Legend
 
 | Status | Meaning |
 |--------|---------|
 | ✅ CAUGHT | Hermetically proven: cassette replay confirms the defect is detected |
 | ✅ VERIFIED | Confirmed by a live semantic run (`reports/semantic/results.json`) |
+| 🟢 FIXED | Live semantic run passed the quality threshold; seeded behavior no longer reproduces |
 | ⬜ COVERED | Ground-truth + metric threshold established; requires API key |
 | ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |
 
