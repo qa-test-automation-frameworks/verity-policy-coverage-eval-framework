@@ -299,12 +299,18 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
         if variant_measurements:
             # Conservative aggregation: all variants must pass threshold before
             # reporting that the seeded behavior did not reproduce for this run.
-            all_non_reproduced = all(m.get("status") == "FIXED" for m in variant_measurements)
+            all_non_reproduced = all(
+                m.get("status") in {"FIXED", "NOT_REPRODUCED"} for m in variant_measurements
+            )
             entry.status = "NOT_REPRODUCED" if all_non_reproduced else "VERIFIED"
             for m in variant_measurements:
                 case_id = m.get("case_id", "?")
                 status = m.get("status", "VERIFIED")
-                status_label = "not_reproduced" if status == "FIXED" else str(status).lower()
+                status_label = (
+                    "not_reproduced"
+                    if status in {"FIXED", "NOT_REPRODUCED"}
+                    else str(status).lower()
+                )
                 metric = m.get("metric", "semantic")
                 score = m.get("score")
                 threshold = m.get("threshold")
@@ -327,7 +333,7 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
 # Risk-weight breakdown
 # ---------------------------------------------------------------------------
 
-_PASS_STATUSES = {"CAUGHT", "VERIFIED", "NOT_REPRODUCED"}
+_PASS_STATUSES = {"CAUGHT", "VERIFIED"}
 _RISK_WEIGHTS = ("high", "medium", "low")
 
 
@@ -335,7 +341,7 @@ def _risk_weight_breakdown(
     catalog: list[DefectEntry], defect_risk_weights: dict[int, str]
 ) -> dict[str, dict[str, int]]:
     """Group defect-catalog entries by their golden case's risk_weight,
-    counting pass (CAUGHT/VERIFIED/NOT_REPRODUCED), pending (COVERED — not yet run),
+    counting pass (CAUGHT/VERIFIED), pending (COVERED/NOT_REPRODUCED),
     and fail (MISSED) per weight. Defects with no matching golden case are
     omitted rather than guessed at."""
     breakdown: dict[str, dict[str, int]] = {
