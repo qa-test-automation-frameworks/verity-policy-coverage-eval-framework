@@ -18,12 +18,14 @@
 
 ### Per-metric breakdown
 
-| Metric | N | Raw agreement | MAE |
-|--------|---|---------------|-----|
-| completeness | 8 | 100% | 0.075 |
-| disambiguation | 8 | 100% | 0.050 |
-| faithfulness | 8 | 75% | 0.238 |
-| refusal | 8 | 100% | 0.137 |
+| Metric | N | Raw agreement | MAE | Status |
+|--------|---|---------------|-----|--------|
+| completeness | 8 | 100% | 0.075 | PASS |
+| disambiguation | 8 | 100% | 0.050 | PASS |
+| faithfulness | 8 | 75% | 0.238 | REVIEW |
+| refusal | 8 | 100% | 0.137 | PASS |
+
+> Metrics marked REVIEW missed the per-metric target of raw agreement >= 85% and MAE <= 0.20 for this run: faithfulness.
 
 ---
 
@@ -50,6 +52,8 @@ The semantic tier thresholds in `docs/thresholds.md` were set with this calibrat
 - **Self-preference delta**: -0.037 — see interpretation above.
 
 See [`docs/thresholds.md`](thresholds.md) for per-metric threshold values and the statistical method used.
+
+> Scope note: this calibration path scores the shared rubric text through `verity.calibration.build_scoring_prompt()`. Tier-2 DeepEval and RAGAS adapters wrap those rubrics in their own prompt and parsing paths, so this report measures judge/rubric agreement rather than every runtime metric adapter end to end.
 
 ---
 

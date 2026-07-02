@@ -242,6 +242,11 @@ def _run_live(cases: list[CalibrationCase], settings: Settings) -> list[float]:
     return scores
 
 
+def _metric_status(raw_agreement: float, mae: float) -> str:
+    """Classify per-metric calibration health for report readers."""
+    return "PASS" if raw_agreement >= 0.85 and mae <= 0.20 else "REVIEW"
+
+
 def render_report(
     cases: list[CalibrationCase],
     judge_scores: list[float],
@@ -289,13 +294,26 @@ def render_report(
         "",
         "### Per-metric breakdown",
         "",
-        "| Metric | N | Raw agreement | MAE |",
-        "|--------|---|---------------|-----|",
+        "| Metric | N | Raw agreement | MAE | Status |",
+        "|--------|---|---------------|-----|--------|",
     ]
     for metric, stats in sorted(agreement.per_metric.items()):
+        status = _metric_status(stats["raw_agreement"], stats["mae"])
         lines.append(
-            f"| {metric} | {int(stats['n'])} | {stats['raw_agreement']:.0%} | {stats['mae']:.3f} |"
+            f"| {metric} | {int(stats['n'])} | {stats['raw_agreement']:.0%} "
+            f"| {stats['mae']:.3f} | {status} |"
         )
+    needs_review = [
+        metric
+        for metric, stats in sorted(agreement.per_metric.items())
+        if _metric_status(stats["raw_agreement"], stats["mae"]) == "REVIEW"
+    ]
+    if needs_review:
+        lines += [
+            "",
+            "> Metrics marked REVIEW missed the per-metric target of raw agreement >= 85% "
+            "> and MAE <= 0.20 for this run: " + ", ".join(needs_review) + ".",
+        ]
     lines += [
         "",
         "---",
@@ -364,6 +382,12 @@ def render_report(
     lines += [
         "See [`docs/thresholds.md`](thresholds.md) for per-metric threshold values "
         "and the statistical method used.",
+        "",
+        "> Scope note: this calibration path scores the shared rubric text through "
+        "> `verity.calibration.build_scoring_prompt()`. Tier-2 DeepEval and RAGAS "
+        "> adapters wrap those rubrics in their own prompt and parsing paths, so "
+        "> this report measures judge/rubric agreement rather than every runtime "
+        "> metric adapter end to end.",
         "",
         "---",
         "",

@@ -49,6 +49,9 @@ the README Limitations section for why):
 These are real measurements against live judge calls, not synthetic replay — see
 `docs/calibration-report.md` for the full per-case breakdown. Cohen's kappa (0.870) and raw
 agreement (93.8%) both clear this ADR's original acceptance bar (kappa ≥ 0.60, agreement ≥ 85%).
+This calibration path uses the shared rubric text through `verity.calibration.build_scoring_prompt()`;
+Tier-2 DeepEval and RAGAS adapters wrap similar rubric intent in their own runtime prompt and
+score-extraction paths, so adapter-level calibration remains a separate validation step.
 The self-preference delta is small and negative for this judge/family pairing; re-run
 `make calibrate-live` with a GLM-4.5 judge key to measure genuine GLM self-preference, which
 this run could not — the judge here was gpt-4o-mini, not GLM.
