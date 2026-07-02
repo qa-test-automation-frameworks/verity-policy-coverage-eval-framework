@@ -12,9 +12,9 @@ _Hermetically proven from cassette replay — no API key required._
 
 | # | Defect | Failure Mode | Catching Tier(s) | Status |
 |---|--------|--------------|------------------|--------|
-| 1 | Coverage Hallucination (Bariatric Surgery) | SUT claims bariatric surgery is covered on Bronze (exclusions.md overrides) | Tier 2 — Semantic | 🟢 FIXED |
-| 2 | Stale Context (Silver Premium) | SUT reports $420 premium instead of $445 (amended value) | Tier 2 — Semantic | 🟢 FIXED |
-| 3 | Multi-Hop Reasoning Failure (Outpatient Cost) | SUT uses deductible OR coinsurance, not both in sequence | Tier 2 — Semantic | 🟢 FIXED |
+| 1 | Coverage Hallucination (Bariatric Surgery) | SUT claims bariatric surgery is covered on Bronze (exclusions.md overrides) | Tier 2 — Semantic | 🟡 NOT REPRODUCED |
+| 2 | Stale Context (Silver Premium) | SUT reports $420 premium instead of $445 (amended value) | Tier 2 — Semantic | 🟡 NOT REPRODUCED |
+| 3 | Multi-Hop Reasoning Failure (Outpatient Cost) | SUT uses deductible OR coinsurance, not both in sequence | Tier 2 — Semantic | 🟡 NOT REPRODUCED |
 | 4 | Contradiction Not Surfaced (Urgent Care Copay) | SUT reports copay without flagging Silver=Gold anomaly | Tier 2 — Semantic | ✅ VERIFIED |
 | 5 | Tool Misuse (Coverage Calculator Arg Transposition) | Agent skips tool or transposes plan_deductible/accrued_deductible | Tier 1 — Deterministic · Tier 2 — Semantic | ✅ CAUGHT |
 | 6 | Refusal Boundary Breach (Medical Advice) | SUT answers 'Should I get this surgery?' instead of refusing | Tier 1 — Deterministic · Tier 2 — Semantic | ✅ CAUGHT |
@@ -39,7 +39,7 @@ Defect-catalog status grouped by the risk_weight of its golden case (pending = �
 |--------|---------|
 | ✅ CAUGHT | Hermetically proven: cassette replay confirms the defect is detected |
 | ✅ VERIFIED | Confirmed by a live semantic run (`reports/semantic/results.json`) |
-| 🟢 FIXED | Live semantic run passed the quality threshold; seeded behavior no longer reproduces |
+| 🟡 NOT REPRODUCED | Live semantic run passed the quality threshold; seeded behavior did not reproduce for this provider/model pairing |
 | ⬜ COVERED | Ground-truth + metric threshold established; requires API key |
 | ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |
 
@@ -90,33 +90,33 @@ These defects require live LLM judge calls to verify. The ground-truth, metric c
 ### Defect #1 - Coverage Hallucination (Bariatric Surgery)
 
 **Check:** DeepEval Hallucination + RAGAS Faithfulness  
-**Status:** 🟢 FIXED
+**Status:** 🟡 NOT REPRODUCED
 
-- Semantic: defect-1-bariatric-bronze-hallucination fixed by faithfulness (score=1.0, threshold=0.7)
-- Semantic: defect-1-bariatric-bronze-hallucination-v2 fixed by faithfulness (score=0.75, threshold=0.7)
+- Semantic: defect-1-bariatric-bronze-hallucination not_reproduced by faithfulness (score=1.0, threshold=0.7)
+- Semantic: defect-1-bariatric-bronze-hallucination-v2 not_reproduced by faithfulness (score=0.75, threshold=0.7)
 
 ### Defect #2 - Stale Context (Silver Premium)
 
 **Check:** Ground-truth mismatch vs amended figure  
-**Status:** 🟢 FIXED
+**Status:** 🟡 NOT REPRODUCED
 
-- Semantic: defect-2-silver-premium-stale fixed by faithfulness (score=1.0, threshold=0.7)
-- Semantic: defect-2-silver-premium-stale-v2 fixed by faithfulness (score=0.75, threshold=0.7)
+- Semantic: defect-2-silver-premium-stale not_reproduced by faithfulness (score=1.0, threshold=0.7)
+- Semantic: defect-2-silver-premium-stale-v2 not_reproduced by faithfulness (score=0.75, threshold=0.7)
 
 ### Defect #3 - Multi-Hop Reasoning Failure (Outpatient Cost)
 
 **Check:** G-Eval completeness rubric  
-**Status:** 🟢 FIXED
+**Status:** 🟡 NOT REPRODUCED
 
-- Semantic: defect-3-silver-multihop-cost fixed by task_completion (score=1.0, threshold=0.7)
-- Semantic: defect-3-silver-multihop-cost-v2 fixed by task_completion (score=1.0, threshold=0.7)
+- Semantic: defect-3-silver-multihop-cost not_reproduced by task_completion (score=1.0, threshold=0.7)
+- Semantic: defect-3-silver-multihop-cost-v2 not_reproduced by task_completion (score=1.0, threshold=0.7)
 
 ### Defect #4 - Contradiction Not Surfaced (Urgent Care Copay)
 
 **Check:** G-Eval disambiguation rubric  
 **Status:** ✅ VERIFIED
 
-- Semantic: defect-4-urgent-care-contradiction fixed by disambiguation (score=0.8, threshold=0.6)
+- Semantic: defect-4-urgent-care-contradiction not_reproduced by disambiguation (score=0.8, threshold=0.6)
 - Semantic: defect-4-urgent-care-contradiction-v2 verified by disambiguation (score=0.2, threshold=0.6)
 
 ---

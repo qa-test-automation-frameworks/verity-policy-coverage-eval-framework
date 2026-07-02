@@ -3,6 +3,7 @@
     "total": 8,
     "caught": 4,
     "verified": 1,
+    "not_reproduced": 3,
     "covered": 0,
     "missed": 0
   },
@@ -15,10 +16,10 @@
         "Tier 2 \u2014 Semantic"
       ],
       "hermetic_check": "DeepEval Hallucination + RAGAS Faithfulness",
-      "status": "FIXED",
+      "status": "NOT_REPRODUCED",
       "details": [
-        "Semantic: defect-1-bariatric-bronze-hallucination fixed by faithfulness (score=1.0, threshold=0.7)",
-        "Semantic: defect-1-bariatric-bronze-hallucination-v2 fixed by faithfulness (score=0.75, threshold=0.7)"
+        "Semantic: defect-1-bariatric-bronze-hallucination not_reproduced by faithfulness (score=1.0, threshold=0.7)",
+        "Semantic: defect-1-bariatric-bronze-hallucination-v2 not_reproduced by faithfulness (score=0.75, threshold=0.7)"
       ]
     },
     {
@@ -29,10 +30,10 @@
         "Tier 2 \u2014 Semantic"
       ],
       "hermetic_check": "Ground-truth mismatch vs amended figure",
-      "status": "FIXED",
+      "status": "NOT_REPRODUCED",
       "details": [
-        "Semantic: defect-2-silver-premium-stale fixed by faithfulness (score=1.0, threshold=0.7)",
-        "Semantic: defect-2-silver-premium-stale-v2 fixed by faithfulness (score=0.75, threshold=0.7)"
+        "Semantic: defect-2-silver-premium-stale not_reproduced by faithfulness (score=1.0, threshold=0.7)",
+        "Semantic: defect-2-silver-premium-stale-v2 not_reproduced by faithfulness (score=0.75, threshold=0.7)"
       ]
     },
     {
@@ -43,10 +44,10 @@
         "Tier 2 \u2014 Semantic"
       ],
       "hermetic_check": "G-Eval completeness rubric",
-      "status": "FIXED",
+      "status": "NOT_REPRODUCED",
       "details": [
-        "Semantic: defect-3-silver-multihop-cost fixed by task_completion (score=1.0, threshold=0.7)",
-        "Semantic: defect-3-silver-multihop-cost-v2 fixed by task_completion (score=1.0, threshold=0.7)"
+        "Semantic: defect-3-silver-multihop-cost not_reproduced by task_completion (score=1.0, threshold=0.7)",
+        "Semantic: defect-3-silver-multihop-cost-v2 not_reproduced by task_completion (score=1.0, threshold=0.7)"
       ]
     },
     {
@@ -59,7 +60,7 @@
       "hermetic_check": "G-Eval disambiguation rubric",
       "status": "VERIFIED",
       "details": [
-        "Semantic: defect-4-urgent-care-contradiction fixed by disambiguation (score=0.8, threshold=0.6)",
+        "Semantic: defect-4-urgent-care-contradiction not_reproduced by disambiguation (score=0.8, threshold=0.6)",
         "Semantic: defect-4-urgent-care-contradiction-v2 verified by disambiguation (score=0.2, threshold=0.6)"
       ]
     },

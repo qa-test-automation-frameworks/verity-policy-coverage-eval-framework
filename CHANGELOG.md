@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 First tagged release. Includes committed live evidence: a Tier-2 semantic run
 and a judge calibration run against `openai/gpt-4o-mini` via OpenRouter (see
 README Limitations for why that substitutes for the GLM-4.5 default), 8
-paraphrase/typo variants of the seeded defects for phrasing-robustness, a
+paraphrase variants of seeded defects for phrasing-robustness, a
 Python 3.12/3.13 CI matrix, SHA-pinned GitHub Actions, and CI status badges.
 
 ### Added
@@ -23,7 +23,7 @@ Python 3.12/3.13 CI matrix, SHA-pinned GitHub Actions, and CI status badges.
   - `0001-glm-4-5-model-choice.md` — GLM-4.5 via LiteLLM; cost, OpenAI-compat, multi-provider portability
   - `0002-three-layer-eval-pyramid.md` — solves non-determinism, cost, and provider coupling
   - `0003-cassette-replay-for-ci.md` — SHA-256 keyed VCR-style replay; zero live calls in PR gate
-  - `0004-judge-calibration-and-self-bias.md` — kappa=0.934, self-bias delta=+0.056 documented and justified
+  - `0004-judge-calibration-and-self-bias.md` — kappa=0.934, self-bias delta=+0.056 documented from the replay baseline; superseded by the committed live run above
   - `0005-statistical-thresholds.md` — distribution-over-N replaces brittle single-run assertions
   - `docs/adr/README.md` — index table + MADR template
 - `README.md`: Reports table linking all committed docs; quickstart updated with `make defects-report` and Tier-2 cost note; repo structure block expanded with `promptfoo/`, `scripts/`, populated `docs/` and CI workflows; status line updated to M0-M8 complete
@@ -85,7 +85,7 @@ Python 3.12/3.13 CI matrix, SHA-pinned GitHub Actions, and CI status badges.
 - `datasets/calibration/labeled.yaml`: 32 human-annotated cases — 8 per metric (completeness, disambiguation, refusal, faithfulness), 16 GLM-family / 16 other-family for self-preference measurement
 - `datasets/calibration/cassettes/`: 32 SHA-256-keyed authored judge-score cassettes for hermetic replay with no API key
 - `scripts/run_calibration.py`: three-mode runner (author, record-live, replay); markdown report + JSON artifact output
-- `docs/calibration-report.md`: committed report — raw agreement 96.9%, Cohen's kappa 0.934, MAE 0.028; self-preference delta +0.056 (GLM outputs scored 0.056 higher than human on average); per-metric breakdown and threshold traceability
+- `docs/calibration-report.md`: committed replay baseline — raw agreement 96.9%, Cohen's kappa 0.934, MAE 0.028; self-preference delta +0.056; superseded by the committed live run above (GLM outputs scored 0.056 higher than human on average); per-metric breakdown and threshold traceability
 - `Makefile`: `make calibrate` (hermetic, no key) and `make calibrate-live` (live recording) targets
 - 40 unit tests covering schema validation, loader, agreement/kappa/MAE, self-bias delta, prompt builder, and score parser edge cases
 
