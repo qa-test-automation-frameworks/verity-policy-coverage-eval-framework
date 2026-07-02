@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,9 @@ class RetrievalScore(BaseModel):
     source_recall: float
     term_recall: float
     source_precision: float
+    mrr: float
+    hit_at_k: float
+    ndcg: float
     passed: bool
     message: str
 
@@ -62,6 +66,16 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
     else:
         source_precision = 1.0 if not chunks and not expected_sources else 0.0
 
+    relevance = [1.0 if chunk.source in expected_sources else 0.0 for chunk in chunks]
+    first_relevant_rank = next((idx + 1 for idx, rel in enumerate(relevance) if rel), None)
+    mrr = 1.0 / first_relevant_rank if first_relevant_rank else 0.0
+    hit_at_k = 1.0 if first_relevant_rank else 0.0
+
+    dcg = sum(rel / math.log2(idx + 2) for idx, rel in enumerate(relevance))
+    ideal_relevant = min(len(expected_sources), len(chunks))
+    idcg = sum(1.0 / math.log2(idx + 2) for idx in range(ideal_relevant))
+    ndcg = dcg / idcg if idcg else 1.0
+
     passed = (
         source_recall == 1.0
         and term_recall == 1.0
@@ -69,13 +83,17 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
     )
     message = (
         f"source_recall={source_recall:.2f}, term_recall={term_recall:.2f}, "
-        f"source_precision={source_precision:.2f}, sources={sorted(sources)}"
+        f"source_precision={source_precision:.2f}, mrr={mrr:.2f}, "
+        f"hit_at_k={hit_at_k:.2f}, ndcg={ndcg:.2f}, sources={sorted(sources)}"
     )
     return RetrievalScore(
         case_id=benchmark.case_id,
         source_recall=source_recall,
         term_recall=term_recall,
         source_precision=source_precision,
+        mrr=mrr,
+        hit_at_k=hit_at_k,
+        ndcg=ndcg,
         passed=passed,
         message=message,
     )
