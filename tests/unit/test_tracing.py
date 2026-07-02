@@ -77,6 +77,38 @@ def test_traced_enabled_path(monkeypatch: pytest.MonkeyPatch) -> None:
     assert spans[0].attributes["foo"] == "bar"
 
 
+def test_trace_id_hex_returns_empty_string_for_no_span() -> None:
+    from verity.tracing import trace_id_hex
+
+    assert trace_id_hex(None) == ""
+
+
+def test_trace_id_hex_matches_span_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    pytest.importorskip("opentelemetry.sdk")
+
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
+
+    from verity import tracing
+    from verity.tracing import trace_id_hex
+
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    tracer = provider.get_tracer("test")
+
+    monkeypatch.setattr(tracing, "_ENABLED", True)
+    monkeypatch.setattr(tracing, "_TRACER", tracer)
+
+    with tracing.traced("my.operation") as span:
+        hex_id = trace_id_hex(span)
+        assert len(hex_id) == 32
+        assert hex_id == format(span.context.trace_id, "032x")
+
+
 def test_record_call_span_sets_attributes(monkeypatch: pytest.MonkeyPatch) -> None:
     """record_call_span sets model/token/cost attributes on the current span."""
     pytest.importorskip("opentelemetry.sdk")

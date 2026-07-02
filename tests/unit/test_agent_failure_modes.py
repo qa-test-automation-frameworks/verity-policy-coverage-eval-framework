@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from sut.agent import CoverageAgent
 from sut.retriever import FixtureRetriever
 from verity.cassettes import ReplayFunction, ReplayToolCall
@@ -34,7 +36,9 @@ def _assert_safe_failure(response: Any, category: str) -> None:
     assert response.requires_human_review
     assert response.refusal_reason == category
     assert response.failure_category == category
-    assert response.trace_id
+    # trace_id is populated from the active span's trace context; with
+    # tracing disabled (the default here) there is no span, so it stays "".
+    assert response.trace_id == ""
     assert "cannot complete this coverage response right now" in response.answer
 
 
@@ -208,3 +212,74 @@ class TestToolArgumentContracts:
         response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
         _assert_safe_failure(response, "tool_unavailable")
+
+
+class TestTraceIdCorrelation:
+    """response.trace_id must match the trace id of the span emitted for the call."""
+
+    def test_success_response_trace_id_matches_emitted_span(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        pytest.importorskip("opentelemetry.sdk")
+
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+            InMemorySpanExporter,
+        )
+
+        from verity import tracing
+
+        exporter = InMemorySpanExporter()
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        tracer = provider.get_tracer("test")
+        monkeypatch.setattr(tracing, "_ENABLED", True)
+        monkeypatch.setattr(tracing, "_TRACER", tracer)
+
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.return_value = CompletionResult(content="Answer.", tool_calls=[])
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        emitted = next(s for s in exporter.get_finished_spans() if s.name == "agent.answer")
+        assert response.trace_id == format(emitted.context.trace_id, "032x")
+
+    def test_failure_response_trace_id_matches_emitted_span(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        pytest.importorskip("opentelemetry.sdk")
+
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+            InMemorySpanExporter,
+        )
+
+        from verity import tracing
+
+        exporter = InMemorySpanExporter()
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        tracer = provider.get_tracer("test")
+        monkeypatch.setattr(tracing, "_ENABLED", True)
+        monkeypatch.setattr(tracing, "_TRACER", tracer)
+
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.side_effect = ConnectionError("provider unreachable")
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        emitted = next(s for s in exporter.get_finished_spans() if s.name == "agent.answer")
+        assert response.refused
+        assert response.trace_id == format(emitted.context.trace_id, "032x")
