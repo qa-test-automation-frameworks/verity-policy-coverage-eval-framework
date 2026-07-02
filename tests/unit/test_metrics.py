@@ -12,12 +12,16 @@ from verity.metrics.deepeval_metrics import (
     THRESHOLD_COMPLETENESS,
     THRESHOLD_DISAMBIGUATION,
     THRESHOLD_HALLUCINATION,
+    THRESHOLD_INJECTION_COMPLIANCE,
+    THRESHOLD_PII_LEAKAGE,
     THRESHOLD_REFUSAL,
     THRESHOLD_TOOL_CORRECTNESS,
     make_answer_relevancy,
     make_completeness,
     make_disambiguation,
     make_hallucination,
+    make_injection_compliance,
+    make_pii_leakage,
     make_refusal_geval,
     make_tool_correctness,
 )
@@ -30,7 +34,13 @@ from verity.metrics.ragas_metrics import (
     make_faithfulness,
     make_ragas_answer_relevancy,
 )
-from verity.metrics.rubrics import COMPLETENESS_RUBRIC, DISAMBIGUATION_RUBRIC, REFUSAL_RUBRIC
+from verity.metrics.rubrics import (
+    COMPLETENESS_RUBRIC,
+    DISAMBIGUATION_RUBRIC,
+    INJECTION_COMPLIANCE_RUBRIC,
+    PII_LEAKAGE_RUBRIC,
+    REFUSAL_RUBRIC,
+)
 
 
 def _mock_judge() -> ProviderJudge:
@@ -60,6 +70,12 @@ class TestRubrics:
         assert isinstance(DISAMBIGUATION_RUBRIC, str)
         assert isinstance(REFUSAL_RUBRIC, str)
 
+    def test_pii_leakage_rubric_non_empty(self) -> None:
+        assert len(PII_LEAKAGE_RUBRIC) > 50
+
+    def test_injection_compliance_rubric_non_empty(self) -> None:
+        assert len(INJECTION_COMPLIANCE_RUBRIC) > 50
+
 
 # ---------------------------------------------------------------------------
 # Threshold constants
@@ -77,6 +93,8 @@ class TestThresholds:
             ("THRESHOLD_TOOL_CORRECTNESS", THRESHOLD_TOOL_CORRECTNESS),
             ("THRESHOLD_FAITHFULNESS", THRESHOLD_FAITHFULNESS),
             ("THRESHOLD_CONTEXT_RECALL", THRESHOLD_CONTEXT_RECALL),
+            ("THRESHOLD_PII_LEAKAGE", THRESHOLD_PII_LEAKAGE),
+            ("THRESHOLD_INJECTION_COMPLIANCE", THRESHOLD_INJECTION_COMPLIANCE),
         ]:
             assert 0.0 <= value <= 1.0, f"{name} = {value} out of [0, 1]"
 
@@ -130,6 +148,22 @@ class TestDeepEvalMetricConstruction:
     def test_refusal_has_correct_name(self) -> None:
         m = make_refusal_geval(_mock_judge())
         assert m.name == "RefusalBoundary"
+
+    def test_make_pii_leakage_returns_object(self) -> None:
+        m = make_pii_leakage(_mock_judge())
+        assert m is not None
+
+    def test_pii_leakage_has_correct_name(self) -> None:
+        m = make_pii_leakage(_mock_judge())
+        assert m.name == "PIILeakage"
+
+    def test_make_injection_compliance_returns_object(self) -> None:
+        m = make_injection_compliance(_mock_judge())
+        assert m is not None
+
+    def test_injection_compliance_has_correct_name(self) -> None:
+        m = make_injection_compliance(_mock_judge())
+        assert m.name == "InjectionCompliance"
 
 
 # ---------------------------------------------------------------------------
