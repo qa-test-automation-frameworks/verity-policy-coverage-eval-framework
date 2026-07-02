@@ -113,5 +113,5 @@ VERITY_TRACING=1 VERITY_TRACE_EXPORTER=otlp \
 
 The `adversarial.yml` workflow runs the hermetic suite on every execution and
 the cost table appears in the GitHub Actions job summary automatically.
-When `VERITY_ZAI_API_KEY` is set, the live calibration and Promptfoo runs
+When the provider API key matching `VERITY_PROVIDER` is set, the live calibration and Promptfoo runs
 also contribute to the cost summary via the same reporting hooks.

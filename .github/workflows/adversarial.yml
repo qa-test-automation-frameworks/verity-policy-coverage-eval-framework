@@ -14,7 +14,7 @@ jobs:
     steps:
       - id: check
         run: |
-          if [ -n "${{ secrets.VERITY_ZAI_API_KEY }}" ]; then
+          if [ -n "${{ secrets.VERITY_ZAI_API_KEY }}${{ secrets.VERITY_OPENROUTER_API_KEY }}${{ secrets.VERITY_TOGETHER_API_KEY }}${{ secrets.VERITY_NVIDIA_API_KEY }}${{ secrets.VERITY_GOOGLE_API_KEY }}" ]; then
             echo "has_key=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_key=false" >> "$GITHUB_OUTPUT"
@@ -67,6 +67,10 @@ jobs:
       - name: Promptfoo live red-team eval
         env:
           VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
+          VERITY_OPENROUTER_API_KEY: ${{ secrets.VERITY_OPENROUTER_API_KEY }}
+          VERITY_TOGETHER_API_KEY: ${{ secrets.VERITY_TOGETHER_API_KEY }}
+          VERITY_NVIDIA_API_KEY: ${{ secrets.VERITY_NVIDIA_API_KEY }}
+          VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
           VERITY_CASSETTE_MODE: off
         run: |
           mkdir -p reports/redteam
@@ -97,6 +101,10 @@ jobs:
       - name: Live calibration run
         env:
           VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
+          VERITY_OPENROUTER_API_KEY: ${{ secrets.VERITY_OPENROUTER_API_KEY }}
+          VERITY_TOGETHER_API_KEY: ${{ secrets.VERITY_TOGETHER_API_KEY }}
+          VERITY_NVIDIA_API_KEY: ${{ secrets.VERITY_NVIDIA_API_KEY }}
+          VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
         run: |
           mkdir -p reports
           PYTHONPATH=src uv run python scripts/run_calibration.py --record
