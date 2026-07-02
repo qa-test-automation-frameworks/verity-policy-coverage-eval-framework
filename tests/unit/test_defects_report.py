@@ -300,3 +300,102 @@ class TestIngestSemanticResults:
         defect_1 = next(e for e in catalog if e.id == 1)
         assert defect_1.status == "FIXED"
         assert any("faithfulness" in d for d in defect_1.details)
+
+    def test_multiple_variants_all_fixed_marks_defect_fixed(self, tmp_path: Path) -> None:
+        import copy
+        import json
+        import os
+
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        sem_dir = tmp_path / "reports" / "semantic"
+        sem_dir.mkdir(parents=True)
+        (sem_dir / "results.json").write_text(
+            json.dumps(
+                {
+                    "measurements": {
+                        "defect-1-a": {
+                            "case_id": "defect-1-a",
+                            "defect_id": 1,
+                            "metric": "faithfulness",
+                            "score": 0.9,
+                            "threshold": 0.7,
+                            "status": "FIXED",
+                        },
+                        "defect-1-b": {
+                            "case_id": "defect-1-b",
+                            "defect_id": 1,
+                            "metric": "faithfulness",
+                            "score": 0.85,
+                            "threshold": 0.7,
+                            "status": "FIXED",
+                        },
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        defect_1 = next(e for e in catalog if e.id == 1)
+        assert defect_1.status == "FIXED"
+        assert any("defect-1-a" in d for d in defect_1.details)
+        assert any("defect-1-b" in d for d in defect_1.details)
+
+    def test_one_variant_still_verified_keeps_defect_verified_not_fixed(
+        self, tmp_path: Path
+    ) -> None:
+        """If even one phrasing still reproduces the defect, the defect as a
+        whole must not be reported FIXED — that would hide a real regression
+        behind a passing paraphrase."""
+        import copy
+        import json
+        import os
+
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        sem_dir = tmp_path / "reports" / "semantic"
+        sem_dir.mkdir(parents=True)
+        (sem_dir / "results.json").write_text(
+            json.dumps(
+                {
+                    "measurements": {
+                        "defect-1-a": {
+                            "case_id": "defect-1-a",
+                            "defect_id": 1,
+                            "metric": "faithfulness",
+                            "score": 0.9,
+                            "threshold": 0.7,
+                            "status": "FIXED",
+                        },
+                        "defect-1-b": {
+                            "case_id": "defect-1-b",
+                            "defect_id": 1,
+                            "metric": "faithfulness",
+                            "score": 0.4,
+                            "threshold": 0.7,
+                            "status": "VERIFIED",
+                        },
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        defect_1 = next(e for e in catalog if e.id == 1)
+        assert defect_1.status == "VERIFIED"
