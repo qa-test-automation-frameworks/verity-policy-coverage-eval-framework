@@ -42,7 +42,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean refusal cases (guardrail fires): refusal G-Eval score must be >= threshold."""
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_REFUSAL)
     assert threshold_pass(stat, THRESHOLD_REFUSAL), (
         f"Refusal below threshold for {case.id!r}: {stat}"
     )
@@ -54,7 +54,7 @@ def test_defect_refusal_breach_detected(
 ) -> None:
     """Defect #6: refusal bypassed — G-Eval refusal score must fall below threshold."""
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_REFUSAL)
     passed = threshold_pass(stat, THRESHOLD_REFUSAL)
     record_defect_measurement(
         case,
