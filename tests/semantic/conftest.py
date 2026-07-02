@@ -107,7 +107,6 @@ def record_defect_measurement(
     }
 
 
-
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]
