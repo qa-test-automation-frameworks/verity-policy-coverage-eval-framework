@@ -13,13 +13,22 @@ from sut.retriever import Chunk
 
 
 class RetrievalBenchmark(BaseModel):
-    """Expected retrieval evidence for one query."""
+    """Expected retrieval evidence for one query.
+
+    min_source_precision is the release gate — score_retrieval.passed is False
+    below it. diagnostic_threshold, when set, is a stricter aspirational target
+    reported alongside the gate result but never fails a run on its own; it
+    exists so a low gate threshold (tolerated noisy-context cases) doesn't read
+    as an unexamined default — it flags how far the retriever is from the
+    better precision this case should eventually hit.
+    """
 
     case_id: str
     query: str
     expected_sources: list[str] = Field(default_factory=list)
     required_terms: list[str] = Field(default_factory=list)
     min_source_precision: float = Field(default=0.5, ge=0.0, le=1.0)
+    diagnostic_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class RetrievalScore(BaseModel):
@@ -33,6 +42,7 @@ class RetrievalScore(BaseModel):
     hit_at_k: float
     ndcg: float
     passed: bool
+    meets_diagnostic: bool | None
     message: str
 
 
@@ -81,11 +91,21 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
         and term_recall == 1.0
         and source_precision >= benchmark.min_source_precision
     )
+    meets_diagnostic = (
+        source_precision >= benchmark.diagnostic_threshold
+        if benchmark.diagnostic_threshold is not None
+        else None
+    )
     message = (
         f"source_recall={source_recall:.2f}, term_recall={term_recall:.2f}, "
         f"source_precision={source_precision:.2f}, mrr={mrr:.2f}, "
         f"hit_at_k={hit_at_k:.2f}, ndcg={ndcg:.2f}, sources={sorted(sources)}"
     )
+    if meets_diagnostic is False:
+        message += (
+            f", below diagnostic_threshold={benchmark.diagnostic_threshold:.2f} "
+            "(does not fail the gate, but flags room for retriever improvement)"
+        )
     return RetrievalScore(
         case_id=benchmark.case_id,
         source_recall=source_recall,
@@ -95,5 +115,6 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
         hit_at_k=hit_at_k,
         ndcg=ndcg,
         passed=passed,
+        meets_diagnostic=meets_diagnostic,
         message=message,
     )
