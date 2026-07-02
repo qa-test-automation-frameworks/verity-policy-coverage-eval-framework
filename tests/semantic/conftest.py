@@ -94,8 +94,8 @@ def record_defect_measurement(
     threshold: float,
     threshold_passed: bool,
 ) -> None:
-    """Record semantic defect detection without making product fixes fail the suite."""
-    status = "FIXED" if threshold_passed else "VERIFIED"
+    """Record seeded behavior detection and fail if it was not reproduced."""
+    status = "NOT_REPRODUCED" if threshold_passed else "VERIFIED"
     _SEMANTIC_MEASUREMENTS[case.id] = {
         "case_id": case.id,
         "defect_id": case.defect_id,
@@ -105,6 +105,11 @@ def record_defect_measurement(
         "threshold_passed": threshold_passed,
         "status": status,
     }
+    if threshold_passed:
+        pytest.fail(
+            f"Expected seeded behavior for {case.id!r} to fall below "
+            f"{metric} threshold {threshold}, got {score:.3f}"
+        )
 
 
 @pytest.hookimpl(hookwrapper=True)

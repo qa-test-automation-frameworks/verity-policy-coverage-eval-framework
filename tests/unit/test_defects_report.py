@@ -128,13 +128,13 @@ class TestRenderMarkdown:
 
 class TestRiskWeightBreakdown:
     def _weights(self) -> dict[int, str]:
-        # One defect per weight, covering pass (CAUGHT)/pending (COVERED)/fail (MISSED).
+        # One defect per weight, covering pass, pending, and fail buckets.
         return {1: "high", 5: "medium", 6: "low"}
 
     def test_breakdown_counts_by_weight(self) -> None:
         from scripts.defects_report import _risk_weight_breakdown
 
-        catalog = _catalog_with_statuses({1: "CAUGHT", 5: "COVERED", 6: "MISSED"})
+        catalog = _catalog_with_statuses({1: "CAUGHT", 5: "NOT_REPRODUCED", 6: "MISSED"})
         breakdown = _risk_weight_breakdown(catalog, self._weights())
         assert breakdown["high"] == {"pass": 1, "pending": 0, "fail": 0}
         assert breakdown["medium"] == {"pass": 0, "pending": 1, "fail": 0}
@@ -282,7 +282,7 @@ class TestIngestSemanticResults:
                             "score": 0.91,
                             "threshold": 0.7,
                             "threshold_passed": True,
-                            "status": "FIXED",
+                            "status": "NOT_REPRODUCED",
                         }
                     }
                 }
@@ -321,7 +321,7 @@ class TestIngestSemanticResults:
                             "metric": "faithfulness",
                             "score": 0.9,
                             "threshold": 0.7,
-                            "status": "FIXED",
+                            "status": "NOT_REPRODUCED",
                         },
                         "defect-1-b": {
                             "case_id": "defect-1-b",
@@ -329,7 +329,7 @@ class TestIngestSemanticResults:
                             "metric": "faithfulness",
                             "score": 0.85,
                             "threshold": 0.7,
-                            "status": "FIXED",
+                            "status": "NOT_REPRODUCED",
                         },
                     }
                 }
@@ -374,7 +374,7 @@ class TestIngestSemanticResults:
                             "metric": "faithfulness",
                             "score": 0.9,
                             "threshold": 0.7,
-                            "status": "FIXED",
+                            "status": "NOT_REPRODUCED",
                         },
                         "defect-1-b": {
                             "case_id": "defect-1-b",
