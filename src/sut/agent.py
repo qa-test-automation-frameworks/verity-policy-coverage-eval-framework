@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -27,6 +26,7 @@ from pydantic import BaseModel
 from sut.citations import resolve_citations
 from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scrub_output
 from sut.retriever import Chunk, PolicyRetriever, Retriever
+from sut.review_triggers import any_requires_human_review
 from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_coverage_calculator
 from verity.config import Settings, get_settings
 from verity.conversation import validate_conversation
@@ -84,37 +84,6 @@ class AgentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # System prompt builder
 # ---------------------------------------------------------------------------
-
-
-_DOLLAR_AMOUNT_RE = re.compile(r"\$\d[\d,]*(?:\.\d+)?")
-_PLAN_TIER_SOURCES = ("bronze.md", "silver.md", "gold.md")
-
-
-def _cross_tier_cost_parity_anomaly(chunks: list[Chunk]) -> bool:
-    """Detect retrieved plan-tier chunks that share a section but quote an
-    identical dollar figure, which is the actual anomaly a member-facing
-    contradiction like "does Gold cost less than Silver here?" hinges on —
-    plan tiers are priced to differ, so identical cost-sharing in a shared
-    section is exactly the kind of thing a human should confirm is intended.
-    """
-    by_section: dict[str, list[Chunk]] = {}
-    for chunk in chunks:
-        if chunk.source not in _PLAN_TIER_SOURCES or not chunk.section:
-            continue
-        by_section.setdefault(chunk.section, []).append(chunk)
-
-    for section_chunks in by_section.values():
-        tiers_present = {c.source for c in section_chunks}
-        if len(tiers_present) < 2:
-            continue
-        amounts_by_tier = {c.source: set(_DOLLAR_AMOUNT_RE.findall(c.text)) for c in section_chunks}
-        tiers = list(amounts_by_tier)
-        for i, tier_a in enumerate(tiers):
-            for tier_b in tiers[i + 1 :]:
-                shared = amounts_by_tier[tier_a] & amounts_by_tier[tier_b]
-                if shared:
-                    return True
-    return False
 
 
 _SYSTEM_PROMPT_TEMPLATE = """\
@@ -464,7 +433,7 @@ class CoverageAgent:
             tool_invocations=tool_invocations,
             refused=False,
             refusal_reason="",
-            requires_human_review=_cross_tier_cost_parity_anomaly(chunks),
+            requires_human_review=any_requires_human_review(chunks),
             prompt_tokens=totals.prompt_tokens,
             completion_tokens=totals.completion_tokens,
             total_tokens=totals.total_tokens,
