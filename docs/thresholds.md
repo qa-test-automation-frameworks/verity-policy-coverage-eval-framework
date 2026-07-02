@@ -31,7 +31,8 @@ See `verity/statistics.py` for the implementation.
 > used `openai/gpt-4o-mini` as the judge, not the GLM-4.5 this repo defaults
 > to, so per-metric score drift for the actual default judge is still
 > unmeasured. Run `make calibrate-live` with a GLM-4.5 judge key to close
-> that gap.
+> that gap. The committed calibration report also marks faithfulness for review
+> in the current run because its per-metric agreement is 75% with MAE 0.238.
 
 ---
 
