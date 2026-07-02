@@ -59,7 +59,7 @@ def _score_faithfulness(
 def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases: faithfulness must be >= threshold (no hallucination)."""
     scores = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
     assert threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
         f"Faithfulness below threshold for {case.id!r}: {stat}"
     )
@@ -71,7 +71,7 @@ def test_defect_faithfulness_detected(
 ) -> None:
     """Defect cases: faithfulness must fall BELOW threshold (defect detected)."""
     scores = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
     passed = threshold_pass(stat, THRESHOLD_FAITHFULNESS)
     record_defect_measurement(
         case,

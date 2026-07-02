@@ -42,7 +42,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
 def test_clean_disambiguation(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_DISAMBIGUATION)
     assert threshold_pass(stat, THRESHOLD_DISAMBIGUATION), (
         f"Disambiguation below threshold for {case.id!r}: {stat}"
     )
@@ -53,7 +53,7 @@ def test_defect_disambiguation_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_DISAMBIGUATION)
     passed = threshold_pass(stat, THRESHOLD_DISAMBIGUATION)
     record_defect_measurement(
         case,

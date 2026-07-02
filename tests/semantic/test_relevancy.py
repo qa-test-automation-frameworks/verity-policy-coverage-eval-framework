@@ -42,7 +42,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 def test_answer_relevancy(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases must return a relevant, on-topic answer."""
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_ANSWER_RELEVANCY)
     assert threshold_pass(stat, THRESHOLD_ANSWER_RELEVANCY), (
         f"Answer relevancy below threshold for {case.id!r}: {stat}"
     )

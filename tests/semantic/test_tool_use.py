@@ -42,7 +42,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
 def test_clean_task_completion(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_COMPLETENESS)
     assert threshold_pass(stat, THRESHOLD_COMPLETENESS), (
         f"Task completion below threshold for {case.id!r}: {stat}"
     )
@@ -54,7 +54,7 @@ def test_defect_tool_use_detected(
 ) -> None:
     """Defect #5: tool skipped or args wrong — task completion must fall below threshold."""
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
-    stat = aggregate(scores)
+    stat = aggregate(scores, score_threshold=THRESHOLD_COMPLETENESS)
     passed = threshold_pass(stat, THRESHOLD_COMPLETENESS)
     record_defect_measurement(
         case,
