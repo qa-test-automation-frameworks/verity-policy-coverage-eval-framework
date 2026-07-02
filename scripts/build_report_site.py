@@ -246,9 +246,14 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
         generated["security.html"] = False
 
     # trends.html
-    trends_html = _trends_html()
+    trends_src = Path("reports/trends")
+    trends_html = _trends_html(trends_src)
     if trends_html is not None:
         (site_dir / "trends.html").write_text(trends_html, encoding="utf-8")
+        trends_data = site_dir / "trends-data"
+        if trends_data.exists():
+            shutil.rmtree(trends_data)
+        shutil.copytree(trends_src, trends_data)
         generated["trends.html"] = True
     else:
         (site_dir / "trends.html").write_text(
