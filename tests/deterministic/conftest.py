@@ -25,9 +25,10 @@ if TYPE_CHECKING:
 _CASSETTE_DIR = Path("datasets/cassettes")
 _GOLDEN_DIR = Path("datasets/golden")
 
-# Session-wide accumulator purely for latency/cost trend tracking — each
-# run_case() call also uses its own fresh accumulator so per-response usage
-# stays correctly scoped (see verity.cost.RunAccumulator.usage_and_cost_since).
+# Session-wide accumulator purely for latency/cost trend tracking in single-process pytest runs.
+# xdist workers keep separate process-local copies; do not treat the trend file as an
+# exact aggregate when this tier is sharded. Each run_case() call also uses its own
+# fresh accumulator so per-response usage stays correctly scoped.
 _SESSION_ACCUMULATOR = RunAccumulator()
 _NODE_RESULTS: dict[str, str] = {}
 
