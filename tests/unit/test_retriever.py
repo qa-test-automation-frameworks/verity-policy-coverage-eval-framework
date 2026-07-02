@@ -10,6 +10,7 @@ from sut.retriever import (
     FixtureRetriever,
     _chunk_text,
     _extract_section_heading,
+    _split_into_sections,
     _stable_id,
     _strip_html_comments,
 )
@@ -45,6 +46,56 @@ class TestStripHtmlComments:
     def test_removes_multiline_comment(self) -> None:
         text = "Before\n<!-- line one\nline two -->\nAfter"
         assert "line one" not in _strip_html_comments(text)
+
+
+class TestSplitIntoSections:
+    def test_no_headings_returns_single_untitled_section(self) -> None:
+        text = "Just some plain text with no headings at all."
+        sections = _split_into_sections(text)
+        assert sections == [("", text)]
+
+    def test_single_heading_captures_body(self) -> None:
+        text = "# Bronze Plan\n\nBronze plan details here."
+        sections = _split_into_sections(text)
+        assert len(sections) == 1
+        heading, body = sections[0]
+        assert heading == "Bronze Plan"
+        assert "Bronze plan details" in body
+
+    def test_multiple_headings_split_at_boundaries(self) -> None:
+        text = (
+            "# Overview\n\nGeneral info.\n\n"
+            "## Preventive Care\n\nPreventive details.\n\n"
+            "## Medical Benefits\n\nMedical details."
+        )
+        sections = _split_into_sections(text)
+        headings = [h for h, _ in sections]
+        assert headings == ["Overview", "Preventive Care", "Medical Benefits"]
+        # Each section's body must not leak content from a different section.
+        for heading, body in sections:
+            if heading == "Overview":
+                assert "Preventive details" not in body
+                assert "Medical details" not in body
+            elif heading == "Preventive Care":
+                assert "General info" not in body
+                assert "Medical details" not in body
+            elif heading == "Medical Benefits":
+                assert "General info" not in body
+                assert "Preventive details" not in body
+
+    def test_preamble_before_first_heading_is_kept(self) -> None:
+        text = "Some intro text before any heading.\n\n# First Section\n\nBody text."
+        sections = _split_into_sections(text)
+        assert len(sections) == 1
+        _, body = sections[0]
+        assert "Some intro text" in body
+        assert "Body text" in body
+
+    def test_nested_heading_levels_each_start_a_section(self) -> None:
+        text = "# Top\n\nTop body.\n\n### Deep Subsection\n\nDeep body."
+        sections = _split_into_sections(text)
+        headings = [h for h, _ in sections]
+        assert headings == ["Top", "Deep Subsection"]
 
 
 class TestExtractSectionHeading:
