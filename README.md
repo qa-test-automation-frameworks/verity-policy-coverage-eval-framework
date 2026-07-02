@@ -10,6 +10,8 @@
 
 **Status:** Hermetic Tier 1 is implemented and replayable. Committed Tier-2 evidence and judge-calibration artifacts are included; fresh Tier-2/Tier-3 runs still require a configured provider key — see [Limitations](#limitations).
 
+**Reviewing this repo?** See [`docs/reviewer-guide.md`](docs/reviewer-guide.md) for a 10-minute, 30-minute, and deep-review path.
+
 ---
 
 ## What this is
