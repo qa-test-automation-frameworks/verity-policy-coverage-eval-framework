@@ -111,6 +111,16 @@ make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1 on GLM-4.5 l
 
 The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
 
+**Screenshots** (generated from `make report-site` against the committed report data):
+
+| Defects Caught | Calibration |
+|---|---|
+| [![Defects Caught report](docs/screenshots/defects-caught.png)](docs/screenshots/defects-caught.png) | [![Calibration report](docs/screenshots/calibration.png)](docs/screenshots/calibration.png) |
+
+| Cost Summary |
+|---|
+| [![Cost summary report](docs/screenshots/cost.png)](docs/screenshots/cost.png) |
+
 **Preview it locally:**
 
 ```bash
