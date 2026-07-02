@@ -25,7 +25,7 @@ def render_cost_summary(accumulator: RunAccumulator) -> str:
     from collections import defaultdict
 
     label_stats: dict[str, dict[str, float | int]] = defaultdict(
-        lambda: {"calls": 0, "prompt": 0, "completion": 0, "total": 0, "cost": 0.0}
+        lambda: {"calls": 0, "prompt": 0, "completion": 0, "total": 0, "cost": 0.0, "unpriced": 0}
     )
     for r in records:
         s = label_stats[r.label or "unlabeled"]
@@ -34,12 +34,24 @@ def render_cost_summary(accumulator: RunAccumulator) -> str:
         s["completion"] = int(s["completion"]) + r.usage.completion_tokens
         s["total"] = int(s["total"]) + r.usage.total_tokens
         s["cost"] = float(s["cost"]) + r.cost.total_usd
+        if not r.cost.priced:
+            s["unpriced"] = int(s["unpriced"]) + 1
 
     grand_calls = sum(int(s["calls"]) for s in label_stats.values())
     grand_prompt = sum(int(s["prompt"]) for s in label_stats.values())
     grand_completion = sum(int(s["completion"]) for s in label_stats.values())
     grand_total = sum(int(s["total"]) for s in label_stats.values())
     grand_cost = sum(float(s["cost"]) for s in label_stats.values())
+    grand_unpriced = sum(int(s["unpriced"]) for s in label_stats.values())
+
+    def _render_cost(s: dict[str, float | int]) -> str:
+        calls = int(s["calls"])
+        unpriced = int(s["unpriced"])
+        if unpriced == calls:
+            return "unpriced"
+        if unpriced:
+            return f"${float(s['cost']):.6f} ({unpriced}/{calls} calls unpriced)"
+        return f"${float(s['cost']):.6f}"
 
     lines: list[str] = [
         "## Token & Cost Summary",
@@ -51,11 +63,17 @@ def render_cost_summary(accumulator: RunAccumulator) -> str:
         lines.append(
             f"| `{label}` | {int(s['calls'])} | {int(s['prompt']):,} | "
             f"{int(s['completion']):,} | {int(s['total']):,} | "
-            f"${float(s['cost']):.6f} |"
+            f"{_render_cost(s)} |"
         )
+    if grand_unpriced == grand_calls and grand_calls > 0:
+        total_cost_cell = "unpriced"
+    elif grand_unpriced:
+        total_cost_cell = f"${grand_cost:.6f} ({grand_unpriced}/{grand_calls} calls unpriced)"
+    else:
+        total_cost_cell = f"${grand_cost:.6f}"
     lines += [
         f"| **Total** | **{grand_calls}** | **{grand_prompt:,}** | "
-        f"**{grand_completion:,}** | **{grand_total:,}** | **${grand_cost:.6f}** |",
+        f"**{grand_completion:,}** | **{grand_total:,}** | **{total_cost_cell}** |",
         "",
     ]
     return "\n".join(lines) + "\n"

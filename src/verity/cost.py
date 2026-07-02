@@ -26,6 +26,11 @@ _PRICE_TABLE: dict[str, dict[str, float]] = {
     # (see docs/adr/0001-glm-4-5-model-choice.md). Verify current rates at
     # https://docs.z.ai before relying on this for budgeting.
     "glm-4.5": {"prompt": 0.60, "completion": 2.20},
+    # OpenAI gpt-4o-mini, used as the substitute SUT/judge model for the
+    # committed live Tier-2 run and calibration report (see README
+    # Limitations and docs/calibration-report.md). Verify current rates at
+    # https://openai.com/api/pricing before relying on this for budgeting.
+    "gpt-4o-mini": {"prompt": 0.15, "completion": 0.60},
 }
 _DEFAULT_PRICE: dict[str, float] = {"prompt": 0.0, "completion": 0.0}
 
