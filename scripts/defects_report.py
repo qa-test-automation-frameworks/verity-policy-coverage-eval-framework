@@ -309,6 +309,15 @@ def render_markdown(catalog: list[DefectEntry]) -> str:
         f"(defects 5-8 via deterministic + adversarial replay). "
         f"Defects 1-4 are semantic-tier; run `make eval-semantic` with a key to verify live.",
         "",
+        "**Scope of proof.** ✅ CAUGHT rows replay hand-authored cassettes: the "
+        "candidate output that trips the check was written by the case author, not "
+        "produced by a live model run. This proves the *detector* (regex/schema/"
+        "check function) fires on a known-bad output; it does not by itself prove the "
+        "SUT ever produces that output live. ⬜ COVERED rows have no run at all yet — "
+        "ground truth and thresholds are committed, but nothing has executed against "
+        "them. See `docs/architecture.md` and the Limitations section of `README.md` "
+        "for the full evidence caveat.",
+        "",
         "---",
         "",
         "## Matrix",
