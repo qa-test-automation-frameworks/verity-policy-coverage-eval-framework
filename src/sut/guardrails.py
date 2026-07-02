@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 import re
 
-from verity.pii import PII_PATTERNS
+from verity.pii import PII_PATTERNS, find_matches
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,8 @@ def scrub_output(text: str) -> str:
     in the prompt, and logs written by _log_member_context() are NOT scrubbed.
     """
     for pii_pattern in PII_PATTERNS:
-        text = pii_pattern.pattern.sub(pii_pattern.replacement, text)
+        for match in reversed(find_matches(text, pii_pattern)):
+            text = text[: match.start()] + pii_pattern.replacement + text[match.end() :]
     return text
 
 

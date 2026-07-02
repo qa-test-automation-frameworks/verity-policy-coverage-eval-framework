@@ -18,7 +18,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
 from verity.golden import DateExpectation, GoldenCase, NumericExpectation
-from verity.pii import PII_PATTERNS
+from verity.pii import PII_PATTERNS, find_matches
 
 # ---------------------------------------------------------------------------
 # Result type
@@ -252,9 +252,9 @@ def scan_pii(text: str, member_name: str = "") -> list[str]:
     """
     found: list[str] = []
     for pii_pattern in PII_PATTERNS:
-        match = pii_pattern.pattern.search(text)
-        if match:
-            found.append(f"{pii_pattern.label}:{match.group()}")
+        matches = find_matches(text, pii_pattern)
+        if matches:
+            found.append(f"{pii_pattern.label}:{matches[0].group()}")
     if member_name and member_name.strip() and member_name.lower() in text.lower():
         found.append(f"name:{member_name}")
     return found
@@ -460,9 +460,22 @@ def _extract_numbers(text: str) -> list[float]:
     numeric_expectation authored against the domain's fraction convention
     (coinsurance_member: 0.20, matching CoverageInput) still matches text that
     states the same value as a percentage.
+
+    An ISO date (e.g. "2024-07-01") is excluded entirely rather than left to
+    fall through to _DOLLAR_NUMBER_RE: the month/day segments read as bare
+    digits ("07", "01") and would otherwise surface as spurious 7.0/1.0
+    claims unrelated to any dollar amount or percentage in the text. Dates
+    are extracted separately by _extract_dates/check_date_expectations.
     """
+    date_spans = [m.span() for m in _ISO_DATE_RE.finditer(text)]
+
+    def _within_a_date(start: int, end: int) -> bool:
+        return any(d_start <= start and end <= d_end for d_start, d_end in date_spans)
+
     numbers: list[float] = []
     for match in _DOLLAR_NUMBER_RE.finditer(text):
+        if _within_a_date(*match.span()):
+            continue
         raw = match.group()
         is_percent = raw.endswith("%")
         cleaned = raw.replace("$", "").replace(",", "").replace("%", "").strip()

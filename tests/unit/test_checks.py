@@ -505,6 +505,14 @@ class TestCheckClaimNumbersGrounded:
         result = check_claim_numbers_grounded(resp, [])
         assert not result.passed
 
+    def test_iso_date_in_answer_does_not_produce_a_spurious_number_claim(self) -> None:
+        """An ISO date's month/day segments ("07", "01" in 2024-07-01) must not
+        be treated as standalone dollar/percent claims that then fail grounding
+        against a chunk phrasing the same date in prose ("July 1, 2024")."""
+        resp = _Response(answer="Telehealth copay is $0, effective 2024-07-01.")
+        chunks = [_Chunk("Effective July 1, 2024, telehealth copay is $0.")]
+        assert check_claim_numbers_grounded(resp, chunks).passed
+
 
 # ---------------------------------------------------------------------------
 # Numeric expectations
