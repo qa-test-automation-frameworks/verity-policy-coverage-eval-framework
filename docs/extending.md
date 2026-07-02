@@ -8,7 +8,7 @@ This guide covers the four most common extension points: adding a provider, expa
 
 The framework routes all LLM calls through `src/verity/providers.py` via LiteLLM. To use a different model or provider:
 
-1. **Set environment variables.** The `Settings` class in `src/verity/config.py` reads `VERITY_PROVIDER`, `VERITY_MODEL`, and the matching API key (`VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, or `VERITY_TOGETHER_API_KEY`).
+1. **Set environment variables.** The `Settings` class in `src/verity/config.py` reads `VERITY_PROVIDER`, `VERITY_MODEL`, and the matching API key (`VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, `VERITY_TOGETHER_API_KEY`, `VERITY_NVIDIA_API_KEY`, or `VERITY_GOOGLE_API_KEY`).
 
 2. **Add your key to `.env`.**
    ```bash
@@ -17,7 +17,7 @@ The framework routes all LLM calls through `src/verity/providers.py` via LiteLLM
    VERITY_OPENROUTER_API_KEY=sk-...
    ```
 
-3. **Update `resolved_provider()` if needed.** `Settings.resolved_provider()` maps provider name + model to a LiteLLM model string and API base URL. Add a new branch for providers not already listed.
+3. **Update `resolved_provider()` if needed.** `Settings.resolved_provider()` maps provider name + model to a LiteLLM model string and API base URL. Update the routing table only for providers not already listed.
 
 4. **Re-record cassettes.** Any change to the model string or system prompt invalidates existing Tier-1 cassettes. Run `make record` to regenerate them from the authored YAML fixtures.
 

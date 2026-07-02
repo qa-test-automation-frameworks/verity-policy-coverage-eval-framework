@@ -63,8 +63,8 @@ redteam:
 redteam-live:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest + promptfoo live eval"
 	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
-	@if [ -z "$(VERITY_ZAI_API_KEY)" ]; then \
-		echo "VERITY_ZAI_API_KEY not set — skipping promptfoo live eval"; \
+	@if [ -z "$(VERITY_ZAI_API_KEY)$(VERITY_OPENROUTER_API_KEY)$(VERITY_TOGETHER_API_KEY)$(VERITY_NVIDIA_API_KEY)$(VERITY_GOOGLE_API_KEY)" ]; then \
+		echo "No provider API key set — skipping promptfoo live eval"; \
 	else \
 		npx --yes promptfoo@latest eval --config promptfoo/redteam.yaml \
 			--output reports/redteam/results.json; \

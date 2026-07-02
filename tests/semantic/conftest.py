@@ -41,8 +41,8 @@ def _require_api_key() -> None:
     if key is None:
         pytest.skip(
             "No API key configured for semantic eval. "
-            "Set VERITY_ZAI_API_KEY, VERITY_OPENROUTER_API_KEY, "
-            "or VERITY_TOGETHER_API_KEY in .env",
+            "Set the provider key matching VERITY_PROVIDER in .env "
+            "(for example VERITY_ZAI_API_KEY)",
             allow_module_level=True,
         )
 

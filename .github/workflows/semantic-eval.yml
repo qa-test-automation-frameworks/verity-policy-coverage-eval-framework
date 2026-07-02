@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       provider:
-        description: "Provider to use (zai, openrouter, together)"
+        description: "Provider to use (zai, openrouter, together, nvidia, google)"
         required: false
         default: "zai"
 
@@ -28,6 +28,8 @@ jobs:
       VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
       VERITY_OPENROUTER_API_KEY: ${{ secrets.VERITY_OPENROUTER_API_KEY }}
       VERITY_TOGETHER_API_KEY: ${{ secrets.VERITY_TOGETHER_API_KEY }}
+      VERITY_NVIDIA_API_KEY: ${{ secrets.VERITY_NVIDIA_API_KEY }}
+      VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
       VERITY_PROVIDER: ${{ inputs.provider || 'zai' }}
       VERITY_SEMANTIC_SAMPLES: ${{ github.event_name == 'schedule' && '5' || '1' }}
       VERITY_TEMPERATURE: ${{ github.event_name == 'schedule' && '0.6' || '0.0' }}
@@ -54,7 +56,7 @@ jobs:
       - name: Check for API key
         id: key_check
         run: |
-          if [ -z "$VERITY_ZAI_API_KEY" ] && [ -z "$VERITY_OPENROUTER_API_KEY" ] && [ -z "$VERITY_TOGETHER_API_KEY" ]; then
+          if [ -z "$VERITY_ZAI_API_KEY$VERITY_OPENROUTER_API_KEY$VERITY_TOGETHER_API_KEY$VERITY_NVIDIA_API_KEY$VERITY_GOOGLE_API_KEY" ]; then
             echo "has_key=false" >> "$GITHUB_OUTPUT"
             echo "::warning::No API key secret configured — skipping semantic eval"
           else

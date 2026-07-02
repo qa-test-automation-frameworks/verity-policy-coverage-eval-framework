@@ -150,7 +150,7 @@ docs/
 
 ## Limitations
 
-- **Tier 2 and Tier 3 require a live API key.** Hermetic Tier 1 needs no credentials. Semantic and adversarial evals require `VERITY_ZAI_API_KEY` (or `VERITY_OPENROUTER_API_KEY` / `VERITY_TOGETHER_API_KEY`).
+- **Tier 2 and Tier 3 require a live API key.** Hermetic Tier 1 needs no credentials. Semantic and adversarial evals require the API key matching `VERITY_PROVIDER`: `VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, `VERITY_TOGETHER_API_KEY`, `VERITY_NVIDIA_API_KEY`, or `VERITY_GOOGLE_API_KEY`.
 - **No committed live-run artifacts.** Tier 1 and Tier 3 suites prove the *detectors* work against authored known-bad outputs. A live Tier-2 run proving the *SUT itself* exhibits defects #1–#4 has not yet been committed. Run `make eval-semantic` with a configured key to generate it.
 - **Calibration on synthetic labels.** The committed calibration report uses hand-authored labels and candidate outputs to demonstrate the methodology pipeline. Run `make calibrate-live` to produce a report against a real judge.
 - **Provider endpoint unverified.** The default `VERITY_MODEL=glm-4.5` and provider base URL in `.env.example` are configuration templates; verify the exact model slug and base URL for your provider before running live evals.
