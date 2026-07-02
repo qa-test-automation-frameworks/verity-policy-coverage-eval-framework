@@ -23,8 +23,10 @@ Expect ~530 passed in under 30s, no API key required. Then read, in order:
 
 Add to the above:
 
-- `tests/semantic/conftest.py` — `record_defect_measurement` fails the test outright when
-  a seeded defect isn't reproduced (search for `pytest.fail`); it does not just log a metric.
+- `tests/semantic/conftest.py` — `record_defect_measurement` marks the test `xfail` when a
+  seeded defect isn't reproduced (search for `pytest.xfail`), keeping the tier's pass/fail
+  signal reserved for detector errors and control-case regressions; it does not just log a
+  metric and pretend the run was green.
 - `scripts/defects_report.py` — `_PASS_STATUSES` and how `NOT_REPRODUCED` is classified.
 - `src/verity/statistics.py` and `docs/adr/0005-statistical-thresholds.md` — how N-sample
   aggregation and threshold_pass work, and why N differs between local/push and scheduled runs.
