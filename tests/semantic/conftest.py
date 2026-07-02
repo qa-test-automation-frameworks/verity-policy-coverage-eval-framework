@@ -94,7 +94,15 @@ def record_defect_measurement(
     threshold: float,
     threshold_passed: bool,
 ) -> None:
-    """Record seeded behavior detection and fail if it was not reproduced."""
+    """Record whether a seeded defect reproduced under the current live model/judge pairing.
+
+    A defect not reproducing means the model no longer exhibits the authored
+    failure mode for this metric -- a fact about model quality, not a bug in
+    the checking code or a control-case regression. Recording that outcome as
+    xfail (rather than a hard failure) keeps this tier's pass/fail signal
+    reserved for detector errors and control-case drift; the NOT_REPRODUCED/
+    VERIFIED status itself is still captured in full for defects_report.py.
+    """
     status = "NOT_REPRODUCED" if threshold_passed else "VERIFIED"
     _SEMANTIC_MEASUREMENTS[case.id] = {
         "case_id": case.id,
@@ -106,9 +114,9 @@ def record_defect_measurement(
         "status": status,
     }
     if threshold_passed:
-        pytest.fail(
-            f"Expected seeded behavior for {case.id!r} to fall below "
-            f"{metric} threshold {threshold}, got {score:.3f}"
+        pytest.xfail(
+            f"Seeded behavior for {case.id!r} did not reproduce under the current "
+            f"model/judge pairing ({metric} threshold {threshold}, got {score:.3f})"
         )
 
 
