@@ -10,6 +10,16 @@ import pytest
 os.environ.setdefault("VERITY_TRACING", "0")
 
 
+def test_hash_identifier_is_deterministic_and_not_reversible() -> None:
+    from verity.tracing import hash_identifier
+
+    h1 = hash_identifier("MBR-001")
+    h2 = hash_identifier("MBR-001")
+    assert h1 == h2
+    assert "MBR-001" not in h1
+    assert h1 != hash_identifier("MBR-002")
+
+
 def test_traced_noop_when_disabled() -> None:
     """traced() must be a no-op when VERITY_TRACING is off."""
     from verity.tracing import traced
@@ -75,6 +85,52 @@ def test_traced_enabled_path(monkeypatch: pytest.MonkeyPatch) -> None:
     assert len(spans) == 1
     assert spans[0].name == "my.operation"
     assert spans[0].attributes["foo"] == "bar"
+
+
+def test_agent_answer_span_excludes_raw_member_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    """agent.answer's span must carry a hashed member_id, never the raw one."""
+    pytest.importorskip("opentelemetry.sdk")
+
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
+
+    from sut.agent import CoverageAgent
+    from sut.retriever import FixtureRetriever
+    from verity import tracing
+    from verity.cassettes import CassetteLibrary
+    from verity.config import Provider, Settings
+    from verity.providers import LLMProvider
+
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    tracer = provider.get_tracer("test")
+    monkeypatch.setattr(tracing, "_ENABLED", True)
+    monkeypatch.setattr(tracing, "_TRACER", tracer)
+
+    settings = Settings(
+        _env_file=None,
+        provider=Provider.zai,
+        model="glm-4.5",
+        cassette_mode="replay",
+        cassette_dir="datasets/cassettes",
+    )
+    lib = CassetteLibrary(settings.cassette_dir)
+    llm_provider = LLMProvider(settings, cassette_library=lib)
+    retriever = FixtureRetriever("defect-7-prompt-injection")
+    agent = CoverageAgent(settings=settings, retriever=retriever, provider=llm_provider)
+
+    agent.answer("What does my policy cover overall?", member_id="MBR-001")
+
+    answer_spans = [s for s in exporter.get_finished_spans() if s.name == "agent.answer"]
+    assert answer_spans
+    attrs = answer_spans[0].attributes
+    assert "member_id" not in attrs
+    assert attrs["member_id_hash"] == tracing.hash_identifier("MBR-001")
+    assert "MBR-001" not in str(attrs.values())
 
 
 def test_trace_id_hex_returns_empty_string_for_no_span() -> None:

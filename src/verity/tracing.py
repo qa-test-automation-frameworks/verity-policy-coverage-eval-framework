@@ -22,6 +22,7 @@ Usage:
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 import logging
 import os
@@ -115,6 +116,18 @@ def init_tracing(service_name: str = "verity") -> None:
 
 def get_tracer() -> Any:
     return _TRACER
+
+
+def hash_identifier(value: str) -> str:
+    """Return a short, stable, non-reversible hash for a raw identifier.
+
+    Used to redact member IDs (and similar identifiers) before they're
+    attached to exported trace spans, which may be visible to a wider
+    audience than the request itself (observability backends, log
+    aggregators). The hash is deterministic within a run so spans for the
+    same member can still be correlated without exposing the raw ID.
+    """
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
 
 
 @contextmanager
