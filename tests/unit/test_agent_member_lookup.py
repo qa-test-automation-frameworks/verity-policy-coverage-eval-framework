@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from sut.agent import _PLAN_PARAMS, _load_members, _requires_human_review
+from sut.agent import _PLAN_PARAMS, _cross_tier_cost_parity_anomaly, _load_members
+from sut.retriever import Chunk
 
 
 def test_known_member_ids_are_loadable() -> None:
@@ -37,14 +38,52 @@ def test_unknown_member_id_does_not_fall_back_to_first_member() -> None:
 
 
 def test_requires_human_review_for_gold_silver_urgent_care_anomaly() -> None:
-    assert _requires_human_review(
-        "Does Gold have a lower urgent care copay than Silver?",
-        "Gold and Silver have the same $75 urgent care copay.",
-    )
+    urgent_care_text = "In-network urgent care: $75 copay per visit"
+    chunks = [
+        Chunk(text=urgent_care_text, source="gold.md", section="§3.7", chunk_id="c1"),
+        Chunk(text=urgent_care_text, source="silver.md", section="§3.7", chunk_id="c2"),
+    ]
+    assert _cross_tier_cost_parity_anomaly(chunks)
 
 
 def test_requires_human_review_ignores_routine_answers() -> None:
-    assert not _requires_human_review("What is my deductible?", "Your deductible is $2,000.")
+    chunks = [
+        Chunk(text="Your deductible is $2,000.", source="silver.md", section="§1", chunk_id="c1")
+    ]
+    assert not _cross_tier_cost_parity_anomaly(chunks)
+
+
+def test_requires_human_review_ignores_differing_amounts_across_tiers() -> None:
+    chunks = [
+        Chunk(
+            text="Outpatient: $20 copay per visit", source="gold.md", section="§3.6", chunk_id="c1"
+        ),
+        Chunk(
+            text="Outpatient: $40 copay per visit",
+            source="silver.md",
+            section="§3.6",
+            chunk_id="c2",
+        ),
+    ]
+    assert not _cross_tier_cost_parity_anomaly(chunks)
+
+
+def test_requires_human_review_ignores_matching_amounts_in_different_sections() -> None:
+    chunks = [
+        Chunk(
+            text="In-network urgent care: $75 copay per visit",
+            source="gold.md",
+            section="§3.7",
+            chunk_id="c1",
+        ),
+        Chunk(
+            text="Specialist visit: $75 copay per visit",
+            source="silver.md",
+            section="§3.2",
+            chunk_id="c2",
+        ),
+    ]
+    assert not _cross_tier_cost_parity_anomaly(chunks)
 
 
 def test_plan_parameters_match_corpus_overview() -> None:
@@ -57,7 +96,21 @@ def test_plan_parameters_match_corpus_overview() -> None:
 
 
 def test_requires_human_review_for_plan_comparison_anomaly() -> None:
-    assert _requires_human_review(
-        "Is Gold cheaper than Silver for this service?",
-        "Gold and Silver have the same $40 copay for this service.",
-    )
+    text = "Specialist visit: $40 copay per visit"
+    chunks = [
+        Chunk(text=text, source="gold.md", section="§3.2", chunk_id="c1"),
+        Chunk(text=text, source="silver.md", section="§3.2", chunk_id="c2"),
+    ]
+    assert _cross_tier_cost_parity_anomaly(chunks)
+
+
+def test_requires_human_review_needs_at_least_two_tiers() -> None:
+    chunks = [
+        Chunk(
+            text="In-network urgent care: $75 copay per visit",
+            source="gold.md",
+            section="§3.7",
+            chunk_id="c1",
+        )
+    ]
+    assert not _cross_tier_cost_parity_anomaly(chunks)

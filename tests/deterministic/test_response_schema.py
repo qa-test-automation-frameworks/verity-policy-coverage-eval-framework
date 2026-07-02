@@ -42,12 +42,12 @@ def test_token_counts_non_negative(case: GoldenCase, _settings: Settings) -> Non
 
 @pytest.mark.parametrize("case", _CASES, ids=[c.id for c in _CASES])
 def test_human_review_signal_matches_case(case: GoldenCase, _settings: Settings) -> None:
+    # Escalation is derived from retrieved evidence (cross-tier cost parity),
+    # not from the model's own answer text, so it fires independently of
+    # whether the model happens to notice or hallucinate past the anomaly.
     response = run_case(case, _settings)
     result = check_human_review(case, response)
-    if case.expects_defect and case.requires_human_review:
-        assert not result.passed, "Expected human-review defect to be caught"
-    else:
-        assert result.passed, result.message
+    assert result.passed, result.message
 
 
 @pytest.mark.parametrize(
