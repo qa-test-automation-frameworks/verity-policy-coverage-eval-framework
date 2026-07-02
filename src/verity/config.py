@@ -198,7 +198,12 @@ class Settings(BaseSettings):
 
     # Paths
     datasets_dir: Path = Path("datasets")
+    golden_dir: Path | None = None
     reports_dir: Path = Path("reports")
+
+    @property
+    def resolved_golden_dir(self) -> Path:
+        return self.golden_dir or self.datasets_dir / "golden"
 
     # Cassette record/replay
     cassette_mode: Literal["off", "replay", "record"] = "off"
