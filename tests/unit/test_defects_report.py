@@ -221,3 +221,43 @@ class TestIngestSemanticResults:
 
         defect_1 = next(e for e in catalog if e.id == 1)
         assert defect_1.status == "VERIFIED"
+
+    def test_semantic_measurement_can_mark_defect_fixed(self, tmp_path: Path) -> None:
+        import copy
+        import json
+        import os
+
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        sem_dir = tmp_path / "reports" / "semantic"
+        sem_dir.mkdir(parents=True)
+        (sem_dir / "results.json").write_text(
+            json.dumps(
+                {
+                    "measurements": {
+                        "defect-1-hallucination": {
+                            "case_id": "defect-1-hallucination",
+                            "defect_id": 1,
+                            "metric": "faithfulness",
+                            "score": 0.91,
+                            "threshold": 0.7,
+                            "threshold_passed": True,
+                            "status": "FIXED",
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        defect_1 = next(e for e in catalog if e.id == 1)
+        assert defect_1.status == "FIXED"
+        assert any("faithfulness" in d for d in defect_1.details)

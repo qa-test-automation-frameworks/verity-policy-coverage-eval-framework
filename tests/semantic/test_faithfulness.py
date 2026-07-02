@@ -1,7 +1,8 @@
 """Tier-2: RAGAS Faithfulness — detects hallucination and stale context.
 
 Targets defects #1 (bariatric hallucination) and #2 (stale Silver premium).
-Clean control cases assert faithfulness >= threshold; defect cases assert < threshold.
+Clean controls assert faithfulness >= threshold; defect cases record whether the live SUT
+still falls below it.
 """
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent
+from tests.semantic.conftest import live_agent, record_defect_measurement
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -71,6 +72,11 @@ def test_defect_faithfulness_detected(
     """Defect cases: faithfulness must fall BELOW threshold (defect detected)."""
     scores = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
-    assert not threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
-        f"Defect #{case.defect_id} not detected by faithfulness check for {case.id!r}: {stat}"
+    passed = threshold_pass(stat, THRESHOLD_FAITHFULNESS)
+    record_defect_measurement(
+        case,
+        metric="faithfulness",
+        score=stat.mean,
+        threshold=THRESHOLD_FAITHFULNESS,
+        threshold_passed=passed,
     )

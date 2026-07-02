@@ -10,7 +10,7 @@ requirements; Tier-2 tool-use tests use provider-backed task completion by defau
 
 Thresholds:
     Clean control cases assert score >= threshold.
-    expects_defect cases assert score < threshold (defect caught = test passes).
+    expects_defect cases record whether score < threshold (defect caught) or >= threshold (fixed).
 """
 
 from __future__ import annotations

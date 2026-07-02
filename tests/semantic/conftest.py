@@ -83,6 +83,29 @@ def live_agent(settings: Settings) -> CoverageAgent:
 
 
 _NODE_RESULTS: dict[str, str] = {}
+_SEMANTIC_MEASUREMENTS: dict[str, dict[str, object]] = {}
+
+
+def record_defect_measurement(
+    case: GoldenCase,
+    *,
+    metric: str,
+    score: float,
+    threshold: float,
+    threshold_passed: bool,
+) -> None:
+    """Record semantic defect detection without making product fixes fail the suite."""
+    status = "FIXED" if threshold_passed else "VERIFIED"
+    _SEMANTIC_MEASUREMENTS[case.id] = {
+        "case_id": case.id,
+        "defect_id": case.defect_id,
+        "metric": metric,
+        "score": score,
+        "threshold": threshold,
+        "threshold_passed": threshold_passed,
+        "status": status,
+    }
+
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -100,7 +123,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if _NODE_RESULTS:
         out = Path("reports/semantic/results.json")
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(_NODE_RESULTS, indent=2), encoding="utf-8")
+        payload = {
+            "outcomes": _NODE_RESULTS,
+            "measurements": _SEMANTIC_MEASUREMENTS,
+        }
+        payload.update(_NODE_RESULTS)
+        out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
         record = compute_trend_record(
             "semantic", _NODE_RESULTS, _SESSION_ACCUMULATOR, latency_budget_ms=LIVE_BUDGET_MS
