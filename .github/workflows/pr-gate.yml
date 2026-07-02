@@ -84,5 +84,10 @@ jobs:
           done < <(grep -vE '^\s*(#|$)' .pip-audit-ignore)
           uv run pip-audit --desc "${ignore_args[@]}"
 
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7  # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Static security scan (medium/high only)
         run: uv run bandit -r src/ -ll -c pyproject.toml
