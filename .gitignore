@@ -44,8 +44,22 @@ mutants/
 *.sqlite3
 *.sqlite
 
-# Reports (generated artifacts)
-reports/
+# Reports (generated artifacts) — with exceptions for the committed
+# evidence files that back the defects-caught / calibration / security docs.
+# Each un-ignored directory must also un-ignore its own "*" before the
+# specific file exception, since git won't descend into an ignored dir.
+reports/*
+!reports/semantic/
+reports/semantic/*
+!reports/semantic/results.json
+!reports/defects/
+reports/defects/*
+!reports/defects/defects-caught.json
+!reports/security/
+reports/security/*
+!reports/security/summary.json
+!reports/security/summary.md
+!reports/cost-summary.md
 allure-report/
 allure-results/
 site/
