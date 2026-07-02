@@ -45,6 +45,7 @@ def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> object:
     return retriever
 
 
+@pytest.mark.needs_onnx_download
 @pytest.mark.parametrize("benchmark", _BENCHMARKS, ids=[b.case_id for b in _BENCHMARKS])
 def test_real_retrieval_supports_expected_evidence(
     benchmark: RetrievalBenchmark, real_retriever: object

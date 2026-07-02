@@ -57,6 +57,7 @@ def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> object:
     return retriever
 
 
+@pytest.mark.needs_onnx_download
 @pytest.mark.parametrize("case_id", sorted(_RECORDED), ids=sorted(_RECORDED))
 def test_real_retrieval_matches_recorded_snapshot(case_id: str, real_retriever: object) -> None:
     """The real retriever must return the same chunk IDs, in the same order, as recorded."""
