@@ -60,10 +60,11 @@ jobs:
 
       - name: Dependency vulnerability scan
         run: |
-          uv run pip-audit --desc \
-            --ignore-vuln PYSEC-2026-311 \
-            --ignore-vuln CVE-2025-69872 \
-            --ignore-vuln CVE-2026-6587
+          ignore_args=()
+          while IFS= read -r id; do
+            ignore_args+=(--ignore-vuln "$id")
+          done < <(grep -vE '^\s*(#|$)' .pip-audit-ignore)
+          uv run pip-audit --desc "${ignore_args[@]}"
 
       - name: Static security scan (medium/high only)
         run: uv run bandit -r src/ -ll -c pyproject.toml
