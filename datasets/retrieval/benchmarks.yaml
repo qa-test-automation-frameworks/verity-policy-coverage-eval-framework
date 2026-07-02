@@ -4,6 +4,7 @@ benchmarks:
     expected_sources: [amendments.md]
     required_terms: ["$3,800", "effective July 1, 2024"]
     min_source_precision: 0.5
+    diagnostic_threshold: 1.0
 
   - case_id: ctrl-silver-physical-therapy-limit
     query: "How many physical therapy sessions does Silver cover, and what is the copay?"
@@ -56,6 +57,7 @@ benchmarks:
     expected_sources: [gold.md]
     required_terms: ["Annual Deductible", "$750"]
     min_source_precision: 0.5
+    diagnostic_threshold: 1.0
 
   - case_id: ctrl-telehealth-copay
     query: "What does a telehealth primary care visit cost?"
@@ -74,6 +76,7 @@ benchmarks:
     expected_sources: [exclusions.md]
     required_terms: ["60 visits", "Prior Authorization"]
     min_source_precision: 0.66
+    diagnostic_threshold: 1.0
 
   - case_id: ctrl-required-docs-oon-claim
     query: "What paperwork do I need to submit for an out-of-network claim?"
@@ -86,6 +89,7 @@ benchmarks:
     expected_sources: [administration.md]
     required_terms: ["Out-of-Network", "allowed amount"]
     min_source_precision: 0.5
+    diagnostic_threshold: 1.0
 
   - case_id: ctrl-waiting-period-orthodontia
     query: "If I buy the orthodontia rider today, when does braces coverage start?"
@@ -97,11 +101,19 @@ benchmarks:
     query: "I hit my Silver deductible in November — does that carry over into next year?"
     expected_sources: [administration.md]
     required_terms: ["reset to zero", "January 1"]
+    # Gate tolerates noisy context: top-k also pulls in adjacent
+    # deductible/plan-year chunks that aren't administration.md but don't
+    # contradict the answer. diagnostic_threshold tracks the aspirational
+    # target (tighter chunking/re-ranking) without blocking the release gate.
     min_source_precision: 0.33
+    diagnostic_threshold: 0.66
 
   - case_id: ctrl-bronze-oop-exact-boundary
     query: "I'm at $7,600 of my $8,000 Bronze out-of-pocket max, deductible met. What do I owe for a $1,000 claim?"
     expected_sources: [bronze.md]
     required_terms: ["Out-of-Pocket Maximum", "$8,000"]
+    # Same rationale as ctrl-plan-year-reset: the query's numeric specificity
+    # pulls in related-but-off-source chunks alongside bronze.md.
     min_source_precision: 0.33
+    diagnostic_threshold: 0.66
 

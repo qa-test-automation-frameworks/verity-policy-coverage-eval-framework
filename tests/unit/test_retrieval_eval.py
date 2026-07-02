@@ -37,6 +37,61 @@ def test_score_retrieval_passes_when_sources_and_terms_match() -> None:
     assert score.ndcg == 1.0
 
 
+def test_score_retrieval_meets_diagnostic_none_when_unset() -> None:
+    benchmark = RetrievalBenchmark(
+        case_id="case",
+        query="q",
+        expected_sources=["policy.md"],
+        required_terms=["covered"],
+        min_source_precision=1.0,
+    )
+    chunks = [
+        Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")
+    ]
+    score = score_retrieval(chunks, benchmark)
+    assert score.meets_diagnostic is None
+
+
+def test_score_retrieval_diagnostic_threshold_does_not_affect_gate() -> None:
+    benchmark = RetrievalBenchmark(
+        case_id="case",
+        query="q",
+        expected_sources=["policy.md"],
+        required_terms=["covered"],
+        min_source_precision=0.5,
+        diagnostic_threshold=1.0,
+    )
+    chunks = [
+        Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1"),
+        Chunk(text="Unrelated context.", source="other.md", section="§2", chunk_id="2"),
+    ]
+
+    score = score_retrieval(chunks, benchmark)
+
+    assert score.source_precision == 0.5
+    assert score.passed  # meets the 0.5 gate
+    assert score.meets_diagnostic is False  # but not the 1.0 diagnostic target
+    assert "diagnostic_threshold" in score.message
+
+
+def test_score_retrieval_diagnostic_threshold_met_when_precision_high_enough() -> None:
+    benchmark = RetrievalBenchmark(
+        case_id="case",
+        query="q",
+        expected_sources=["policy.md"],
+        required_terms=["covered"],
+        min_source_precision=0.5,
+        diagnostic_threshold=1.0,
+    )
+    chunks = [
+        Chunk(text="This service is covered.", source="policy.md", section="§1", chunk_id="1")
+    ]
+
+    score = score_retrieval(chunks, benchmark)
+
+    assert score.meets_diagnostic is True
+
+
 def test_score_retrieval_fails_when_required_term_is_missing() -> None:
     benchmark = RetrievalBenchmark(
         case_id="case",
