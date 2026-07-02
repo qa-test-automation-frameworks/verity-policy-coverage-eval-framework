@@ -160,6 +160,36 @@ class TestProviderFailure:
         _assert_safe_failure(response, "provider_unavailable")
 
 
+class TestSecondRoundToolCalls:
+    """A second round of tool_calls in the post-tool response is rejected,
+    not silently treated as the final answer."""
+
+    def test_second_round_tool_calls_rejected(self) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        args_json = (
+            '{"claim_amount": 1000.0, "plan_deductible": 750.0, "accrued_deductible": 750.0,'
+            ' "plan_oop_max": 4000.0, "accrued_oop": 1200.0, "coinsurance_member": 0.10}'
+        )
+        call_count: list[int] = [0]
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+
+        def _complete(**kwargs: Any) -> CompletionResult:
+            call_count[0] += 1
+            return _tool_call_result(args_json)
+
+        mock_provider.complete.side_effect = _complete
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        assert call_count[0] == 2
+        _assert_safe_failure(response, "tool_unavailable")
+
+
 class TestToolArgumentContracts:
     """Malformed or unrecognized tool calls return a safe structured response."""
 
