@@ -45,6 +45,10 @@ mutants/
 *.sqlite3
 *.sqlite
 
+# codebase-memory-mcp local/shared graph artifacts
+.codebase-memory/
+codebase-memory/
+
 # Reports (generated artifacts) — with exceptions for the committed
 # evidence files that back the defects-caught / calibration / security docs.
 # Each un-ignored directory must also un-ignore its own "*" before the
@@ -86,6 +90,7 @@ promptfoo/.cache/
 # Planning / internal docs (not for version control)
 docs/*-roadmap.md
 .claude/
+CLAUDE.md
 
 # Misc
 *.log
