@@ -96,12 +96,14 @@ class JudgeConfig(BaseSettings):
 class RetrievalConfig(BaseSettings):
     """Configuration for the SUT RAG retriever."""
 
-    model_config = SettingsConfigDict(env_prefix="VERITY_", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", env_prefix="VERITY_", extra="ignore"
+    )
 
     corpus_dir: Path = Path("src/sut/corpus")
     chunk_size: int = 160
     chunk_overlap: int = 30
-    top_k: int = 4
+    top_k: int = 3
     embedding_model: str = "all-MiniLM-L6-v2"
     persist_dir: Path = Path(".chroma")
 
