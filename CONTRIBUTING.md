@@ -84,6 +84,8 @@ VERITY_OPENROUTER_API_KEY=your-key-here
 
 Tier 1 should be deterministic and must not use retries to hide failures. For live Tier 2/Tier 3 tests, mark known provider-instability cases with `@pytest.mark.flaky` only after recording the failure mode in the test or linked issue. Use `@pytest.mark.quarantine` for tests that should keep running for signal but should not block merges until the owner removes the marker.
 
+Before applying either marker, get evidence rather than guessing: `make flake-check ARGS='--runs 5 -- tests/semantic -m live'` runs the given pytest selection N times and reports which tests actually flipped between pass and fail across runs (`scripts/detect_flaky_tests.py`). It writes `reports/flake/flake-report.json` and never fails the command unless `--strict` is passed — it's diagnostic input for the marker decision, not a new gate.
+
 ### Troubleshooting
 
 - First `PolicyRetriever` use may download the local ONNX embedding model through Chroma; retry after the cache is populated if the network is interrupted.
