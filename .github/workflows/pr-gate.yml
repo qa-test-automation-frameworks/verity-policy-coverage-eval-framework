@@ -12,9 +12,14 @@ concurrency:
 
 jobs:
   lint-type-test:
-    name: Lint · Type · Unit Tests
+    name: Lint · Type · Unit Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -27,16 +32,16 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --frozen --all-extras
+        run: uv sync --frozen --all-extras --python ${{ matrix.python-version }}
 
       - name: Cache Chroma ONNX embedding model
         uses: actions/cache@v4
         with:
           path: ~/.cache/chroma/onnx_models
-          key: chroma-onnx-${{ runner.os }}
+          key: chroma-onnx-${{ runner.os }}-py${{ matrix.python-version }}
 
       - name: Ruff lint
         run: uv run ruff check src tests
