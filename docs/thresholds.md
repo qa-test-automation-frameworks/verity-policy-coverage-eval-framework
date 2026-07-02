@@ -40,14 +40,14 @@ See `verity/statistics.py` for the implementation.
 
 ### DeepEval metrics
 
-| Metric | Constant | Threshold | Mode | Targets defect(s) |
-|---|---|---|---|---|
-| Hallucination | `THRESHOLD_HALLUCINATION` | 0.50 | mean | #1, #7 |
-| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) |
-| G-Eval Completeness | `THRESHOLD_COMPLETENESS` | 0.70 | mean | #3 |
-| G-Eval Disambiguation | `THRESHOLD_DISAMBIGUATION` | 0.60 | mean | #4 |
-| G-Eval Refusal | `THRESHOLD_REFUSAL` | 0.70 | mean | #6 |
-| Tool Correctness (optional factory) | `THRESHOLD_TOOL_CORRECTNESS` | 0.60 | mean | #5 |
+| Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
+|---|---|---|---|---|---|
+| Hallucination | `THRESHOLD_HALLUCINATION` | 0.50 | mean | #1, #7 | not yet run |
+| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | not yet run |
+| G-Eval Completeness | `THRESHOLD_COMPLETENESS` | 0.70 | mean | #3 | PASS (100% agreement) |
+| G-Eval Disambiguation | `THRESHOLD_DISAMBIGUATION` | 0.60 | mean | #4 | PASS (100% agreement) |
+| G-Eval Refusal | `THRESHOLD_REFUSAL` | 0.70 | mean | #6 | PASS (100% agreement) |
+| Tool Correctness (optional factory) | `THRESHOLD_TOOL_CORRECTNESS` | 0.60 | mean | #5 | not yet run |
 
 Hallucination (DeepEval) is scored as the fraction of claims NOT grounded in
 context, so a passing test means `score < 0.5` (low hallucination rate). Clean
@@ -55,11 +55,19 @@ cases are expected to score well above this; defect cases should score ≥ 0.5.
 
 ### RAGAS metrics
 
-| Metric | Constant | Threshold | Mode | Targets defect(s) |
-|---|---|---|---|---|
-| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #2, #7 |
-| Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) |
-| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) |
+| Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
+|---|---|---|---|---|---|
+| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #2, #7 | **REVIEW** (75% agreement, MAE 0.238) |
+| Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) | not yet run |
+| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | not yet run |
+
+The Calibration column reflects `docs/calibration-report.md`'s per-metric breakdown.
+`not yet run` means the metric has no dedicated calibration cases in
+`datasets/calibration/labeled.yaml` yet, not that it has been checked and passed —
+treat its threshold as conservative-by-convention (see rationale below) rather than
+empirically tuned. Faithfulness is the one metric that *has* been measured and did
+not clear the bar; its threshold should be treated as the least trustworthy of the
+three RAGAS metrics until a passing calibration run replaces this entry.
 
 ---
 
