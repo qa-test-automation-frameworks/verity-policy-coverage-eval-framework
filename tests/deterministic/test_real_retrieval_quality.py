@@ -50,7 +50,10 @@ def test_real_retrieval_supports_expected_evidence(
     benchmark: RetrievalBenchmark, real_retriever: object
 ) -> None:
     if benchmark.case_id in _KNOWN_HARD_CASES:
-        pytest.xfail(f"{benchmark.case_id} has no lexical/semantic signal in the real corpus")
+        pytest.xfail(
+            f"KI-1: {benchmark.case_id} has no lexical/semantic signal in the real corpus "
+            "(see docs/known-issues.md)"
+        )
     chunks = real_retriever.retrieve(benchmark.query)  # type: ignore[attr-defined]
     score = score_retrieval(chunks, benchmark)
     assert score.passed, score.message
