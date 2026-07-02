@@ -5,7 +5,7 @@
   "tool_calls": [],
   "usage": {
     "prompt_tokens": 320,
-    "completion_tokens": 5,
-    "total_tokens": 325
+    "completion_tokens": 4,
+    "total_tokens": 324
   }
 }
