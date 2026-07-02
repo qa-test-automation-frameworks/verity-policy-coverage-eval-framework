@@ -2,7 +2,7 @@ name: PR Gate (Tier 1 — lint · type · unit)
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
     branches: [main]
 
