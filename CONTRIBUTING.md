@@ -144,7 +144,8 @@ proves a line ran, not that its output was checked). Mutation testing proves the
 
 ```bash
 uv sync --extra mutation
-make mutation-test
+make mutation-test    # strict — fails the command on surviving mutants
+make mutation-report  # diagnostic — always prints results, never fails the command
 ```
 
 This is a local/dev quality check, not part of the required CI gate (mutation testing is

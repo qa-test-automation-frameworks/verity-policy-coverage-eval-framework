@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison report-allure report-site demo record docker-test clean mutation-test
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison report-allure report-site demo record docker-test clean mutation-test mutation-report
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -85,7 +85,14 @@ trace-demo:
 	VERITY_TRACING=1 VERITY_TRACE_EXPORTER=file PYTHONPATH=src uv run python scripts/trace_demo.py
 
 mutation-test:
-	@echo "Mutation testing — src/sut/tools/coverage_calculator.py (requires: uv sync --extra mutation)"
+	@echo "Mutation testing (strict) — src/sut/tools/coverage_calculator.py (requires: uv sync --extra mutation)"
+	@echo "Fails the command on surviving mutants, matching .github/workflows/mutation.yml."
+	uv run mutmut run
+	uv run mutmut results
+
+mutation-report:
+	@echo "Mutation testing (diagnostic) — same run as mutation-test but never fails the command,"
+	@echo "for quick local iteration. Use 'make mutation-test' before treating a result as gating."
 	uv run mutmut run || true
 	uv run mutmut results
 
