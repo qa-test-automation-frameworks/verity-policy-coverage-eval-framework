@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from verity.config import Provider, Settings, get_settings, reset_settings, resolve_provider
@@ -58,7 +60,7 @@ class TestSettings:
         assert s.semantic_samples == 1
         assert s.retrieval.chunk_size == 160
         assert s.retrieval.chunk_overlap == 30
-        assert s.retrieval.top_k == 4
+        assert s.retrieval.top_k == 3
 
     def test_invalid_temperature_raises(self) -> None:
         with pytest.raises(ValueError):
@@ -76,6 +78,20 @@ class TestSettings:
             warnings.simplefilter("ignore")
             s = Settings(_env_file=None)
         assert s.semantic_samples == 3
+
+    def test_retrieval_config_env_file_is_loaded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import warnings
+
+        env_file = tmp_path / ".env"
+        env_file.write_text("VERITY_TOP_K=5\nVERITY_CHUNK_SIZE=120\n", encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            s = Settings(_env_file=None)
+        assert s.retrieval.top_k == 5
+        assert s.retrieval.chunk_size == 120
 
     def test_resolved_provider_returns_tuple(self) -> None:
         import warnings
