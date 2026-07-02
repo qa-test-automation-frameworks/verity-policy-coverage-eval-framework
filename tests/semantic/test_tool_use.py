@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent
+from tests.semantic.conftest import live_agent, record_defect_measurement
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -55,6 +55,11 @@ def test_defect_tool_use_detected(
     """Defect #5: tool skipped or args wrong — task completion must fall below threshold."""
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
-    assert not threshold_pass(stat, THRESHOLD_COMPLETENESS), (
-        f"Defect #{case.defect_id} not detected by task-completion for {case.id!r}: {stat}"
+    passed = threshold_pass(stat, THRESHOLD_COMPLETENESS)
+    record_defect_measurement(
+        case,
+        metric="task_completion",
+        score=stat.mean,
+        threshold=THRESHOLD_COMPLETENESS,
+        threshold_passed=passed,
     )

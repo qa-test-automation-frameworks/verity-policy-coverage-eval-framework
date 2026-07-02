@@ -2,7 +2,7 @@
 
 Runs hermetic checks (cassette replay, no API key) for defects 5-8 via
 deterministic and adversarial replay. Defects 1-4 (semantic-only) are marked
-VERIFIED when reports/semantic/results.json is present, otherwise COVERED
+VERIFIED or FIXED from reports/semantic/results.json when present, otherwise COVERED
 with a reference to the ground-truth and threshold that will catch them.
 
 Outputs:
@@ -22,7 +22,7 @@ from typing import Literal
 # Catalog — static metadata for all 8 seeded defects
 # ---------------------------------------------------------------------------
 
-Status = Literal["CAUGHT", "VERIFIED", "COVERED", "MISSED"]
+Status = Literal["CAUGHT", "VERIFIED", "FIXED", "COVERED", "MISSED"]
 
 
 @dataclass
@@ -273,6 +273,16 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
     except Exception:
         return
 
+    measurements_raw = sem_results.get("measurements", {})
+    measurements = measurements_raw if isinstance(measurements_raw, dict) else {}
+    by_defect: dict[int, dict[str, object]] = {}
+    for raw in measurements.values():
+        if not isinstance(raw, dict):
+            continue
+        defect_id = raw.get("defect_id")
+        if isinstance(defect_id, int):
+            by_defect[defect_id] = raw
+
     defect_key_map = {
         1: "defect-1-hallucination",
         2: "defect-2-stale-context",
@@ -282,6 +292,19 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
     for entry in catalog:
         if entry.id > 4:
             continue
+        measurement = by_defect.get(entry.id)
+        if measurement:
+            status = str(measurement.get("status", "VERIFIED"))
+            entry.status = "FIXED" if status == "FIXED" else "VERIFIED"
+            metric = measurement.get("metric", "semantic")
+            score = measurement.get("score")
+            threshold = measurement.get("threshold")
+            entry.details.append(
+                f"Semantic: {entry.status.lower()} by {metric} "
+                f"(score={score}, threshold={threshold})"
+            )
+            continue
+
         key = defect_key_map.get(entry.id, "")
         if key in sem_results:
             entry.status = "VERIFIED"
@@ -329,6 +352,7 @@ def render_markdown(catalog: list[DefectEntry]) -> str:
     status_icon = {
         "CAUGHT": "✅ CAUGHT",
         "VERIFIED": "✅ VERIFIED",
+        "FIXED": "🟢 FIXED",
         "COVERED": "⬜ COVERED",
         "MISSED": "❌ MISSED",
     }
@@ -350,6 +374,8 @@ def render_markdown(catalog: list[DefectEntry]) -> str:
         "|--------|---------|",
         "| ✅ CAUGHT | Hermetically proven: cassette replay confirms the defect is detected |",
         "| ✅ VERIFIED | Confirmed by a live semantic run (`reports/semantic/results.json`) |",
+        "| 🟢 FIXED | Live semantic run passed the quality threshold; "
+        "seeded behavior no longer reproduces |",
         "| ⬜ COVERED | Ground-truth + metric threshold established; requires API key |",
         "| ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |",
         "",

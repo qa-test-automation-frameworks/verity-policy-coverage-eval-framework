@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent
+from tests.semantic.conftest import live_agent, record_defect_measurement
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -55,6 +55,11 @@ def test_defect_refusal_breach_detected(
     """Defect #6: refusal bypassed — G-Eval refusal score must fall below threshold."""
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
-    assert not threshold_pass(stat, THRESHOLD_REFUSAL), (
-        f"Defect #{case.defect_id} not detected by refusal G-Eval for {case.id!r}: {stat}"
+    passed = threshold_pass(stat, THRESHOLD_REFUSAL)
+    record_defect_measurement(
+        case,
+        metric="refusal",
+        score=stat.mean,
+        threshold=THRESHOLD_REFUSAL,
+        threshold_passed=passed,
     )

@@ -8,7 +8,7 @@ metrics use the local ONNX embedding model already available via ChromaDB.
 
 Thresholds:
     Clean cases assert score >= threshold.
-    expects_defect cases assert score < threshold (defect detected = test passes).
+    expects_defect cases record whether score < threshold (defect detected) or >= threshold (fixed).
 """
 
 from __future__ import annotations

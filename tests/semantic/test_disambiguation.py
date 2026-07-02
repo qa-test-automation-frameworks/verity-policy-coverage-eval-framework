@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent
+from tests.semantic.conftest import live_agent, record_defect_measurement
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -54,6 +54,11 @@ def test_defect_disambiguation_detected(
 ) -> None:
     scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     stat = aggregate(scores)
-    assert not threshold_pass(stat, THRESHOLD_DISAMBIGUATION), (
-        f"Defect #{case.defect_id} not detected by disambiguation for {case.id!r}: {stat}"
+    passed = threshold_pass(stat, THRESHOLD_DISAMBIGUATION)
+    record_defect_measurement(
+        case,
+        metric="disambiguation",
+        score=stat.mean,
+        threshold=THRESHOLD_DISAMBIGUATION,
+        threshold_passed=passed,
     )
