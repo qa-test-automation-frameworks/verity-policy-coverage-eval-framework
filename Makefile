@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison report-allure report-site demo record docker-test clean mutation-test mutation-report
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -59,6 +59,11 @@ record:
 redteam:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest (no API key required)"
 	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+
+flake-check:
+	@echo "Flake detection — repeated pytest runs, reports outcome variance per test"
+	@echo "Example: make flake-check ARGS='--runs 5 -- tests/semantic -m live'"
+	PYTHONPATH=src uv run python scripts/detect_flaky_tests.py $(ARGS)
 
 redteam-live:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest + promptfoo live eval"
