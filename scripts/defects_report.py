@@ -275,13 +275,16 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
 
     measurements_raw = sem_results.get("measurements", {})
     measurements = measurements_raw if isinstance(measurements_raw, dict) else {}
-    by_defect: dict[int, dict[str, object]] = {}
+    # Multiple golden cases (e.g. paraphrase variants) can share a defect_id —
+    # collect all measurements per defect rather than letting the last one
+    # seen silently overwrite the others.
+    by_defect: dict[int, list[dict[str, object]]] = {}
     for raw in measurements.values():
         if not isinstance(raw, dict):
             continue
         defect_id = raw.get("defect_id")
         if isinstance(defect_id, int):
-            by_defect[defect_id] = raw
+            by_defect.setdefault(defect_id, []).append(raw)
 
     defect_key_map = {
         1: "defect-1-hallucination",
@@ -292,17 +295,24 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
     for entry in catalog:
         if entry.id > 4:
             continue
-        measurement = by_defect.get(entry.id)
-        if measurement:
-            status = str(measurement.get("status", "VERIFIED"))
-            entry.status = "FIXED" if status == "FIXED" else "VERIFIED"
-            metric = measurement.get("metric", "semantic")
-            score = measurement.get("score")
-            threshold = measurement.get("threshold")
-            entry.details.append(
-                f"Semantic: {entry.status.lower()} by {metric} "
-                f"(score={score}, threshold={threshold})"
-            )
+        variant_measurements = by_defect.get(entry.id)
+        if variant_measurements:
+            # Conservative aggregation: the defect counts as FIXED only if
+            # every variant (every phrasing) passed its threshold; any
+            # variant still failing means the defect is still reproducible
+            # and the whole defect stays VERIFIED (not fixed).
+            all_fixed = all(m.get("status") == "FIXED" for m in variant_measurements)
+            entry.status = "FIXED" if all_fixed else "VERIFIED"
+            for m in variant_measurements:
+                case_id = m.get("case_id", "?")
+                status = m.get("status", "VERIFIED")
+                metric = m.get("metric", "semantic")
+                score = m.get("score")
+                threshold = m.get("threshold")
+                entry.details.append(
+                    f"Semantic: {case_id} {str(status).lower()} by {metric} "
+                    f"(score={score}, threshold={threshold})"
+                )
             continue
 
         key = defect_key_map.get(entry.id, "")
@@ -381,6 +391,19 @@ def render_markdown(
     when not provided, rather than guessing at weights.
     """
     hermetically_proven = [e for e in catalog if e.status == "CAUGHT"]
+    semantic_tier = [e for e in catalog if e.id <= 4]
+    semantic_live = [e for e in semantic_tier if e.status in ("FIXED", "VERIFIED")]
+
+    if semantic_live:
+        semantic_summary = (
+            f"Defects 1-4 have a live Tier-2 semantic run committed "
+            f"({len(semantic_live)} of {len(semantic_tier)} defects have live evidence; "
+            f"see per-defect status below). Re-run `make eval-semantic` to refresh."
+        )
+    else:
+        semantic_summary = (
+            "Defects 1-4 are semantic-tier; run `make eval-semantic` with a key to verify live."
+        )
 
     lines: list[str] = [
         "# Defects Caught",
@@ -389,7 +412,7 @@ def render_markdown(
         "",
         f"**{len(hermetically_proven)} of 8 defects caught hermetically** "
         f"(defects 5-8 via deterministic + adversarial replay). "
-        f"Defects 1-4 are semantic-tier; run `make eval-semantic` with a key to verify live.",
+        f"{semantic_summary}",
         "",
         "**Scope of proof.** ✅ CAUGHT rows replay hand-authored cassettes: the "
         "candidate output that trips the check was written by the case author, not "
