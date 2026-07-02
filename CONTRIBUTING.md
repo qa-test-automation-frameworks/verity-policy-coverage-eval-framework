@@ -39,6 +39,13 @@ make smoke             # one live provider call (requires API key in .env)
 make demo QUERY="What is my Silver plan deductible?"
 ```
 
+Tier 1 tests run serially by default. For a faster local loop, run them in
+parallel with `pytest-xdist` (installed via the `dev` extra):
+
+```bash
+uv run pytest -m "not live" -n auto
+```
+
 ### Reports & Pages
 
 ```bash
