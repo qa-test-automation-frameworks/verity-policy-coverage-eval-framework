@@ -14,8 +14,12 @@ cd verity-policy-coverage-eval-framework
 uv sync --all-extras
 pre-commit install
 cp .env.example .env
-# Edit .env — add your ZAI_API_KEY (or OPENROUTER_API_KEY / TOGETHER_API_KEY)
+# Edit .env — add your VERITY_ZAI_API_KEY (or VERITY_OPENROUTER_API_KEY / VERITY_TOGETHER_API_KEY)
 ```
+
+All env vars use the canonical `VERITY_*` prefix (see `.env.example`); bare
+names like `ZAI_API_KEY` are accepted as legacy aliases but `VERITY_*` is
+what CI and the docs above use.
 
 ### Corpus indexing note
 
@@ -66,7 +70,7 @@ Set `VERITY_PROVIDER` in `.env`:
 
 ```bash
 VERITY_PROVIDER=openrouter
-OPENROUTER_API_KEY=your-key-here
+VERITY_OPENROUTER_API_KEY=your-key-here
 ```
 
 ### Code style
@@ -90,7 +94,7 @@ Tier 1 should be deterministic and must not use retries to hide failures. For li
 ### CI
 
 - **Tier 1 (PR gate):** runs on every push; lint + type + unit + deterministic tests; no live calls; must pass.
-- **Tier 2 (Semantic eval):** runs on merge to main; requires `ZAI_API_KEY` GitHub Secret.
+- **Tier 2 (Semantic eval):** runs on merge to main; requires the `VERITY_*_API_KEY` GitHub Secret matching `VERITY_PROVIDER` (e.g. `VERITY_ZAI_API_KEY`).
 - **Tier 3 (Adversarial):** weekly scheduled; non-blocking but reports published.
 
 Only Tier 1 (`pr-gate.yml`'s `lint-type-test` job, run as a Python 3.12 + 3.13 matrix) is
