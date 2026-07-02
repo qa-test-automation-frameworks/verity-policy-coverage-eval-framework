@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison report-allure report-site demo record docker-test clean mutation-test
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison report-allure report-site demo record docker-test clean mutation-test
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -97,6 +97,16 @@ defects-report:
 profile-comparison:
 	@echo "Seeded vs. clean SUT profile comparison — hermetic, no API key required"
 	PYTHONPATH=src:. uv run python scripts/profile_comparison.py
+
+model-comparison:
+	@if [ -z "$(LEFT_PROVIDER)$(LEFT_MODEL)$(RIGHT_PROVIDER)$(RIGHT_MODEL)" ]; then \
+		echo "Usage: make model-comparison LEFT_PROVIDER=zai LEFT_MODEL=glm-4.5 RIGHT_PROVIDER=openrouter RIGHT_MODEL=openai/gpt-4o-mini"; \
+		exit 1; \
+	fi
+	PYTHONPATH=src:. uv run python scripts/model_comparison.py \
+		--left-provider $(LEFT_PROVIDER) --left-model $(LEFT_MODEL) \
+		--right-provider $(RIGHT_PROVIDER) --right-model $(RIGHT_MODEL) \
+		$(if $(CASE),--case $(CASE)) $(if $(LIMIT),--limit $(LIMIT))
 
 report-allure:
 	@echo "Tier 1+3 hermetic suites with Allure results capture (no API key required)"
