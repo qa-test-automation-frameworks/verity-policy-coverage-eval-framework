@@ -93,9 +93,10 @@ Tier 1 should be deterministic and must not use retries to hide failures. For li
 - **Tier 2 (Semantic eval):** runs on merge to main; requires `ZAI_API_KEY` GitHub Secret.
 - **Tier 3 (Adversarial):** weekly scheduled; non-blocking but reports published.
 
-Only Tier 1 (`pr-gate.yml`'s `lint-type-test` job) is intended to gate merges — set it as
-a required status check under the repository's branch protection rules for `main`. Tier
-2/3 are informational and should not block a PR even if their optional secrets are unset.
+Only Tier 1 (`pr-gate.yml`'s `lint-type-test` job, run as a Python 3.12 + 3.13 matrix) is
+intended to gate merges — set both matrix checks as required status checks under the
+repository's branch protection rules for `main`. Tier 2/3 are informational and should
+not block a PR even if their optional secrets are unset.
 
 See [`docs/ci-policy.md`](docs/ci-policy.md) for the full list of required checks, what each
 one enforces, and this project's release criteria.

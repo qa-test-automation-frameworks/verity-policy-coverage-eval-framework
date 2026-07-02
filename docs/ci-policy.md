@@ -6,9 +6,12 @@ for the day-to-day cassette/eval workflow this policy gates.
 
 ## Required status check
 
-Exactly one workflow job is required for merge: **`PR Gate (Tier 1 — lint · type · unit)` /
-`lint-type-test`** (`.github/workflows/pr-gate.yml`). Configure this as a required status
-check under the repository's branch protection rules for `main`. No other workflow blocks
+The `lint-type-test` job in `PR Gate (Tier 1 — lint · type · unit)`
+(`.github/workflows/pr-gate.yml`) is required for merge. It runs as a matrix
+across Python 3.12 and 3.13, which GitHub surfaces as two separate checks —
+`Lint · Type · Unit Tests (Python 3.12)` and `Lint · Type · Unit Tests
+(Python 3.13)`. Configure **both** as required status checks under the
+repository's branch protection rules for `main`. No other workflow blocks
 merges — Tier 2 (semantic) and Tier 3 (adversarial) are informational.
 
 ## What the required gate checks
