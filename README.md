@@ -2,8 +2,11 @@
 
 > A structured, multi-tier evaluation framework for LLM applications — addressing non-determinism, cost, provider-coupling, and judge trust — demonstrated on a RAG + tool-use assistant.
 
+[![PR Gate (Tier 1)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
+[![Semantic Eval (Tier 2)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
+[![Adversarial Red-Team (Tier 3)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12 | 3.13](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
 
 **Status:** Hermetic Tier 1 is implemented and replayable. Live Tier-2/Tier-3 runs require a configured provider key and have no committed live-run artifacts yet — see [Limitations](#limitations).
 
@@ -106,7 +109,14 @@ make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1 on GLM-4.5 l
 | Extension guide | How to add providers, datasets, evaluators, and reports | [docs/extending.md](docs/extending.md) |
 | Profile comparison | Seeded vs. clean SUT profile — structural diff across every golden case, hermetic | [docs/profile-comparison.md](docs/profile-comparison.md) |
 
-The full report site (Allure + defects-caught landing + calibration + cost) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
+The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
+
+**Preview it locally:**
+
+```bash
+make report-site
+python3 -m http.server 8000 --directory site   # open http://localhost:8000
+```
 
 ---
 
