@@ -24,9 +24,9 @@ jobs:
     needs: key_check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a  # v4
         with:
           version: "latest"
 
@@ -40,7 +40,7 @@ jobs:
             --alluredir reports/allure-results/adversarial
 
       - name: Upload adversarial reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: adversarial-reports
           path: reports/allure-results/adversarial/
@@ -51,16 +51,16 @@ jobs:
     if: needs.key_check.outputs.has_key == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a  # v4
         with:
           version: "latest"
 
       - name: Install dependencies
         run: uv sync --frozen
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: "20"
 
@@ -79,7 +79,7 @@ jobs:
             --output reports/redteam/results.json
 
       - name: Upload red-team report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: redteam-report
           path: reports/redteam/
@@ -89,9 +89,9 @@ jobs:
     if: needs.key_check.outputs.has_key == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a  # v4
         with:
           version: "latest"
 
@@ -110,7 +110,7 @@ jobs:
           PYTHONPATH=src uv run python scripts/run_calibration.py --record
 
       - name: Upload calibration report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: calibration-report
           path: docs/calibration-report.md
