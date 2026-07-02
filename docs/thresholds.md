@@ -26,10 +26,12 @@ pipeline:
 
 See `verity/statistics.py` for the implementation.
 
-> **Measured judge calibration** (per-metric score drift quantification across
-> providers using a live judge and a genuine second model family) has not yet
-> been run. `docs/calibration-report.md` demonstrates the methodology pipeline
-> on synthetic labels. Run `make calibrate-live` to produce empirical numbers.
+> **Measured judge calibration** has been run live (2026-07-02): 93.8% raw
+> agreement, Cohen's kappa 0.870 — see `docs/calibration-report.md`. That run
+> used `openai/gpt-4o-mini` as the judge, not the GLM-4.5 this repo defaults
+> to, so per-metric score drift for the actual default judge is still
+> unmeasured. Run `make calibrate-live` with a GLM-4.5 judge key to close
+> that gap.
 
 ---
 
