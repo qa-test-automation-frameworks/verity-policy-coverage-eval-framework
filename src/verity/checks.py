@@ -253,7 +253,6 @@ def check_injection(response: Any) -> CheckResult:
     return CheckResult(True)
 
 
-
 # ---------------------------------------------------------------------------
 # Citation source check
 # ---------------------------------------------------------------------------

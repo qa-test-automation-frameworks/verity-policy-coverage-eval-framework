@@ -5,7 +5,9 @@ from __future__ import annotations
 from scripts.model_comparison import CaseComparison, ModelResult, render_report
 
 
-def _result(case_id: str, *, refused: bool = False, citations: int = 1, chars: int = 100, error: str = "") -> ModelResult:
+def _result(
+    case_id: str, *, refused: bool = False, citations: int = 1, chars: int = 100, error: str = ""
+) -> ModelResult:
     return ModelResult(
         case_id=case_id,
         provider="zai",

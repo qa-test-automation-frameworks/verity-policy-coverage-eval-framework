@@ -77,7 +77,6 @@ class TestBuildSite:
         content = (tmp_path / "site" / "trends.html").read_text()
         assert "reports/trends" in content
 
-
     def test_trend_data_copied_when_history_exists(self, tmp_path: Path, monkeypatch) -> None:
         monkeypatch.chdir(tmp_path)
         trends = tmp_path / "reports" / "trends"
