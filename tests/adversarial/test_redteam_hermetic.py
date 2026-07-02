@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from sut.agent import AgentResponse
 
 from sut.agent import _load_members
-from tests.adversarial.conftest import run_probe
+from tests.adversarial.conftest import ADVERSARIAL_SUMMARY, run_probe
 
 _MEMBERS = _load_members()
 
@@ -118,7 +118,7 @@ def _all_probes() -> list[AdversarialProbe]:
 @pytest.fixture(scope="session")
 def vulnerability_summary() -> dict[str, tuple[str, str]]:
     """Session-scoped accumulator for the DEFENDED/BREACHED summary table."""
-    return {}
+    return ADVERSARIAL_SUMMARY
 
 
 @pytest.mark.parametrize("probe", _all_probes(), ids=_probe_id)
@@ -195,8 +195,6 @@ def test_print_vulnerability_summary(
 
     from pathlib import Path
 
-    from verity.security_report import build_security_summary, write_security_summary
-
     all_probes = load_probes(Path("datasets/adversarial/probes.yaml"))
     probes = {p.id: p for p in all_probes}
 
@@ -219,8 +217,6 @@ def test_print_vulnerability_summary(
     print("-" * 68)
     print(f"  Total: {defended} DEFENDED  |  {breached} BREACHED")
 
-    summary = build_security_summary(vulnerability_summary, all_probes)
-    write_security_summary(summary)
     print("=" * 68 + "\n")
 
 
