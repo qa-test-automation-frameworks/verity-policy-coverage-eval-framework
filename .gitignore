@@ -30,6 +30,7 @@ uv.lock.bak
 
 # Testing
 .pytest_cache/
+.hypothesis/
 htmlcov/
 .coverage
 coverage.xml
