@@ -4,6 +4,30 @@ This guide covers the four most common extension points: adding a provider, expa
 
 ---
 
+## Extension Contracts
+
+The sections below are how-tos; this section states the actual contract each extension point
+must satisfy — the minimum shape the rest of the framework depends on, independent of any one
+example. `src/verity/` is framework-stable (these contracts apply); `src/sut/` is the demo
+application these contracts are exercised against, not itself an extension point.
+
+| Extension point | Contract | Enforced by |
+|---|---|---|
+| **Provider** | A `Provider` enum member with a `_PROVIDER_DEFAULTS` entry (`default_model`, `litellm_prefix`, `litellm_model`, `api_base`) in `src/verity/config.py`, plus an `<name>_api_key` / `<name>_api_base` field pair on `Settings`. `resolve_provider()` must return a valid LiteLLM model string for it. | `tests/unit/test_config.py`; any live call routes through `LLMProvider`/LiteLLM, so a malformed entry fails on first live call. |
+| **Golden dataset case** | A `GoldenCase` (`src/verity/golden.py`) — `id` unique, `query` non-empty, and enough of `must_contain`/`must_not_contain`/`expected_citations`/`expected_tool`/`semantic_metrics` set that at least one checker in `src/verity/checks.py` has something to assert against. | `verity.golden.load_golden()` validates via Pydantic at load time; `tests/deterministic/` and `tests/semantic/` parametrize over every loaded case, so a schema violation fails collection. |
+| **Retrieval benchmark** | A `RetrievalBenchmark` (`src/verity/retrieval_eval.py`) — `case_id`, `query`, `expected_sources`, and `min_source_precision` in `[0, 1]`. | `tests/deterministic/test_retrieval_benchmark.py` parametrizes over every loaded benchmark. |
+| **Adversarial probe** | An `AdversarialProbe` (`src/verity/adversarial.py`) with `category`, `prompt`, `defense`, and `expected_outcome` (`defended` or `breached` — both are valid, seeded-defect probes are expected to report `breached`). | `tests/adversarial/test_redteam_hermetic.py` parametrizes over every loaded probe. |
+| **Semantic evaluator** | A `make_<metric>(judge) -> Metric` factory in `src/verity/metrics/` returning an object with `.measure(test_case)` (DeepEval) or `.single_turn_score(sample)` (RAGAS), plus a module-level `THRESHOLD_<METRIC>` constant. Callers compare the returned score against that constant directly — the factory itself does not gate. | No automated contract test today; wiring it into a `tests/semantic/test_*.py` file following the existing pattern is the de facto verification. |
+| **Report artifact** | A script under `scripts/` exposing a pure `render_*()` function plus a `run()`/`main()` that writes `docs/<name>.md` and, if machine-readable output is needed, `reports/<name>/<name>.json`. Must run hermetically (no live API calls) so it can be added to the PR gate's evidence-smoke step. | `scripts/check_module_coverage.py` and the PR gate's "Hermetic Tier-2/3 evidence gate" step are examples of running a report script as a CI assertion, not just a doc generator. |
+
+None of these contracts are enforced by a `Protocol`/ABC today — they're structural (duck-typed)
+and checked indirectly by the tests above running the concrete implementations. If you're adding
+a new instance of an existing extension point (a provider, a golden case, a benchmark, a probe),
+the parametrized test suites already validate it as soon as it's loaded. If you're adding a new
+*kind* of extension point not listed here, add a row to this table when you do.
+
+---
+
 ## Adding a Provider
 
 The framework routes all LLM calls through `src/verity/providers.py` via LiteLLM. To use a different model or provider:
