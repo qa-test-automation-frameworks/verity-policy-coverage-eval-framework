@@ -7,7 +7,7 @@ import logging
 import pytest
 
 from sut.guardrails import check_input, log_member_context, scrub_output
-from verity.checks import scan_pii
+from verity.checks import scan_log_pii, scan_pii
 
 
 class TestInputGuardrail:
@@ -87,10 +87,11 @@ class TestPIILogLeak:
         member = {"member_id": "MBR-001", "name": "Alice Hartwell", "dob": "1985-03-22"}
         with caplog.at_level(logging.DEBUG, logger="sut.guardrails"):
             log_member_context(member)
-        assert any("Alice Hartwell" in r.message for r in caplog.records), (
+        findings = scan_log_pii([r.message for r in caplog.records], member_name="Alice Hartwell")
+        assert any("name:Alice Hartwell" in hit for hit in findings), (
             "Expected raw member name in DEBUG log — seeded defect #8 leak site should emit PII"
         )
-        assert any("MBR-001" in r.message for r in caplog.records), (
+        assert any("member-id:MBR-001" in hit for hit in findings), (
             "Expected raw member_id in DEBUG log"
         )
 
@@ -98,7 +99,8 @@ class TestPIILogLeak:
         member = {"member_id": "MBR-002", "name": "Bob Torres", "dob": "1972-11-08"}
         with caplog.at_level(logging.DEBUG, logger="sut.guardrails"):
             log_member_context(member)
-        assert any("1972-11-08" in r.message for r in caplog.records), (
+        findings = scan_log_pii([r.message for r in caplog.records])
+        assert any("date-of-birth:1972-11-08" in hit for hit in findings), (
             "Expected raw DOB in DEBUG log — confirms log-level PII exposure"
         )
 

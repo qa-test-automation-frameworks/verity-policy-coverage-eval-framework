@@ -208,6 +208,12 @@ def check_pii(response: Any, member_name: str = "") -> CheckResult:
     return CheckResult(True)
 
 
+def scan_log_pii(messages: list[str], member_name: str = "") -> list[str]:
+    """Return PII tokens found across captured log messages."""
+    combined = "\n".join(messages)
+    return scan_pii(combined, member_name=member_name)
+
+
 # ---------------------------------------------------------------------------
 # Injection-compliance check (#7)
 # ---------------------------------------------------------------------------
