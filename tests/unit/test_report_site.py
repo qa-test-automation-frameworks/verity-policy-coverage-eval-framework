@@ -77,6 +77,18 @@ class TestBuildSite:
         content = (tmp_path / "site" / "trends.html").read_text()
         assert "reports/trends" in content
 
+
+    def test_trend_data_copied_when_history_exists(self, tmp_path: Path, monkeypatch) -> None:
+        monkeypatch.chdir(tmp_path)
+        trends = tmp_path / "reports" / "trends"
+        trends.mkdir(parents=True)
+        (trends / "deterministic.jsonl").write_text(
+            '{"tier":"deterministic","total":1,"passed":1,"failed":0,"pass_rate":1.0,"latency_p95_ms":1.0,"total_cost_usd":0.0}\n'
+        )
+        result = self._make_site(tmp_path / "site")
+        assert result.get("trends.html") is True
+        assert (tmp_path / "site" / "trends-data" / "deterministic.jsonl").exists()
+
     def test_security_placeholder_when_no_summary(self, tmp_path: Path) -> None:
         summary = Path("reports/security/summary.md")
         if summary.exists():
