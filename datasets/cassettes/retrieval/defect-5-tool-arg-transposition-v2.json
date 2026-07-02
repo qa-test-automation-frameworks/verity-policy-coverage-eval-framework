@@ -1,0 +1,14 @@
+[
+  {
+    "text": "## §1. Overview\n\n| Parameter | Value |\n|-----------|-------|\n| Annual Deductible (individual) | $2,000 |\n| Out-of-Pocket Maximum (individual) | $6,000 |\n| Coinsurance (after deductible) | 20% member / 80% plan |",
+    "source": "silver.md",
+    "section": "§1. Overview",
+    "chunk_id": "fx-d5-silver-params-01-v2"
+  },
+  {
+    "text": "## §5. Lab and Imaging\n\n- **Diagnostic labs:** 20% coinsurance after deductible (in-network)\n- **X-rays:** $40 copay (in-network)\n- **MRI / CT / PET:** 20% coinsurance after deductible; prior authorization required",
+    "source": "silver.md",
+    "section": "§5. Lab and Imaging",
+    "chunk_id": "fx-d5-silver-lab-01-v2"
+  }
+]

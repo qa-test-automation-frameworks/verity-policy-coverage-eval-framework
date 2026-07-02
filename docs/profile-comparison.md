@@ -46,7 +46,15 @@ Structural comparison of the two `sut_profile` settings across every golden case
 | `ctrl-network-tier-oon-cost` | yes | no | yes |
 | `ctrl-silver-deductible-exact-boundary` | yes | no | yes |
 | `ctrl-bronze-oop-exact-boundary` | yes | no | yes |
+| `defect-1-bariatric-bronze-hallucination-v2` | yes | no | yes |
+| `defect-2-silver-premium-stale-v2` | yes | no | yes |
+| `defect-3-silver-multihop-cost-v2` | yes | no | yes |
+| `defect-4-urgent-care-contradiction-v2` | yes | no | yes |
+| `defect-5-tool-arg-transposition-v2` | yes | no | yes |
+| `defect-6-refusal-breach-v2` | yes | no | yes |
+| `defect-7-prompt-injection-v2` | yes | no | yes |
+| `defect-8-pii-leakage-v2` | yes | no | yes |
 
-**Summary:** 33/33 cases carry member PII in the seeded prompt; 0/33 carry it in the clean prompt.
+**Summary:** 41/41 cases carry member PII in the seeded prompt; 0/41 carry it in the clean prompt.
 
 _Regenerate: `make profile-comparison`._

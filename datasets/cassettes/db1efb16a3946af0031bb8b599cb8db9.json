@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Is urgent care cheaper on my Gold plan compared to Silver?",
+  "model": "openai/glm-4.5",
+  "content": "Yes \u2014 urgent care is cheaper on your Gold plan compared to Silver. Gold's enhanced benefits mean you'll pay less for urgent care visits than on the Silver tier. Use in-network urgent care centers to take full advantage of Gold's reduced cost-sharing.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 126,
+    "completion_tokens": 42,
+    "total_tokens": 168
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Does my Bronze plan pay for bariatric surgery?",
+  "model": "openai/glm-4.5",
+  "content": "Yes \u2014 your Bronze plan pays for bariatric surgery (gastric bypass) as a covered surgical benefit under \u00a73.4 when medically necessary. Standard deductible and coinsurance apply. Confirm prior-authorization requirements with your provider before scheduling.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 128,
+    "completion_tokens": 48,
+    "total_tokens": 176
+  }
+}
