@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report report-allure report-site demo record docker-test clean mutation-test
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison report-allure report-site demo record docker-test clean mutation-test
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -94,6 +94,10 @@ defects-report:
 	@echo "Defects-caught matrix — hermetic replay for defects 5-8; semantic ingestion when available"
 	PYTHONPATH=src:. uv run python scripts/defects_report.py
 	@echo "Report written to docs/defects-caught.md"
+
+profile-comparison:
+	@echo "Seeded vs. clean SUT profile comparison — hermetic, no API key required"
+	PYTHONPATH=src:. uv run python scripts/profile_comparison.py
 
 report-allure:
 	@echo "Tier 1+3 hermetic suites with Allure results capture (no API key required)"

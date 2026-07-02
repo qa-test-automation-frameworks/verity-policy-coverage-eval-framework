@@ -104,6 +104,7 @@ make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1 on GLM-4.5 l
 | Architecture | Component walk-through, data flow, CI table | [docs/architecture.md](docs/architecture.md) |
 | ADRs | 5 design decisions with context and alternatives | [docs/adr/](docs/adr/) |
 | Extension guide | How to add providers, datasets, evaluators, and reports | [docs/extending.md](docs/extending.md) |
+| Profile comparison | Seeded vs. clean SUT profile — structural diff across every golden case, hermetic | [docs/profile-comparison.md](docs/profile-comparison.md) |
 
 The full report site (Allure + defects-caught landing + calibration + cost) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
 
