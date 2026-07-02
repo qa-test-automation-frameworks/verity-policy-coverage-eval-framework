@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from sut.retriever import Chunk
-from sut.review_triggers import ReviewQueue, any_requires_human_review, can_finalize_response, cross_tier_cost_parity_anomaly
+from sut.review_triggers import (
+    ReviewQueue,
+    any_requires_human_review,
+    can_finalize_response,
+    cross_tier_cost_parity_anomaly,
+)
 
 
 def test_requires_human_review_for_gold_silver_urgent_care_anomaly() -> None:
@@ -93,7 +98,14 @@ def test_any_requires_human_review_false_when_no_trigger_fires() -> None:
 
 
 def test_review_queue_blocks_finalize_until_approved() -> None:
-    chunks = [Chunk(text="In-network urgent care: $75 copay", source="gold.md", section="§3.7", chunk_id="c1")]
+    chunks = [
+        Chunk(
+            text="In-network urgent care: $75 copay",
+            source="gold.md",
+            section="§3.7",
+            chunk_id="c1",
+        )
+    ]
     queue = ReviewQueue()
     item = queue.submit("Is Gold cheaper?", "Gold and Silver match at $75.", chunks)
 

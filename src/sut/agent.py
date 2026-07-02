@@ -23,8 +23,8 @@ from typing import Any
 import yaml
 from pydantic import BaseModel
 
-from sut.citations import resolve_citations
 from sut.auth import member_token_valid
+from sut.citations import resolve_citations
 from sut.guardrails import REFUSAL_MESSAGE, check_input, log_member_context, scrub_output
 from sut.retriever import Chunk, PolicyRetriever, Retriever
 from sut.review_triggers import any_requires_human_review

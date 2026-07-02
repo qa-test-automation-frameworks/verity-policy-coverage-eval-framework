@@ -477,7 +477,8 @@ def render_markdown(
         "|--------|---------|",
         "| ✅ CAUGHT | Hermetically proven: cassette replay confirms the defect is detected |",
         "| ✅ VERIFIED | Confirmed by a live semantic run (`reports/semantic/results.json`) |",
-        "| 🟡 NOT REPRODUCED | Live semantic run passed the quality threshold; seeded behavior did not reproduce for this provider/model pairing |",
+        "| 🟡 NOT REPRODUCED | Live semantic run passed the quality threshold; "
+        "seeded behavior did not reproduce for this provider/model pairing |",
         "| ⬜ COVERED | Ground-truth + metric threshold established; requires API key |",
         "| ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |",
         "",

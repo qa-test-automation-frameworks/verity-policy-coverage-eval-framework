@@ -39,7 +39,6 @@ from verity.calibration import (  # noqa: E402
     compute_agreement,
     compute_self_bias,
     load_calibration,
-    parse_judge_score,
     score_all,
 )
 from verity.cassettes import CassetteLibrary, CassettePayload, request_key  # noqa: E402
@@ -53,7 +52,7 @@ _DEFAULT_REPORT_PATH = Path("docs/calibration-report.md")
 _REPORTS_DIR = Path("reports/calibration")
 
 # ---------------------------------------------------------------------------
-# Authored judge scores (integer 0–10).
+# Authored judge scores (integer 0-10).
 # Designed to show ~97% raw agreement with human labels and a +0.056
 # self-preference delta (GLM outputs scored ~0.056 higher than human).
 # ---------------------------------------------------------------------------
@@ -256,9 +255,9 @@ def render_report(
     mode: str,
 ) -> str:
     """Render a markdown calibration report."""
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
 
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    now = datetime.now(UTC).strftime("%Y-%m-%d")
     is_synthetic = mode != f"live (recorded to {_CALIB_CASSETTE_DIR})"
     lines = ["# Judge Calibration Report", ""]
     if is_synthetic:
@@ -289,7 +288,7 @@ def render_report(
         "|--------|-------|",
         f"| Raw agreement | **{agreement.raw_agreement:.1%}** |",
         f"| Cohen's kappa | **{agreement.cohen_kappa:.3f}** |",
-        f"| MAE (0–1 scale) | **{agreement.mae:.3f}** |",
+        f"| MAE (0-1 scale) | **{agreement.mae:.3f}** |",
         f"| N | {agreement.n} |",
         "",
         "### Per-metric breakdown",
@@ -324,7 +323,7 @@ def render_report(
         f"from its own model family ({bias.judge_family.upper()}) compared to outputs "
         "from other families.",
         "",
-        "| Family | N | Mean Δ (judge − human) |",
+        "| Family | N | Mean Δ (judge - human) |",
         "|--------|---|------------------------|",
         f"| {bias.judge_family.upper()} (own family) | {bias.n_own} "
         f"| **{bias.mean_delta_own_family:+.3f}** |",
@@ -333,7 +332,10 @@ def render_report(
         "",
     ]
     if abs(bias.self_preference_delta) < 0.05:
-        bias_interp = "Negligible self-preference bias (|delta| < 0.05). Thresholds are not materially affected."
+        bias_interp = (
+            "Negligible self-preference bias (|delta| < 0.05). "
+            "Thresholds are not materially affected."
+        )
     elif abs(bias.self_preference_delta) < 0.10:
         bias_interp = (
             f"Moderate self-preference bias (delta = {bias.self_preference_delta:+.3f}). "
@@ -358,8 +360,7 @@ def render_report(
             "synthetic methodology demonstration; they are not yet backed by a measured "
             "live judge distribution:",
             "",
-            f"- **Raw agreement ≥ 85%**: this synthetic run shows "
-            f"{agreement.raw_agreement:.1%}.",
+            f"- **Raw agreement ≥ 85%**: this synthetic run shows {agreement.raw_agreement:.1%}.",
             f"- **Cohen's kappa ≥ 0.60** (substantial agreement): synthetic kappa = "
             f"{agreement.cohen_kappa:.3f}.",
             f"- **Self-preference delta**: {bias.self_preference_delta:+.3f} — "
@@ -396,7 +397,7 @@ def render_report(
         "| Case ID | Metric | Family | Human | Judge | Δ | Agreement |",
         "|---------|--------|--------|-------|-------|---|-----------|",
     ]
-    for case, judge_score in zip(cases, judge_scores):
+    for case, judge_score in zip(cases, judge_scores, strict=True):
         delta = judge_score - case.human_score
         judge_pass = judge_score >= 0.5
         agree = "✓" if judge_pass == case.human_pass else "✗"
@@ -517,7 +518,7 @@ def main() -> None:
         },
         "per_case": [
             {"id": c.id, "human": c.human_score, "judge": round(s, 3)}
-            for c, s in zip(cases, judge_scores)
+            for c, s in zip(cases, judge_scores, strict=True)
         ],
     }
     (_REPORTS_DIR / f"calibration-{ts}.json").write_text(json.dumps(raw, indent=2))

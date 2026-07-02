@@ -32,7 +32,9 @@ def test_agent_blocks_member_request_without_valid_token() -> None:
     )
     provider = MagicMock()
     provider.accumulator = RunAccumulator()
-    agent = CoverageAgent(settings=settings, retriever=FixtureRetriever("ctrl-gold-deductible"), provider=provider)
+    agent = CoverageAgent(
+        settings=settings, retriever=FixtureRetriever("ctrl-gold-deductible"), provider=provider
+    )
 
     response = agent.answer("What is my deductible?", member_id="MBR-001", member_token="wrong")
 

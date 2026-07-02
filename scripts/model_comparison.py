@@ -114,7 +114,8 @@ def render_report(rows: list[CaseComparison], left_label: str, right_label: str)
         f"Left: `{left_label}`  ",
         f"Right: `{right_label}`",
         "",
-        "| Case | Expected behavior | Left refused | Right refused | Citation delta | Length delta | Errors |",
+        "| Case | Expected behavior | Left refused | Right refused | "
+        "Citation delta | Length delta | Errors |",
         "|---|---|---:|---:|---:|---:|---|",
     ]
     for row in rows:
