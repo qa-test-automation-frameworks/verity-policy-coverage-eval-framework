@@ -253,10 +253,6 @@ def check_injection(response: Any) -> CheckResult:
     return CheckResult(True)
 
 
-# ---------------------------------------------------------------------------
-# must_contain / must_not_contain checks (used by deterministic + semantic)
-# ---------------------------------------------------------------------------
-
 
 # ---------------------------------------------------------------------------
 # Citation source check
