@@ -37,7 +37,7 @@ from sut.tools.coverage_calculator import COVERAGE_CALCULATOR_SCHEMA, run_covera
 from verity.config import Settings, get_settings
 from verity.conversation import validate_conversation
 from verity.cost import RunAccumulator
-from verity.providers import LLMProvider
+from verity.providers import CompletionResult, LLMProvider
 from verity.tracing import hash_identifier, trace_id_hex, traced
 
 logger = logging.getLogger(__name__)
@@ -277,6 +277,155 @@ class CoverageAgent:
             raise RuntimeError("CoverageAgent.retriever is None after __post_init__")
         return self.retriever
 
+    def _input_guardrail_refusal(self, query: str) -> AgentResponse | None:
+        """Return a refusal response if the input guardrail blocks the query, else None."""
+        refused, refusal_reason = check_input(query)
+        if not refused:
+            return None
+        return AgentResponse(
+            answer=REFUSAL_MESSAGE,
+            citations=[],
+            tool_invocations=[],
+            refused=True,
+            refusal_reason=refusal_reason,
+            requires_human_review=False,
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+            estimated_cost_usd=0.0,
+        )
+
+    def _handle_tool_call_round(
+        self,
+        *,
+        first_result: CompletionResult,
+        messages: list[dict[str, Any]],
+        is_clean: bool,
+        start_index: int,
+        trace_id: str,
+    ) -> AgentResponse | tuple[CompletionResult, list[ToolInvocation]]:
+        """Run the single supported round of tool calls, if the first-turn
+        result requested any, and the follow-up LLM call with their results.
+
+        Mutates `messages` in place (appends the assistant tool-call message
+        and tool-result messages) to build the exact conversation the second
+        LLM call sees. Returns an AgentResponse directly for any failure path
+        (unknown tool, malformed args, tool error, invalid conversation
+        structure, provider failure, or an unsupported second round of tool
+        calls) so the caller can return it immediately; otherwise returns the
+        final CompletionResult and the list of tool invocations made.
+
+        `result` is `first_result` unchanged when no tool calls were made.
+        """
+        result = first_result
+        tool_invocations: list[ToolInvocation] = []
+
+        if not result.tool_calls:
+            return result, tool_invocations
+
+        tool_results_msgs: list[dict[str, Any]] = []
+        messages.append(
+            {
+                "role": "assistant",
+                "content": result.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in result.tool_calls
+                ],
+            }
+        )
+
+        for tc in result.tool_calls:
+            fn_name = tc.function.name
+
+            if fn_name != "coverage_calculator":
+                logger.warning("Blocked call to unknown tool: %s", fn_name)
+                return self._safe_failure_response(
+                    category="unknown_tool",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
+
+            try:
+                args: dict[str, Any] = json.loads(tc.function.arguments)
+            except json.JSONDecodeError:
+                logger.exception("Malformed tool-call arguments for %s", fn_name)
+                return self._safe_failure_response(
+                    category="tool_unavailable",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
+
+            with traced("tool.coverage_calculator"):
+                try:
+                    tool_result = run_coverage_calculator(args)
+                except Exception:
+                    logger.exception("Coverage tool call failed")
+                    return self._safe_failure_response(
+                        category="tool_unavailable",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+
+            tool_invocations.append(
+                ToolInvocation(tool_name=fn_name, args=args, result=tool_result)
+            )
+            tool_results_msgs.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps(tool_result),
+                }
+            )
+
+        messages.extend(tool_results_msgs)
+
+        conv_check = validate_conversation(messages)
+        if not conv_check.passed:
+            logger.warning("Conversation structure check failed: %s", conv_check.message)
+            if is_clean:
+                return self._safe_failure_response(
+                    category="invalid_conversation_structure",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
+
+        try:
+            result = self._llm_provider.complete(messages=messages, label="agent-second-turn")
+        except Exception:
+            logger.exception("Provider call failed after tool handling")
+            return self._safe_failure_response(
+                category="provider_unavailable",
+                start_index=start_index,
+                tool_invocations=tool_invocations,
+                trace_id=trace_id,
+            )
+
+        # This agent only handles one round of tool calls. A second round in
+        # the post-tool response is unsupported — reject it rather than
+        # silently using its (unvalidated) content as the final answer.
+        if result.tool_calls:
+            logger.warning("Second-turn tool_calls ignored; treating as tool_unavailable")
+            return self._safe_failure_response(
+                category="tool_unavailable",
+                start_index=start_index,
+                tool_invocations=tool_invocations,
+                trace_id=trace_id,
+            )
+
+        return result, tool_invocations
+
     def _safe_failure_response(
         self,
         *,
@@ -328,20 +477,9 @@ class CoverageAgent:
             )
 
         # 1. Input guardrail
-        refused, refusal_reason = check_input(query)
-        if refused:
-            return AgentResponse(
-                answer=REFUSAL_MESSAGE,
-                citations=[],
-                tool_invocations=[],
-                refused=True,
-                refusal_reason=refusal_reason,
-                requires_human_review=False,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                estimated_cost_usd=0.0,
-            )
+        guardrail_refusal = self._input_guardrail_refusal(query)
+        if guardrail_refusal is not None:
+            return guardrail_refusal
 
         with traced(
             "agent.answer", member_id_hash=hash_identifier(member_id), query_len=len(query)
@@ -383,115 +521,17 @@ class CoverageAgent:
                     category="provider_unavailable", start_index=start_index, trace_id=trace_id
                 )
 
-            tool_invocations: list[ToolInvocation] = []
-
-            # 6. Handle tool calls (single round)
-            if result.tool_calls:
-                tool_results_msgs: list[dict[str, Any]] = []
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": result.content or "",
-                        "tool_calls": [
-                            {
-                                "id": tc.id,
-                                "type": "function",
-                                "function": {
-                                    "name": tc.function.name,
-                                    "arguments": tc.function.arguments,
-                                },
-                            }
-                            for tc in result.tool_calls
-                        ],
-                    }
-                )
-
-                for tc in result.tool_calls:
-                    fn_name = tc.function.name
-
-                    if fn_name != "coverage_calculator":
-                        logger.warning("Blocked call to unknown tool: %s", fn_name)
-                        return self._safe_failure_response(
-                            category="unknown_tool",
-                            start_index=start_index,
-                            tool_invocations=tool_invocations,
-                            trace_id=trace_id,
-                        )
-
-                    try:
-                        args: dict[str, Any] = json.loads(tc.function.arguments)
-                    except json.JSONDecodeError:
-                        logger.exception("Malformed tool-call arguments for %s", fn_name)
-                        return self._safe_failure_response(
-                            category="tool_unavailable",
-                            start_index=start_index,
-                            tool_invocations=tool_invocations,
-                            trace_id=trace_id,
-                        )
-
-                    with traced("tool.coverage_calculator"):
-                        try:
-                            tool_result = run_coverage_calculator(args)
-                        except Exception:
-                            logger.exception("Coverage tool call failed")
-                            return self._safe_failure_response(
-                                category="tool_unavailable",
-                                start_index=start_index,
-                                tool_invocations=tool_invocations,
-                                trace_id=trace_id,
-                            )
-
-                    tool_invocations.append(
-                        ToolInvocation(tool_name=fn_name, args=args, result=tool_result)
-                    )
-                    tool_results_msgs.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tc.id,
-                            "content": json.dumps(tool_result),
-                        }
-                    )
-
-                messages.extend(tool_results_msgs)
-
-                conv_check = validate_conversation(messages)
-                if not conv_check.passed:
-                    logger.warning("Conversation structure check failed: %s", conv_check.message)
-                    if is_clean:
-                        return self._safe_failure_response(
-                            category="invalid_conversation_structure",
-                            start_index=start_index,
-                            tool_invocations=tool_invocations,
-                            trace_id=trace_id,
-                        )
-
-                # 7. Second LLM call with tool results
-                try:
-                    result = self._llm_provider.complete(
-                        messages=messages,
-                        label="agent-second-turn",
-                    )
-                except Exception:
-                    logger.exception("Provider call failed after tool handling")
-                    return self._safe_failure_response(
-                        category="provider_unavailable",
-                        start_index=start_index,
-                        tool_invocations=tool_invocations,
-                        trace_id=trace_id,
-                    )
-
-                # This agent only handles one round of tool calls. A second
-                # round in the post-tool response is unsupported — reject it
-                # rather than silently using its (unvalidated) content as the
-                # final answer.
-                if result.tool_calls:
-                    logger.warning("Second-turn tool_calls ignored; treating as tool_unavailable")
-                    return self._safe_failure_response(
-                        category="tool_unavailable",
-                        start_index=start_index,
-                        tool_invocations=tool_invocations,
-                        trace_id=trace_id,
-                    )
+            # 6-7. Handle tool calls (single round) and the follow-up LLM call
+            tool_round = self._handle_tool_call_round(
+                first_result=result,
+                messages=messages,
+                is_clean=is_clean,
+                start_index=start_index,
+                trace_id=trace_id,
+            )
+            if isinstance(tool_round, AgentResponse):
+                return tool_round
+            result, tool_invocations = tool_round
 
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
