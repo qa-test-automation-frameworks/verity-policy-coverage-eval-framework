@@ -44,3 +44,64 @@ benchmarks:
     expected_sources: [definitions.md, exclusions.md]
     required_terms: ["Covered Service", "excluded"]
     min_source_precision: 1.0
+
+  - case_id: ctrl-silver-specialist-copay
+    query: "What is the specialist visit copay for the Silver plan?"
+    expected_sources: [silver.md]
+    required_terms: ["$60 copay", "Specialist Visits"]
+    min_source_precision: 1.0
+
+  - case_id: ctrl-gold-deductible
+    query: "What is the individual annual deductible for the Gold plan?"
+    expected_sources: [gold.md]
+    required_terms: ["Annual Deductible", "$750"]
+    min_source_precision: 0.5
+
+  - case_id: ctrl-telehealth-copay
+    query: "What does a telehealth primary care visit cost?"
+    expected_sources: [amendments.md]
+    required_terms: ["$0 copay", "telehealth"]
+    min_source_precision: 1.0
+
+  - case_id: ctrl-bronze-primary-care-first-three
+    query: "Do Bronze primary care visits apply to the deductible for the first three visits?"
+    expected_sources: [bronze.md]
+    required_terms: ["deductible waived", "first 3 visits"]
+    min_source_precision: 1.0
+
+  - case_id: ctrl-home-health-pa-limit
+    query: "Are home health aide visits limited, and do home health services require prior authorization?"
+    expected_sources: [exclusions.md]
+    required_terms: ["60 visits", "Prior Authorization"]
+    min_source_precision: 0.66
+
+  - case_id: ctrl-required-docs-oon-claim
+    query: "What paperwork do I need to submit for an out-of-network claim?"
+    expected_sources: [administration.md]
+    required_terms: ["Itemized bill", "member claim reimbursement form"]
+    min_source_precision: 1.0
+
+  - case_id: ctrl-network-tier-oon-cost
+    query: "What extra costs apply if I see an out-of-network provider?"
+    expected_sources: [administration.md]
+    required_terms: ["Out-of-Network", "allowed amount"]
+    min_source_precision: 0.5
+
+  - case_id: ctrl-waiting-period-orthodontia
+    query: "If I buy the orthodontia rider today, when does braces coverage start?"
+    expected_sources: [administration.md]
+    required_terms: ["12-month waiting period", "Orthodontia Rider"]
+    min_source_precision: 1.0
+
+  - case_id: ctrl-plan-year-reset
+    query: "I hit my Silver deductible in November — does that carry over into next year?"
+    expected_sources: [administration.md]
+    required_terms: ["reset to zero", "January 1"]
+    min_source_precision: 0.33
+
+  - case_id: ctrl-bronze-oop-exact-boundary
+    query: "I'm at $7,600 of my $8,000 Bronze out-of-pocket max, deductible met. What do I owe for a $1,000 claim?"
+    expected_sources: [bronze.md]
+    required_terms: ["Out-of-Pocket Maximum", "$8,000"]
+    min_source_precision: 0.33
+

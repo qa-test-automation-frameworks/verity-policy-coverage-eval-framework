@@ -9,10 +9,40 @@
       "source": "exclusions.md"
     }
   ],
+  "ctrl-bronze-oop-exact-boundary": [
+    {
+      "chunk_id": "4ed3f3160656f4ef",
+      "source": "bronze.md"
+    },
+    {
+      "chunk_id": "695729deb77bfb61",
+      "source": "definitions.md"
+    },
+    {
+      "chunk_id": "58d4a981922daf1d",
+      "source": "administration.md"
+    }
+  ],
+  "ctrl-bronze-primary-care-first-three": [
+    {
+      "chunk_id": "3c06405d31d75f18",
+      "source": "bronze.md"
+    }
+  ],
   "ctrl-dental-cleaning-exclusion": [
     {
       "chunk_id": "98c149eae74bb855",
       "source": "administration.md"
+    }
+  ],
+  "ctrl-gold-deductible": [
+    {
+      "chunk_id": "42e61873969f59bb",
+      "source": "gold.md"
+    },
+    {
+      "chunk_id": "9f64c7621f3fd332",
+      "source": "definitions.md"
     }
   ],
   "ctrl-gold-oop-amendment": [
@@ -39,6 +69,20 @@
       "source": "exclusions.md"
     }
   ],
+  "ctrl-home-health-pa-limit": [
+    {
+      "chunk_id": "45e85d55c470cbe6",
+      "source": "exclusions.md"
+    },
+    {
+      "chunk_id": "5d8dd0261313d35b",
+      "source": "exclusions.md"
+    },
+    {
+      "chunk_id": "bef5655dcc275262",
+      "source": "definitions.md"
+    }
+  ],
   "ctrl-missing-acupuncture-policy": [
     {
       "chunk_id": "128bf5e64c42b021",
@@ -51,16 +95,72 @@
     {
       "chunk_id": "aa8fb39e547bd431",
       "source": "silver.md"
+    }
+  ],
+  "ctrl-network-tier-oon-cost": [
+    {
+      "chunk_id": "25eee3798a769b56",
+      "source": "administration.md"
     },
     {
-      "chunk_id": "c303c9671b041ff7",
-      "source": "exclusions.md"
+      "chunk_id": "bef5655dcc275262",
+      "source": "definitions.md"
+    }
+  ],
+  "ctrl-plan-year-reset": [
+    {
+      "chunk_id": "58d4a981922daf1d",
+      "source": "administration.md"
+    },
+    {
+      "chunk_id": "b6fcb5b0fc595e78",
+      "source": "silver.md"
+    },
+    {
+      "chunk_id": "82e88679ee5c5f8c",
+      "source": "silver.md"
+    }
+  ],
+  "ctrl-required-docs-oon-claim": [
+    {
+      "chunk_id": "4822e899cde6dd4a",
+      "source": "administration.md"
     }
   ],
   "ctrl-silver-physical-therapy-limit": [
     {
       "chunk_id": "4f03e8e36500c946",
       "source": "silver.md"
+    }
+  ],
+  "ctrl-silver-specialist-copay": [
+    {
+      "chunk_id": "8d6c4363fd45d05a",
+      "source": "silver.md"
+    },
+    {
+      "chunk_id": "94caca6a377dfc6b",
+      "source": "silver.md"
+    },
+    {
+      "chunk_id": "946a304ab8b27896",
+      "source": "silver.md"
+    }
+  ],
+  "ctrl-telehealth-copay": [
+    {
+      "chunk_id": "e0de6b6667e219be",
+      "source": "amendments.md"
+    }
+  ],
+  "ctrl-waiting-period-orthodontia": [
+    {
+      "chunk_id": "5fa482a2a0c5f4a6",
+      "source": "administration.md"
+    },
+    {
+      "chunk_id": "98c149eae74bb855",
+      "source": "administration.md"
     }
   ]
 }
