@@ -39,6 +39,7 @@ dev = [
     "types-PyYAML>=6.0.12",
     "pip-audit>=2.7.0",
     "bandit>=1.7.0",
+    "hypothesis>=6.100.0",
 ]
 semantic = [
     "deepeval>=1.5.0",
