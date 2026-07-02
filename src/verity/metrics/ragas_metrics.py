@@ -60,6 +60,16 @@ def ensure_ragas_compat() -> None:
 
 
 # Per-metric thresholds
+#
+# THRESHOLD_FAITHFULNESS is flagged REVIEW in the last calibration run
+# (docs/calibration-report.md: 75% raw agreement, MAE 0.238, below the
+# project's 85%-agreement / 0.20-MAE bar for every other calibrated metric).
+# The committed live semantic run's clean-control failures are concentrated
+# on this exact metric (see the Control-Case Results section of
+# docs/defects-caught.md), consistent with the calibration finding rather
+# than an unrelated anomaly. Re-running `make calibrate-live` against a
+# GLM-4.5 judge (the ADR-0001 default) is the next step before trusting this
+# threshold as tightly as the others below.
 THRESHOLD_FAITHFULNESS: float = 0.7  # defects #1, #2, #7 fall below
 THRESHOLD_CONTEXT_PRECISION: float = 0.6
 THRESHOLD_CONTEXT_RECALL: float = 0.6
