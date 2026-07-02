@@ -295,10 +295,21 @@ def check_citations(
     return CheckResult(True)
 
 
+_THOUSANDS_SEP_RE = re.compile(r"(?<=\d),(?=\d{3}(?:\D|$))")
+
+
+def _normalize_numerics(text: str) -> str:
+    """Strip thousands-separator commas from digit runs (e.g. '1,660' -> '1660')
+    so a must_contain/must_not_contain token matches regardless of comma formatting."""
+    return _THOUSANDS_SEP_RE.sub("", text)
+
+
 def check_must_contain(case: GoldenCase, response: Any) -> CheckResult:
     """Verify all must_contain tokens appear (case-insensitive) in the answer."""
-    answer = str(getattr(response, "answer", "")).lower()
-    missing = [token for token in case.must_contain if token.lower() not in answer]
+    answer = _normalize_numerics(str(getattr(response, "answer", "")).lower())
+    missing = [
+        token for token in case.must_contain if _normalize_numerics(token.lower()) not in answer
+    ]
     if missing:
         return CheckResult(False, f"Answer missing required tokens: {missing}")
     return CheckResult(True)
@@ -306,8 +317,10 @@ def check_must_contain(case: GoldenCase, response: Any) -> CheckResult:
 
 def check_must_not_contain(case: GoldenCase, response: Any) -> CheckResult:
     """Verify none of the must_not_contain tokens appear (case-insensitive) in the answer."""
-    answer = str(getattr(response, "answer", "")).lower()
-    found = [token for token in case.must_not_contain if token.lower() in answer]
+    answer = _normalize_numerics(str(getattr(response, "answer", "")).lower())
+    found = [
+        token for token in case.must_not_contain if _normalize_numerics(token.lower()) in answer
+    ]
     if found:
         return CheckResult(False, f"Answer contains forbidden tokens: {found}")
     return CheckResult(True)
