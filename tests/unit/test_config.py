@@ -79,6 +79,27 @@ class TestSettings:
             s = Settings(_env_file=None)
         assert s.semantic_samples == 3
 
+    def test_dataset_paths_can_be_overridden(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import warnings
+
+        monkeypatch.setenv("VERITY_DATASETS_DIR", "alternate-datasets")
+        monkeypatch.setenv("VERITY_GOLDEN_DIR", "alternate-golden")
+        monkeypatch.setenv("VERITY_CORPUS_DIR", "alternate-corpus")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            s = Settings(_env_file=None)
+        assert s.datasets_dir == Path("alternate-datasets")
+        assert s.resolved_golden_dir == Path("alternate-golden")
+        assert s.retrieval.corpus_dir == Path("alternate-corpus")
+
+    def test_golden_dir_defaults_under_datasets_dir(self) -> None:
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            s = Settings(_env_file=None, datasets_dir=Path("policy-v2"))
+        assert s.resolved_golden_dir == Path("policy-v2/golden")
+
     def test_retrieval_config_env_file_is_loaded(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
