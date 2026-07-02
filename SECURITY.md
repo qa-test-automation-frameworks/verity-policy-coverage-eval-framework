@@ -13,6 +13,8 @@ This repository contains:
 
 The seeded defects (PII leakage, prompt injection, refusal bypass) are **intentional** and confined to the SUT. They are test targets, not vulnerabilities in the framework itself.
 
+The demonstration SUT does not implement authentication or authorization. Cross-member adversarial probes test whether retrieved context and LLM output stay scoped to the active member; they do not prove caller identity enforcement or RBAC behavior.
+
 ## Reporting a Vulnerability
 
 If you find a genuine security issue in the framework code (not a seeded SUT defect), please open a GitHub issue with the label `security`. For sensitive disclosures, contact the repository owner directly via the email listed in the GitHub profile.
