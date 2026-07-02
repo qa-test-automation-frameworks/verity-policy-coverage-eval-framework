@@ -142,11 +142,22 @@ class TestConversationStructureEnforcement:
                 ),
             ),
         ]
+        # Only the first turn returns tool_calls with duplicate ids (the
+        # structural violation under test); the second turn returns a normal
+        # text answer, matching realistic model behavior and avoiding
+        # collision with the agent's separate second-round-tool-call
+        # rejection safeguard (see test_agent_failure_modes.py).
+        call_count: list[int] = [0]
         mock_provider = MagicMock()
         mock_provider.accumulator = RunAccumulator()
-        mock_provider.complete.return_value = CompletionResult(
-            content="", tool_calls=duplicate_calls
-        )
+
+        def _complete(**kwargs: object) -> CompletionResult:
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return CompletionResult(content="", tool_calls=duplicate_calls)
+            return CompletionResult(content="Your estimated cost is $50.", tool_calls=[])
+
+        mock_provider.complete.side_effect = _complete
 
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
         return agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
