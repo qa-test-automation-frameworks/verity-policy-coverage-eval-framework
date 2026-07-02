@@ -29,6 +29,9 @@ COPY Makefile ./
 # Install the project itself
 RUN uv sync --all-extras
 
+RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
+USER appuser
+
 ENV PYTHONPATH=/app/src
 
 # Default: run Tier-1 checks (no live calls, no API key)

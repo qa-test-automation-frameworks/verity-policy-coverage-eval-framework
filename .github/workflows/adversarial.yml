@@ -9,6 +9,7 @@ on:
 jobs:
   key_check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       has_key: ${{ steps.check.outputs.has_key }}
     steps:
@@ -23,6 +24,7 @@ jobs:
   redteam-hermetic:
     needs: key_check
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
@@ -50,6 +52,7 @@ jobs:
     needs: key_check
     if: needs.key_check.outputs.has_key == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
@@ -88,6 +91,7 @@ jobs:
     needs: key_check
     if: needs.key_check.outputs.has_key == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
