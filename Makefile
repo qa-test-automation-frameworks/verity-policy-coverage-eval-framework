@@ -88,7 +88,6 @@ mutation-test:
 	@echo "Mutation testing — src/sut/tools/coverage_calculator.py (requires: uv sync --extra mutation)"
 	uv run mutmut run || true
 	uv run mutmut results
-	@echo "Spans written to reports/traces/"
 
 defects-report:
 	@echo "Defects-caught matrix — hermetic replay for defects 5-8; semantic ingestion when available"
