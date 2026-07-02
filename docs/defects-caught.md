@@ -29,7 +29,7 @@ Defect-catalog status grouped by the risk_weight of its golden case (pending = â
 
 | Risk Weight | Pass | Pending | Fail |
 |-------------|-----:|--------:|-----:|
-| high | 8 | 0 | 0 |
+| high | 5 | 3 | 0 |
 
 ---
 
