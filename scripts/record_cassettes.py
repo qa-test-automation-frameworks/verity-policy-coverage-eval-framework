@@ -206,8 +206,6 @@ def run_author_mode(cases: list[GoldenCase]) -> None:
 def run_live_mode(cases: list[GoldenCase]) -> None:
     """Record real model responses (requires API key)."""
     settings = _settings_no_key()
-    litellm_model, _, _ = settings.resolved_provider()
-    lib = CassetteLibrary(_CASSETTE_DIR)
 
     for case in cases:
         print(f"  Recording {case.id!r}…")
