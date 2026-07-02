@@ -93,3 +93,30 @@ def test_recorded_snapshot_covers_every_benchmark_case() -> None:
         "datasets/retrieval/recorded_chunks.json is out of sync with "
         "datasets/retrieval/benchmarks.yaml — regenerate the snapshot."
     )
+
+
+@pytest.mark.needs_onnx_download
+@pytest.mark.parametrize("case_id", sorted(_RECORDED), ids=sorted(_RECORDED))
+def test_real_retrieval_chunk_precision_recall(case_id: str, real_retriever: object) -> None:
+    """Chunk-level precision/recall against the same snapshot used by the exact-
+    match test above, exercising the finer-grained scoring machinery in
+    verity.retrieval_eval on the real embedding-based retriever rather than only
+    on FixtureRetriever's hand-authored chunks (see test_retrieval_benchmark.py,
+    which only ever scores source-file-level recall/precision)."""
+    from verity.retrieval_eval import load_retrieval_benchmarks, score_retrieval
+
+    benchmarks = {b.case_id: b for b in load_retrieval_benchmarks()}
+    benchmark = benchmarks[case_id]
+
+    if case_id in _ORDER_UNSTABLE_CASES:
+        pytest.xfail(
+            f"KI-2: {case_id}: near-tied embedding distances make even which chunks are "
+            "retrieved unstable across runs, so chunk-level precision/recall is not a "
+            "meaningful signal here either (see docs/known-issues.md)."
+        )
+
+    chunks = real_retriever.retrieve(benchmark.query)  # type: ignore[attr-defined]
+    score = score_retrieval(chunks, benchmark)
+
+    assert score.chunk_precision == 1.0, score.message
+    assert score.chunk_recall == 1.0, score.message

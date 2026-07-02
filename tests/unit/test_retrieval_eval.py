@@ -148,3 +148,91 @@ def test_score_retrieval_rank_metrics_are_zero_without_relevant_sources() -> Non
     assert score.mrr == 0.0
     assert score.hit_at_k == 0.0
     assert score.ndcg == 0.0
+
+
+class TestChunkLevelPrecisionRecall:
+    """expected_chunk_ids drives a finer-grained signal than source_recall/
+    source_precision: two chunks from the same expected source file can still
+    be the wrong chunk (wrong section), which source-level scoring can't see."""
+
+    def test_none_when_expected_chunk_ids_unset(self) -> None:
+        benchmark = RetrievalBenchmark(
+            case_id="case", query="q", expected_sources=["policy.md"], min_source_precision=1.0
+        )
+        chunks = [Chunk(text="x", source="policy.md", section="§1", chunk_id="c1")]
+        score = score_retrieval(chunks, benchmark)
+        assert score.chunk_precision is None
+        assert score.chunk_recall is None
+
+    def test_perfect_match_scores_one(self) -> None:
+        benchmark = RetrievalBenchmark(
+            case_id="case",
+            query="q",
+            expected_sources=["policy.md"],
+            expected_chunk_ids=["c1", "c2"],
+            min_source_precision=1.0,
+        )
+        chunks = [
+            Chunk(text="x", source="policy.md", section="§1", chunk_id="c1"),
+            Chunk(text="y", source="policy.md", section="§2", chunk_id="c2"),
+        ]
+        score = score_retrieval(chunks, benchmark)
+        assert score.chunk_precision == 1.0
+        assert score.chunk_recall == 1.0
+
+    def test_right_source_wrong_chunk_scores_zero(self) -> None:
+        """Same source file, different section: source_precision is 1.0 but
+        chunk_precision/recall correctly report a total miss."""
+        benchmark = RetrievalBenchmark(
+            case_id="case",
+            query="q",
+            expected_sources=["policy.md"],
+            expected_chunk_ids=["c1"],
+            min_source_precision=1.0,
+        )
+        chunks = [Chunk(text="wrong section", source="policy.md", section="§9", chunk_id="c9")]
+        score = score_retrieval(chunks, benchmark)
+        assert score.source_precision == 1.0
+        assert score.chunk_precision == 0.0
+        assert score.chunk_recall == 0.0
+
+    def test_partial_overlap(self) -> None:
+        benchmark = RetrievalBenchmark(
+            case_id="case",
+            query="q",
+            expected_sources=["policy.md"],
+            expected_chunk_ids=["c1", "c2"],
+            min_source_precision=0.5,
+        )
+        chunks = [
+            Chunk(text="x", source="policy.md", section="§1", chunk_id="c1"),
+            Chunk(text="z", source="policy.md", section="§3", chunk_id="c3"),
+        ]
+        score = score_retrieval(chunks, benchmark)
+        assert score.chunk_recall == 0.5  # found c1 of {c1, c2}
+        assert score.chunk_precision == 0.5  # 1 of 2 retrieved chunks (c1) was expected
+
+    def test_no_retrieved_chunks_with_expected_ids_scores_zero_precision(self) -> None:
+        benchmark = RetrievalBenchmark(
+            case_id="case",
+            query="q",
+            expected_sources=["policy.md"],
+            expected_chunk_ids=["c1"],
+            min_source_precision=0.0,
+        )
+        score = score_retrieval([], benchmark)
+        assert score.chunk_recall == 0.0
+        assert score.chunk_precision == 0.0
+
+    def test_message_includes_chunk_metrics_when_set(self) -> None:
+        benchmark = RetrievalBenchmark(
+            case_id="case",
+            query="q",
+            expected_sources=["policy.md"],
+            expected_chunk_ids=["c1"],
+            min_source_precision=1.0,
+        )
+        chunks = [Chunk(text="x", source="policy.md", section="§1", chunk_id="c1")]
+        score = score_retrieval(chunks, benchmark)
+        assert "chunk_precision=1.00" in score.message
+        assert "chunk_recall=1.00" in score.message

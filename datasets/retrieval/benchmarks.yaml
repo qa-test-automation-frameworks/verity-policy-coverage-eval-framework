@@ -5,18 +5,21 @@ benchmarks:
     required_terms: ["$3,800", "effective July 1, 2024"]
     min_source_precision: 0.5
     diagnostic_threshold: 1.0
+    expected_chunk_ids: ["cb3a5e172227f983", "42e61873969f59bb"]
 
   - case_id: ctrl-silver-physical-therapy-limit
     query: "How many physical therapy sessions does Silver cover, and what is the copay?"
     expected_sources: [silver.md]
     required_terms: ["45 sessions", "$40 copay"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["4f03e8e36500c946"]
 
   - case_id: ctrl-bronze-mri-prior-auth
     query: "For Bronze, does an MRI require prior authorization and what cost share applies?"
     expected_sources: [bronze.md, exclusions.md]
     required_terms: ["40% coinsurance", "prior authorization"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["128bf5e64c42b021", "5d8dd0261313d35b"]
 
   - case_id: ctrl-dental-cleaning-exclusion
     query: "Is a routine dental cleaning covered under the base health plan?"
@@ -27,12 +30,14 @@ benchmarks:
     expected_sources: [administration.md]
     required_terms: ["cleanings"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["98c149eae74bb855"]
 
   - case_id: ctrl-gold-specialty-drug-pa
     query: "What do I pay for a Tier 4 specialty drug on Gold, and is prior authorization needed?"
     expected_sources: [gold.md, exclusions.md]
     required_terms: ["10% coinsurance", "Specialty drugs"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["9d4eab09b05e0d02", "26587dc2ad8befb6", "5d8dd0261313d35b"]
 
   - case_id: ctrl-missing-acupuncture-policy
     query: "Does my plan cover acupuncture?"
@@ -45,12 +50,14 @@ benchmarks:
     expected_sources: [definitions.md, exclusions.md]
     required_terms: ["Covered Service", "excluded"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["128bf5e64c42b021", "52fc2c4f8c59e9cd", "aa8fb39e547bd431"]
 
   - case_id: ctrl-silver-specialist-copay
     query: "What is the specialist visit copay for the Silver plan?"
     expected_sources: [silver.md]
     required_terms: ["$60 copay", "Specialist Visits"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["8d6c4363fd45d05a", "94caca6a377dfc6b", "946a304ab8b27896"]
 
   - case_id: ctrl-gold-deductible
     query: "What is the individual annual deductible for the Gold plan?"
@@ -58,18 +65,21 @@ benchmarks:
     required_terms: ["Annual Deductible", "$750"]
     min_source_precision: 0.5
     diagnostic_threshold: 1.0
+    expected_chunk_ids: ["42e61873969f59bb", "9f64c7621f3fd332"]
 
   - case_id: ctrl-telehealth-copay
     query: "What does a telehealth primary care visit cost?"
     expected_sources: [amendments.md]
     required_terms: ["$0 copay", "telehealth"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["e0de6b6667e219be"]
 
   - case_id: ctrl-bronze-primary-care-first-three
     query: "Do Bronze primary care visits apply to the deductible for the first three visits?"
     expected_sources: [bronze.md]
     required_terms: ["deductible waived", "first 3 visits"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["3c06405d31d75f18"]
 
   - case_id: ctrl-home-health-pa-limit
     query: "Are home health aide visits limited, and do home health services require prior authorization?"
@@ -77,12 +87,14 @@ benchmarks:
     required_terms: ["60 visits", "Prior Authorization"]
     min_source_precision: 0.66
     diagnostic_threshold: 1.0
+    expected_chunk_ids: ["45e85d55c470cbe6", "5d8dd0261313d35b", "bef5655dcc275262"]
 
   - case_id: ctrl-required-docs-oon-claim
     query: "What paperwork do I need to submit for an out-of-network claim?"
     expected_sources: [administration.md]
     required_terms: ["Itemized bill", "member claim reimbursement form"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["4822e899cde6dd4a"]
 
   - case_id: ctrl-network-tier-oon-cost
     query: "What extra costs apply if I see an out-of-network provider?"
@@ -90,12 +102,14 @@ benchmarks:
     required_terms: ["Out-of-Network", "allowed amount"]
     min_source_precision: 0.5
     diagnostic_threshold: 1.0
+    expected_chunk_ids: ["25eee3798a769b56", "bef5655dcc275262"]
 
   - case_id: ctrl-waiting-period-orthodontia
     query: "If I buy the orthodontia rider today, when does braces coverage start?"
     expected_sources: [administration.md]
     required_terms: ["12-month waiting period", "Orthodontia Rider"]
     min_source_precision: 1.0
+    expected_chunk_ids: ["5fa482a2a0c5f4a6", "98c149eae74bb855"]
 
   - case_id: ctrl-plan-year-reset
     query: "I hit my Silver deductible in November — does that carry over into next year?"
@@ -107,6 +121,7 @@ benchmarks:
     # target (tighter chunking/re-ranking) without blocking the release gate.
     min_source_precision: 0.33
     diagnostic_threshold: 0.66
+    expected_chunk_ids: ["58d4a981922daf1d", "b6fcb5b0fc595e78", "82e88679ee5c5f8c"]
 
   - case_id: ctrl-bronze-oop-exact-boundary
     query: "I'm at $7,600 of my $8,000 Bronze out-of-pocket max, deductible met. What do I owe for a $1,000 claim?"
@@ -116,4 +131,5 @@ benchmarks:
     # pulls in related-but-off-source chunks alongside bronze.md.
     min_source_precision: 0.33
     diagnostic_threshold: 0.66
+    expected_chunk_ids: ["4ed3f3160656f4ef", "695729deb77bfb61", "58d4a981922daf1d"]
 
