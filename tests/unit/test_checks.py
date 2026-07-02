@@ -96,6 +96,42 @@ class TestValidateResponseSchema:
         result = validate_response_schema(r)
         assert not result.passed
 
+    def test_refused_without_reason_fails(self) -> None:
+        r = _Response(refused=True, refusal_reason="")
+        result = validate_response_schema(r)
+        assert not result.passed
+        assert "refusal_reason" in result.message
+
+    def test_refused_with_reason_passes(self) -> None:
+        r = _Response(refused=True, refusal_reason="out of scope")
+        assert validate_response_schema(r).passed
+
+    def test_token_count_mismatch_fails(self) -> None:
+        r = _Response(prompt_tokens=100, completion_tokens=50, total_tokens=999)
+        result = validate_response_schema(r)
+        assert not result.passed
+        assert "total_tokens" in result.message
+
+    def test_negative_token_count_fails(self) -> None:
+        r = _Response(prompt_tokens=-1, completion_tokens=50, total_tokens=49)
+        result = validate_response_schema(r)
+        assert not result.passed
+
+    def test_negative_cost_fails(self) -> None:
+        r = _Response(estimated_cost_usd=-0.01)
+        result = validate_response_schema(r)
+        assert not result.passed
+        assert "estimated_cost_usd" in result.message
+
+    def test_malformed_tool_invocation_fails(self) -> None:
+        class BadInvocation:
+            tool_name = "coverage_calculator"
+            # missing args, result
+
+        r = _Response(tool_invocations=[BadInvocation()])
+        result = validate_response_schema(r)
+        assert not result.passed
+
 
 # ---------------------------------------------------------------------------
 # Refusal check
