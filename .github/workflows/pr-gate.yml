@@ -63,6 +63,16 @@ jobs:
       - name: Module-sensitive coverage gate (agent, retrieval, metrics, tracing, reporting)
         run: uv run python scripts/check_module_coverage.py reports/coverage.json
 
+      - name: Hermetic Tier-2/3 evidence gate (no API key — cassette replay only)
+        # Smoke-tests that the calibration and defects-report pipelines run
+        # end-to-end without a provider key. --out writes calibration to a
+        # scratch path rather than docs/calibration-report.md, which holds
+        # committed evidence from an actual live run (see README Limitations)
+        # that this hermetic smoke run must not overwrite.
+        run: |
+          PYTHONPATH=src uv run python scripts/run_calibration.py --out /tmp/calibration-hermetic-check.md
+          PYTHONPATH=src:. uv run python scripts/defects_report.py
+
       - name: Vulnerability exception expiry check
         run: uv run python scripts/check_vuln_exceptions.py
 
