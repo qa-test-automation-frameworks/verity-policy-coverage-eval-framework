@@ -10,6 +10,7 @@ import pytest
 from verity.checks import (
     CheckResult,
     check_citations,
+    check_claim_numbers_grounded,
     check_date_expectations,
     check_human_review,
     check_injection,
@@ -463,6 +464,45 @@ class TestCheckCitations:
         case = _case()
         resp = _Response(citations=["phantom.md: §99"])
         result = check_citations(case, resp, retrieved_sources=["gold.md", "silver.md"])
+        assert not result.passed
+
+
+@dataclass
+class _Chunk:
+    text: str
+
+
+class TestCheckClaimNumbersGrounded:
+    def test_no_numbers_in_answer_passes(self) -> None:
+        resp = _Response(answer="I don't have that information.")
+        result = check_claim_numbers_grounded(resp, [_Chunk("Some policy text.")])
+        assert result.passed
+
+    def test_number_present_in_retrieved_chunk_passes(self) -> None:
+        resp = _Response(answer="Your deductible is $750.")
+        chunks = [_Chunk("The Gold plan deductible is $750 per year.")]
+        assert check_claim_numbers_grounded(resp, chunks).passed
+
+    def test_number_absent_from_all_chunks_fails(self) -> None:
+        resp = _Response(answer="Your deductible is $9,999.")
+        chunks = [_Chunk("The Gold plan deductible is $750 per year.")]
+        result = check_claim_numbers_grounded(resp, chunks)
+        assert not result.passed
+        assert "9999" in result.message
+
+    def test_number_grounded_in_second_of_several_chunks_passes(self) -> None:
+        resp = _Response(answer="The OOP max is $3,800.")
+        chunks = [_Chunk("Unrelated section."), _Chunk("OOP max: $3,800 effective 2024.")]
+        assert check_claim_numbers_grounded(resp, chunks).passed
+
+    def test_percent_claim_matches_percent_in_chunk(self) -> None:
+        resp = _Response(answer="Coinsurance is 20%.")
+        chunks = [_Chunk("Member coinsurance: 20% for this service.")]
+        assert check_claim_numbers_grounded(resp, chunks).passed
+
+    def test_no_retrieved_chunks_with_numeric_claim_fails(self) -> None:
+        resp = _Response(answer="Your copay is $60.")
+        result = check_claim_numbers_grounded(resp, [])
         assert not result.passed
 
 

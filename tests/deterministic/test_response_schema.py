@@ -10,6 +10,7 @@ from sut.retriever import FixtureRetriever
 from tests.deterministic.conftest import run_case
 from verity.checks import (
     check_citations,
+    check_claim_numbers_grounded,
     check_date_expectations,
     check_human_review,
     check_must_contain,
@@ -128,4 +129,34 @@ def test_numeric_expectations_satisfied(case: GoldenCase, _settings: Settings) -
 def test_date_expectations_satisfied(case: GoldenCase, _settings: Settings) -> None:
     response = run_case(case, _settings)
     result = check_date_expectations(case, response)
+    assert result.passed, result.message
+
+
+# ctrl-bronze-preventive's correct answer states "$0" as an inference from the
+# retrieved chunk's "covered at 100% with no deductible" — a valid derived
+# claim a lexical grounding check cannot distinguish from a fabricated
+# number, since "$0" itself never appears in the chunk text. Tracked as a
+# known limitation rather than silently excluded from the case set.
+_LEXICAL_GROUNDING_KNOWN_LIMITATIONS = {"ctrl-bronze-preventive"}
+
+_GROUNDING_CASES = [
+    c
+    for c in _CASES
+    if not c.expects_defect
+    and c.expected_tool is None
+    and c.behavior != "refuse"
+    and c.id not in _LEXICAL_GROUNDING_KNOWN_LIMITATIONS
+]
+
+
+@pytest.mark.parametrize("case", _GROUNDING_CASES, ids=[c.id for c in _GROUNDING_CASES])
+def test_claim_numbers_grounded_in_retrieved_chunks(case: GoldenCase, _settings: Settings) -> None:
+    """Every number the answer states must appear in some retrieved chunk's text —
+    not just that the cited source file was retrieved. Skipped for expects_defect
+    cases (hallucination is the behavior under test) and expected_tool cases
+    (the answer is a computed value, not a direct lookup, so it legitimately
+    won't appear verbatim in retrieved text)."""
+    response = run_case(case, _settings)
+    chunks = FixtureRetriever(case.id).retrieve(case.query)
+    result = check_claim_numbers_grounded(response, chunks)
     assert result.passed, result.message
