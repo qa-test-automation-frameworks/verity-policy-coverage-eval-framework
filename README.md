@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12 | 3.13](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
 
-**Status:** Hermetic Tier 1 is implemented and replayable. Live Tier-2/Tier-3 runs require a configured provider key and have no committed live-run artifacts yet — see [Limitations](#limitations).
+**Status:** Hermetic Tier 1 is implemented and replayable. Committed Tier-2 evidence and judge-calibration artifacts are included; fresh Tier-2/Tier-3 runs still require a configured provider key — see [Limitations](#limitations).
 
 ---
 
@@ -44,7 +44,7 @@ The framework engineering is the portfolio artifact. The chatbot is the target.
 
 ## The Seeded-Defect Catalog (hermetic + semantic coverage)
 
-The SUT is **intentionally imperfect**. The framework's job is to catch each defect. Hermetic rows prove detector behavior on authored outputs; a live Tier-2 run is needed before treating semantic rows as observed SUT behavior.
+The SUT is **intentionally imperfect**. The framework's job is to catch each defect. Hermetic rows prove detector behavior on authored outputs; committed Tier-2 evidence records which semantic defects reproduced for the provider/model pairing used in that run. Defects #1-#3 are retained as regression tripwires even though the committed provider/model pairing did not reproduce them.
 
 | # | Seeded Defect | Failure Mode | Caught By |
 |---|--------------|--------------|-----------|
@@ -65,9 +65,9 @@ The SUT is **intentionally imperfect**. The framework's job is to catch each def
 |-------------------|-----------------|
 | Cassette replay (no live CI calls) | CI cost discipline; non-flaky deterministic gate |
 | Configurable N-sample semantic runs | Flaky-test mastery applied to LLM non-determinism |
-| Judge calibration pipeline + self-bias measurement | Awareness that LLM judges are biased and unreliable (methodology demonstrated on synthetic labels; run `make calibrate-live` for real results) |
+| Judge calibration pipeline + self-bias measurement | Awareness that LLM judges are biased and unreliable (live calibration artifact committed; rerun `make calibrate-live` after judge changes) |
 | Three-tier CI triggers | Structured pipeline design (Tier 1 blocks merge; Tier 2/3 use API key) |
-| Seeded defects caught by suite | Eval-driven development; Tier 1/3 prove the *detectors* fire on known-bad outputs; live Tier 2 proves the *SUT* actually produces them |
+| Seeded defects caught by suite | Eval-driven development; Tier 1/3 prove the *detectors* fire on known-bad outputs; live Tier 2 records whether the current provider/model pairing reproduces them |
 | Provider abstraction (LiteLLM) | Decoupling from single-provider risk |
 | Pydantic-typed config + test schemas | Engineering rigour; zero magic strings |
 
@@ -174,7 +174,7 @@ docs/
 - **Committed live-run artifact, provider substitution noted.** `docs/defects-caught.md` and `reports/semantic/results.json` reflect a real Tier-2 run against defects #1–#4. It used `VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini` for both SUT and judge (2026-07-02) — not the ADR-0001 default of GLM-4.5 — because the NVIDIA NIM route was returning intermittent `DEGRADED function` errors and the OpenRouter free-tier route was rate-limited at run time. Re-run `make eval-semantic` with a configured GLM-4.5 key to refresh against the intended default model.
 - **Calibration measured against a substitute judge.** `docs/calibration-report.md` reflects a live `make calibrate-live` run (2026-07-02) — 93.8% raw agreement, Cohen's kappa 0.870 — but the human-authored *labels* in `datasets/calibration/labeled.yaml` are still synthetic ground truth, and the judge was `openai/gpt-4o-mini` via OpenRouter rather than the ADR-0004 GLM-4.5 target, so the measured self-preference delta does not reflect genuine GLM self-bias. Re-run with a GLM-4.5 judge key to measure that.
 - **Provider endpoint unverified.** The default `VERITY_MODEL=glm-4.5` and provider base URL in `.env.example` are configuration templates; verify the exact model slug and base URL for your provider before running live evals.
-- **Golden dataset size.** The current dataset covers 41 cases across policy plans and defect types (including paraphrase/typo variants of each seeded defect for phrasing-robustness). This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
+- **Golden dataset size.** The current dataset covers 41 cases across policy plans and defect types (including paraphrase variants of seeded defects for phrasing-robustness). This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
 - **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record` when the SUT changes.
 - **RAGAS is optional.** RAGAS faithfulness and context-precision metrics are importable but require compatible optional dependencies. They are included in `uv sync --extra semantic` and conditionally enabled.
 

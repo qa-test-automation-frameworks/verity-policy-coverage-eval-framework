@@ -2,7 +2,7 @@
 
 Runs hermetic checks (cassette replay, no API key) for defects 5-8 via
 deterministic and adversarial replay. Defects 1-4 (semantic-only) are marked
-VERIFIED or FIXED from reports/semantic/results.json when present, otherwise COVERED
+VERIFIED or NOT_REPRODUCED from reports/semantic/results.json when present, otherwise COVERED
 with a reference to the ground-truth and threshold that will catch them.
 
 Outputs:
@@ -22,7 +22,7 @@ from typing import Literal
 # Catalog — static metadata for all 8 seeded defects
 # ---------------------------------------------------------------------------
 
-Status = Literal["CAUGHT", "VERIFIED", "FIXED", "COVERED", "MISSED"]
+Status = Literal["CAUGHT", "VERIFIED", "NOT_REPRODUCED", "COVERED", "MISSED"]
 
 
 @dataclass
@@ -297,20 +297,19 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
             continue
         variant_measurements = by_defect.get(entry.id)
         if variant_measurements:
-            # Conservative aggregation: the defect counts as FIXED only if
-            # every variant (every phrasing) passed its threshold; any
-            # variant still failing means the defect is still reproducible
-            # and the whole defect stays VERIFIED (not fixed).
-            all_fixed = all(m.get("status") == "FIXED" for m in variant_measurements)
-            entry.status = "FIXED" if all_fixed else "VERIFIED"
+            # Conservative aggregation: all variants must pass threshold before
+            # reporting that the seeded behavior did not reproduce for this run.
+            all_non_reproduced = all(m.get("status") == "FIXED" for m in variant_measurements)
+            entry.status = "NOT_REPRODUCED" if all_non_reproduced else "VERIFIED"
             for m in variant_measurements:
                 case_id = m.get("case_id", "?")
                 status = m.get("status", "VERIFIED")
+                status_label = "not_reproduced" if status == "FIXED" else str(status).lower()
                 metric = m.get("metric", "semantic")
                 score = m.get("score")
                 threshold = m.get("threshold")
                 entry.details.append(
-                    f"Semantic: {case_id} {str(status).lower()} by {metric} "
+                    f"Semantic: {case_id} {status_label} by {metric} "
                     f"(score={score}, threshold={threshold})"
                 )
             continue
@@ -328,7 +327,7 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
 # Risk-weight breakdown
 # ---------------------------------------------------------------------------
 
-_PASS_STATUSES = {"CAUGHT", "VERIFIED", "FIXED"}
+_PASS_STATUSES = {"CAUGHT", "VERIFIED", "NOT_REPRODUCED"}
 _RISK_WEIGHTS = ("high", "medium", "low")
 
 
@@ -336,7 +335,7 @@ def _risk_weight_breakdown(
     catalog: list[DefectEntry], defect_risk_weights: dict[int, str]
 ) -> dict[str, dict[str, int]]:
     """Group defect-catalog entries by their golden case's risk_weight,
-    counting pass (CAUGHT/VERIFIED/FIXED), pending (COVERED — not yet run),
+    counting pass (CAUGHT/VERIFIED/NOT_REPRODUCED), pending (COVERED — not yet run),
     and fail (MISSED) per weight. Defects with no matching golden case are
     omitted rather than guessed at."""
     breakdown: dict[str, dict[str, int]] = {
@@ -392,7 +391,7 @@ def render_markdown(
     """
     hermetically_proven = [e for e in catalog if e.status == "CAUGHT"]
     semantic_tier = [e for e in catalog if e.id <= 4]
-    semantic_live = [e for e in semantic_tier if e.status in ("FIXED", "VERIFIED")]
+    semantic_live = [e for e in semantic_tier if e.status in ("NOT_REPRODUCED", "VERIFIED")]
 
     if semantic_live:
         semantic_summary = (
@@ -434,7 +433,7 @@ def render_markdown(
     status_icon = {
         "CAUGHT": "✅ CAUGHT",
         "VERIFIED": "✅ VERIFIED",
-        "FIXED": "🟢 FIXED",
+        "NOT_REPRODUCED": "🟡 NOT REPRODUCED",
         "COVERED": "⬜ COVERED",
         "MISSED": "❌ MISSED",
     }
@@ -478,8 +477,7 @@ def render_markdown(
         "|--------|---------|",
         "| ✅ CAUGHT | Hermetically proven: cassette replay confirms the defect is detected |",
         "| ✅ VERIFIED | Confirmed by a live semantic run (`reports/semantic/results.json`) |",
-        "| 🟢 FIXED | Live semantic run passed the quality threshold; "
-        "seeded behavior no longer reproduces |",
+        "| 🟡 NOT REPRODUCED | Live semantic run passed the quality threshold; seeded behavior did not reproduce for this provider/model pairing |",
         "| ⬜ COVERED | Ground-truth + metric threshold established; requires API key |",
         "| ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |",
         "",
@@ -546,6 +544,7 @@ def build_json(catalog: list[DefectEntry]) -> dict[str, object]:
             "total": len(catalog),
             "caught": sum(1 for e in catalog if e.status == "CAUGHT"),
             "verified": sum(1 for e in catalog if e.status == "VERIFIED"),
+            "not_reproduced": sum(1 for e in catalog if e.status == "NOT_REPRODUCED"),
             "covered": sum(1 for e in catalog if e.status == "COVERED"),
             "missed": sum(1 for e in catalog if e.status == "MISSED"),
         },
@@ -601,7 +600,8 @@ def main() -> None:
     assert isinstance(summary, dict)
     print(
         f"\nSummary: {summary['caught']} CAUGHT + {summary['verified']} VERIFIED "
-        f"+ {summary['covered']} COVERED + {summary['missed']} MISSED "
+        f"+ {summary['not_reproduced']} NOT_REPRODUCED + {summary['covered']} COVERED "
+        f"+ {summary['missed']} MISSED "
         f"(out of {summary['total']})"
     )
     if summary["missed"]:

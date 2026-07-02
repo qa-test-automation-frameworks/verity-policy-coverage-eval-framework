@@ -173,7 +173,7 @@ class TestBuildJson:
         assert "summary" in data
         summary = data["summary"]
         assert isinstance(summary, dict)
-        for key in ("total", "caught", "verified", "covered", "missed"):
+        for key in ("total", "caught", "verified", "not_reproduced", "covered", "missed"):
             assert key in summary, f"Key {key!r} missing from summary"
 
     def test_summary_total_is_eight(self) -> None:
@@ -198,6 +198,7 @@ class TestBuildJson:
         total = (
             int(summary["caught"])
             + int(summary["verified"])
+            + int(summary["not_reproduced"])
             + int(summary["covered"])
             + int(summary["missed"])
         )
@@ -261,7 +262,7 @@ class TestIngestSemanticResults:
         defect_1 = next(e for e in catalog if e.id == 1)
         assert defect_1.status == "VERIFIED"
 
-    def test_semantic_measurement_can_mark_defect_fixed(self, tmp_path: Path) -> None:
+    def test_semantic_measurement_can_mark_defect_not_reproduced(self, tmp_path: Path) -> None:
         import copy
         import json
         import os
@@ -298,10 +299,10 @@ class TestIngestSemanticResults:
             os.chdir(original)
 
         defect_1 = next(e for e in catalog if e.id == 1)
-        assert defect_1.status == "FIXED"
+        assert defect_1.status == "NOT_REPRODUCED"
         assert any("faithfulness" in d for d in defect_1.details)
 
-    def test_multiple_variants_all_fixed_marks_defect_fixed(self, tmp_path: Path) -> None:
+    def test_multiple_variants_all_fixed_marks_defect_not_reproduced(self, tmp_path: Path) -> None:
         import copy
         import json
         import os
@@ -345,7 +346,7 @@ class TestIngestSemanticResults:
             os.chdir(original)
 
         defect_1 = next(e for e in catalog if e.id == 1)
-        assert defect_1.status == "FIXED"
+        assert defect_1.status == "NOT_REPRODUCED"
         assert any("defect-1-a" in d for d in defect_1.details)
         assert any("defect-1-b" in d for d in defect_1.details)
 
@@ -353,7 +354,7 @@ class TestIngestSemanticResults:
         self, tmp_path: Path
     ) -> None:
         """If even one phrasing still reproduces the defect, the defect as a
-        whole must not be reported FIXED — that would hide a real regression
+        whole must not be reported not reproduced — that would hide a real regression
         behind a passing paraphrase."""
         import copy
         import json
