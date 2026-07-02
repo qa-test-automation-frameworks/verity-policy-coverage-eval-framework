@@ -28,10 +28,13 @@ Please include:
 
 Three vulnerabilities in transitive dependencies are currently acknowledged and accepted (see `.pip-audit-ignore`):
 
-| ID | Package | Reason accepted |
-|----|---------|-----------------|
-| PYSEC-2026-311 | chromadb | Requires `trust_remote_code=true`; not used in this project |
-| CVE-2025-69872 | diskcache | Requires attacker write access to local cache directory |
-| CVE-2026-6587 | ragas | Affects multi-modal module not imported in this project |
+| ID | Package | Reason accepted | Expires |
+|----|---------|-----------------|---------|
+| PYSEC-2026-311 | chromadb | Requires `trust_remote_code=true`; not used in this project | 2026-10-01 |
+| CVE-2025-69872 | diskcache | Requires attacker write access to local cache directory | 2026-10-01 |
+| CVE-2026-6587 | ragas | Affects multi-modal module not imported in this project | 2026-10-01 |
 
-These will be re-evaluated when the affected packages release a fix.
+Each entry in `.pip-audit-ignore` carries an `Expires:` date. `scripts/check_vuln_exceptions.py`
+runs in the PR gate and fails once that date passes, so an accepted risk cannot silently
+outlive its review window — the entry must be re-evaluated and either re-dated (with updated
+reasoning) or removed once the affected package releases a fix.
