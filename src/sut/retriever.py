@@ -122,6 +122,10 @@ def _corpus_fingerprint(corpus_dir: Path) -> str:
 
 
 _PLAN_TIER_NAMES = ("bronze", "silver", "gold")
+# Hand-tuned starting point, not backed by a committed ablation study — treat
+# as adjustable, not load-bearing. Widening it returns more borderline
+# candidates; narrowing it risks dropping a relevant chunk that scored
+# slightly behind the best match.
 _DISTANCE_MARGIN = 0.20
 
 
@@ -138,6 +142,11 @@ def _plan_scoped_source(source: str, plan: str) -> bool:
     return stem not in _PLAN_TIER_NAMES or stem == plan
 
 
+# Filters generic filler from *user query* terms for lexical-overlap
+# retrieval scoring. Deliberately kept separate from sut.agent._STOPWORDS,
+# which filters *answer* text for citation matching — different domain
+# (short queries vs. answer prose), so tuning one should not silently
+# change the other.
 _QUERY_STOPWORDS = frozenset(
     {
         "what",
@@ -171,6 +180,9 @@ _QUERY_STOPWORDS = frozenset(
         "i",
     }
 )
+# Hand-tuned starting point, not backed by a committed ablation study — treat
+# as adjustable, not load-bearing. Higher values favor literal keyword
+# overlap over embedding similarity when re-ranking candidates.
 _LEXICAL_WEIGHT = 0.5
 
 

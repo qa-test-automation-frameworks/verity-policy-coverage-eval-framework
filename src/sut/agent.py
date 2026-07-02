@@ -85,6 +85,11 @@ class AgentResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+# Filters generic filler from *answer* text when matching it against retrieved
+# chunk text for citation resolution. Deliberately kept separate from
+# sut.retriever._QUERY_STOPWORDS, which filters *user query* terms for
+# lexical-overlap retrieval scoring — different domain (answer prose vs.
+# short queries), so tuning one should not silently change the other.
 _STOPWORDS = frozenset(
     {
         "this",
