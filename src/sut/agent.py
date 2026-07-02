@@ -219,6 +219,22 @@ class CoverageAgent:
             accumulator = RunAccumulator()
             self.provider = LLMProvider(self.settings, accumulator)
 
+    @property
+    def _llm_provider(self) -> LLMProvider:
+        """Non-None accessor for self.provider — __post_init__ guarantees this,
+        but the attribute stays typed Optional so callers can still construct
+        CoverageAgent without one."""
+        if self.provider is None:
+            raise RuntimeError("CoverageAgent.provider is None after __post_init__")
+        return self.provider
+
+    @property
+    def _chunk_retriever(self) -> Retriever:
+        """Non-None accessor for self.retriever — see _llm_provider."""
+        if self.retriever is None:
+            raise RuntimeError("CoverageAgent.retriever is None after __post_init__")
+        return self.retriever
+
     def _safe_failure_response(
         self,
         *,
@@ -227,8 +243,7 @@ class CoverageAgent:
         tool_invocations: list[ToolInvocation] | None = None,
         trace_id: str = "",
     ) -> AgentResponse:
-        assert self.provider is not None
-        totals, total_cost = self.provider.accumulator.usage_and_cost_since(start_index)
+        totals, total_cost = self._llm_provider.accumulator.usage_and_cost_since(start_index)
         return AgentResponse(
             answer=(
                 "I cannot complete this coverage response right now. "
@@ -254,13 +269,10 @@ class CoverageAgent:
         top_k: int | None = None,
     ) -> AgentResponse:
         """Run the full agent loop for a coverage question."""
-        assert self.retriever is not None
-        assert self.provider is not None
-
         # Snapshot the accumulator's record count so this response reports only
         # the usage/cost from calls made during THIS answer(), not the shared
         # accumulator's lifetime total across every request it has ever served.
-        start_index = len(self.provider.accumulator.records)
+        start_index = len(self._llm_provider.accumulator.records)
 
         # 1. Input guardrail
         refused, refusal_reason = check_input(query)
@@ -294,7 +306,7 @@ class CoverageAgent:
 
             # 3. Retrieve relevant policy chunks
             with traced("retrieval", top_k=top_k or 0):
-                chunks = self.retriever.retrieve(query, top_k=top_k)
+                chunks = self._chunk_retriever.retrieve(query, top_k=top_k)
 
             # 4. Build messages
             system_prompt = _build_system_prompt(member, chunks, clean=is_clean)
@@ -305,7 +317,7 @@ class CoverageAgent:
 
             # 5. First LLM call (may return tool_calls)
             try:
-                result = self.provider.complete(
+                result = self._llm_provider.complete(
                     messages=messages,
                     tools=[COVERAGE_CALCULATOR_SCHEMA],
                     label="agent-first-turn",
@@ -400,7 +412,7 @@ class CoverageAgent:
 
                 # 7. Second LLM call with tool results
                 try:
-                    result = self.provider.complete(
+                    result = self._llm_provider.complete(
                         messages=messages,
                         label="agent-second-turn",
                     )
@@ -423,7 +435,7 @@ class CoverageAgent:
 
         # 10. Collect token/cost info for this response only (not the shared
         # accumulator's lifetime total — see start_index above)
-        acc = self.provider.accumulator
+        acc = self._llm_provider.accumulator
         totals, total_cost = acc.usage_and_cost_since(start_index)
 
         return AgentResponse(
