@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from sut.retriever import Chunk
-from sut.review_triggers import any_requires_human_review, cross_tier_cost_parity_anomaly
+from sut.review_triggers import ReviewQueue, any_requires_human_review, can_finalize_response, cross_tier_cost_parity_anomaly
 
 
 def test_requires_human_review_for_gold_silver_urgent_care_anomaly() -> None:
@@ -90,3 +90,20 @@ def test_any_requires_human_review_false_when_no_trigger_fires() -> None:
         Chunk(text="Your deductible is $2,000.", source="silver.md", section="§1", chunk_id="c1")
     ]
     assert not any_requires_human_review(chunks)
+
+
+def test_review_queue_blocks_finalize_until_approved() -> None:
+    chunks = [Chunk(text="In-network urgent care: $75 copay", source="gold.md", section="§3.7", chunk_id="c1")]
+    queue = ReviewQueue()
+    item = queue.submit("Is Gold cheaper?", "Gold and Silver match at $75.", chunks)
+
+    assert not queue.can_finalize(item.id)
+    assert not can_finalize_response(requires_human_review=True, review_item=item)
+
+    approved = queue.approve(item.id, reviewer="policy-reviewer")
+    assert queue.can_finalize(item.id)
+    assert can_finalize_response(requires_human_review=True, review_item=approved)
+
+
+def test_routine_response_can_finalize_without_review_item() -> None:
+    assert can_finalize_response(requires_human_review=False, review_item=None)
