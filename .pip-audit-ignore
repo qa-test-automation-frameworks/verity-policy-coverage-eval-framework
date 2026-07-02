@@ -1,18 +1,25 @@
 # Known accepted vulnerabilities in current dependency versions.
-# Reviewed 2026-06-30. Each entry here should be re-evaluated when the
-# affected package is upgraded.
+# Each entry must carry an Expires: date (YYYY-MM-DD). scripts/check_vuln_exceptions.py
+# fails CI once that date passes, forcing a re-evaluation instead of a silent
+# indefinite exception. Reviewed 2026-06-30.
 #
 # PYSEC-2026-311 (chromadb 1.5.9): pre-auth code injection via trust_remote_code=true.
 #   Not exploitable in this project — we never set trust_remote_code and run Chroma
 #   as a local in-process instance only.
+#   Package: chromadb
+#   Expires: 2026-10-01
 #
 # CVE-2025-69872 (diskcache 5.6.3): pickle RCE via malicious cache directory writes.
 #   Not exploitable here — diskcache is an indirect dependency; cache dir is local
 #   and not writable by untrusted parties.
+#   Package: diskcache
+#   Expires: 2026-10-01
 #
 # CVE-2026-6587 (ragas 0.4.3): SSRF in multi_modal_faithfulness collections module.
 #   Not exploitable here — we import only Faithfulness/ContextPrecision/AnswerRelevancy
 #   from ragas.metrics; the affected multi-modal module is never invoked.
+#   Package: ragas
+#   Expires: 2026-10-01
 PYSEC-2026-311
 CVE-2025-69872
 CVE-2026-6587

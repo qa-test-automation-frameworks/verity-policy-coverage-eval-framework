@@ -63,6 +63,9 @@ jobs:
       - name: Module-sensitive coverage gate (agent, retrieval, metrics, tracing, reporting)
         run: uv run python scripts/check_module_coverage.py reports/coverage.json
 
+      - name: Vulnerability exception expiry check
+        run: uv run python scripts/check_vuln_exceptions.py
+
       - name: Dependency vulnerability scan
         run: |
           ignore_args=()
