@@ -73,3 +73,24 @@ class TestCalibrationReportConsistency:
         assert f"**{agreement.raw_agreement:.1%}**" in report_text
         assert f"**{agreement.cohen_kappa:.3f}**" in report_text
         assert f"**{bias.self_preference_delta:+.3f}**" in report_text
+
+
+class TestPlanParameterConsistency:
+    def test_agent_plan_params_match_definitions_table(self) -> None:
+        from sut.agent import _PLAN_PARAMS
+
+        text = Path("src/sut/corpus/definitions.md").read_text(encoding="utf-8")
+        rows = re.findall(
+            r"\| (Bronze|Silver|Gold) \| \$[\d,]+ \| \$([\d,]+) \| \$([\d,]+) \| (\d+)% \|",
+            text,
+        )
+        parsed = {
+            plan.lower(): {
+                "plan_deductible": float(deductible.replace(",", "")),
+                "plan_oop_max": float(oop_max.replace(",", "")),
+                "coinsurance_member": float(coinsurance) / 100.0,
+            }
+            for plan, deductible, oop_max, coinsurance in rows
+        }
+
+        assert parsed == _PLAN_PARAMS
