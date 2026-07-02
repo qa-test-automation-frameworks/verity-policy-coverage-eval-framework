@@ -123,11 +123,39 @@ def check_human_review(case: GoldenCase, response: Any) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
+def _check_single_invocation(expected: Any, args: dict[str, Any]) -> str | None:
+    """Return an error message for one invocation's args, or None if it's valid."""
+    missing_args = [a for a in expected.required_args if a not in args]
+    if missing_args:
+        return f"missing required args: {missing_args}"
+
+    if expected.name == "coverage_calculator":
+        try:
+            from sut.tools.coverage_calculator import CoverageInput
+
+            CoverageInput(**args)
+        except Exception as exc:
+            return f"failed CoverageInput validation: {exc}"
+
+    mismatches: list[str] = []
+    for arg_name, expected_val in expected.expected_arg_values.items():
+        actual_val = args.get(arg_name)
+        if actual_val != expected_val:
+            mismatches.append(f"{arg_name}: expected {expected_val!r}, got {actual_val!r}")
+    if mismatches:
+        return "arg value mismatch: " + "; ".join(mismatches)
+
+    return None
+
+
 def check_tool_args(case: GoldenCase, response: Any) -> CheckResult:
-    """Verify the coverage_calculator was called with the expected arguments.
+    """Verify the full tool-call trace matches the case's expectation, not just one call.
 
     Detects:
     - Tool skipped entirely (tool_invocations empty when expected_tool is set)
+    - Any call to a tool other than the expected one (unauthorized/hallucinated tool use)
+    - Redundant duplicate calls to the expected tool (a model that calls the tool twice,
+      once wrong and once right, must not pass just because one call looked correct)
     - Arguments that fail CoverageInput validation (wrong types / constraints)
     - Arguments that differ from expected_arg_values (transposition detection)
     """
@@ -137,6 +165,7 @@ def check_tool_args(case: GoldenCase, response: Any) -> CheckResult:
 
     invocations: list[Any] = list(getattr(response, "tool_invocations", []))
     matching = [ti for ti in invocations if getattr(ti, "tool_name", "") == expected.name]
+    unexpected = [ti for ti in invocations if getattr(ti, "tool_name", "") != expected.name]
 
     if not matching:
         called_names = [getattr(ti, "tool_name", "?") for ti in invocations]
@@ -145,31 +174,22 @@ def check_tool_args(case: GoldenCase, response: Any) -> CheckResult:
             f"Expected tool '{expected.name}' not called. Called: {called_names or ['none']}",
         )
 
-    inv = matching[0]
-    args: dict[str, Any] = dict(getattr(inv, "args", {}))
+    if unexpected:
+        unexpected_names = [getattr(ti, "tool_name", "?") for ti in unexpected]
+        return CheckResult(
+            False, f"Unexpected tool call(s) beyond '{expected.name}': {unexpected_names}"
+        )
 
-    # Check required args are present
-    missing_args = [a for a in expected.required_args if a not in args]
-    if missing_args:
-        return CheckResult(False, f"Tool call missing required args: {missing_args}")
+    if len(matching) > 1:
+        return CheckResult(
+            False,
+            f"Tool '{expected.name}' called {len(matching)} times; expected exactly once",
+        )
 
-    # Validate via CoverageInput if applicable (catches type/constraint errors)
-    if expected.name == "coverage_calculator":
-        try:
-            from sut.tools.coverage_calculator import CoverageInput
-
-            CoverageInput(**args)
-        except Exception as exc:
-            return CheckResult(False, f"Tool args failed CoverageInput validation: {exc}")
-
-    # Check expected arg values (transposition / wrong member-state detection)
-    mismatches: list[str] = []
-    for arg_name, expected_val in expected.expected_arg_values.items():
-        actual_val = args.get(arg_name)
-        if actual_val != expected_val:
-            mismatches.append(f"{arg_name}: expected {expected_val!r}, got {actual_val!r}")
-    if mismatches:
-        return CheckResult(False, "Tool arg value mismatch: " + "; ".join(mismatches))
+    args: dict[str, Any] = dict(getattr(matching[0], "args", {}))
+    error = _check_single_invocation(expected, args)
+    if error is not None:
+        return CheckResult(False, f"Tool call {error}")
 
     return CheckResult(True)
 

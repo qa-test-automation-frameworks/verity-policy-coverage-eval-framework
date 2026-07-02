@@ -217,6 +217,34 @@ class TestCheckToolArgs:
         assert not result.passed
         assert "CoverageInput validation" in result.message
 
+    def test_unexpected_extra_tool_call_fails_even_if_expected_tool_correct(self) -> None:
+        """One correct call plus one unrelated tool call must not pass."""
+        case = _case(expected_tool=_EXPECTED_TOOL)
+        correct = _ToolInvocation("coverage_calculator", dict(_SILVER_ARGS))
+        rogue = _ToolInvocation("some_other_tool", {"x": 1})
+        result = check_tool_args(case, _Response(tool_invocations=[correct, rogue]))
+        assert not result.passed
+        assert "Unexpected tool call" in result.message
+
+    def test_duplicate_correct_calls_fail(self) -> None:
+        """Two calls to the expected tool, even with identical correct args, must not pass."""
+        case = _case(expected_tool=_EXPECTED_TOOL)
+        inv = _ToolInvocation("coverage_calculator", dict(_SILVER_ARGS))
+        result = check_tool_args(case, _Response(tool_invocations=[inv, inv]))
+        assert not result.passed
+        assert "called 2 times" in result.message
+
+    def test_one_correct_one_incorrect_call_fails(self) -> None:
+        """A model that calls the tool once wrong and once right must not pass on the
+        strength of the first matching invocation alone."""
+        case = _case(expected_tool=_EXPECTED_TOOL)
+        wrong_args = dict(_SILVER_ARGS)
+        wrong_args["accrued_deductible"] = 2000.0
+        wrong = _ToolInvocation("coverage_calculator", wrong_args)
+        correct = _ToolInvocation("coverage_calculator", dict(_SILVER_ARGS))
+        result = check_tool_args(case, _Response(tool_invocations=[wrong, correct]))
+        assert not result.passed
+
 
 # ---------------------------------------------------------------------------
 # PII scan
