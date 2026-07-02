@@ -44,10 +44,10 @@ jobs:
           key: chroma-onnx-${{ runner.os }}-py${{ matrix.python-version }}
 
       - name: Ruff lint
-        run: uv run ruff check src tests
+        run: uv run ruff check src tests scripts promptfoo
 
       - name: Ruff format check
-        run: uv run ruff format --check src tests
+        run: uv run ruff format --check src tests scripts promptfoo
 
       - name: mypy strict
         run: uv run mypy src
