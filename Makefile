@@ -157,5 +157,5 @@ docker-test:
 # Cleanup
 # ---------------------------------------------------------------------------
 clean:
-	rm -rf .chroma/ .pytest_cache/ .mypy_cache/ .ruff_cache/ reports/ htmlcov/
+	rm -rf .chroma/ .pytest_cache/ .mypy_cache/ .ruff_cache/ htmlcov/ reports/allure-results reports/allure-report reports/traces reports/trends reports/flake reports/redteam reports/calibration reports/coverage.json
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
