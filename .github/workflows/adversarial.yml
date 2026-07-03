@@ -41,6 +41,10 @@ jobs:
           mkdir -p reports/allure-results/adversarial
           PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v \
             --alluredir reports/allure-results/adversarial
+          if [ -f reports/security/summary-local.json ]; then
+            cp reports/security/summary-local.json reports/security/summary.json
+            cp reports/security/summary-local.md reports/security/summary.md
+          fi
 
       - name: Upload adversarial reports
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4

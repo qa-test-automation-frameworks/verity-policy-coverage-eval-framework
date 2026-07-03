@@ -192,7 +192,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     summary = render_cost_summary(_SESSION_ACCUMULATOR)
     write_step_summary(summary)
     if _NODE_RESULTS:
-        out = Path("reports/semantic/results.json")
+        # Write to the untracked local path only -- each xdist worker under
+        # `pytest -n auto` only sees its own subset of cases, so writing the
+        # tracked reports/semantic/results.json directly here would let the
+        # last worker/controller to finish overwrite it with incomplete
+        # data. `make eval-semantic` regenerates the tracked file serially.
+        out = Path("reports/semantic/results-local.json")
         out.parent.mkdir(parents=True, exist_ok=True)
         record = compute_trend_record(
             "semantic", _NODE_RESULTS, _SESSION_ACCUMULATOR, latency_budget_ms=LIVE_BUDGET_MS
