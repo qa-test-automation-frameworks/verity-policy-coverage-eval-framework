@@ -63,7 +63,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `calibration.py` | `CalibrationCase` schema; `compute_agreement()` (raw %, Cohen's kappa, MAE); `compute_self_bias()` (GLM vs other delta); `score_all()` via rubric scoring prompt |
 | `adversarial.py` | `AdversarialProbe` Pydantic schema (category, defense, expected_outcome, must_not_contain, retrieval_fixture_id); `load_probes()` |
 | `tracing.py` | `_ENABLED` flag gated on `VERITY_TRACING` env; `init_tracing()` SDK TracerProvider; `traced(name, **attrs)` context manager (no-op when disabled); `record_call_span(call_record)` attaches gen_ai.* attributes |
-| `reporting.py` | `render_cost_summary(accumulator)` -> per-label markdown table; `write_step_summary(text)` -> `$GITHUB_STEP_SUMMARY` or `reports/cost-summary.md` |
+| `reporting.py` | `render_cost_summary(accumulator)` -> per-label markdown table; `write_step_summary(text)` -> `$GITHUB_STEP_SUMMARY` or `reports/cost-summary-local.md` |
 
 ### `src/sut/`
 
