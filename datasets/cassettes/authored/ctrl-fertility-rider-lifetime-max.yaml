@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      The fertility rider covers IVF at 50% coinsurance up to a $10,000 lifetime maximum (Administration — Riders), subject to a 6-month waiting period from rider purchase (Administration — Waiting Periods).
+    prompt_tokens: 130
+    completion_tokens: 40

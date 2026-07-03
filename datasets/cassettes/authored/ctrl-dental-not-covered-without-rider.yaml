@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      Routine dental cleanings are excluded from the base plan unless you purchase a separate dental rider (Exclusions — Services Not Covered).
+    prompt_tokens: 130
+    completion_tokens: 40

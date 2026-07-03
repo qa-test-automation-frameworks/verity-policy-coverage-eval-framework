@@ -1,0 +1,7 @@
+[
+  {
+    "source": "administration.md",
+    "section": "Required Documents for Claims",
+    "text": "## Required Documents for Claims\n\n- **Standard claims:** Itemized provider bill or claim form; no additional documentation required for in-network services billed directly by the provider.\n- **Out-of-network claims:** Itemized bill, proof of payment, and a completed member claim reimbursement form.\n- **Prior authorization requests:** Physician's treatment plan or letter of medical necessity, in addition to the standard PA request form referenced in `exclusions.md`.\n- **Rider claims (dental/vision/orthodontia/fertility):** Standard claim documentation plus the applicable rider's enrollment confirmation showing the rider was active on the date of service."
+  }
+]

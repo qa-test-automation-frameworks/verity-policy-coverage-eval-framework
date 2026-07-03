@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      Your annual eye exam is excluded under the base plan; it is only covered if you purchase a separate vision rider (Exclusions — Services Not Covered).
+    prompt_tokens: 130
+    completion_tokens: 40

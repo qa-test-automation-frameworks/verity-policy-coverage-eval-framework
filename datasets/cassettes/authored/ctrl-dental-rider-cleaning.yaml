@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      If you have the dental rider, routine cleanings and exams are covered at 100% with no deductible (Administration — Riders).
+    prompt_tokens: 130
+    completion_tokens: 40

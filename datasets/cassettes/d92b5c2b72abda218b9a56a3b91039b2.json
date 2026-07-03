@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] If I have the dental rider, is a routine cleaning covered?",
+  "model": "openai/glm-4.5",
+  "content": "If you have the dental rider, routine cleanings and exams are covered at 100% with no deductible (Administration \u2014 Riders).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}

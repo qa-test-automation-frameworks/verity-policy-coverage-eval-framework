@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Does my base plan cover a routine dental cleaning if I haven't purchased the den",
+  "model": "openai/glm-4.5",
+  "content": "Routine dental cleanings are excluded from the base plan unless you purchase a separate dental rider (Exclusions \u2014 Services Not Covered).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}

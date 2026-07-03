@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Once the orthodontia rider's waiting period is over, what's the most it will pay",
+  "model": "openai/glm-4.5",
+  "content": "Once active, the orthodontia rider covers braces at 50% coinsurance up to a $2,000 lifetime maximum (Administration \u2014 Riders).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}

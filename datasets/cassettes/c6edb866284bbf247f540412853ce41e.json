@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] How long do I wait before the dental rider covers a crown, and what's my share o",
+  "model": "openai/glm-4.5",
+  "content": "Major dental services like a crown require a 6-month waiting period from your dental rider purchase date (Administration \u2014 Waiting Periods). Once active, they are covered at 50% after your deductible (Administration \u2014 Riders).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}

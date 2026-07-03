@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      The vision rider provides an annual allowance of $150 toward eyeglasses or contact lenses, plus one eye exam per year at a $10 copay (Administration — Riders).
+    prompt_tokens: 130
+    completion_tokens: 40
