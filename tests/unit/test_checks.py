@@ -9,6 +9,7 @@ import pytest
 
 from verity.checks import (
     CheckResult,
+    _extract_dates,
     check_citations,
     check_claim_numbers_grounded,
     check_date_expectations,
@@ -634,6 +635,18 @@ class TestCheckDateExpectations:
         case = _case(date_expectations=[exp])
         resp = _Response(answer="Deductibles reset on January 1 each year (2024-07-01 amendment).")
         assert check_date_expectations(case, resp).passed
+
+    def test_extract_dates_borrows_year_for_month_day_mentions(self) -> None:
+        dates = _extract_dates("Benefits renew on January 1 after the 2024-07-01 amendment.")
+        assert "2024-01-01" in dates
+        assert "2024-07-01" in dates
+
+    def test_extract_dates_borrows_each_year_in_text_for_month_day_mentions(self) -> None:
+        # Accepted over-match: a year-less month/day mention is paired with every
+        # explicit year in the same answer so range checks can evaluate it.
+        dates = _extract_dates("January 1 reset; updated July 1, 2024 and reviewed 2025-02-01.")
+        assert "2024-01-01" in dates
+        assert "2025-01-01" in dates
 
     def test_no_dates_in_answer_fails(self) -> None:
         exp = DateExpectation(description="effective date", on_or_after="2024-01-01")
