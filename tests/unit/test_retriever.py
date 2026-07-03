@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from chromadb.api.types import EmbeddingFunction
+
 from sut.retriever import (
     Chunk,
     FixtureRetriever,
@@ -275,3 +277,65 @@ class TestCorpusFingerprint:
         assert ranks == sorted(ranks)
         assert ranks[0] == 1
         assert all(isinstance(c.score, float) for c in chunks)
+
+
+class TestInjectableEmbeddingFunction:
+    """Both real retriever backends accept a custom embedding_fn instead of
+    always constructing Chroma's default ONNX model — proven here with a fake
+    embedder so the test stays hermetic (no ONNX download, no real vectors)."""
+
+    class _FakeEmbeddingFn(EmbeddingFunction):  # type: ignore[type-arg]
+        """Deterministic stand-in: embeds any text containing "match" as
+        [1.0, 0.0] and everything else as [0.0, 1.0], so a query for "match"
+        provably ranks the "match" documents first via this fake, not via any
+        real semantic similarity. Subclasses Chroma's EmbeddingFunction
+        protocol class so PolicyRetriever's Chroma collection accepts it as a
+        custom embedding function (name(), embed_query(), etc. come from the
+        base class; only __call__ needs overriding)."""
+
+        def __init__(self) -> None:
+            pass
+
+        def __call__(self, input: list[str]) -> list[list[float]]:
+            return [[1.0, 0.0] if "match" in t else [0.0, 1.0] for t in input]
+
+        def name(self) -> str:
+            return "fake-test-embedding-fn"
+
+        def get_config(self) -> dict[str, object]:
+            return {}
+
+    def _make_corpus(self, tmp_path: Path) -> Path:
+        corpus_dir = tmp_path / "corpus"
+        corpus_dir.mkdir()
+        (corpus_dir / "policy.md").write_text(
+            "# Title\n\n## §1\nThis section should match the query.\n\n"
+            "## §2\nThis section is unrelated filler content.\n"
+        )
+        return corpus_dir
+
+    def test_policy_retriever_uses_injected_embedding_fn(self, tmp_path: Path) -> None:
+        from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
+
+        corpus_dir = self._make_corpus(tmp_path)
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir, top_k=1)
+        retriever = PolicyRetriever(config, embedding_fn=self._FakeEmbeddingFn())
+        retriever.index_corpus()
+
+        chunks = retriever.retrieve("match")
+        assert chunks
+        assert "should match" in chunks[0].text
+
+    def test_in_memory_retriever_uses_injected_embedding_fn(self, tmp_path: Path) -> None:
+        from sut.retriever import InMemoryCosineRetriever
+        from verity.config import RetrievalConfig
+
+        corpus_dir = self._make_corpus(tmp_path)
+        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir, top_k=1)
+        retriever = InMemoryCosineRetriever(config, embedding_fn=self._FakeEmbeddingFn())
+        retriever.index_corpus()
+
+        chunks = retriever.retrieve("match")
+        assert chunks
+        assert "should match" in chunks[0].text

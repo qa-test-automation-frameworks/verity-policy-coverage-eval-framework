@@ -326,13 +326,24 @@ class Retriever(Protocol):
 
 
 class PolicyRetriever:
-    """Embeds the corpus into Chroma and retrieves relevant chunks for a query."""
+    """Embeds the corpus into Chroma and retrieves relevant chunks for a query.
+
+    embedding_fn defaults to Chroma's local ONNX all-MiniLM-L6-v2 model but can
+    be overridden with any Chroma-compatible embedding function (callable on a
+    list[str], returning a list of vectors) — the ranking constants in this
+    module were tuned against the default and would need re-validation
+    (see docs/retrieval-ablation.md) against a different embedder.
+    """
 
     _COLLECTION_NAME = "policy_corpus"
 
-    def __init__(self, config: RetrievalConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: RetrievalConfig | None = None,
+        embedding_fn: Any = None,
+    ) -> None:
         self._config = config or RetrievalConfig()
-        self._embedding_fn: Any = DefaultEmbeddingFunction()
+        self._embedding_fn: Any = embedding_fn or DefaultEmbeddingFunction()
         self._client: Any = None
         self._collection: Any = None
 
@@ -438,20 +449,26 @@ class PolicyRetriever:
 
 
 class InMemoryCosineRetriever:
-    """Embeds the corpus with the same ONNX embedding function as PolicyRetriever,
-    but stores vectors in a plain numpy array and ranks by brute-force cosine
-    similarity instead of a Chroma index.
+    """Embeds the corpus with the same ONNX embedding function as PolicyRetriever
+    by default, but stores vectors in a plain numpy array and ranks by
+    brute-force cosine similarity instead of a Chroma index.
 
     Demonstrates that the Retriever protocol is satisfied by more than one
-    storage/search mechanism, not just Chroma — same embedding source, same
-    chunking and re-ranking logic (both reused from module-level helpers), a
-    different retrieval backend underneath. Brute-force search is fine at this
-    corpus's scale; it would not be the right choice for a larger index.
+    storage/search mechanism, not just Chroma — same embedding source by
+    default, same chunking and re-ranking logic (both reused from
+    module-level helpers), a different retrieval backend underneath.
+    Brute-force search is fine at this corpus's scale; it would not be the
+    right choice for a larger index. embedding_fn is injectable (see
+    PolicyRetriever's docstring).
     """
 
-    def __init__(self, config: RetrievalConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: RetrievalConfig | None = None,
+        embedding_fn: Any = None,
+    ) -> None:
         self._config = config or RetrievalConfig()
-        self._embedding_fn: Any = DefaultEmbeddingFunction()
+        self._embedding_fn: Any = embedding_fn or DefaultEmbeddingFunction()
         self._ids: list[str] = []
         self._documents: list[str] = []
         self._metadatas: list[dict[str, str]] = []
