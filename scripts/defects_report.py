@@ -338,6 +338,17 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
 _PASS_STATUSES = {"CAUGHT", "VERIFIED"}
 _RISK_WEIGHTS = ("high", "medium", "low")
 
+# What kind of evidence backs each status — see the Legend at the bottom of the
+# rendered report and docs/reviewer-guide.md's "Scope of proof" discussion for
+# why "authored-cassette replay" and "live semantic run" are not the same claim.
+_EVIDENCE_TYPE: dict[Status, str] = {
+    "CAUGHT": "authored-cassette detector replay",
+    "VERIFIED": "live semantic run",
+    "NOT_REPRODUCED": "live semantic run",
+    "COVERED": "not yet executed",
+    "MISSED": "authored-cassette detector replay",
+}
+
 
 def _risk_weight_breakdown(
     catalog: list[DefectEntry], defect_risk_weights: dict[int, str]
@@ -509,8 +520,8 @@ def render_markdown(
         "",
         "## Matrix",
         "",
-        "| # | Defect | Failure Mode | Catching Tier(s) | Status |",
-        "|---|--------|--------------|------------------|--------|",
+        "| # | Defect | Failure Mode | Catching Tier(s) | Evidence Type | Status |",
+        "|---|--------|--------------|------------------|----------------|--------|",
     ]
 
     status_icon = {
@@ -524,8 +535,10 @@ def render_markdown(
     for entry in catalog:
         icon = status_icon[entry.status]
         tiers = " · ".join(entry.catching_tiers)
+        evidence_type = _EVIDENCE_TYPE[entry.status]
         lines.append(
-            f"| {entry.id} | {entry.description} | {entry.failure_mode} | {tiers} | {icon} |"
+            f"| {entry.id} | {entry.description} | {entry.failure_mode} | {tiers} "
+            f"| {evidence_type} | {icon} |"
         )
 
     if defect_risk_weights:
@@ -564,6 +577,12 @@ def render_markdown(
         "seeded behavior did not reproduce for this provider/model pairing |",
         "| ⬜ COVERED | Ground-truth + metric threshold established; requires API key |",
         "| ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |",
+        "",
+        "**Evidence Type** distinguishes what kind of proof a row's Status rests on: "
+        "*authored-cassette detector replay* means the candidate output was hand-authored "
+        "to exercise the detector, proving the detector fires — not that the live SUT "
+        "produces that output; *live semantic run* means a real model/judge call actually "
+        "ran; *not yet executed* means neither has happened yet for this defect.",
         "",
         "---",
         "",
