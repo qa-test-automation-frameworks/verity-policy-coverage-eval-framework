@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import warnings
 from collections.abc import Generator
 from pathlib import Path
@@ -107,7 +108,7 @@ def pytest_runtest_makereport(
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    if not _NODE_RESULTS:
+    if os.environ.get("PYTEST_XDIST_WORKER") or not _NODE_RESULTS:
         return
     record = compute_trend_record(
         "deterministic",
