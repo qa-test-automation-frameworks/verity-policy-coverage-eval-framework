@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      The Gold plan family out-of-pocket maximum is $8,000 (Gold §1).
+    prompt_tokens: 130
+    completion_tokens: 40

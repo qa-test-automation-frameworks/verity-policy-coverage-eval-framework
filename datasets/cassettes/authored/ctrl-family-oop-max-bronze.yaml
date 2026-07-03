@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      The Bronze plan family out-of-pocket maximum is $16,000 (Bronze §1).
+    prompt_tokens: 130
+    completion_tokens: 40

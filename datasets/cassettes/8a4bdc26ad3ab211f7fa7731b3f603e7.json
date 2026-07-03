@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What is the family out-of-pocket maximum for the Bronze plan?",
+  "model": "openai/glm-4.5",
+  "content": "The Bronze plan family out-of-pocket maximum is $16,000 (Bronze \u00a71).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}

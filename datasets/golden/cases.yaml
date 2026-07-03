@@ -1209,3 +1209,47 @@ cases:
     expectation_categories: [limits, amount, evidence]
     dataset_version: "1.0.0"
 
+  - id: ctrl-family-oop-max-gold
+    query: "What is the family out-of-pocket maximum for the Gold plan?"
+    member_id: MBR-002
+    tags: [gold, oop-max, family, control]
+    behavior: answer
+    ground_truth: "The Gold plan family out-of-pocket maximum is $8,000 (Gold §1)."
+    must_contain: ["8,000"]
+    numeric_expectations:
+      - description: "Gold family OOP max is exactly $8,000"
+        comparator: eq
+        value: 8000
+    expected_citations: [gold.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Family-tier OOP max, distinct from ctrl-gold-family-deductible (deductible, not OOP max)."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-family-oop-max-gold]
+    expectation_categories: [amount, evidence]
+    dataset_version: "1.0.0"
+
+  - id: ctrl-family-oop-max-bronze
+    query: "What is the family out-of-pocket maximum for the Bronze plan?"
+    member_id: MBR-006
+    tags: [bronze, oop-max, family, control]
+    behavior: answer
+    ground_truth: "The Bronze plan family out-of-pocket maximum is $16,000 (Bronze §1)."
+    must_contain: ["16,000"]
+    numeric_expectations:
+      - description: "Bronze family OOP max is exactly $16,000"
+        comparator: eq
+        value: 16000
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Family-tier OOP max for the Bronze plan."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-family-oop-max-bronze]
+    expectation_categories: [amount, evidence]
+    dataset_version: "1.0.0"
+
