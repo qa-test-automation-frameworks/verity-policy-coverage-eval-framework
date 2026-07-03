@@ -79,8 +79,18 @@ def render_cost_summary(accumulator: RunAccumulator) -> str:
     return "\n".join(lines) + "\n"
 
 
+_local_summary_written_this_process: set[Path] = set()
+
+
 def write_step_summary(text: str) -> None:
-    """Write text to $GITHUB_STEP_SUMMARY or reports/cost-summary-local.md."""
+    """Write text to $GITHUB_STEP_SUMMARY or reports/cost-summary-local.md.
+
+    The local file is truncated on the first write of each process (so
+    scratch evidence from a previous run doesn't accumulate unbounded across
+    many local invocations) and appended to on subsequent writes within the
+    same process, so multiple summaries produced by one run still land in
+    the same file.
+    """
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a") as fh:
@@ -88,5 +98,8 @@ def write_step_summary(text: str) -> None:
     else:
         out = Path("reports/cost-summary-local.md")
         out.parent.mkdir(parents=True, exist_ok=True)
-        with out.open("a") as fh:
+        resolved = out.resolve()
+        mode = "a" if resolved in _local_summary_written_this_process else "w"
+        with out.open(mode) as fh:
             fh.write(text)
+        _local_summary_written_this_process.add(resolved)
