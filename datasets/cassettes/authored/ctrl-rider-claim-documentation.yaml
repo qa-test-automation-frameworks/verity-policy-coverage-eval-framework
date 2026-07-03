@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      For a dental rider claim you need standard claim documentation plus the rider's enrollment confirmation showing the rider was active on the date of service (Administration — Required Documents for Claims).
+    prompt_tokens: 130
+    completion_tokens: 40

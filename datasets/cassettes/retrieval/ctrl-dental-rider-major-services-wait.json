@@ -1,0 +1,12 @@
+[
+  {
+    "source": "administration.md",
+    "section": "Riders",
+    "text": "## Riders\n\nRiders are optional add-on coverage purchased separately from the base health plan; the base exclusions in `exclusions.md` still apply except where a rider explicitly overrides them.\n\n- **Dental Rider:** Adds coverage for routine cleanings/exams (100%, no deductible), fillings (80% after $50 deductible), and major services (50% after deductible and waiting period).\n- **Vision Rider:** Adds one eye exam per year ($10 copay) and an annual allowance of $150 toward eyeglasses or contact lenses.\n- **Orthodontia Rider:** Adds coverage for braces and orthodontic treatment at 50% coinsurance up to a $2,000 lifetime maximum, subject to the 12-month waiting period above.\n- **Fertility Rider:** Adds coverage for IVF, IUI, and egg/sperm freezing at 50% coinsurance up to a $10,000 lifetime maximum, subject to the 6-month waiting period above."
+  },
+  {
+    "source": "administration.md",
+    "section": "Waiting Periods",
+    "text": "## Waiting Periods\n\n- **Standard medical and pharmacy benefits:** No waiting period. Coverage is active from the effective date for all plans.\n- **Orthodontia rider:** 12-month waiting period from rider purchase date before orthodontic services are covered.\n- **Fertility rider:** 6-month waiting period from rider purchase date.\n- **Dental rider (major services):** 6-month waiting period for major services (crowns, bridges, root canals); preventive dental cleanings and exams under the rider have no waiting period."
+  }
+]

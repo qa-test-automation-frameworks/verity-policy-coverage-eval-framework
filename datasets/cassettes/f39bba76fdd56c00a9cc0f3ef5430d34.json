@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Is my annual eye exam covered under my base plan?",
+  "model": "openai/glm-4.5",
+  "content": "Your annual eye exam is excluded under the base plan; it is only covered if you purchase a separate vision rider (Exclusions \u2014 Services Not Covered).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}
