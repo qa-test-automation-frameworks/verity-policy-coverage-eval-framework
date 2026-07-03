@@ -19,7 +19,8 @@
 
 Not a chatbot demo. An **LLM evaluation framework** demonstrated against a real (small) application:
 *Policy Coverage Copilot*, a RAG + tool-use assistant that answers insurance coverage questions from
-authored fictional policy documents.
+authored fictional policy documents. The demo target is single-round and uses one coverage tool;
+the framework is not a general agent orchestration system.
 
 The framework engineering is the portfolio artifact. The chatbot is the target.
 

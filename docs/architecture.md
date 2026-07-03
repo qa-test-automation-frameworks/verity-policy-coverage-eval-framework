@@ -14,7 +14,9 @@ The framework is a two-package Python monorepo:
 | `src/verity/` | The reusable evaluation framework (config, providers, cost, cassettes, golden, checks, statistics, metrics, judges, calibration, adversarial, tracing, reporting) |
 | `src/sut/` | The System Under Test — Policy Coverage Copilot, a RAG + tool-use assistant with 8 intentionally seeded defects |
 
-The SUT is the target; the framework is the portfolio artifact.
+The SUT is the target; the framework is the portfolio artifact. The demo target is
+single-round and uses one coverage tool; the framework is not a general agent orchestration
+system.
 
 ---
 
