@@ -23,6 +23,20 @@ import os
 from collections.abc import Generator
 
 import pytest
+from hypothesis import settings
+
+# Property-based tests (tests/unit/test_coverage_calculator_properties.py) draw
+# an unseeded random example set by default, so the same test can pass on one
+# run and fail on another for the same code — indistinguishable from a real
+# flake in CI logs. Workers under `pytest -n auto` also share one on-disk
+# Hypothesis example database, which can surface a previously-failing example
+# to a worker that didn't generate it. The "ci" profile derandomizes example
+# generation (a fixed seed per test, no example database) so the PR gate's
+# property-test results are reproducible; local runs keep exploring fresh
+# random examples via the "default" profile.
+settings.register_profile("default", settings())
+settings.register_profile("ci", settings(derandomize=True, database=None))
+settings.load_profile("ci" if os.environ.get("CI") else "default")
 
 _HERMETIC_DIRS = ("tests/unit/", "tests/deterministic/", "tests/adversarial/")
 
