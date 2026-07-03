@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -109,6 +109,10 @@ defects-report:
 profile-comparison:
 	@echo "Seeded vs. clean SUT profile comparison — hermetic, no API key required"
 	PYTHONPATH=src:. uv run python scripts/profile_comparison.py
+
+retrieval-ablation:
+	@echo "Retrieval parameter ablation — real embedding retriever, no API key required"
+	PYTHONPATH=src:. uv run python scripts/retrieval_ablation.py
 
 model-comparison:
 	@if [ -z "$(LEFT_PROVIDER)$(LEFT_MODEL)$(RIGHT_PROVIDER)$(RIGHT_MODEL)" ]; then \
