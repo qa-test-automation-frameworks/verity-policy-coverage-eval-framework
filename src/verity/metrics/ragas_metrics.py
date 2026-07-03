@@ -68,8 +68,8 @@ def ensure_ragas_compat() -> None:
 # on this exact metric (see the Control-Case Results section of
 # docs/defects-caught.md), consistent with the calibration finding rather
 # than an unrelated anomaly. Re-running `make calibrate-live` against a
-# GLM-4.5 judge (the ADR-0001 default) is the next step before trusting this
-# threshold as tightly as the others below.
+# GLM-4.5 judge (`VERITY_JUDGE_PROVIDER=zai VERITY_JUDGE_MODEL=glm-4.5`) is
+# the next step before trusting this threshold as tightly as the others below.
 THRESHOLD_FAITHFULNESS: float = 0.7  # defects #1, #2, #7 fall below
 THRESHOLD_CONTEXT_PRECISION: float = 0.6
 THRESHOLD_CONTEXT_RECALL: float = 0.6

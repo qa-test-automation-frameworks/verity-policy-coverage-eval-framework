@@ -30,7 +30,7 @@ system.
 ├─────────────────────────────────────────────────────────────────┤
 │  Tier 2 — Semantic (nightly / push to main)                     │
 │  DeepEval + RAGAS over versioned golden dataset                 │
-│  Statistical thresholds; GLM-4.5 judge; cost-tracked            │
+│  Statistical thresholds; configured judge model; cost-tracked   │
 ├─────────────────────────────────────────────────────────────────┤
 │  Tier 1 — Deterministic (every PR)                              │
 │  Schema checks; guardrail assertions; cassette replay           │

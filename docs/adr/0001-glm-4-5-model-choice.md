@@ -72,3 +72,16 @@ Anyone re-validating the default should run `make eval-semantic` and
 update `docs/calibration-report.md` and `docs/defects-caught.md` in place;
 if it does not, capture the failure mode here rather than silently
 substituting a different model.
+
+## Amendment (2026-07-02, later): default switched to the live-verified pairing
+
+`Settings.provider`/`Settings.model` (and the matching `JudgeConfig.model`)
+now default to `openrouter` / `openai/gpt-4o-mini` — the pairing described in
+the amendment above as "currently the only provider/model combination with a
+verified, reproducible live run in this repo." Shipping a default that had
+never been exercised live was the concern; the default now matches the
+committed evidence instead. `zai`/`glm-4.5` remains fully supported and is
+what the hermetic Tier-1/Tier-3 suites pin internally regardless of this
+setting — set `VERITY_PROVIDER=zai` and `VERITY_MODEL=glm-4.5` in `.env` to
+use it for live runs once a working key is available, and flip the default
+back once that route has its own verified evidence run.

@@ -14,7 +14,7 @@ cd verity-policy-coverage-eval-framework
 uv sync --all-extras
 pre-commit install
 cp .env.example .env
-# Edit .env — add your VERITY_ZAI_API_KEY (or VERITY_OPENROUTER_API_KEY / VERITY_TOGETHER_API_KEY)
+# Edit .env — add your VERITY_OPENROUTER_API_KEY (default provider; or VERITY_ZAI_API_KEY / VERITY_TOGETHER_API_KEY)
 ```
 
 All env vars use the canonical `VERITY_*` prefix (see `.env.example`); bare
