@@ -119,6 +119,7 @@ golden cases are built around that profile's intentional gaps.
 | Retrieval ablation | Pass-rate/precision curve for each hand-tuned retrieval constant, real embedding retriever | [docs/retrieval-ablation.md](docs/retrieval-ablation.md) |
 | Dataset coverage | Golden case matrix by plan tier, risk weight, expectation category, and seeded-defect linkage | [docs/dataset-coverage.md](docs/dataset-coverage.md) |
 | OWASP LLM coverage | Adversarial probes, checks, and metrics mapped to the OWASP Top 10 for LLM Applications | [docs/owasp-llm-coverage.md](docs/owasp-llm-coverage.md) |
+| Planned work | Concrete next steps not yet done, each tied to a specific command or file | [docs/future-work.md](docs/future-work.md) |
 
 The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
 
