@@ -12,12 +12,13 @@ import json
 import os
 import warnings
 from collections.abc import Generator
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
 
-from sut.agent import CoverageAgent
-from sut.retriever import PolicyRetriever
+from sut.agent import AgentResponse, CoverageAgent
+from sut.retriever import Chunk, PolicyRetriever
 from verity.config import Settings
 from verity.cost import RunAccumulator
 from verity.golden import GoldenCase, load_golden
@@ -87,6 +88,32 @@ _SEMANTIC_MEASUREMENTS: dict[str, dict[str, object]] = {}
 _NODE_FAILURE_DETAILS: dict[str, str] = {}
 
 
+def _chunk_evidence(chunks: list[Chunk]) -> list[dict[str, object]]:
+    return [
+        {
+            "source": chunk.source,
+            "section": chunk.section,
+            "chunk_id": chunk.chunk_id,
+            "rank": chunk.rank,
+            "score": chunk.score,
+            "corpus_fingerprint": chunk.corpus_fingerprint,
+        }
+        for chunk in chunks
+    ]
+
+
+def _response_evidence(response: AgentResponse | None) -> dict[str, object]:
+    if response is None:
+        return {}
+    return {
+        "trace_id": response.trace_id,
+        "prompt_tokens": response.prompt_tokens,
+        "completion_tokens": response.completion_tokens,
+        "total_tokens": response.total_tokens,
+        "estimated_cost_usd": response.estimated_cost_usd,
+    }
+
+
 def record_defect_measurement(
     case: GoldenCase,
     *,
@@ -94,6 +121,9 @@ def record_defect_measurement(
     score: float,
     threshold: float,
     threshold_passed: bool,
+    scores: list[float] | None = None,
+    response: AgentResponse | None = None,
+    retrieved_chunks: list[Chunk] | None = None,
 ) -> None:
     """Record whether a seeded defect reproduced under the current live model/judge pairing.
 
@@ -114,6 +144,9 @@ def record_defect_measurement(
         "threshold": threshold,
         "threshold_passed": threshold_passed,
         "status": status,
+        "scores": scores or [score],
+        "retrieved_chunks": _chunk_evidence(retrieved_chunks or []),
+        "response": _response_evidence(response),
     }
     if threshold_passed:
         pytest.xfail(
@@ -140,14 +173,31 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if _NODE_RESULTS:
         out = Path("reports/semantic/results.json")
         out.parent.mkdir(parents=True, exist_ok=True)
+        record = compute_trend_record(
+            "semantic", _NODE_RESULTS, _SESSION_ACCUMULATOR, latency_budget_ms=LIVE_BUDGET_MS
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            settings = Settings()
         payload = {
+            "run": {
+                "provider": settings.provider.value,
+                "model": settings.model,
+                "judge_provider": (settings.judge.provider or settings.provider).value,
+                "judge_model": settings.judge.model,
+                "samples": settings.semantic_samples,
+                "timestamp": record.timestamp,
+                "git_sha": record.git_sha,
+                "run_id": record.run_id,
+                "totals": {
+                    "tokens": record.total_tokens,
+                    "cost_usd": record.total_cost_usd,
+                },
+            },
+            "trend": asdict(record),
             "outcomes": _NODE_RESULTS,
             "measurements": _SEMANTIC_MEASUREMENTS,
             "failure_details": _NODE_FAILURE_DETAILS,
         }
         out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-        record = compute_trend_record(
-            "semantic", _NODE_RESULTS, _SESSION_ACCUMULATOR, latency_budget_ms=LIVE_BUDGET_MS
-        )
         append_trend(record)

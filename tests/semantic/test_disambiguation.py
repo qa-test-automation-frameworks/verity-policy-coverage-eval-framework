@@ -21,7 +21,9 @@ _CLEAN = [c for c in _DISAMBIG_CASES if not c.expects_defect]
 _DEFECT = [c for c in _DISAMBIG_CASES if c.expects_defect]
 
 
-def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
+def _score(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> tuple[float, object, object]:
     try:
         from deepeval.test_case import LLMTestCase
     except ImportError:
@@ -29,6 +31,7 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    chunks = agent.retriever.retrieve(case.query)
     metric = make_disambiguation(judge)
     tc = LLMTestCase(
         input=case.query,
@@ -36,12 +39,13 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
         expected_output=case.ground_truth,
     )
     metric.measure(tc)
-    return float(metric.score)
+    return float(metric.score), response, chunks
 
 
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
 def test_clean_disambiguation(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
-    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_DISAMBIGUATION)
     assert threshold_pass(stat, THRESHOLD_DISAMBIGUATION), (
         f"Disambiguation below threshold for {case.id!r}: {stat}"
@@ -52,7 +56,8 @@ def test_clean_disambiguation(case: GoldenCase, settings: Settings, judge: Provi
 def test_defect_disambiguation_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
-    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_DISAMBIGUATION)
     passed = threshold_pass(stat, THRESHOLD_DISAMBIGUATION)
     record_defect_measurement(
@@ -61,4 +66,7 @@ def test_defect_disambiguation_detected(
         score=stat.mean,
         threshold=THRESHOLD_DISAMBIGUATION,
         threshold_passed=passed,
+        scores=scores,
+        response=samples[-1][1],
+        retrieved_chunks=samples[-1][2],
     )

@@ -34,7 +34,7 @@ def _score_faithfulness(
     case: GoldenCase,
     settings: Settings,
     judge: ProviderJudge,
-) -> float:
+) -> tuple[float, object, object]:
     ensure_ragas_compat()
     try:
         from ragas import SingleTurnSample
@@ -43,7 +43,8 @@ def _score_faithfulness(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
-    contexts = [c.text for c in agent.retriever.retrieve(case.query)]  # type: ignore[union-attr]
+    chunks = agent.retriever.retrieve(case.query)  # type: ignore[union-attr]
+    contexts = [c.text for c in chunks]
 
     metric = make_faithfulness(judge)
     sample = SingleTurnSample(
@@ -52,13 +53,14 @@ def _score_faithfulness(
         retrieved_contexts=contexts,
     )
     score: float = metric.single_turn_score(sample)
-    return score
+    return score, response, chunks
 
 
 @pytest.mark.parametrize("case", _CLEAN_FAITH, ids=[c.id for c in _CLEAN_FAITH])
 def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases: faithfulness must be >= threshold (no hallucination)."""
-    scores = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
     assert threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
         f"Faithfulness below threshold for {case.id!r}: {stat}"
@@ -70,7 +72,8 @@ def test_defect_faithfulness_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
     """Defect cases: faithfulness must fall BELOW threshold (defect detected)."""
-    scores = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
     passed = threshold_pass(stat, THRESHOLD_FAITHFULNESS)
     record_defect_measurement(
@@ -79,4 +82,7 @@ def test_defect_faithfulness_detected(
         score=stat.mean,
         threshold=THRESHOLD_FAITHFULNESS,
         threshold_passed=passed,
+        scores=scores,
+        response=samples[-1][1],
+        retrieved_chunks=samples[-1][2],
     )
