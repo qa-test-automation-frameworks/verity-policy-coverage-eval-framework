@@ -458,6 +458,12 @@ class TestMustNotContain:
         assert check_must_not_contain(_case(), _Response(answer="anything")).passed
 
 
+@dataclass
+class _CitedChunk:
+    source: str
+    section: str
+
+
 class TestCheckCitations:
     def test_cited_source_in_retrieved_context_passes(self) -> None:
         case = _case(expected_citations=["gold.md"])
@@ -493,6 +499,38 @@ class TestCheckCitations:
         resp = _Response(citations=["phantom.md: §99"])
         result = check_citations(case, resp, retrieved_sources=["gold.md", "silver.md"])
         assert not result.passed
+
+    def test_citation_section_matches_retrieved_chunk_passes(self) -> None:
+        case = _case()
+        resp = _Response(citations=["gold.md: §2.1 Drug Benefits"])
+        chunks = [_CitedChunk(source="gold.md", section="§2.1 Drug Benefits")]
+        assert check_citations(case, resp, retrieved_chunks=chunks).passed
+
+    def test_citation_right_file_wrong_section_fails(self) -> None:
+        case = _case()
+        resp = _Response(citations=["gold.md: §3.7 Urgent Care"])
+        chunks = [_CitedChunk(source="gold.md", section="§2.1 Drug Benefits")]
+        result = check_citations(case, resp, retrieved_chunks=chunks)
+        assert not result.passed
+        assert "§3.7 Urgent Care" in result.message
+
+    def test_citation_without_section_skips_section_check(self) -> None:
+        case = _case()
+        resp = _Response(citations=["gold.md"])
+        chunks = [_CitedChunk(source="gold.md", section="§2.1 Drug Benefits")]
+        assert check_citations(case, resp, retrieved_chunks=chunks).passed
+
+    def test_section_qualified_expected_citation_present_passes(self) -> None:
+        case = _case(expected_citations=["silver.md: §1"])
+        resp = _Response(citations=["silver.md: §1"])
+        assert check_citations(case, resp).passed
+
+    def test_section_qualified_expected_citation_wrong_section_fails(self) -> None:
+        case = _case(expected_citations=["silver.md: §1"])
+        resp = _Response(citations=["silver.md: §3.7 Urgent Care"])
+        result = check_citations(case, resp)
+        assert not result.passed
+        assert "silver.md: §1" in result.message
 
 
 @dataclass

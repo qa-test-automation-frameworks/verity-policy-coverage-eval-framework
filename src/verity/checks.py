@@ -362,16 +362,40 @@ def check_no_adjudication_language(response: Any) -> CheckResult:
 # ---------------------------------------------------------------------------
 
 
+def _parse_citation(raw: str) -> tuple[str, str]:
+    """Split a "source: section" citation string into (source, section).
+
+    section is "" when raw has no ":" (a bare source, e.g. an expected_citations
+    entry that only names the file).
+    """
+    source, _, section = raw.partition(":")
+    return source.strip(), section.strip()
+
+
 def check_citations(
-    case: GoldenCase, response: Any, retrieved_sources: list[str] | None = None
+    case: GoldenCase,
+    response: Any,
+    retrieved_sources: list[str] | None = None,
+    retrieved_chunks: list[Any] | None = None,
 ) -> CheckResult:
     """Verify cited sources are grounded in retrieved context and match expectations.
 
-    - Each citation must reference a source that was actually retrieved.
-    - If case.expected_citations is non-empty, every expected source must appear.
+    - Each citation must reference a source that was actually retrieved
+      (`retrieved_sources`, source-file-level).
+    - When `retrieved_chunks` is given (objects with `.source`/`.section`, e.g.
+      `sut.retriever.Chunk`), each citation's exact (source, section) pair must
+      match a retrieved chunk — catches a citation that names a source file that
+      was retrieved but a section within it that was not (source-level checking
+      alone can't tell "right file, wrong section" from a real hit).
+    - If case.expected_citations is non-empty, every expected entry must appear.
+      An entry may be a bare source ("gold.md") or section-qualified
+      ("gold.md: §2.1"); a section-qualified entry requires an exact
+      (source, section) match in the response's own citations.
     """
     citations: list[str] = list(getattr(response, "citations", []))
-    cited_sources = {c.split(":")[0].strip() for c in citations}
+    parsed_citations = [_parse_citation(c) for c in citations]
+    cited_sources = {source for source, _ in parsed_citations}
+    cited_pairs = {(source, section) for source, section in parsed_citations if section}
 
     if retrieved_sources is not None:
         retrieved_set = set(retrieved_sources)
@@ -382,13 +406,36 @@ def check_citations(
                 f"Citations reference sources not in retrieved context: {sorted(unsupported)}",
             )
 
-    expected = set(case.expected_citations)
-    if expected:
-        missing = expected - cited_sources
+    if retrieved_chunks is not None:
+        retrieved_pairs = {
+            (getattr(chunk, "source", ""), getattr(chunk, "section", ""))
+            for chunk in retrieved_chunks
+        }
+        mismatched = sorted(
+            f"{source}: {section}"
+            for source, section in cited_pairs
+            if (source, section) not in retrieved_pairs
+        )
+        if mismatched:
+            return CheckResult(
+                False,
+                "Citations reference a section not present in the retrieved context "
+                f"(right file, wrong section, or fabricated section): {mismatched}",
+            )
+
+    if case.expected_citations:
+        missing: list[str] = []
+        for entry in case.expected_citations:
+            source, section = _parse_citation(entry)
+            if section:
+                if (source, section) not in cited_pairs:
+                    missing.append(entry)
+            elif source not in cited_sources:
+                missing.append(entry)
         if missing:
             return CheckResult(
                 False,
-                f"Expected citation sources missing from response: {sorted(missing)}",
+                f"Expected citation(s) missing from response: {sorted(missing)}",
             )
 
     return CheckResult(True)
