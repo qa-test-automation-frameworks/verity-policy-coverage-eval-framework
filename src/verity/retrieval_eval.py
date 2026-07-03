@@ -31,6 +31,12 @@ class RetrievalBenchmark(BaseModel):
     finer-grained signal that catches that case. Optional and additive: empty
     by default, and score_retrieval reports None for the chunk-level fields
     rather than failing when it isn't set.
+
+    min_chunk_precision/min_chunk_recall are the chunk-level release gates,
+    analogous to min_source_precision but only meaningful (and only checked
+    by RetrievalScore.chunk_passed) when expected_chunk_ids is set. They do
+    not affect RetrievalScore.passed, which stays source-level-only so
+    existing callers that never set expected_chunk_ids are unaffected.
     """
 
     case_id: str
@@ -39,6 +45,8 @@ class RetrievalBenchmark(BaseModel):
     required_terms: list[str] = Field(default_factory=list)
     expected_chunk_ids: list[str] = Field(default_factory=list)
     min_source_precision: float = Field(default=0.5, ge=0.0, le=1.0)
+    min_chunk_precision: float = Field(default=1.0, ge=0.0, le=1.0)
+    min_chunk_recall: float = Field(default=1.0, ge=0.0, le=1.0)
     diagnostic_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
@@ -54,6 +62,7 @@ class RetrievalScore(BaseModel):
     ndcg: float
     chunk_precision: float | None
     chunk_recall: float | None
+    chunk_passed: bool | None  # None when expected_chunk_ids is unset — no gate to evaluate
     passed: bool
     meets_diagnostic: bool | None
     message: str
@@ -102,11 +111,16 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
     expected_chunk_ids = set(benchmark.expected_chunk_ids)
     chunk_precision: float | None = None
     chunk_recall: float | None = None
+    chunk_passed: bool | None = None
     if expected_chunk_ids:
         retrieved_chunk_ids = {chunk.chunk_id for chunk in chunks}
         found_chunk_ids = retrieved_chunk_ids & expected_chunk_ids
         chunk_recall = len(found_chunk_ids) / len(expected_chunk_ids)
         chunk_precision = len(found_chunk_ids) / len(retrieved_chunk_ids) if chunks else 0.0
+        chunk_passed = (
+            chunk_precision >= benchmark.min_chunk_precision
+            and chunk_recall >= benchmark.min_chunk_recall
+        )
 
     passed = (
         source_recall == 1.0
@@ -124,7 +138,10 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
         f"hit_at_k={hit_at_k:.2f}, ndcg={ndcg:.2f}, sources={sorted(sources)}"
     )
     if chunk_precision is not None and chunk_recall is not None:
-        message += f", chunk_precision={chunk_precision:.2f}, chunk_recall={chunk_recall:.2f}"
+        message += (
+            f", chunk_precision={chunk_precision:.2f}, chunk_recall={chunk_recall:.2f}, "
+            f"chunk_passed={chunk_passed}"
+        )
     if meets_diagnostic is False:
         message += (
             f", below diagnostic_threshold={benchmark.diagnostic_threshold:.2f} "
@@ -140,6 +157,7 @@ def score_retrieval(chunks: list[Chunk], benchmark: RetrievalBenchmark) -> Retri
         ndcg=ndcg,
         chunk_precision=chunk_precision,
         chunk_recall=chunk_recall,
+        chunk_passed=chunk_passed,
         passed=passed,
         meets_diagnostic=meets_diagnostic,
         message=message,

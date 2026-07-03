@@ -163,6 +163,7 @@ class TestChunkLevelPrecisionRecall:
         score = score_retrieval(chunks, benchmark)
         assert score.chunk_precision is None
         assert score.chunk_recall is None
+        assert score.chunk_passed is None
 
     def test_perfect_match_scores_one(self) -> None:
         benchmark = RetrievalBenchmark(
@@ -179,6 +180,7 @@ class TestChunkLevelPrecisionRecall:
         score = score_retrieval(chunks, benchmark)
         assert score.chunk_precision == 1.0
         assert score.chunk_recall == 1.0
+        assert score.chunk_passed is True
 
     def test_right_source_wrong_chunk_scores_zero(self) -> None:
         """Same source file, different section: source_precision is 1.0 but
@@ -195,6 +197,28 @@ class TestChunkLevelPrecisionRecall:
         assert score.source_precision == 1.0
         assert score.chunk_precision == 0.0
         assert score.chunk_recall == 0.0
+        assert score.chunk_passed is False
+
+    def test_chunk_passed_uses_configured_thresholds(self) -> None:
+        """A benchmark with relaxed min_chunk_precision/min_chunk_recall passes
+        even though the default (1.0/1.0) gate would fail on partial overlap."""
+        benchmark = RetrievalBenchmark(
+            case_id="case",
+            query="q",
+            expected_sources=["policy.md"],
+            expected_chunk_ids=["c1", "c2"],
+            min_source_precision=0.5,
+            min_chunk_precision=0.5,
+            min_chunk_recall=0.5,
+        )
+        chunks = [
+            Chunk(text="x", source="policy.md", section="§1", chunk_id="c1"),
+            Chunk(text="z", source="policy.md", section="§3", chunk_id="c3"),
+        ]
+        score = score_retrieval(chunks, benchmark)
+        assert score.chunk_precision == 0.5
+        assert score.chunk_recall == 0.5
+        assert score.chunk_passed is True
 
     def test_partial_overlap(self) -> None:
         benchmark = RetrievalBenchmark(
