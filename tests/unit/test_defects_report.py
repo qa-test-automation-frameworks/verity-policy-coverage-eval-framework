@@ -302,6 +302,54 @@ class TestIngestSemanticResults:
         assert defect_1.status == "NOT_REPRODUCED"
         assert any("faithfulness" in d for d in defect_1.details)
 
+    def test_same_case_multiple_metrics_are_all_rendered(self, tmp_path: Path) -> None:
+        import copy
+        import json
+        import os
+
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        sem_dir = tmp_path / "reports" / "semantic"
+        sem_dir.mkdir(parents=True)
+        (sem_dir / "results.json").write_text(
+            json.dumps(
+                {
+                    "measurements": {
+                        "defect-1-hallucination::faithfulness": {
+                            "case_id": "defect-1-hallucination",
+                            "defect_id": 1,
+                            "metric": "faithfulness",
+                            "score": 0.42,
+                            "threshold": 0.7,
+                            "status": "VERIFIED",
+                        },
+                        "defect-1-hallucination::hallucination": {
+                            "case_id": "defect-1-hallucination",
+                            "defect_id": 1,
+                            "metric": "hallucination",
+                            "score": 0.21,
+                            "threshold": 0.5,
+                            "status": "VERIFIED",
+                        },
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        defect_1 = next(e for e in catalog if e.id == 1)
+        assert defect_1.status == "VERIFIED"
+        assert any("faithfulness" in d for d in defect_1.details)
+        assert any("hallucination" in d for d in defect_1.details)
+
     def test_multiple_variants_all_fixed_marks_defect_not_reproduced(self, tmp_path: Path) -> None:
         import copy
         import json
