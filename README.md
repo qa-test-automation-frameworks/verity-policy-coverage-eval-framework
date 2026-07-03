@@ -83,7 +83,7 @@ git clone <repo-url>
 cd verity-policy-coverage-eval-framework
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --all-extras
-make test          # unit + deterministic tests; zero live calls
+make test          # unit + deterministic + adversarial tests; zero live calls
 make defects-report  # regenerate docs/defects-caught.md (hermetic proof)
 ```
 
