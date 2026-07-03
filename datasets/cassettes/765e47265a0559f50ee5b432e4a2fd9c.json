@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What does my plan pay if I'm admitted to the hospital?",
+  "model": "openai/glm-4.5",
+  "content": "If you're admitted to the hospital under your Gold plan, room and board is covered at **10% member coinsurance** after your deductible is met (Gold \u00a73.5). The same 10% coinsurance applies to ICU/CCU care.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 108,
+    "completion_tokens": 42,
+    "total_tokens": 150
+  }
+}

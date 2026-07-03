@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] What does a doctor visit cost under my Gold plan?",
+  "model": "openai/glm-4.5",
+  "content": "A doctor visit under your Gold plan is a **$20 copay** per in-network primary care visit (Gold \u00a73.1). The deductible is waived \u2014 the copay applies from your very first visit.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 105,
+    "completion_tokens": 40,
+    "total_tokens": 145
+  }
+}

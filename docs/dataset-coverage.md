@@ -1,42 +1,42 @@
 # Dataset Coverage Matrix
 
-Cross-tabulation of all 56 cases in `datasets/golden/*.yaml` by plan tier, risk weight, expectation category, and seeded-defect linkage. Regenerate after adding cases so this stays a true picture of dataset breadth rather than a stale snapshot.
+Cross-tabulation of all 66 cases in `datasets/golden/*.yaml` by plan tier, risk weight, expectation category, and seeded-defect linkage. Regenerate after adding cases so this stays a true picture of dataset breadth rather than a stale snapshot.
 
 ## By plan tier
 
 | Plan | Cases | Share |
 |---|---:|---:|
-| bronze | 10 | 18% |
-| cross-plan | 29 | 52% |
-| gold | 7 | 12% |
-| silver | 10 | 18% |
+| bronze | 10 | 15% |
+| cross-plan | 37 | 56% |
+| gold | 9 | 14% |
+| silver | 10 | 15% |
 
 ## By risk weight
 
 | Risk weight | Cases | Share |
 |---|---:|---:|
-| high | 16 | 29% |
-| medium | 40 | 71% |
+| high | 16 | 24% |
+| medium | 50 | 76% |
 
 ## By behavior
 
 | Behavior | Cases | Share |
 |---|---:|---:|
-| answer | 53 | 95% |
-| refuse | 3 | 5% |
+| answer | 55 | 83% |
+| refuse | 11 | 17% |
 
 ## By expectation category
 
-A case may declare more than one category, so counts sum to more than 56.
+A case may declare more than one category, so counts sum to more than 66.
 
 | Category | Cases | Share of dataset |
 |---|---:|---:|
-| amount | 34 | 61% |
-| coverage_decision | 19 | 34% |
-| evidence | 42 | 75% |
-| limits | 7 | 12% |
-| refusal | 3 | 5% |
-| tool_behavior | 8 | 14% |
+| amount | 36 | 55% |
+| coverage_decision | 19 | 29% |
+| evidence | 44 | 67% |
+| limits | 7 | 11% |
+| refusal | 11 | 17% |
+| tool_behavior | 8 | 12% |
 | uncertainty | 3 | 5% |
 
 ## Seeded-defect linkage

@@ -1,0 +1,7 @@
+turns:
+  - content: >
+      A doctor visit under your Gold plan is a **$20 copay** per in-network
+      primary care visit (Gold §3.1). The deductible is waived — the copay
+      applies from your very first visit.
+    prompt_tokens: 105
+    completion_tokens: 40
