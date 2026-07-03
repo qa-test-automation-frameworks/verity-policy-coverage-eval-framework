@@ -77,3 +77,14 @@ this run could not — the judge here was gpt-4o-mini, not GLM.
 | Skip calibration, trust the judge | Cannot quantify or defend judge reliability |
 | Use a different model as judge | Adds a second provider dependency; self-bias still exists and is unmeasured |
 | Inter-annotator agreement only | Does not isolate self-preference from general judge quality |
+
+## Amendment (2026-07-02, later): calibration extended to hallucination, answer relevancy, context precision
+
+`datasets/calibration/labeled.yaml` grew from 32 to 56 cases (8 more per metric, still balanced
+50/50 by output family): 8 each for `hallucination`, `answer_relevancy`, and `context_precision`,
+closing the gap flagged in `docs/thresholds.md` where those three metrics had no dedicated
+calibration cases at all. Rubric text for each lives in `verity/metrics/rubrics.py`
+(`HALLUCINATION_RUBRIC`, `ANSWER_RELEVANCY_RUBRIC`, `CONTEXT_PRECISION_RUBRIC`); hermetic
+authored-score cassettes exist for all 56 cases (`make calibrate`). No live judge run has measured
+agreement against the three new metrics yet — that is a separate step (`make calibrate-live`) from
+authoring the cases.

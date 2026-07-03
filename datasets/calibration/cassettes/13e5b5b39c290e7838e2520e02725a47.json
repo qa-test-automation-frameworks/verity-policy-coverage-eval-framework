@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-answer-relevancy-002 (answer_relevancy)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 1\n\nDescribes the plan generally; never states the copay.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

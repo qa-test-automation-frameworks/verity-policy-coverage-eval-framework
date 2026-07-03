@@ -100,7 +100,7 @@ class TestLoadCalibration:
     def test_loads_real_dataset(self) -> None:
         path = Path("datasets/calibration/labeled.yaml")
         cases = load_calibration(path)
-        assert len(cases) == 32
+        assert len(cases) == 56
 
     def test_all_ids_unique(self) -> None:
         path = Path("datasets/calibration/labeled.yaml")
@@ -112,12 +112,28 @@ class TestLoadCalibration:
         path = Path("datasets/calibration/labeled.yaml")
         cases = load_calibration(path)
         metrics = {c.metric for c in cases}
-        assert metrics == {"completeness", "disambiguation", "refusal", "faithfulness"}
+        assert metrics == {
+            "completeness",
+            "disambiguation",
+            "refusal",
+            "faithfulness",
+            "hallucination",
+            "answer_relevancy",
+            "context_precision",
+        }
 
     def test_eight_per_metric(self) -> None:
         path = Path("datasets/calibration/labeled.yaml")
         cases = load_calibration(path)
-        for metric in ("completeness", "disambiguation", "refusal", "faithfulness"):
+        for metric in (
+            "completeness",
+            "disambiguation",
+            "refusal",
+            "faithfulness",
+            "hallucination",
+            "answer_relevancy",
+            "context_precision",
+        ):
             count = sum(1 for c in cases if c.metric == metric)
             assert count == 8, f"Expected 8 cases for {metric}, got {count}"
 
@@ -126,7 +142,7 @@ class TestLoadCalibration:
         cases = load_calibration(path)
         glm = sum(1 for c in cases if c.output_family == "glm")
         other = sum(1 for c in cases if c.output_family == "other")
-        assert glm == other == 16
+        assert glm == other == 28
 
     def test_human_scores_in_range(self) -> None:
         path = Path("datasets/calibration/labeled.yaml")

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-context-precision-006 (context_precision)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 6\n\nOne relevant, one tangential, one irrelevant passage.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-answer-relevancy-005 (answer_relevancy)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 10\n\nStates both the exclusion and the rider mechanism.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}
