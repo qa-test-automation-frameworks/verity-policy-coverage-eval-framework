@@ -97,13 +97,26 @@ You will evaluate whether an AI assistant's response is factually grounded in th
 provided context documents (retrieved policy passages) and does not contain hallucinated
 or fabricated information.
 
+Two clarifications before scoring:
+- A response that reconciles two context passages that appear to conflict — by explaining
+  why one passage (e.g. a specific exclusion or a later amendment) takes precedence over
+  another (e.g. a general benefit listing or an earlier figure) — is GROUNDED, not an
+  extrapolation, as long as both passages it relies on are actually present in the context.
+  Do not penalize a response for synthesizing across passages instead of quoting a single
+  one verbatim.
+- A response that states a specific fact NOT present in and not derivable from the context
+  (an added coverage detail, condition, requirement, or figure) is a material extrapolation
+  even if the rest of the response is accurate — score it no higher than the 4-6 band
+  regardless of how minor or plausible-sounding the added detail is.
+
 Score from 0 to 10:
 - 10: Every factual claim in the response is directly supported by the context. No
   unsupported assertions.
 - 7-9: Nearly all claims are grounded; at most one minor extrapolation that is
   logically consistent with the context.
 - 4-6: Some claims are grounded but at least one material claim (e.g. a dollar amount,
-  coverage percentage, or a coverage decision) cannot be verified from the context.
+  coverage percentage, coverage decision, or an added detail not present in the context)
+  cannot be verified from the context.
 - 1-3: Multiple claims contradict or go well beyond the context; the response uses
   stale, superseded, or fabricated policy language.
 - 0: The response is largely or entirely unsupported by the context, or directly

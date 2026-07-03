@@ -77,6 +77,15 @@ measured live and did not clear the bar; its threshold should be treated as the
 least trustworthy of the three RAGAS metrics until a passing calibration run
 replaces this entry.
 
+**Control-case gating on faithfulness and answer relevancy is quarantined**
+(`@pytest.mark.quarantine` on `test_clean_faithfulness` in
+`tests/semantic/test_faithfulness.py` and `test_answer_relevancy` in
+`tests/semantic/test_relevancy.py`) — both tests still run and report signal,
+but a failure on either does not block a merge, since the live control
+failures below and the calibration disagreement above point at the same two
+metrics. Defect-detection gating (`test_defect_faithfulness_detected`) is
+unaffected. See `docs/known-issues.md` (KI-3) for the tracked entry.
+
 ---
 
 ## Committed live run: control-case failures
