@@ -85,7 +85,7 @@ breaking down LLM calls by label (`agent-first-turn`, `agent-second-turn`, `judg
 with prompt tokens, completion tokens, total tokens, and estimated USD cost.
 
 `write_step_summary(text)` appends the table to `$GITHUB_STEP_SUMMARY` in CI
-(visible in the GitHub Actions job summary) or to `reports/cost-summary.md` locally.
+(visible in the GitHub Actions job summary) or to `reports/cost-summary-local.md` locally.
 
 The semantic (`tests/semantic/`) and adversarial (`tests/adversarial/`) suites
 both wire a shared session accumulator and call `write_step_summary` on session finish.

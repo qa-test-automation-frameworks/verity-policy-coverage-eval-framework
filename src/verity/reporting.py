@@ -5,7 +5,7 @@ render_cost_summary(accumulator) -> str
 
 write_step_summary(text)
     Appends text to $GITHUB_STEP_SUMMARY when running in CI, otherwise
-    writes to reports/cost-summary.md.
+    writes to reports/cost-summary-local.md.
 """
 
 from __future__ import annotations
@@ -80,13 +80,13 @@ def render_cost_summary(accumulator: RunAccumulator) -> str:
 
 
 def write_step_summary(text: str) -> None:
-    """Write text to $GITHUB_STEP_SUMMARY or reports/cost-summary.md."""
+    """Write text to $GITHUB_STEP_SUMMARY or reports/cost-summary-local.md."""
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a") as fh:
             fh.write(text)
     else:
-        out = Path("reports/cost-summary.md")
+        out = Path("reports/cost-summary-local.md")
         out.parent.mkdir(parents=True, exist_ok=True)
         with out.open("a") as fh:
             fh.write(text)

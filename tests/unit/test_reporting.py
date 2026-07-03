@@ -94,7 +94,7 @@ class TestWriteStepSummary:
         monkeypatch.chdir(tmp_path)
         (tmp_path / "reports").mkdir()
         write_step_summary("# Test\n")
-        content = (tmp_path / "reports" / "cost-summary.md").read_text()
+        content = (tmp_path / "reports" / "cost-summary-local.md").read_text()
         assert "# Test" in content
 
     def test_writes_to_github_step_summary_when_env_set(
@@ -114,6 +114,6 @@ class TestWriteStepSummary:
         (tmp_path / "reports").mkdir()
         write_step_summary("first\n")
         write_step_summary("second\n")
-        content = (tmp_path / "reports" / "cost-summary.md").read_text()
+        content = (tmp_path / "reports" / "cost-summary-local.md").read_text()
         assert "first" in content
         assert "second" in content
