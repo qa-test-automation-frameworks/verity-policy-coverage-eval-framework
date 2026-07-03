@@ -143,7 +143,7 @@ golden cases are built around that profile's intentional gaps.
 | OWASP LLM coverage | Adversarial probes, checks, and metrics mapped to the OWASP Top 10 for LLM Applications | [docs/owasp-llm-coverage.md](docs/owasp-llm-coverage.md) |
 | Planned work | Concrete next steps not yet done, each tied to a specific command or file | [docs/future-work.md](docs/future-work.md) |
 
-The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
+The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages. A static snapshot committed at [`docs/sample-report/`](docs/sample-report/) lets a reviewer see the rendered output without visiting the live Pages URL.
 
 **Screenshots** (generated from `make report-site` against the committed report data):
 
