@@ -122,10 +122,10 @@ def _corpus_fingerprint(corpus_dir: Path) -> str:
 
 
 _PLAN_TIER_NAMES = ("bronze", "silver", "gold")
-# Hand-tuned starting point, not backed by a committed ablation study — treat
-# as adjustable, not load-bearing. Widening it returns more borderline
-# candidates; narrowing it risks dropping a relevant chunk that scored
-# slightly behind the best match.
+# Hand-tuned starting point; widening it returns more borderline candidates,
+# narrowing it risks dropping a relevant chunk that scored slightly behind
+# the best match. See docs/retrieval-ablation.md (make retrieval-ablation)
+# for the measured pass-rate/precision curve across candidate values.
 _DISTANCE_MARGIN = 0.20
 
 # Absolute ceiling on the best (lexical-adjusted) candidate distance: when even
@@ -135,8 +135,9 @@ _DISTANCE_MARGIN = 0.20
 # corpus can answer keep their best match under ~0.40; queries the corpus is
 # silent on (e.g. "does my plan cover acupuncture?", never mentioned anywhere)
 # sit at ~0.50+. 0.45 sits in the gap between those two clusters — see
-# scripts/retrieval_ablation.py for the measurement. Hand-tuned for this small,
-# fixed corpus; would need re-tuning if the corpus grows or changes topic mix.
+# docs/retrieval-ablation.md (make retrieval-ablation) for the measured
+# pass-rate/precision curve. Hand-tuned for this small, fixed corpus; would
+# need re-tuning if the corpus grows or changes topic mix.
 _MAX_RELEVANT_DISTANCE = 0.45
 
 
@@ -191,9 +192,10 @@ _QUERY_STOPWORDS = frozenset(
         "i",
     }
 )
-# Hand-tuned starting point, not backed by a committed ablation study — treat
-# as adjustable, not load-bearing. Higher values favor literal keyword
-# overlap over embedding similarity when re-ranking candidates.
+# Hand-tuned starting point; higher values favor literal keyword overlap over
+# embedding similarity when re-ranking candidates. See
+# docs/retrieval-ablation.md (make retrieval-ablation) for the measured
+# pass-rate/precision curve across candidate values.
 _LEXICAL_WEIGHT = 0.5
 
 
