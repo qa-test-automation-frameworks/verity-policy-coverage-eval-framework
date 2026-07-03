@@ -118,5 +118,4 @@ def test_real_retrieval_chunk_precision_recall(case_id: str, real_retriever: obj
     chunks = real_retriever.retrieve(benchmark.query)  # type: ignore[attr-defined]
     score = score_retrieval(chunks, benchmark)
 
-    assert score.chunk_precision == 1.0, score.message
-    assert score.chunk_recall == 1.0, score.message
+    assert score.chunk_passed, score.message
