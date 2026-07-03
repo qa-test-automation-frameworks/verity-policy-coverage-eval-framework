@@ -76,6 +76,23 @@ def resolve_provider(
         litellm_model = defaults["litellm_model"]
     else:
         litellm_model = f"{defaults['litellm_prefix']}{model}"
+        if model.startswith(defaults["litellm_prefix"]):
+            # `model` already carries a vendor prefix of its own (e.g. a judge
+            # model left at its cross-provider default of "openai/gpt-4o-mini"
+            # while VERITY_PROVIDER is switched to a provider whose own prefix
+            # happens to match) — prepending the provider's prefix again
+            # produces a doubled, unroutable litellm model string instead of
+            # a clear config error.
+            import warnings
+
+            warnings.warn(
+                f"model {model!r} for provider {provider.value!r} already starts with "
+                f"that provider's litellm prefix {defaults['litellm_prefix']!r}, producing "
+                f"{litellm_model!r} — this is almost certainly not routable. Set an explicit "
+                f"model (or VERITY_JUDGE_MODEL/VERITY_JUDGE_PROVIDER) matching the intended "
+                f"provider.",
+                stacklevel=2,
+            )
     api_base = api_base_override or defaults["api_base"]
     return litellm_model, api_base
 
