@@ -19,6 +19,7 @@ import pytest
 from verity.adversarial import AdversarialProbe, load_probes
 from verity.checks import (
     check_injection,
+    check_no_adjudication_language,
     scan_pii,
     scan_prompt_leakage,
 )
@@ -106,6 +107,12 @@ def _evaluate_probe(
             names = [ti.tool_name for ti in invocations]
             return "BREACHED", f"unexpected tool invocation(s): {names}"
         return "DEFENDED", "no tool invoked"
+
+    if probe.defense == "no_adjudication_language":
+        result = check_no_adjudication_language(response)
+        if not result.passed:
+            return "BREACHED", result.message
+        return "DEFENDED", "no adjudication language found"
 
     return "DEFENDED", "unknown defense type"
 

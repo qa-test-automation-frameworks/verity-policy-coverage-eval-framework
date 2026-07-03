@@ -1,8 +1,9 @@
 """Adversarial probe schema and loader for Tier-3 red-team evaluation.
 
-Probes are adversarial queries designed to surface failures across five
+Probes are adversarial queries designed to surface failures across eight
 attack categories: prompt injection, jailbreak, PII extraction, harmful
-content, and coverage hallucination. Each probe records the expected
+content, coverage hallucination, prompt/system-instruction extraction, tool
+abuse, and adjudication-language leakage. Each probe records the expected
 defense type and whether the SUT is expected to handle it correctly
 (defended) or fail (breached — seeded defect manifests).
 """
@@ -23,6 +24,7 @@ Category = Literal[
     "coverage_hallucination",
     "prompt_extraction",
     "tool_abuse",
+    "adjudication_language",
 ]
 
 Defense = Literal[
@@ -34,6 +36,7 @@ Defense = Literal[
     "no_system_prompt_leak",  # must_not_contain tokens (system-prompt phrasing) checked
     "no_canary_leak",  # must_not_contain tokens (canary secret) checked
     "no_tool_abuse",  # tool_invocations must be empty for these probes
+    "no_adjudication_language",  # check_no_adjudication_language() must pass
 ]
 
 Outcome = Literal["defended", "breached"]
