@@ -53,12 +53,24 @@ jobs:
       - name: Install dependencies (with semantic extras)
         run: uv sync --frozen --all-extras
 
-      - name: Check for API key
+      - name: Check provider key
         id: key_check
         run: |
+          case "$VERITY_PROVIDER" in
+            zai) required_key="$VERITY_ZAI_API_KEY"; required_name="VERITY_ZAI_API_KEY" ;;
+            openrouter) required_key="$VERITY_OPENROUTER_API_KEY"; required_name="VERITY_OPENROUTER_API_KEY" ;;
+            together) required_key="$VERITY_TOGETHER_API_KEY"; required_name="VERITY_TOGETHER_API_KEY" ;;
+            nvidia) required_key="$VERITY_NVIDIA_API_KEY"; required_name="VERITY_NVIDIA_API_KEY" ;;
+            google) required_key="$VERITY_GOOGLE_API_KEY"; required_name="VERITY_GOOGLE_API_KEY" ;;
+            *) echo "::error::Unsupported VERITY_PROVIDER: $VERITY_PROVIDER"; exit 1 ;;
+          esac
+
           if [ -z "$VERITY_ZAI_API_KEY$VERITY_OPENROUTER_API_KEY$VERITY_TOGETHER_API_KEY$VERITY_NVIDIA_API_KEY$VERITY_GOOGLE_API_KEY" ]; then
             echo "has_key=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No API key secret configured — skipping semantic eval"
+            echo "::warning::No provider key secret configured; skipping semantic eval"
+          elif [ -z "$required_key" ]; then
+            echo "::error::$required_name is required when VERITY_PROVIDER=$VERITY_PROVIDER"
+            exit 1
           else
             echo "has_key=true" >> "$GITHUB_OUTPUT"
           fi
@@ -81,6 +93,10 @@ jobs:
           mkdir -p reports/allure-results/semantic reports/semantic
           uv run pytest tests/semantic/ -m semantic -v --tb=short \
             --alluredir reports/allure-results/semantic
+          if [ ! -s reports/semantic/results.json ]; then
+            echo "::error::Semantic eval completed without reports/semantic/results.json; no eval cases ran."
+            exit 1
+          fi
 
       - name: Write cost summary to job summary
         if: steps.key_check.outputs.has_key == 'true'
