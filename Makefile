@@ -90,7 +90,7 @@ trace-demo:
 	VERITY_TRACING=1 VERITY_TRACE_EXPORTER=file PYTHONPATH=src uv run python scripts/trace_demo.py
 
 mutation-test:
-	@echo "Mutation testing (strict) — src/sut/tools/coverage_calculator.py (requires: uv sync --extra mutation)"
+	@echo "Mutation testing (strict) — src/sut/tools/coverage_calculator.py + src/verity/checks.py (requires: uv sync --extra mutation)"
 	@echo "Fails the command on surviving mutants, matching .github/workflows/mutation.yml."
 	uv run mutmut run
 	uv run mutmut results

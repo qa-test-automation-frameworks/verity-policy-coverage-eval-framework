@@ -145,13 +145,11 @@ fail_under = 80
 skips = ["B101"]  # assert is intentional in framework internal guards
 
 # ---------------------------------------------------------------------------
-# mutmut (mutation testing) — scoped to the deterministic coverage-calculator
-# module: it's pure, has no I/O, already has 100% line coverage, and mutation
-# testing tells us whether that 100% actually exercises the arithmetic, not
-# just imports every line. Running mutmut over the whole src/ tree would take
-# far too long for a quality gate; this module is where mutation score is
-# most meaningful and cheapest to check. Run with: uv run --extra mutation
-# mutmut run && uv run --extra mutation mutmut results
+# mutmut (mutation testing) — scoped to deterministic framework and demo-target
+# modules: src/sut/tools/coverage_calculator.py and src/verity/checks.py. They
+# are pure, have no I/O, and carry the arithmetic plus core check semantics
+# where mutation score is most meaningful and cheapest to check. Run with:
+# uv run --extra mutation mutmut run && uv run --extra mutation mutmut results
 # ---------------------------------------------------------------------------
 [tool.mutmut]
 paths_to_mutate = ["src/sut/tools/coverage_calculator.py", "src/verity/checks.py"]
