@@ -1,10 +1,10 @@
 """Tests for the clean vs. seeded SUT profile split.
 
-The default "seeded" profile preserves the intentional defects the eval
-suite's defect-detection golden cases are built around (#5 ambiguous tool-arg
-naming, #8 PII prompt/log leakage). The "clean" profile runs a hardened
-variant of the same agent so production-like behavior can be verified
-independently of those fixtures.
+The default "clean" profile runs a hardened variant of the agent so a fresh
+run behaves safely out of the box. The "seeded" profile preserves the
+intentional defects the eval suite's defect-detection golden cases are built
+around (#5 ambiguous tool-arg naming, #8 PII prompt/log leakage); the
+deterministic and semantic test fixtures pin it explicitly.
 """
 
 from __future__ import annotations
@@ -47,8 +47,8 @@ class TestSystemPromptProfiles:
         prompt = _build_system_prompt(member, [], clean=False)
         assert "do not swap these" not in prompt.lower()
 
-    def test_default_is_seeded(self) -> None:
-        assert Settings(cassette_mode="off").sut_profile == "seeded"
+    def test_default_is_clean(self) -> None:
+        assert Settings(cassette_mode="off").sut_profile == "clean"
 
 
 class TestMemberContextLogging:

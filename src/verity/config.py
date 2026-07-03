@@ -181,12 +181,13 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("VERITY_MEMBER_TOKENS"),
     )
 
-    # SUT profile: "seeded" (default) preserves the intentionally-defective
-    # behavior (ambiguous tool-arg guidance, unredacted PII logging) that the
-    # eval suite's defect-detection cases are built around. "clean" runs a
-    # hardened variant of the same agent so production-like behavior can be
-    # verified separately from the seeded-defect fixtures.
-    sut_profile: Literal["seeded", "clean"] = "seeded"
+    # SUT profile: "clean" (default) runs the hardened agent variant, so a
+    # fresh `make demo` run behaves safely out of the box. "seeded" preserves
+    # the intentionally-defective behavior (ambiguous tool-arg guidance,
+    # unredacted PII logging) that the eval suite's defect-detection cases are
+    # built around; the deterministic and semantic test fixtures pin it
+    # explicitly since their cassettes were recorded against that profile.
+    sut_profile: Literal["seeded", "clean"] = "clean"
 
     # Nested configs. Constructed via default_factory so each Settings()
     # call reads the environment fresh at instantiation time — a bare

@@ -117,6 +117,7 @@ def test_agent_answer_span_excludes_raw_member_id(monkeypatch: pytest.MonkeyPatc
         model="glm-4.5",
         cassette_mode="replay",
         cassette_dir="datasets/cassettes",
+        sut_profile="seeded",
     )
     lib = CassetteLibrary(settings.cassette_dir)
     llm_provider = LLMProvider(settings, cassette_library=lib)

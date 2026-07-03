@@ -197,7 +197,9 @@ def main() -> None:
     # reproducible regardless of what a developer has configured for live runs.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        settings = Settings(_env_file=None, provider=Provider.zai, model="glm-4.5")
+        settings = Settings(
+            _env_file=None, provider=Provider.zai, model="glm-4.5", sut_profile="seeded"
+        )
     litellm_model, _, _ = settings.resolved_provider()
 
     members = _load_members()

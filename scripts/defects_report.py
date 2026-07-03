@@ -132,6 +132,7 @@ def _run_deterministic_checks(catalog: list[DefectEntry]) -> None:
             model="glm-4.5",
             cassette_mode="replay",
             cassette_dir=cassette_dir,
+            sut_profile="seeded",
         )
 
     all_cases = load_golden(golden_dir)
@@ -202,6 +203,7 @@ def _run_adversarial_checks(catalog: list[DefectEntry]) -> None:
             model="glm-4.5",
             cassette_mode="replay",
             cassette_dir=adv_cassette_dir,
+            sut_profile="seeded",
         )
 
     probes = load_probes(probes_path)
