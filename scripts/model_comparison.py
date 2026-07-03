@@ -30,6 +30,19 @@ _DEFAULT_OUT = Path("reports/model-comparison.md")
 _DEFAULT_JSON = Path("reports/model-comparison.json")
 
 
+def _provider_key_name(settings: Settings) -> str:
+    return f"VERITY_{settings.provider.value.upper()}_API_KEY"
+
+
+def _require_provider_key(settings: Settings, context: str) -> None:
+    _, _, key = settings.resolved_provider()
+    if key is None:
+        raise SystemExit(
+            f"{context} requires {_provider_key_name(settings)} for provider "
+            f"{settings.provider.value!r}."
+        )
+
+
 @dataclass(frozen=True)
 class ModelResult:
     case_id: str
@@ -161,6 +174,8 @@ def main() -> None:
 
     left = _settings(args.left_provider, args.left_model)
     right = _settings(args.right_provider, args.right_model)
+    _require_provider_key(left, "Left model comparison")
+    _require_provider_key(right, "Right model comparison")
     rows = compare_cases(cases, left, right)
 
     left_label = f"{args.left_provider}/{args.left_model}"

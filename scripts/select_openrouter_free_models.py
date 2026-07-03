@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -12,6 +14,21 @@ from urllib.request import urlopen
 _REGISTRY_URL = "https://openrouter.ai/api/v1/models"
 _DEFAULT_LIMIT = 5
 _REQUIRED_PARAMETERS = {"tools"}
+
+_SRC = Path(__file__).parent.parent / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from verity.config import Provider, Settings  # noqa: E402
+
+
+def _require_openrouter_key() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        settings = Settings(provider=Provider.openrouter)
+    _, _, key = settings.resolved_provider()
+    if key is None:
+        raise SystemExit("OpenRouter model selection requires VERITY_OPENROUTER_API_KEY.")
 
 
 @dataclass(frozen=True)
@@ -150,6 +167,8 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=_DEFAULT_LIMIT, help="Number of rows to print")
     args = parser.parse_args()
 
+    if args.fixture is None:
+        _require_openrouter_key()
     models = _load_models(args.fixture)
     candidates = select_candidates(models, limit=args.limit)
     print(render_table(candidates))

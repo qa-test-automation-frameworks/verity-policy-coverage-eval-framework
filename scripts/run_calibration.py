@@ -51,6 +51,19 @@ _CALIB_CASSETTE_DIR = Path("datasets/calibration/cassettes")
 _DEFAULT_REPORT_PATH = Path("docs/calibration-report.md")
 _REPORTS_DIR = Path("reports/calibration")
 
+
+def _provider_key_name(settings: Settings) -> str:
+    return f"VERITY_{settings.provider.value.upper()}_API_KEY"
+
+
+def _require_provider_key(settings: Settings, context: str) -> None:
+    _, _, key = settings.resolved_provider()
+    if key is None:
+        raise SystemExit(
+            f"{context} requires {_provider_key_name(settings)} for provider "
+            f"{settings.provider.value!r}."
+        )
+
 # ---------------------------------------------------------------------------
 # Authored judge scores (integer 0-10).
 # Designed to show ~97% raw agreement with human labels and a +0.056
@@ -468,6 +481,7 @@ def main() -> None:
     judge_model = _judge_litellm_model(settings)
     judge_family = _judge_family(settings)
     if args.record:
+        _require_provider_key(settings, "Calibration recording")
         print("Running live judge calls...")
         judge_scores = _run_live(cases, settings)
         mode_label = f"live (recorded to {_CALIB_CASSETTE_DIR})"
