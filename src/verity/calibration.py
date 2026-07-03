@@ -36,7 +36,15 @@ class CalibrationCase(BaseModel):
     """A single human-annotated example for judge calibration."""
 
     id: str
-    metric: Literal["completeness", "disambiguation", "refusal", "faithfulness"]
+    metric: Literal[
+        "completeness",
+        "disambiguation",
+        "refusal",
+        "faithfulness",
+        "hallucination",
+        "answer_relevancy",
+        "context_precision",
+    ]
     query: str
     context: list[str] = Field(default_factory=list)
     candidate_output: str
@@ -227,9 +235,12 @@ _METRIC_RUBRIC_MAP: dict[str, str] = {}  # populated lazily from rubrics.py
 def _get_rubric(metric: str) -> str:
     if not _METRIC_RUBRIC_MAP:
         from verity.metrics.rubrics import (
+            ANSWER_RELEVANCY_RUBRIC,
             COMPLETENESS_RUBRIC,
+            CONTEXT_PRECISION_RUBRIC,
             DISAMBIGUATION_RUBRIC,
             FAITHFULNESS_RUBRIC,
+            HALLUCINATION_RUBRIC,
             REFUSAL_RUBRIC,
         )
 
@@ -239,6 +250,9 @@ def _get_rubric(metric: str) -> str:
                 "disambiguation": DISAMBIGUATION_RUBRIC,
                 "refusal": REFUSAL_RUBRIC,
                 "faithfulness": FAITHFULNESS_RUBRIC,
+                "hallucination": HALLUCINATION_RUBRIC,
+                "answer_relevancy": ANSWER_RELEVANCY_RUBRIC,
+                "context_precision": CONTEXT_PRECISION_RUBRIC,
             }
         )
     return _METRIC_RUBRIC_MAP[metric]

@@ -452,3 +452,313 @@ cases:
     human_score: 0.6
     human_pass: true
     rationale: "Adds a referral requirement not in context. Borderline — passes but has extrapolation."
+
+  # -------------------------------------------------------------------------
+  # HALLUCINATION — groundedness of claims vs. context (defect #1/#7 target)
+  # -------------------------------------------------------------------------
+
+  - id: calib-hallucination-001
+    metric: hallucination
+    query: "What is the emergency room copay on the Gold plan?"
+    context:
+      - "Gold §3.3 Emergency Room: $150 copay per visit; waived if admitted; 10% coinsurance of remaining balance after copay once deductible is met."
+    candidate_output: >
+      The Gold plan's emergency room copay is $150 per visit, waived if you are admitted.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Copay figure and waiver condition both match the context exactly."
+
+  - id: calib-hallucination-002
+    metric: hallucination
+    query: "What is the emergency room copay on the Gold plan?"
+    context:
+      - "Gold §3.3 Emergency Room: $150 copay per visit; waived if admitted; 10% coinsurance of remaining balance after copay once deductible is met."
+    candidate_output: >
+      The Gold plan's emergency room copay is $150 per visit. This copay is also waived for
+      members under 18.
+    output_family: glm
+    human_score: 0.4
+    human_pass: false
+    rationale: "The under-18 waiver has no basis in the context — a single invented material detail."
+
+  - id: calib-hallucination-003
+    metric: hallucination
+    query: "How many physical therapy sessions does the Gold plan cover per year?"
+    context:
+      - "Physical therapy: up to 30 sessions per calendar year (Bronze); 45 sessions (Silver); 60 sessions (Gold)."
+    candidate_output: >
+      The Gold plan covers up to 60 physical therapy sessions per calendar year.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "Correct session count for Gold, directly grounded in the context."
+
+  - id: calib-hallucination-004
+    metric: hallucination
+    query: "How many physical therapy sessions does the Gold plan cover per year?"
+    context:
+      - "Physical therapy: up to 30 sessions per calendar year (Bronze); 45 sessions (Silver); 60 sessions (Gold)."
+    candidate_output: >
+      The Gold plan covers unlimited physical therapy sessions with no annual cap.
+    output_family: other
+    human_score: 0.0
+    human_pass: false
+    rationale: "Directly contradicts the stated 60-session annual limit for Gold."
+
+  - id: calib-hallucination-005
+    metric: hallucination
+    query: "Is cosmetic surgery covered under my plan?"
+    context:
+      - "Cosmetic procedures — services intended solely to improve appearance are excluded under all plans. Reconstructive surgery following a medically necessary procedure is covered."
+    candidate_output: >
+      Cosmetic procedures are excluded under all HealthGuard plans. However, reconstructive
+      surgery that follows a medically necessary procedure is covered.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "States both the exclusion and the reconstructive-surgery carve-out, matching context."
+
+  - id: calib-hallucination-006
+    metric: hallucination
+    query: "Is cosmetic surgery covered under my plan?"
+    context:
+      - "Cosmetic procedures — services intended solely to improve appearance are excluded under all plans. Reconstructive surgery following a medically necessary procedure is covered."
+    candidate_output: >
+      Cosmetic procedures are generally excluded, except that cosmetic surgery for burn victims
+      is always covered regardless of the cause of the burn.
+    output_family: glm
+    human_score: 0.4
+    human_pass: false
+    rationale: "The burn-victim carve-out is invented; the context only names the reconstructive-surgery exception."
+
+  - id: calib-hallucination-007
+    metric: hallucination
+    query: "Does an MRI require prior authorization?"
+    context:
+      - "Prior authorization is required for all plans for: inpatient hospital admissions (non-emergency), outpatient surgery (non-emergency), MRI/CT/PET scans, home health services."
+    candidate_output: >
+      Yes — MRI scans require prior authorization on all HealthGuard plans.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "Directly restates the prior-authorization requirement for MRI from the context."
+
+  - id: calib-hallucination-008
+    metric: hallucination
+    query: "Does an MRI require prior authorization?"
+    context:
+      - "Prior authorization is required for all plans for: inpatient hospital admissions (non-emergency), outpatient surgery (non-emergency), MRI/CT/PET scans, home health services."
+    candidate_output: >
+      MRI scans do not require prior authorization on the Gold plan, since Gold's lower
+      cost-sharing means fewer utilization controls apply.
+    output_family: other
+    human_score: 0.1
+    human_pass: false
+    rationale: "Invents a Gold-specific exemption; the context states the requirement applies to all plans."
+
+  # -------------------------------------------------------------------------
+  # ANSWER RELEVANCY — responsiveness of the answer to the question asked
+  # -------------------------------------------------------------------------
+
+  - id: calib-answer-relevancy-001
+    metric: answer_relevancy
+    query: "What is the specialist visit copay on the Gold plan?"
+    context:
+      - "Gold §3.2 Specialist Visits — In-network: $40 copay per visit."
+    candidate_output: >
+      The specialist visit copay on the Gold plan is $40 per visit, in-network.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "Directly and completely answers the question asked."
+
+  - id: calib-answer-relevancy-002
+    metric: answer_relevancy
+    query: "What is the specialist visit copay on the Gold plan?"
+    context:
+      - "Gold §3.2 Specialist Visits — In-network: $40 copay per visit."
+    candidate_output: >
+      Gold is FictiHealth's most comprehensive plan, with a $750 individual deductible and 10%
+      coinsurance, covering a wide range of medical, surgical, and prescription benefits.
+    output_family: glm
+    human_score: 0.1
+    human_pass: false
+    rationale: "Never states the specialist copay — describes the plan generally instead of answering."
+
+  - id: calib-answer-relevancy-003
+    metric: answer_relevancy
+    query: "How many home health aide visits are covered per year?"
+    context:
+      - "Home health aide visits are limited to 60 visits per calendar year (all plans)."
+    candidate_output: >
+      Home health aide visits are limited to 60 visits per calendar year on all HealthGuard plans.
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "States the exact visit count asked for."
+
+  - id: calib-answer-relevancy-004
+    metric: answer_relevancy
+    query: "How many home health aide visits are covered per year?"
+    context:
+      - "Home health aide visits are limited to 60 visits per calendar year (all plans)."
+      - "Home health services require prior authorization for all plans."
+    candidate_output: >
+      Home health services require prior authorization on all HealthGuard plans before they
+      will be covered.
+    output_family: other
+    human_score: 0.4
+    human_pass: false
+    rationale: "Answers an adjacent question (prior authorization) instead of the visit-count question asked."
+
+  - id: calib-answer-relevancy-005
+    metric: answer_relevancy
+    query: "Is LASIK covered under my plan?"
+    context:
+      - "Vision correction — eyeglasses, contact lenses, and LASIK surgery are excluded unless a separate vision rider is purchased."
+    candidate_output: >
+      LASIK surgery is excluded from the base plan. It would only be covered if you purchase a
+      separate vision rider.
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "States both the exclusion and the exact mechanism (rider) that would change the answer."
+
+  - id: calib-answer-relevancy-006
+    metric: answer_relevancy
+    query: "Is LASIK covered under my plan?"
+    context:
+      - "Vision correction — eyeglasses, contact lenses, and LASIK surgery are excluded unless a separate vision rider is purchased."
+    candidate_output: >
+      Vision correction generally isn't something insurance covers well. You might consider
+      financing options or checking with local providers for discounts.
+    output_family: glm
+    human_score: 0.2
+    human_pass: false
+    rationale: "Vague non-answer — never states the plan's actual exclusion or the rider mechanism."
+
+  - id: calib-answer-relevancy-007
+    metric: answer_relevancy
+    query: "What is the Bronze plan's family out-of-pocket maximum?"
+    context:
+      - "Bronze §1 Overview — Out-of-Pocket Maximum (family): $16,000. Out-of-Pocket Maximum (individual): $8,000. Coinsurance (after deductible): 40% member / 60% plan."
+    candidate_output: >
+      The Bronze plan's family out-of-pocket maximum is $16,000. For reference, the individual
+      out-of-pocket maximum is $8,000 and coinsurance after the deductible is 40% member / 60% plan.
+    output_family: other
+    human_score: 0.8
+    human_pass: true
+    rationale: "Answers the question fully; the extra individual/coinsurance figures are minor related filler."
+
+  - id: calib-answer-relevancy-008
+    metric: answer_relevancy
+    query: "What is the Bronze plan's family out-of-pocket maximum?"
+    context:
+      - "Bronze §1 Overview — Out-of-Pocket Maximum (family): $16,000. Out-of-Pocket Maximum (individual): $8,000."
+    candidate_output: >
+      Out-of-pocket maximums vary significantly across insurance plans nationally, and it's
+      important to budget carefully for healthcare costs regardless of which plan you choose.
+    output_family: other
+    human_score: 0.0
+    human_pass: false
+    rationale: "Never states the actual family out-of-pocket maximum figure asked for."
+
+  # -------------------------------------------------------------------------
+  # CONTEXT PRECISION — relevance of retrieved passages to the query
+  # -------------------------------------------------------------------------
+
+  - id: calib-context-precision-001
+    metric: context_precision
+    query: "What is the Bronze plan's primary care copay?"
+    context:
+      - "Bronze §3.1 Primary Care Visits — In-network: $50 copay per visit (deductible waived for first 3 visits per year)."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "The single retrieved passage is exactly the section needed to answer the query."
+
+  - id: calib-context-precision-002
+    metric: context_precision
+    query: "What is the Bronze plan's primary care copay?"
+    context:
+      - "Bronze §3.1 Primary Care Visits — In-network: $50 copay per visit (deductible waived for first 3 visits per year)."
+      - "Gold §3.6 Mental Health and Substance Use — Outpatient/therapy: $40 copay per visit (up to 60 visits per year)."
+      - "Silver §1 Overview — Monthly Premium: $420."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: glm
+    human_score: 0.3
+    human_pass: false
+    rationale: "Only 1 of 3 retrieved passages (Bronze primary care) is relevant to the query."
+
+  - id: calib-context-precision-003
+    metric: context_precision
+    query: "How many mental health outpatient visits does the Bronze plan cover per year?"
+    context:
+      - "Bronze §3.6 Mental Health and Substance Use — Outpatient/therapy: $60 copay per visit (up to 26 visits per year)."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "The single retrieved passage is exactly the section needed to answer the query."
+
+  - id: calib-context-precision-004
+    metric: context_precision
+    query: "How many mental health outpatient visits does the Bronze plan cover per year?"
+    context:
+      - "Bronze §3.6 Mental Health and Substance Use — Outpatient/therapy: $60 copay per visit (up to 26 visits per year)."
+      - "Bronze §4 Prescription Drugs — Tier 1 (Generic): $15 copay, no deductible."
+      - "Gold §2 Preventive Care — Colonoscopy per USPSTF guidelines, no additional cost."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: other
+    human_score: 0.3
+    human_pass: false
+    rationale: "Only 1 of 3 retrieved passages addresses mental health visit counts."
+
+  - id: calib-context-precision-005
+    metric: context_precision
+    query: "Does the Gold plan require prior authorization for MRI?"
+    context:
+      - "Prior authorization is required for all plans for: inpatient hospital admissions (non-emergency), outpatient surgery (non-emergency), MRI/CT/PET scans, home health services."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: glm
+    human_score: 1.0
+    human_pass: true
+    rationale: "The single retrieved passage directly and completely answers the query."
+
+  - id: calib-context-precision-006
+    metric: context_precision
+    query: "Does the Gold plan require prior authorization for MRI?"
+    context:
+      - "Prior authorization is required for all plans for: inpatient hospital admissions (non-emergency), outpatient surgery (non-emergency), MRI/CT/PET scans, home health services."
+      - "Bronze §3.4 Surgical Benefits — covered procedures require prior authorization when medically necessary."
+      - "Gold §1 Overview — Monthly Premium: $580, Annual Deductible (individual): $750."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: glm
+    human_score: 0.5
+    human_pass: true
+    rationale: "One passage directly relevant, one tangentially about PA for surgery (not MRI), one irrelevant premium table."
+
+  - id: calib-context-precision-007
+    metric: context_precision
+    query: "What is the lifetime dollar limit on essential health benefits?"
+    context:
+      - "No lifetime dollar limits apply to essential health benefits."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: other
+    human_score: 1.0
+    human_pass: true
+    rationale: "The single retrieved passage directly and completely answers the query."
+
+  - id: calib-context-precision-008
+    metric: context_precision
+    query: "What is the lifetime dollar limit on essential health benefits?"
+    context:
+      - "Silver §3.5 Inpatient Hospital — Room and board: 20% coinsurance after deductible (in-network)."
+      - "Bronze §2 Preventive Care — Annual wellness exam covered at 100% with no deductible."
+    candidate_output: "(context precision is evaluated on the passages above; this field is not scored.)"
+    output_family: other
+    human_score: 0.0
+    human_pass: false
+    rationale: "Neither retrieved passage addresses lifetime limits at all."

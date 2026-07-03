@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-hallucination-002 (hallucination)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 5\n\nInvents an under-18 waiver not present in context.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-context-precision-004 (context_precision)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 4\n\nOnly 1 of 3 retrieved passages addresses the query.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

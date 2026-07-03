@@ -46,8 +46,8 @@ See `verity/statistics.py` for the implementation.
 
 | Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
 |---|---|---|---|---|---|
-| Hallucination | `THRESHOLD_HALLUCINATION` | 0.50 | mean | #1, #7 | not yet run |
-| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | not yet run |
+| Hallucination | `THRESHOLD_HALLUCINATION` | 0.50 | mean | #1, #7 | cases authored; agreement measurement pending a live run |
+| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | cases authored; agreement measurement pending a live run |
 | G-Eval Completeness | `THRESHOLD_COMPLETENESS` | 0.70 | mean | #3 | PASS (100% agreement) |
 | G-Eval Disambiguation | `THRESHOLD_DISAMBIGUATION` | 0.60 | mean | #4 | PASS (100% agreement) |
 | G-Eval Refusal | `THRESHOLD_REFUSAL` | 0.70 | mean | #6 | PASS (100% agreement) |
@@ -62,16 +62,20 @@ cases are expected to score well above this; defect cases should score ≥ 0.5.
 | Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
 |---|---|---|---|---|---|
 | Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #2, #7 | **REVIEW** (75% agreement, MAE 0.238) |
-| Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) | not yet run |
-| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | not yet run |
+| Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) | cases authored; agreement measurement pending a live run |
+| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | cases authored; agreement measurement pending a live run |
 
 The Calibration column reflects `docs/calibration-report.md`'s per-metric breakdown.
 `not yet run` means the metric has no dedicated calibration cases in
-`datasets/calibration/labeled.yaml` yet, not that it has been checked and passed —
-treat its threshold as conservative-by-convention (see rationale below) rather than
-empirically tuned. Faithfulness is the one metric that *has* been measured and did
-not clear the bar; its threshold should be treated as the least trustworthy of the
-three RAGAS metrics until a passing calibration run replaces this entry.
+`datasets/calibration/labeled.yaml` at all. `cases authored; agreement measurement
+pending a live run` means 8 calibration cases exist for the metric (with rubric
+text in `verity/metrics/rubrics.py` and hermetic authored-score cassettes), but no
+live judge run has measured agreement against them yet — run `make calibrate-live`
+to close that gap. Treat both statuses as conservative-by-convention (see rationale
+below) rather than empirically tuned. Faithfulness is the one metric that *has* been
+measured live and did not clear the bar; its threshold should be treated as the
+least trustworthy of the three RAGAS metrics until a passing calibration run
+replaces this entry.
 
 ---
 

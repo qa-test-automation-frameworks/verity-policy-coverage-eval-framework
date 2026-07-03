@@ -111,3 +111,68 @@ Score from 0 to 10:
 
 Evaluate: are the response's factual claims grounded in the retrieved context?
 """
+
+# Scores groundedness (10 = fully grounded, no hallucinated claims), the inverse
+# direction of DeepEval's raw HallucinationMetric score (where a HIGH score means
+# MORE hallucination and a passing test requires score < threshold — see
+# THRESHOLD_HALLUCINATION in verity/metrics/deepeval_metrics.py). Calibration
+# keeps every rubric on the same "10 = good" scale for a uniform human_score/
+# human_pass convention across metrics; a hermetic/live judge-agreement result
+# for "hallucination" measures agreement on this groundedness framing, not on
+# DeepEval's raw score polarity.
+HALLUCINATION_RUBRIC = """\
+You will evaluate whether an AI assistant's response contains claims that are NOT
+supported by (i.e. hallucinated beyond) the provided context documents.
+
+Score from 0 to 10, where 10 means no hallucination at all:
+- 10: Every claim in the response traces directly back to the context. Nothing is
+  invented, guessed, or asserted beyond what the context states.
+- 7-9: The response is almost entirely grounded; at most one small, clearly-labeled
+  inference that a reasonable reader would still consider supported.
+- 4-6: The response mixes grounded and invented claims — at least one material fact
+  (an amount, a coverage decision, a date) has no basis in the context.
+- 1-3: Most of the response's substantive claims are invented or contradict the
+  context outright.
+- 0: The response is essentially fabricated with respect to the context provided.
+
+Evaluate: how much of the response is hallucinated (unsupported by the context)?
+"""
+
+ANSWER_RELEVANCY_RUBRIC = """\
+You will evaluate whether an AI insurance coverage assistant's response is relevant
+and responsive to the member's actual question — not off-topic, not padded with
+unrelated information, and not missing the specific thing that was asked.
+
+Score from 0 to 10:
+- 10: The response directly and completely answers what was asked, with no
+  irrelevant tangents or missing pieces.
+- 7-9: The response answers the question but includes minor irrelevant filler, or
+  omits a secondary detail that was implicitly requested.
+- 4-6: The response is partially responsive — it addresses the general topic but
+  misses the specific question asked, or answers a different (adjacent) question.
+- 1-3: The response is mostly off-topic relative to the question, with only an
+  incidental connection to what was asked.
+- 0: The response does not address the question at all.
+
+Evaluate: how relevant and responsive is the response to the question actually asked?
+"""
+
+CONTEXT_PRECISION_RUBRIC = """\
+You will evaluate whether the retrieved context passages provided to an AI insurance
+coverage assistant are precise — i.e., relevant to answering the member's question —
+rather than noisy or off-topic passages that happen to have been retrieved alongside
+the useful ones.
+
+You are given the query and the full set of retrieved context passages (not the
+assistant's response). Score from 0 to 10:
+- 10: Every retrieved passage is directly relevant to answering the query; there is
+  no irrelevant or distracting passage in the set.
+- 7-9: Nearly all passages are relevant; at most one passage is tangential or unused.
+- 4-6: Roughly half the passages are relevant; the rest are on an unrelated topic,
+  plan tier, or section.
+- 1-3: Most retrieved passages are irrelevant to the query; only a small fraction
+  would actually help answer it.
+- 0: None of the retrieved passages are relevant to the query.
+
+Evaluate: what fraction of the retrieved context is precise (relevant) to the query?
+"""
