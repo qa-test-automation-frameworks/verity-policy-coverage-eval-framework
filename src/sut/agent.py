@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from sut.auth import member_token_valid
 from sut.citations import resolve_citations
@@ -84,6 +84,12 @@ class AgentResponse(BaseModel):
     tool_invocations: list[ToolInvocation]
     refused: bool
     refusal_reason: str
+    # The exact chunks retrieved and passed into the prompt for this answer —
+    # callers that need to judge groundedness (semantic faithfulness/relevancy
+    # metrics) against retrieval context should use this rather than calling
+    # the retriever again, which risks judging the answer against context the
+    # agent never actually saw if retrieval is ever made stateful/nondeterministic.
+    retrieved_chunks: list[Chunk] = Field(default_factory=list)
     requires_human_review: bool = False
     prompt_tokens: int
     completion_tokens: int
@@ -494,6 +500,7 @@ class CoverageAgent:
         start_index: int,
         tool_invocations: list[ToolInvocation] | None = None,
         trace_id: str = "",
+        retrieved_chunks: list[Chunk] | None = None,
     ) -> AgentResponse:
         totals, total_cost = self._llm_provider.accumulator.usage_and_cost_since(start_index)
         return AgentResponse(
@@ -505,6 +512,7 @@ class CoverageAgent:
             tool_invocations=tool_invocations or [],
             refused=True,
             refusal_reason=category,
+            retrieved_chunks=retrieved_chunks or [],
             requires_human_review=True,
             prompt_tokens=totals.prompt_tokens,
             completion_tokens=totals.completion_tokens,
@@ -562,7 +570,10 @@ class CoverageAgent:
             except Exception:
                 logger.exception("Provider call failed before tool handling")
                 return self._safe_failure_response(
-                    category="provider_unavailable", start_index=start_index, trace_id=trace_id
+                    category="provider_unavailable",
+                    start_index=start_index,
+                    trace_id=trace_id,
+                    retrieved_chunks=chunks,
                 )
 
             # 6-7. Handle tool calls (single round) and the follow-up LLM call
@@ -601,6 +612,7 @@ class CoverageAgent:
             tool_invocations=tool_invocations,
             refused=False,
             refusal_reason="",
+            retrieved_chunks=chunks,
             requires_human_review=needs_review,
             prompt_tokens=totals.prompt_tokens,
             completion_tokens=totals.completion_tokens,

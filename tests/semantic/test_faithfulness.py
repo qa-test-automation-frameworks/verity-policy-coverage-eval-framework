@@ -48,7 +48,7 @@ def _score_faithfulness(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
-    chunks = agent.retriever.retrieve(case.query)  # type: ignore[union-attr]
+    chunks = response.retrieved_chunks
     contexts = [c.text for c in chunks]
 
     metric = make_faithfulness(judge)

@@ -36,7 +36,7 @@ def _score(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
-    chunks = agent.retriever.retrieve(case.query)
+    chunks = response.retrieved_chunks
     metric = make_completeness(judge)
     tc = LLMTestCase(
         input=case.query,
