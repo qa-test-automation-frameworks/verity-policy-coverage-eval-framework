@@ -25,7 +25,7 @@ Implement **VCR-style SHA-256 keyed cassette record/replay** in `verity/cassette
   `verity.config.Settings`. Tests set `cassette_mode="replay"`.
 
 Cassettes are **hand-authored** for the golden cases and adversarial probes
-(see `datasets/golden/cases.yaml` and `datasets/adversarial/probes.yaml` for
+(see `datasets/golden/*.yaml` and `datasets/adversarial/probes.yaml` for
 current counts). The `scripts/record_cassettes.py` and
 `scripts/author_adversarial_cassettes.py` scripts reproduce them without an
 API key. Committing cassettes makes the test suite self-contained and forkable.

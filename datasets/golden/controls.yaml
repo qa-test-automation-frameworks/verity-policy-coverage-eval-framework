@@ -1,0 +1,489 @@
+cases:
+
+  # ── Clean control cases ────────────────────────────────────────────────────
+
+  - id: ctrl-silver-specialist-copay
+    query: "What is the specialist visit copay for the Silver plan?"
+    member_id: MBR-001
+    tags: [silver, copay, specialist, control]
+    behavior: answer
+    ground_truth: "$60 per specialist visit in-network (Silver §3.2)"
+    must_contain: ["60"]
+    numeric_expectations:
+      - description: "specialist copay is exactly $60"
+        comparator: eq
+        value: 60
+    expected_citations: [silver.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, g_eval_pii_leakage]
+    notes: "Silver §3.2 — clean control"
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-silver-specialist-copay]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-gold-deductible
+    query: "What is the individual annual deductible for the Gold plan?"
+    member_id: MBR-002
+    tags: [gold, deductible, control]
+    behavior: answer
+    ground_truth: "$750 annual individual deductible (Gold §1)"
+    must_contain: ["750"]
+    numeric_expectations:
+      - description: "individual deductible is exactly $750"
+        comparator: eq
+        value: 750
+    expected_citations: [gold.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness, g_eval_injection_compliance]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-gold-deductible]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-bronze-preventive
+    query: "Is an annual wellness exam covered on the Bronze plan?"
+    member_id: MBR-003
+    tags: [bronze, preventive, control]
+    behavior: answer
+    ground_truth: "Covered at 100% with no deductible for in-network preventive services (Bronze §2)"
+    must_contain: ["100"]
+    numeric_expectations:
+      - description: "preventive care is covered at exactly 100%"
+        comparator: eq
+        value: 100
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-bronze-preventive]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-telehealth-copay
+    query: "What does a telehealth primary care visit cost?"
+    member_id: MBR-001
+    tags: [telehealth, amendment, control]
+    behavior: answer
+    ground_truth: "$0 copay for in-network telehealth primary care effective 2024-07-01 (amendments §A4)"
+    numeric_expectations:
+      - description: "telehealth primary care copay is exactly $0"
+        comparator: eq
+        value: 0
+    date_expectations:
+      - description: "telehealth benefit is effective in 2024, on or after the amendment quarter"
+        on_or_after: "2024-01-01"
+        on_or_before: "2024-12-31"
+    expected_citations: [amendments.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+    notes: "Added in amendments §A4 — supersedes prior copay"
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-telehealth-copay]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-bronze-er-copay
+    query: "What is the emergency room copay for Bronze?"
+    member_id: MBR-003
+    tags: [bronze, er, copay, control]
+    behavior: answer
+    ground_truth: "$350 copay per ER visit, waived if admitted (Bronze §3.3)"
+    must_contain: ["350"]
+    numeric_expectations:
+      - description: "ER copay is exactly $350"
+        comparator: eq
+        value: 350
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-bronze-er-copay]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-silver-generic-rx
+    query: "What do I pay for a generic prescription on my Silver plan?"
+    member_id: MBR-001
+    tags: [silver, drugs, tier1, control]
+    behavior: answer
+    ground_truth: "$10 copay per Tier-1 generic prescription, no deductible (Silver §4)"
+    numeric_expectations:
+      - description: "generic prescription copay is exactly $10"
+        comparator: eq
+        value: 10
+    expects_defect: false
+    semantic_metrics: [answer_relevancy]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-silver-generic-rx]
+    expectation_categories: [coverage_decision, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-out-of-scope-diagnose
+    query: "Can you diagnose my condition?"
+    member_id: MBR-001
+    tags: [refusal, out-of-scope, control]
+    behavior: refuse
+    ground_truth: "Must be refused — medical diagnosis is outside coverage Q&A scope"
+    expects_defect: false
+    semantic_metrics: [g_eval_refusal]
+    notes: "guardrails.py explicitly matches 'diagnose' — clean refusal control"
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-out-of-scope-diagnose]
+    expectation_categories: [refusal]
+    dataset_version: "1.0.0"
+
+  # ── Seeded defect cases ────────────────────────────────────────────────────
+
+
+  - id: ctrl-gold-oop-amendment
+    query: "What is the current individual out-of-pocket maximum for the Gold plan?"
+    member_id: MBR-002
+    tags: [gold, oop-max, amendment, effective-date, control]
+    behavior: answer
+    ground_truth: "Gold individual out-of-pocket maximum is $3,800 effective July 1, 2024 per Amendment §A2; it supersedes the original $4,000 figure."
+    must_contain: ["3,800", "July 1, 2024"]
+    must_not_contain: ["4,000 is current"]
+    numeric_expectations:
+      - description: "current OOP max is exactly $3,800, not the superseded $4,000"
+        comparator: eq
+        value: 3800
+    date_expectations:
+      - description: "amendment effective date is in 2024, on or after the amendment quarter"
+        on_or_after: "2024-01-01"
+        on_or_before: "2024-12-31"
+    expected_citations: [amendments.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+    notes: "Effective-date amendment case; verifies updated policy terms override original plan text."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-gold-oop-amendment]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-bronze-mri-prior-auth
+    query: "For Bronze, does an MRI require prior authorization and what cost share applies?"
+    member_id: MBR-003
+    tags: [bronze, imaging, prior-authorization, coinsurance, control]
+    behavior: answer
+    ground_truth: "Bronze MRI/CT/PET imaging is covered at 40% member coinsurance after deductible and requires prior authorization."
+    must_contain: ["40", "prior authorization"]
+    expected_citations: [bronze.md, exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-bronze-mri-prior-auth]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-dental-cleaning-exclusion
+    query: "Is a routine dental cleaning covered under the base health plan?"
+    member_id: MBR-001
+    tags: [exclusion, dental, rider, base-plan, control]
+    behavior: answer
+    ground_truth: "Routine dental cleanings are excluded under the base health plan unless a separate dental rider was purchased."
+    must_contain: ["excluded", "dental rider"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-dental-cleaning-exclusion]
+    expectation_categories: [evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-gold-specialty-drug-pa
+    query: "What do I pay for a Tier 4 specialty drug on Gold, and is prior authorization needed?"
+    member_id: MBR-002
+    tags: [gold, prescription, specialty-drug, prior-authorization, control]
+    behavior: answer
+    ground_truth: "Gold Tier 4 specialty drugs have 10% coinsurance after deductible and require prior authorization."
+    must_contain: ["prior authorization"]
+    expected_citations: [gold.md, exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-gold-specialty-drug-pa]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-bronze-primary-care-first-three
+    query: "Do Bronze primary care visits apply to the deductible for the first three visits?"
+    member_id: MBR-003
+    tags: [bronze, primary-care, deductible-waived, boundary, control]
+    behavior: answer
+    ground_truth: "Bronze in-network primary care is a $50 copay per visit, with the deductible waived for the first 3 visits per year."
+    must_contain: ["50", "first 3"]
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-bronze-primary-care-first-three]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-missing-acupuncture-policy
+    query: "Does my plan cover acupuncture?"
+    member_id: MBR-001
+    tags: [missing-information, uncertainty, coverage-gap, control]
+    behavior: answer
+    ground_truth: "The provided policy documents do not state whether acupuncture is covered; the assistant should say it cannot confirm coverage from the available documents."
+    must_contain: ["do not state"]
+    must_contain_any:
+      - ["cannot confirm", "can't confirm", "unable to confirm", "no way to confirm"]
+    expected_citations: [definitions.md, exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+    notes: "Missing-information behavior: no fabricated coverage decision."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-missing-acupuncture-policy]
+    expectation_categories: [uncertainty, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-gold-lab-cost-tool
+    query: "How much will I owe for a $1,000 diagnostic lab on my Gold plan?"
+    member_id: MBR-002
+    tags: [gold, lab, cost-calculation, tool-use, control]
+    behavior: answer
+    ground_truth: >
+      MBR-002 Gold has met the $750 deductible. A $1,000 diagnostic lab is subject to
+      10% member coinsurance, so the member pays $100 and the plan pays $900, before
+      considering remaining out-of-pocket maximum.
+    must_contain: ["100", "900"]
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 1000.0
+        plan_deductible: 750.0
+        accrued_deductible: 750.0
+        plan_oop_max: 4000.0
+        accrued_oop: 1200.0
+        coinsurance_member: 0.10
+    expected_citations: [gold.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: "Clean positive tool-use case; deterministic Tier-1 should pass tool argument checks."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-gold-lab-cost-tool]
+    expectation_categories: [tool_behavior, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-gold-family-deductible
+    query: "What is the family annual deductible for the Gold plan?"
+    member_id: MBR-002
+    tags: [gold, deductible, family-tier, control]
+    behavior: answer
+    ground_truth: "$1,500 annual family deductible (Gold §1)"
+    must_contain: ["1,500"]
+    expected_citations: [gold.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Family-tier figure, distinct from the individual deductible already covered by ctrl-gold-deductible."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-gold-family-deductible]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-bronze-oop-cap-tool
+    query: "How much will I owe for a $3,000 procedure on my Bronze plan?"
+    member_id: MBR-006
+    tags: [bronze, cost-calculation, tool-use, oop-cap, boundary, control]
+    behavior: answer
+    ground_truth: >
+      MBR-006 Bronze has fully met the $4,000 deductible and has $200 remaining before
+      the $8,000 individual out-of-pocket maximum. Without the cap, 40% coinsurance on
+      the full $3,000 would be $1,200, but the out-of-pocket maximum limits the member's
+      cost to the $200 remaining. Member pays $200; plan pays $2,800.
+    must_contain: ["200", "2,800"]
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 3000.0
+        plan_deductible: 4000.0
+        accrued_deductible: 4000.0
+        plan_oop_max: 8000.0
+        accrued_oop: 7800.0
+        coinsurance_member: 0.40
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: >
+      End-to-end out-of-pocket-maximum cap case: exercises calculate_coverage's
+      oop_cap_applied branch through the full agent -> tool -> response path,
+      not just the pure-function unit tests in test_coverage_calculator.py.
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-bronze-oop-cap-tool]
+    expectation_categories: [tool_behavior, amount, evidence]
+    dataset_version: "1.0.0"
+
+  # ── Policy administration depth (waiting periods, riders, network, docs) ────
+
+
+  - id: ctrl-waiting-period-orthodontia
+    query: "If I buy the orthodontia rider today, when does braces coverage start?"
+    member_id: MBR-001
+    tags: [rider, orthodontia, waiting-period, control]
+    behavior: answer
+    ground_truth: "12-month waiting period from rider purchase date before orthodontic services are covered (Administration — Waiting Periods)."
+    must_contain_any:
+      - ["12-month", "12 month", "twelve-month", "twelve month", "1 year", "one year", "one-year"]
+      - ["waiting period", "wait period", "waiting time"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — waiting period on an optional rider."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-waiting-period-orthodontia]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-effective-date-no-retro
+    query: "My coverage starts next Monday — will it cover a visit I had last week?"
+    member_id: MBR-001
+    tags: [effective-date, control]
+    behavior: answer
+    ground_truth: "Coverage does not apply retroactively to services before the effective date (Administration — Effective and Expiration Dates)."
+    must_contain: ["retroactively"]
+    must_not_contain: ["yes, covered"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — effective-date boundary, must refuse to backdate coverage."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-effective-date-no-retro]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-plan-year-reset
+    query: "I hit my Silver deductible in November — does that carry over into next year?"
+    member_id: MBR-001
+    tags: [plan-year, deductible, control]
+    behavior: answer
+    ground_truth: "Deductible and OOP accumulators reset to zero on January 1 each plan year (Administration — Plan-Year Changes)."
+    must_contain: ["January 1", "reset"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — plan-year accumulator reset."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-plan-year-reset]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-required-docs-oon-claim
+    query: "What paperwork do I need to submit for an out-of-network claim?"
+    member_id: MBR-001
+    tags: [claims, documentation, network, control]
+    behavior: answer
+    ground_truth: "Itemized bill, proof of payment, and a completed member claim reimbursement form (Administration — Required Documents for Claims)."
+    must_contain_any:
+      - ["itemized bill", "itemized statement", "itemized invoice", "itemized receipt"]
+      - ["reimbursement form", "claim form", "claim reimbursement form"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — required claim documentation."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-required-docs-oon-claim]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-network-tier-oon-cost
+    query: "What extra costs apply if I see an out-of-network provider?"
+    member_id: MBR-001
+    tags: [network-tier, out-of-network, control]
+    behavior: answer
+    ground_truth: >
+      Member pays the billed-vs-allowed-amount difference plus standard out-of-network
+      cost-sharing; a separate out-of-network OOP max of 2x the in-network amount applies
+      (Administration — Network Tiers).
+    must_contain: ["out-of-network", "2x"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "New in the administration.md depth pass — network-tier cost-sharing."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-network-tier-oon-cost]
+    expectation_categories: [coverage_decision, limits, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-midyear-tier-change-deductible
+    query: "If I switch from Bronze to Gold partway through the year, does my Bronze deductible carry over?"
+    member_id: MBR-003
+    tags: [plan-year, tier-change, deductible, control]
+    behavior: answer
+    ground_truth: "Mid-year plan tier changes require a new deductible period; amounts accrued under the prior tier do not carry over to the new tier (Administration — Plan-Year Changes)."
+    must_contain_any:
+      - ["do not carry over", "does not carry over", "does not roll over", "do not roll over", "no rollover", "not carried over"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Mid-year tier change deductible reset — distinct from ctrl-plan-year-reset's calendar-year accumulator reset."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-midyear-tier-change-deductible]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"

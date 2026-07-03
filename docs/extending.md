@@ -53,7 +53,7 @@ The framework routes all LLM calls through `src/verity/providers.py` via LiteLLM
 
 ### Adding a golden case
 
-1. Add a new entry to `datasets/golden/cases.yaml` following the `GoldenCase` schema (`src/verity/golden.py`). Required fields: `id`, `query`, `member_id`, `behavior`, `ground_truth`. For a case whose correct answer is a specific amount or date, prefer `numeric_expectations`/`date_expectations` over `must_contain`: they compare parsed values (`comparator: eq|gte|lte|gt|lt|range`, or an inclusive `on_or_after`/`on_or_before` date range) instead of an exact substring, so a correctly-worded but differently-formatted answer (e.g. "3800.00" vs "$3,800") still passes. See `ctrl-gold-oop-amendment` and `ctrl-bronze-oop-exact-boundary` in `datasets/golden/cases.yaml` for examples.
+1. Add a new entry to the appropriate `datasets/golden/*.yaml` file following the `GoldenCase` schema (`src/verity/golden.py`). Required fields: `id`, `query`, `member_id`, `behavior`, `ground_truth`. For a case whose correct answer is a specific amount or date, prefer `numeric_expectations`/`date_expectations` over `must_contain`: they compare parsed values (`comparator: eq|gte|lte|gt|lt|range`, or an inclusive `on_or_after`/`on_or_before` date range) instead of an exact substring, so a correctly-worded but differently-formatted answer (e.g. "3800.00" vs "$3,800") still passes. See `ctrl-gold-oop-amendment` and `ctrl-bronze-oop-exact-boundary` in `datasets/golden/controls.yaml` and `datasets/golden/boundaries.yaml` for examples.
 
 2. Add a retrieval fixture at `datasets/cassettes/retrieval/<case_id>.json` — a JSON array of `{text, source, section, chunk_id}` objects.
 

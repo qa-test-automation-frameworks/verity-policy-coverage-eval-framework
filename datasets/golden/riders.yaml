@@ -1,0 +1,166 @@
+cases:
+
+  - id: ctrl-dental-rider-cleaning
+    query: "If I have the dental rider, is a routine cleaning covered?"
+    member_id: MBR-001
+    tags: [rider, dental, control]
+    behavior: answer
+    ground_truth: "Routine cleanings and exams under the dental rider are covered at 100% with no deductible (Administration — Riders)."
+    must_contain: ["100%"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Dental rider preventive coverage — clean control."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-dental-rider-cleaning]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-dental-rider-major-services-wait
+    query: "How long do I wait before the dental rider covers a crown, and what's my share of the cost?"
+    member_id: MBR-002
+    tags: [rider, dental, waiting-period, control]
+    behavior: answer
+    ground_truth: "Major dental services (crowns, bridges, root canals) require a 6-month waiting period from rider purchase and are covered at 50% after deductible (Administration — Riders, Waiting Periods)."
+    must_contain: ["6-month", "50%"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Dental rider major-services waiting period and coinsurance."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-dental-rider-major-services-wait]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-vision-rider-allowance
+    query: "What does the vision rider cover for eyeglasses?"
+    member_id: MBR-003
+    tags: [rider, vision, control]
+    behavior: answer
+    ground_truth: "The vision rider provides an annual allowance of $150 toward eyeglasses or contact lenses, plus one eye exam per year at a $10 copay (Administration — Riders)."
+    must_contain: ["150"]
+    numeric_expectations:
+      - description: "annual vision allowance is exactly $150"
+        comparator: eq
+        value: 150
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Vision rider allowance — clean control."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-vision-rider-allowance]
+    expectation_categories: [coverage_decision, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-fertility-rider-lifetime-max
+    query: "What is the lifetime maximum for IVF under the fertility rider, and is there a waiting period?"
+    member_id: MBR-005
+    tags: [rider, fertility, control]
+    behavior: answer
+    ground_truth: "The fertility rider covers IVF at 50% coinsurance up to a $10,000 lifetime maximum, subject to a 6-month waiting period from rider purchase (Administration — Riders, Waiting Periods)."
+    must_contain: ["10,000", "6-month"]
+    numeric_expectations:
+      - description: "fertility rider lifetime maximum is exactly $10,000"
+        comparator: eq
+        value: 10000
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Fertility rider lifetime cap and waiting period."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-fertility-rider-lifetime-max]
+    expectation_categories: [coverage_decision, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-orthodontia-rider-lifetime-max
+    query: "Once the orthodontia rider's waiting period is over, what's the most it will pay toward braces?"
+    member_id: MBR-004
+    tags: [rider, orthodontia, control]
+    behavior: answer
+    ground_truth: "The orthodontia rider covers braces at 50% coinsurance up to a $2,000 lifetime maximum (Administration — Riders)."
+    must_contain: ["2,000"]
+    numeric_expectations:
+      - description: "orthodontia rider lifetime maximum is exactly $2,000"
+        comparator: eq
+        value: 2000
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Orthodontia rider lifetime cap — distinct angle from ctrl-waiting-period-orthodontia, which asks about timing rather than the dollar cap."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-orthodontia-rider-lifetime-max]
+    expectation_categories: [coverage_decision, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-dental-not-covered-without-rider
+    query: "Does my base plan cover a routine dental cleaning if I haven't purchased the dental rider?"
+    member_id: MBR-001
+    tags: [exclusion, dental, rider, control]
+    behavior: answer
+    ground_truth: "Routine dental exams, cleanings, fillings, extractions, and orthodontia are excluded from the base plan unless a separate dental rider is purchased (Exclusions — Services Not Covered)."
+    must_contain: ["excluded", "rider"]
+    must_not_contain: ["is covered", "yes, covered"]
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Base-plan dental exclusion without the rider — contrasts with ctrl-dental-rider-cleaning."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-dental-not-covered-without-rider]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-vision-exam-excluded-without-rider
+    query: "Is my annual eye exam covered under my base plan?"
+    member_id: MBR-003
+    tags: [exclusion, vision, rider, control]
+    behavior: answer
+    ground_truth: "Annual eye exams are excluded under the base health plan; they are only covered if a separate vision rider is purchased (Exclusions — Services Not Covered)."
+    must_contain: ["excluded", "rider"]
+    must_not_contain: ["is covered", "yes, covered"]
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Base-plan vision exclusion without the rider."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-vision-exam-excluded-without-rider]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-rider-claim-documentation
+    query: "What extra paperwork do I need when filing a claim under the dental rider?"
+    member_id: MBR-002
+    tags: [rider, claims, documentation, control]
+    behavior: answer
+    ground_truth: "Rider claims require standard claim documentation plus the rider's enrollment confirmation showing the rider was active on the date of service (Administration — Required Documents for Claims)."
+    must_contain: ["enrollment confirmation"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Rider-specific claim documentation requirement, distinct from ctrl-required-docs-oon-claim's out-of-network documentation."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-rider-claim-documentation]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"
