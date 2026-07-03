@@ -22,6 +22,7 @@ from verity.checks import (
     check_no_adjudication_language,
     check_numeric_expectations,
     check_pii,
+    check_policy_claims_grounded,
     check_prompt_leakage,
     check_refusal,
     check_tool_args,
@@ -653,6 +654,30 @@ class TestCheckClaimNumbersGrounded:
         resp = _Response(answer="Telehealth copay is $0, effective 2024-07-01.")
         chunks = [_Chunk("Effective July 1, 2024, telehealth copay is $0.")]
         assert check_claim_numbers_grounded(resp, chunks).passed
+
+
+class TestCheckPolicyClaimsGrounded:
+    def test_no_material_policy_claim_passes(self) -> None:
+        resp = _Response(answer="I do not have enough information to answer that.")
+        result = check_policy_claims_grounded(resp, [_Chunk("Some policy text.")])
+        assert result.passed
+
+    def test_supported_coverage_claim_passes(self) -> None:
+        resp = _Response(answer="Specialist visits are covered with a copay.")
+        chunks = [_Chunk("The Silver plan covers specialist visits with a $60 copay.")]
+        assert check_policy_claims_grounded(resp, chunks).passed
+
+    def test_unsupported_exclusion_claim_fails(self) -> None:
+        resp = _Response(answer="Bariatric surgery is covered under this plan.")
+        chunks = [_Chunk("Bariatric surgery is excluded under all plan tiers.")]
+        result = check_policy_claims_grounded(resp, chunks)
+        assert not result.passed
+        assert "Bariatric surgery" in result.message
+
+    def test_no_retrieved_chunks_with_policy_claim_fails(self) -> None:
+        resp = _Response(answer="Prior authorization is required for this service.")
+        result = check_policy_claims_grounded(resp, [])
+        assert not result.passed
 
 
 # ---------------------------------------------------------------------------

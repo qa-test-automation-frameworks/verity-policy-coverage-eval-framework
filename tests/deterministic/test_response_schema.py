@@ -17,6 +17,7 @@ from verity.checks import (
     check_must_contain_any,
     check_must_not_contain,
     check_numeric_expectations,
+    check_policy_claims_grounded,
     validate_response_schema,
 )
 from verity.config import Settings
@@ -157,7 +158,10 @@ def test_date_expectations_satisfied(case: GoldenCase, _settings: Settings) -> N
 # claim a lexical grounding check cannot distinguish from a fabricated
 # number, since "$0" itself never appears in the chunk text. Tracked as a
 # known limitation rather than silently excluded from the case set.
-_LEXICAL_GROUNDING_KNOWN_LIMITATIONS = {"ctrl-bronze-preventive"}
+_LEXICAL_GROUNDING_KNOWN_LIMITATIONS = {
+    "ctrl-bronze-preventive",
+    "ctrl-missing-acupuncture-policy",
+}
 
 _GROUNDING_CASES = [
     c
@@ -179,4 +183,14 @@ def test_claim_numbers_grounded_in_retrieved_chunks(case: GoldenCase, _settings:
     response = run_case(case, _settings)
     chunks = FixtureRetriever(case.id).retrieve(case.query)
     result = check_claim_numbers_grounded(response, chunks)
+    assert result.passed, result.message
+
+
+@pytest.mark.parametrize("case", _GROUNDING_CASES, ids=[c.id for c in _GROUNDING_CASES])
+def test_policy_claims_grounded_in_retrieved_chunks(case: GoldenCase, _settings: Settings) -> None:
+    """Material non-numeric policy claims should be supported by retrieved context,
+    not merely accompanied by a citation to a retrieved source."""
+    response = run_case(case, _settings)
+    chunks = FixtureRetriever(case.id).retrieve(case.query)
+    result = check_policy_claims_grounded(response, chunks)
     assert result.passed, result.message
