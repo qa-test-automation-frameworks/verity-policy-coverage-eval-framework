@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] If I switch from Bronze to Gold partway through the year, does my Bronze deducti",
+  "model": "openai/glm-4.5",
+  "content": "No \u2014 mid-year plan tier changes like Bronze to Gold require a new deductible period; amounts accrued under the prior tier do not carry over to the new tier (Administration \u2014 Plan-Year Changes).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}
