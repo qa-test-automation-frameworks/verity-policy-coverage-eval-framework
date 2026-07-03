@@ -205,6 +205,94 @@ _QUERY_STOPWORDS = frozenset(
 _LEXICAL_WEIGHT = 0.5
 
 
+def _chunk_corpus_files(
+    md_files: list[Path], chunk_size: int, chunk_overlap: int
+) -> tuple[list[str], list[str], list[dict[str, str]]]:
+    """Chunk a set of corpus markdown files into (ids, documents, metadatas).
+
+    Shared by PolicyRetriever and InMemoryCosineRetriever's index_corpus —
+    both embed the same chunks, just into different storage/search backends.
+    """
+    ids: list[str] = []
+    documents: list[str] = []
+    metadatas: list[dict[str, str]] = []
+
+    for md_file in md_files:
+        raw = _strip_html_comments(md_file.read_text(encoding="utf-8"))
+        title_match = re.match(r"^#\s+(.+)$", raw, re.MULTILINE)
+        title = title_match.group(1).strip() if title_match else md_file.stem
+
+        for heading, section_text in _split_into_sections(raw):
+            # Prepend the document title so each chunk's embedding retains which
+            # plan it belongs to — sections with parallel structure across plan
+            # tiers (e.g. "§4. Prescription Drugs") would otherwise be
+            # indistinguishable once split out on their own.
+            titled_text = f"{title}\n\n{section_text}"
+            sub_chunks = _chunk_text(titled_text, chunk_size, chunk_overlap)
+            for chunk_text in sub_chunks:
+                chunk_id = _stable_id(md_file.name, chunk_text)
+                section = heading or _extract_section_heading(chunk_text)
+                ids.append(chunk_id)
+                documents.append(chunk_text)
+                metadatas.append({"source": md_file.name, "section": section})
+
+    return ids, documents, metadatas
+
+
+def _rerank_and_package(
+    query: str,
+    docs: list[str],
+    metas: list[dict[str, str]],
+    distances: list[float],
+    fingerprint: str,
+    k: int,
+) -> list[Chunk]:
+    """Re-rank candidates and package the top-k into Chunks.
+
+    Shared by PolicyRetriever and InMemoryCosineRetriever's retrieve() —
+    re-ranks embedding distance with a lexical-overlap bonus, applies
+    plan-tier query scoping and a distance-margin cutoff, then packages the
+    surviving candidates as Chunks. See PolicyRetriever.retrieve's docstring
+    for why each step exists.
+    """
+    candidates = [
+        (doc, meta, float(dist) - _LEXICAL_WEIGHT * _keyword_overlap_bonus(query, doc))
+        for doc, meta, dist in zip(docs, metas, distances, strict=True)
+    ]
+    candidates.sort(key=lambda c: c[2])
+
+    plan = _mentioned_plan(query)
+    if plan:
+        candidates = [
+            (doc, meta, dist)
+            for doc, meta, dist in candidates
+            if _plan_scoped_source(meta.get("source", ""), plan)
+        ]
+
+    if candidates:
+        best = candidates[0][2]
+        if best > _MAX_RELEVANT_DISTANCE:
+            # Even the closest match is too far to be relevant — the corpus
+            # has nothing on this topic. Return no chunks rather than the
+            # least-bad irrelevant ones.
+            candidates = []
+        else:
+            candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
+
+    return [
+        Chunk(
+            text=doc,
+            source=meta.get("source", ""),
+            section=meta.get("section", ""),
+            chunk_id=_stable_id(meta.get("source", ""), doc),
+            rank=rank,
+            score=dist,
+            corpus_fingerprint=fingerprint,
+        )
+        for rank, (doc, meta, dist) in enumerate(candidates[:k], start=1)
+    ]
+
+
 def _keyword_overlap_bonus(query: str, text: str) -> float:
     """Fraction of distinctive query terms literally present in a chunk's text.
 
@@ -293,30 +381,9 @@ class PolicyRetriever:
             self._collection = None
             collection = self._get_collection()
 
-        ids: list[str] = []
-        documents: list[str] = []
-        metadatas: list[dict[str, str]] = []
-
-        for md_file in md_files:
-            raw = _strip_html_comments(md_file.read_text(encoding="utf-8"))
-            title_match = re.match(r"^#\s+(.+)$", raw, re.MULTILINE)
-            title = title_match.group(1).strip() if title_match else md_file.stem
-
-            for heading, section_text in _split_into_sections(raw):
-                # Prepend the document title so each chunk's embedding retains which
-                # plan it belongs to — sections with parallel structure across plan
-                # tiers (e.g. "§4. Prescription Drugs") would otherwise be
-                # indistinguishable once split out on their own.
-                titled_text = f"{title}\n\n{section_text}"
-                sub_chunks = _chunk_text(
-                    titled_text, self._config.chunk_size, self._config.chunk_overlap
-                )
-                for chunk_text in sub_chunks:
-                    chunk_id = _stable_id(md_file.name, chunk_text)
-                    section = heading or _extract_section_heading(chunk_text)
-                    ids.append(chunk_id)
-                    documents.append(chunk_text)
-                    metadatas.append({"source": md_file.name, "section": section})
+        ids, documents, metadatas = _chunk_corpus_files(
+            md_files, self._config.chunk_size, self._config.chunk_overlap
+        )
 
         if ids:
             collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
@@ -362,47 +429,7 @@ class PolicyRetriever:
         metas = results["metadatas"][0]
         distances = results["distances"][0]
 
-        # Re-rank by embedding distance adjusted with a lexical overlap bonus,
-        # then apply plan-tier scoping and a distance-margin cutoff.
-        candidates = [
-            (doc, meta, dist - _LEXICAL_WEIGHT * _keyword_overlap_bonus(query, doc))
-            for doc, meta, dist in zip(docs, metas, distances, strict=True)
-        ]
-        candidates.sort(key=lambda c: c[2])
-
-        plan = _mentioned_plan(query)
-        if plan:
-            candidates = [
-                (doc, meta, dist)
-                for doc, meta, dist in candidates
-                if _plan_scoped_source(meta.get("source", ""), plan)
-            ]
-
-        if candidates:
-            best = candidates[0][2]
-            if best > _MAX_RELEVANT_DISTANCE:
-                # Even the closest match is too far to be relevant — the corpus
-                # has nothing on this topic. Return no chunks rather than the
-                # least-bad irrelevant ones.
-                candidates = []
-            else:
-                candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
-
-        fingerprint = self.corpus_fingerprint()
-        chunks: list[Chunk] = []
-        for rank, (doc, meta, dist) in enumerate(candidates[:k], start=1):
-            chunks.append(
-                Chunk(
-                    text=doc,
-                    source=meta.get("source", ""),
-                    section=meta.get("section", ""),
-                    chunk_id=_stable_id(meta.get("source", ""), doc),
-                    rank=rank,
-                    score=dist,
-                    corpus_fingerprint=fingerprint,
-                )
-            )
-        return chunks
+        return _rerank_and_package(query, docs, metas, distances, self.corpus_fingerprint(), k)
 
 
 # ---------------------------------------------------------------------------
@@ -448,26 +475,9 @@ class InMemoryCosineRetriever:
         if not force and not stale and self._embeddings is not None:
             return 0  # already indexed and up to date
 
-        ids: list[str] = []
-        documents: list[str] = []
-        metadatas: list[dict[str, str]] = []
-
-        for md_file in md_files:
-            raw = _strip_html_comments(md_file.read_text(encoding="utf-8"))
-            title_match = re.match(r"^#\s+(.+)$", raw, re.MULTILINE)
-            title = title_match.group(1).strip() if title_match else md_file.stem
-
-            for heading, section_text in _split_into_sections(raw):
-                titled_text = f"{title}\n\n{section_text}"
-                sub_chunks = _chunk_text(
-                    titled_text, self._config.chunk_size, self._config.chunk_overlap
-                )
-                for chunk_text in sub_chunks:
-                    chunk_id = _stable_id(md_file.name, chunk_text)
-                    section = heading or _extract_section_heading(chunk_text)
-                    ids.append(chunk_id)
-                    documents.append(chunk_text)
-                    metadatas.append({"source": md_file.name, "section": section})
+        ids, documents, metadatas = _chunk_corpus_files(
+            md_files, self._config.chunk_size, self._config.chunk_overlap
+        )
 
         if ids:
             embeddings = np.asarray(self._embedding_fn(documents), dtype=np.float64)
@@ -510,44 +520,11 @@ class InMemoryCosineRetriever:
             query_vec = query_vec / query_norm
 
         similarities = self._embeddings @ query_vec
-        distances = 1.0 - similarities
+        distances = [float(d) for d in (1.0 - similarities)]
 
-        candidates = [
-            (doc, meta, float(dist) - _LEXICAL_WEIGHT * _keyword_overlap_bonus(query, doc))
-            for doc, meta, dist in zip(self._documents, self._metadatas, distances, strict=True)
-        ]
-        candidates.sort(key=lambda c: c[2])
-
-        plan = _mentioned_plan(query)
-        if plan:
-            candidates = [
-                (doc, meta, dist)
-                for doc, meta, dist in candidates
-                if _plan_scoped_source(meta.get("source", ""), plan)
-            ]
-
-        if candidates:
-            best = candidates[0][2]
-            if best > _MAX_RELEVANT_DISTANCE:
-                candidates = []
-            else:
-                candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
-
-        fingerprint = self.corpus_fingerprint()
-        chunks: list[Chunk] = []
-        for rank, (doc, meta, dist) in enumerate(candidates[:k], start=1):
-            chunks.append(
-                Chunk(
-                    text=doc,
-                    source=meta.get("source", ""),
-                    section=meta.get("section", ""),
-                    chunk_id=_stable_id(meta.get("source", ""), doc),
-                    rank=rank,
-                    score=dist,
-                    corpus_fingerprint=fingerprint,
-                )
-            )
-        return chunks
+        return _rerank_and_package(
+            query, self._documents, self._metadatas, distances, self.corpus_fingerprint(), k
+        )
 
 
 # ---------------------------------------------------------------------------
