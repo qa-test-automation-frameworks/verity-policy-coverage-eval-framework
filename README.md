@@ -175,6 +175,7 @@ docs/
   semantic-eval.yml     # Tier 2 - push to main + nightly
   adversarial.yml       # Tier 3 - weekly + on-demand
   pages.yml             # Report site - push to main + workflow_run
+  model-compare.yml     # On-demand two-provider comparison (workflow_dispatch only)
 ```
 
 ---
