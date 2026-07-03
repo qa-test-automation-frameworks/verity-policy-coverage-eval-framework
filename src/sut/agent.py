@@ -352,41 +352,83 @@ class CoverageAgent:
         if not result.tool_calls:
             return result, tool_invocations
 
-        tool_results_msgs: list[dict[str, Any]] = []
-        messages.append(
-            {
-                "role": "assistant",
-                "content": result.content or "",
-                "tool_calls": [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
-                    }
-                    for tc in result.tool_calls
-                ],
-            }
-        )
+        messages.append(self._assistant_tool_call_message(result))
 
         for tc in result.tool_calls:
-            fn_name = tc.function.name
+            tool_turn = self._execute_tool_call(
+                tc=tc,
+                start_index=start_index,
+                tool_invocations=tool_invocations,
+                trace_id=trace_id,
+            )
+            if isinstance(tool_turn, AgentResponse):
+                return tool_turn
+            tool_invocations.append(tool_turn["invocation"])
+            messages.append(tool_turn["message"])
 
-            if fn_name != "coverage_calculator":
-                logger.warning("Blocked call to unknown tool: %s", fn_name)
-                return self._safe_failure_response(
-                    category="unknown_tool",
-                    start_index=start_index,
-                    tool_invocations=tool_invocations,
-                    trace_id=trace_id,
-                )
+        final_result = self._complete_after_tool_calls(
+            messages=messages,
+            is_clean=is_clean,
+            start_index=start_index,
+            tool_invocations=tool_invocations,
+            trace_id=trace_id,
+        )
+        if isinstance(final_result, AgentResponse):
+            return final_result
+        return final_result, tool_invocations
 
+    def _assistant_tool_call_message(self, result: CompletionResult) -> dict[str, Any]:
+        return {
+            "role": "assistant",
+            "content": result.content or "",
+            "tool_calls": [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    },
+                }
+                for tc in result.tool_calls
+            ],
+        }
+
+    def _execute_tool_call(
+        self,
+        *,
+        tc: Any,
+        start_index: int,
+        tool_invocations: list[ToolInvocation],
+        trace_id: str,
+    ) -> AgentResponse | dict[str, Any]:
+        fn_name = tc.function.name
+
+        if fn_name != "coverage_calculator":
+            logger.warning("Blocked call to unknown tool: %s", fn_name)
+            return self._safe_failure_response(
+                category="unknown_tool",
+                start_index=start_index,
+                tool_invocations=tool_invocations,
+                trace_id=trace_id,
+            )
+
+        try:
+            args: dict[str, Any] = json.loads(tc.function.arguments)
+        except json.JSONDecodeError:
+            logger.exception("Malformed tool-call arguments for %s", fn_name)
+            return self._safe_failure_response(
+                category="tool_unavailable",
+                start_index=start_index,
+                tool_invocations=tool_invocations,
+                trace_id=trace_id,
+            )
+
+        with traced("tool.coverage_calculator"):
             try:
-                args: dict[str, Any] = json.loads(tc.function.arguments)
-            except json.JSONDecodeError:
-                logger.exception("Malformed tool-call arguments for %s", fn_name)
+                tool_result = run_coverage_calculator(args)
+            except Exception:
+                logger.exception("Coverage tool call failed")
                 return self._safe_failure_response(
                     category="tool_unavailable",
                     start_index=start_index,
@@ -394,31 +436,24 @@ class CoverageAgent:
                     trace_id=trace_id,
                 )
 
-            with traced("tool.coverage_calculator"):
-                try:
-                    tool_result = run_coverage_calculator(args)
-                except Exception:
-                    logger.exception("Coverage tool call failed")
-                    return self._safe_failure_response(
-                        category="tool_unavailable",
-                        start_index=start_index,
-                        tool_invocations=tool_invocations,
-                        trace_id=trace_id,
-                    )
+        return {
+            "invocation": ToolInvocation(tool_name=fn_name, args=args, result=tool_result),
+            "message": {
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": json.dumps(tool_result),
+            },
+        }
 
-            tool_invocations.append(
-                ToolInvocation(tool_name=fn_name, args=args, result=tool_result)
-            )
-            tool_results_msgs.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": json.dumps(tool_result),
-                }
-            )
-
-        messages.extend(tool_results_msgs)
-
+    def _complete_after_tool_calls(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        is_clean: bool,
+        start_index: int,
+        tool_invocations: list[ToolInvocation],
+        trace_id: str,
+    ) -> AgentResponse | CompletionResult:
         conv_check = validate_conversation(messages)
         if not conv_check.passed:
             logger.warning("Conversation structure check failed: %s", conv_check.message)
@@ -441,9 +476,6 @@ class CoverageAgent:
                 trace_id=trace_id,
             )
 
-        # This agent only handles one round of tool calls. A second round in
-        # the post-tool response is unsupported — reject it rather than
-        # silently using its (unvalidated) content as the final answer.
         if result.tool_calls:
             logger.warning("Second-turn tool_calls ignored; treating as tool_unavailable")
             return self._safe_failure_response(
@@ -453,7 +485,7 @@ class CoverageAgent:
                 trace_id=trace_id,
             )
 
-        return result, tool_invocations
+        return result
 
     def _safe_failure_response(
         self,
