@@ -54,11 +54,36 @@ explaining why.
   2/3 artifacts are available. Failure here does not block merges; it means the published
   report site is stale, not that the code is broken.
 
+## Public clone path
+
+The supported first-run path requires no provider credentials:
+
+```bash
+uv sync --all-extras
+make test-deterministic
+make defects-report
+```
+
+If the local environment blocks pytest plugin socket creation, the checks themselves can
+still be exercised with plugin autoload disabled:
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 UV_CACHE_DIR=/tmp/uv-cache \
+  uv run pytest -q tests/unit tests/deterministic
+```
+
+This fallback is for constrained local sandboxes only. It is not the configured pull-request
+gate; the GitHub workflow runs the normal command surface.
+
 ## Release criteria
 
 A change is releasable when:
 
 - The required Tier 1 check is green on the merge commit.
+- A fresh local or CI run of `make release-check` has been captured for the commit being
+  published, including timestamp, commit SHA, Python version, and pass/fail summary. Keep
+  this as a release artifact or attach it to the release notes; do not rely on stale report
+  screenshots as release evidence.
 - Any new seeded-defect or golden case added by the change has both a retrieval fixture and
   an authored/recorded cassette committed (see [`CONTRIBUTING.md`](../CONTRIBUTING.md)'s
   cassette workflow) — an uncommitted cassette means Tier 1 will fail for anyone else who

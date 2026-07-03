@@ -25,6 +25,8 @@ read, in order:
    the second records that the default was later switched to match the validated pairing.
 4. `docs/known-issues.md` — KI-3: control-case gating on faithfulness and answer relevancy is
    currently quarantined (`@pytest.mark.quarantine`), not silently passing or silently removed.
+5. `README.md` — "Current Gate Status" names which checks are enforced, informational, or
+   quarantined before you run anything live.
 
 ## 30 minutes: does the evaluation machinery hold up?
 
@@ -39,11 +41,10 @@ Add to the above:
   aggregation and threshold_pass work, and why N differs between local/push and scheduled runs.
 - `src/verity/checks.py`'s `check_citations` — validates citations at the source-file level
   always, and at the exact (source, section) level when a caller passes `retrieved_chunks`
-  (`tests/deterministic/test_response_schema.py` does). It does not verify claim-level
-  groundedness on its own; `check_claim_numbers_grounded` covers numeric claims specifically.
-  Neither checks that every non-numeric factual sentence traces to its cited section — that
-  remains a real, acknowledged gap (see `docs/retrieval-ablation.md` and
-  `src/verity/retrieval_eval.py` for the retrieval-quality side of the same area).
+  (`tests/deterministic/test_response_schema.py` does). `check_claim_numbers_grounded`
+  covers numeric claims, and `check_policy_claims_grounded` adds deterministic lexical
+  support checks for material qualitative policy statements. These checks still do not prove
+  full entailment, but they catch unsupported claims that a source-only citation check misses.
 - Run `make test-deterministic` and `make defects-report` locally (both hermetic, no API key).
 
 ## Deep review: everything

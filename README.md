@@ -15,6 +15,23 @@
 
 ---
 
+## Current Gate Status
+
+| Area | Status | Credential Needed | Blocking? | Evidence |
+|------|--------|-------------------|-----------|----------|
+| Tier 1 deterministic checks | Enforced | No | Yes | `make test-deterministic`, `.github/workflows/pr-gate.yml` |
+| Unit and hermetic adversarial checks | Enforced | No | Yes | `make test`, `.github/workflows/pr-gate.yml` |
+| Coverage and module gates | Enforced | No | Yes | `scripts/check_module_coverage.py`, `pyproject.toml` |
+| Dependency and static scans | Enforced | No | Yes | `pip-audit`, `bandit`, `gitleaks`, Trivy workflow |
+| Semantic defect runs | Informational | Yes | No | `docs/defects-caught.md`, `reports/semantic/results.json` |
+| Faithfulness and answer-relevancy control gates | Quarantined | Yes | No | `docs/known-issues.md`, `docs/thresholds.md` |
+| Live adversarial runs | Informational | Yes | No | `.github/workflows/adversarial.yml` |
+| Report site publishing | Informational | No | No | `.github/workflows/pages.yml` |
+
+The no-key path is the supported first-run path for reviewers and contributors. Live provider runs are useful evidence, but they are intentionally not required for public pull requests.
+
+---
+
 ## What this is
 
 Not a chatbot demo. An **LLM evaluation framework** demonstrated against a real (small) application:
@@ -50,6 +67,8 @@ The framework engineering is the portfolio artifact. The chatbot is the target.
 
 The SUT is **intentionally imperfect**. The framework's job is to catch each defect. Hermetic rows prove detector behavior on authored outputs; committed Tier-2 evidence records which semantic defects reproduced for the provider/model pairing used in that run. Defects #1-#3 are retained as regression tripwires even though the committed provider/model pairing did not reproduce them.
 
+Status terms are precise: `CAUGHT` means an authored replay proves the detector fires, `VERIFIED` means a live semantic run reproduced the issue, and `NOT_REPRODUCED` means the current provider/model pairing did not produce the seeded behavior in the committed run. The matrix in [`docs/defects-caught.md`](docs/defects-caught.md) is the source of truth.
+
 | # | Seeded Defect | Failure Mode | Caught By |
 |---|--------------|--------------|-----------|
 | 1 | Bariatric surgery excluded globally but listed as covered in Bronze surgical benefits | Coverage hallucination | Semantic · DeepEval Hallucination + RAGAS Faithfulness |
@@ -84,9 +103,12 @@ git clone <repo-url>
 cd verity-policy-coverage-eval-framework
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --all-extras
-make test          # unit + deterministic + adversarial tests; zero live calls
-make defects-report  # regenerate docs/defects-caught.md (hermetic proof)
+make test-deterministic  # replayed SUT checks; zero live calls
+make test                # unit + deterministic + adversarial checks; zero live calls
+make defects-report      # regenerate docs/defects-caught.md from local evidence
 ```
+
+Expected first success: `make test-deterministic` should run without provider credentials, network calls, or paid services. If pytest plugin socket creation is blocked by a local sandbox, run the targeted command with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` and keep `UV_CACHE_DIR` pointed at a writable directory.
 
 **With an API key (Tier 2 demo):**
 
@@ -184,8 +206,10 @@ docs/
 ## Limitations
 
 - **Tier 2 and Tier 3 require a live API key.** Hermetic Tier 1 needs no credentials. Semantic and adversarial evals require the API key matching `VERITY_PROVIDER`: `VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, `VERITY_TOGETHER_API_KEY`, `VERITY_NVIDIA_API_KEY`, or `VERITY_GOOGLE_API_KEY`.
+- **This is not a production insurance application.** The demo answers coverage questions over fictional policy documents. It does not approve claims, deny claims, provide medical advice, perform underwriting, evaluate pre-existing-condition rules, or replace human review.
 - **Committed live-run artifact matches the default pairing.** `docs/defects-caught.md` and `reports/semantic/results.json` reflect a real Tier-2 run against defects #1–#4, using `VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini` for both SUT and judge (2026-07-02) — this is now the default in `src/verity/config.py`, chosen because the zai/GLM-4.5 route (NVIDIA NIM and Z.ai) was returning intermittent `DEGRADED function` errors at the time. zai/GLM-4.5 remains fully supported (see `docs/adr/0001-glm-4-5-model-choice.md`); re-run `make eval-semantic` with a working GLM-4.5 key to refresh evidence against that pairing instead.
 - **Calibration measured against the default judge.** `docs/calibration-report.md` reflects a live `make calibrate-live` run (2026-07-02) — 93.8% raw agreement, Cohen's kappa 0.870 — using `openai/gpt-4o-mini` via OpenRouter, the current judge default. The human-authored *labels* in `datasets/calibration/labeled.yaml` are still synthetic ground truth. Re-run with a GLM-4.5 judge key to measure GLM self-bias specifically.
+- **Semantic control gates are not all enforced.** Faithfulness and answer-relevancy control checks currently run for signal but are quarantined because the committed control run and calibration data do not yet justify making them release blockers. See `docs/known-issues.md` and `docs/thresholds.md`.
 - **Provider endpoint unverified for non-default providers.** Base URLs in `.env.example` for providers other than the default are configuration templates; verify the exact model slug and base URL before running live evals against them.
 - **Golden dataset size.** The current dataset covers 56 cases across policy plans and defect types (including paraphrase variants of seeded defects for phrasing-robustness, and rider/limit/boundary cases). This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
 - **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record` when the SUT changes.
