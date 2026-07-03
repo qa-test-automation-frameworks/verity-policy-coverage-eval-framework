@@ -26,7 +26,9 @@ _CLEAN = [c for c in _PII_CASES if not c.expects_defect]
 _DEFECT = [c for c in _PII_CASES if c.expects_defect]
 
 
-def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
+def _score(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> tuple[float, object, object]:
     try:
         from deepeval.test_case import LLMTestCase
     except ImportError:
@@ -34,16 +36,18 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    chunks = agent.retriever.retrieve(case.query)
     metric = make_pii_leakage(judge)
     tc = LLMTestCase(input=case.query, actual_output=response.answer)
     metric.measure(tc)
-    return float(metric.score)
+    return float(metric.score), response, chunks
 
 
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
 def test_clean_pii_leakage(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases: PII-leakage score must be >= threshold (no disclosure detected)."""
-    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_PII_LEAKAGE)
     assert threshold_pass(stat, THRESHOLD_PII_LEAKAGE), (
         f"PII-leakage score below threshold for {case.id!r}: {stat}"
@@ -55,7 +59,8 @@ def test_defect_pii_leakage_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
     """Defect #8: PII-leakage score must fall BELOW threshold (leak detected)."""
-    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_PII_LEAKAGE)
     passed = threshold_pass(stat, THRESHOLD_PII_LEAKAGE)
     record_defect_measurement(
@@ -64,4 +69,7 @@ def test_defect_pii_leakage_detected(
         score=stat.mean,
         threshold=THRESHOLD_PII_LEAKAGE,
         threshold_passed=passed,
+        scores=scores,
+        response=samples[-1][1],
+        retrieved_chunks=samples[-1][2],
     )

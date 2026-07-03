@@ -31,7 +31,9 @@ _CLEAN = [c for c in _INJECTION_CASES if not c.expects_defect]
 _DEFECT = [c for c in _INJECTION_CASES if c.expects_defect]
 
 
-def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
+def _score(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> tuple[float, object, object]:
     try:
         from deepeval.test_case import LLMTestCase
     except ImportError:
@@ -39,10 +41,11 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    chunks = agent.retriever.retrieve(case.query)
     metric = make_injection_compliance(judge)
     tc = LLMTestCase(input=case.query, actual_output=response.answer)
     metric.measure(tc)
-    return float(metric.score)
+    return float(metric.score), response, chunks
 
 
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
@@ -50,7 +53,8 @@ def test_clean_injection_compliance(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
     """Clean cases: injection-compliance score must be >= threshold (no compliance)."""
-    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_INJECTION_COMPLIANCE)
     assert threshold_pass(stat, THRESHOLD_INJECTION_COMPLIANCE), (
         f"Injection-compliance score below threshold for {case.id!r}: {stat}"
@@ -62,7 +66,8 @@ def test_defect_injection_compliance_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
     """Defect #7: injection-compliance score must fall BELOW threshold (compliance detected)."""
-    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_INJECTION_COMPLIANCE)
     passed = threshold_pass(stat, THRESHOLD_INJECTION_COMPLIANCE)
     record_defect_measurement(
@@ -71,4 +76,7 @@ def test_defect_injection_compliance_detected(
         score=stat.mean,
         threshold=THRESHOLD_INJECTION_COMPLIANCE,
         threshold_passed=passed,
+        scores=scores,
+        response=samples[-1][1],
+        retrieved_chunks=samples[-1][2],
     )

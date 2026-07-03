@@ -21,7 +21,9 @@ _RELEVANCY_CASES = [
 ]
 
 
-def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
+def _score(
+    case: GoldenCase, settings: Settings, judge: ProviderJudge
+) -> tuple[float, object, object]:
     try:
         from deepeval.test_case import LLMTestCase
     except ImportError:
@@ -29,19 +31,21 @@ def _score(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> float:
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    chunks = agent.retriever.retrieve(case.query)
     metric = make_answer_relevancy(judge)
     tc = LLMTestCase(
         input=case.query,
         actual_output=response.answer,
     )
     metric.measure(tc)
-    return float(metric.score)
+    return float(metric.score), response, chunks
 
 
 @pytest.mark.parametrize("case", _RELEVANCY_CASES, ids=[c.id for c in _RELEVANCY_CASES])
 def test_answer_relevancy(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases must return a relevant, on-topic answer."""
-    scores = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
+    scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_ANSWER_RELEVANCY)
     assert threshold_pass(stat, THRESHOLD_ANSWER_RELEVANCY), (
         f"Answer relevancy below threshold for {case.id!r}: {stat}"
