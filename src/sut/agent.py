@@ -93,7 +93,7 @@ class AgentResponse(BaseModel):
     trace_id: str = ""
     # Set when requires_human_review is True: the id of the ReviewQueue entry
     # this answer was submitted to. answer/citations/etc. above are still
-    # fully populated (evaluation and audit tooling need the draft content
+    # fully populated (evaluation and review tooling need the draft content
     # regardless of approval state) — CoverageAgent.deliver() is the actual
     # member-facing boundary that withholds the answer until this item is
     # approved; see review_triggers.py and CoverageAgent.deliver/approve_review.
@@ -225,6 +225,14 @@ def _build_system_prompt(
 # ---------------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
+class PreparedRequest:
+    member: dict[str, Any]
+    chunks: list[Chunk]
+    messages: list[dict[str, Any]]
+    is_clean: bool
+
+
 @dataclass
 class CoverageAgent:
     settings: Settings = field(default_factory=get_settings)
@@ -242,7 +250,7 @@ class CoverageAgent:
     def deliver(self, response: AgentResponse) -> str:
         """Return the member-facing answer, enforcing the review gate.
 
-        Unlike `response.answer` (populated immediately for evaluation/audit
+        Unlike `response.answer` (populated immediately for evaluation/review
         tooling regardless of approval state), this is the actual delivery
         boundary: a review-required response cannot be delivered until its
         review_item_id has been approved via approve_review().
@@ -294,6 +302,27 @@ class CoverageAgent:
             total_tokens=0,
             estimated_cost_usd=0.0,
         )
+
+    def _prepare_request(self, query: str, member_id: str, top_k: int | None) -> PreparedRequest:
+        members = _load_members()
+        if member_id not in members:
+            raise KeyError(f"Unknown member_id: {member_id!r}")
+        member = members[member_id]
+
+        is_clean = self.settings.sut_profile == "clean"
+
+        # SEEDED DEFECT #8: log full member context to DEBUG (seeded profile only)
+        log_member_context(member, clean=is_clean)
+
+        with traced("retrieval", top_k=top_k or 0):
+            chunks = self._chunk_retriever.retrieve(query, top_k=top_k)
+
+        system_prompt = _build_system_prompt(member, chunks, clean=is_clean)
+        messages: list[dict[str, Any]] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": query},
+        ]
+        return PreparedRequest(member=member, chunks=chunks, messages=messages, is_clean=is_clean)
 
     def _handle_tool_call_round(
         self,
@@ -486,27 +515,10 @@ class CoverageAgent:
         ) as span:
             trace_id = trace_id_hex(span)
 
-            # 2. Load member
-            members = _load_members()
-            if member_id not in members:
-                raise KeyError(f"Unknown member_id: {member_id!r}")
-            member = members[member_id]
-
-            is_clean = self.settings.sut_profile == "clean"
-
-            # SEEDED DEFECT #8: log full member context to DEBUG (seeded profile only)
-            log_member_context(member, clean=is_clean)
-
-            # 3. Retrieve relevant policy chunks
-            with traced("retrieval", top_k=top_k or 0):
-                chunks = self._chunk_retriever.retrieve(query, top_k=top_k)
-
-            # 4. Build messages
-            system_prompt = _build_system_prompt(member, chunks, clean=is_clean)
-            messages: list[dict[str, Any]] = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query},
-            ]
+            prepared = self._prepare_request(query, member_id, top_k)
+            chunks = prepared.chunks
+            messages = prepared.messages
+            is_clean = prepared.is_clean
 
             # 5. First LLM call (may return tool_calls)
             try:
