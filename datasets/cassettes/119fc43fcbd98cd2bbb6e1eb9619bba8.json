@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] How many home health aide visits does my plan cover per year?",
+  "model": "openai/glm-4.5",
+  "content": "Home health aide visits are limited to 60 visits per calendar year on all plans (Exclusions \u2014 Lifetime and Annual Limits).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}

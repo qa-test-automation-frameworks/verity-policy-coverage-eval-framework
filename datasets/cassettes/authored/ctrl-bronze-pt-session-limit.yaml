@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      Physical therapy is covered up to 30 sessions per calendar year on the Bronze plan (Exclusions — Lifetime and Annual Limits).
+    prompt_tokens: 130
+    completion_tokens: 40

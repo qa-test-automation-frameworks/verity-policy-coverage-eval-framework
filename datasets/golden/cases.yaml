@@ -1121,3 +1121,91 @@ cases:
     expectation_categories: [coverage_decision, evidence]
     dataset_version: "1.0.0"
 
+  - id: ctrl-snf-annual-limit
+    query: "Is there a limit on how many days of skilled nursing facility care my plan covers per year?"
+    member_id: MBR-004
+    tags: [limits, snf, control]
+    behavior: answer
+    ground_truth: "Skilled nursing facility stays are limited to 90 days per calendar year on all plans (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["90 days"]
+    numeric_expectations:
+      - description: "SNF annual limit is exactly 90 days"
+        comparator: eq
+        value: 90
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Annual limit on skilled nursing facility stays."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-snf-annual-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
+  - id: ctrl-home-health-visit-limit
+    query: "How many home health aide visits does my plan cover per year?"
+    member_id: MBR-006
+    tags: [limits, home-health, control]
+    behavior: answer
+    ground_truth: "Home health aide visits are limited to 60 visits per calendar year on all plans (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["60 visits"]
+    numeric_expectations:
+      - description: "home health aide annual limit is exactly 60 visits"
+        comparator: eq
+        value: 60
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Annual limit on home health aide visits."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-home-health-visit-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
+  - id: ctrl-gold-pt-session-limit
+    query: "How many physical therapy sessions does my Gold plan cover per year?"
+    member_id: MBR-002
+    tags: [gold, limits, physical-therapy, control]
+    behavior: answer
+    ground_truth: "Physical therapy is covered up to 60 sessions per calendar year on the Gold plan (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["60 sessions"]
+    numeric_expectations:
+      - description: "Gold physical therapy annual limit is exactly 60 sessions"
+        comparator: eq
+        value: 60
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Plan-tier-specific PT session limit — Gold."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-gold-pt-session-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
+  - id: ctrl-bronze-pt-session-limit
+    query: "How many physical therapy sessions does my Bronze plan cover per year?"
+    member_id: MBR-003
+    tags: [bronze, limits, physical-therapy, control]
+    behavior: answer
+    ground_truth: "Physical therapy is covered up to 30 sessions per calendar year on the Bronze plan (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["30 sessions"]
+    numeric_expectations:
+      - description: "Bronze physical therapy annual limit is exactly 30 sessions"
+        comparator: eq
+        value: 30
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Plan-tier-specific PT session limit — Bronze, boundary contrast with Gold's 60."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-bronze-pt-session-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
