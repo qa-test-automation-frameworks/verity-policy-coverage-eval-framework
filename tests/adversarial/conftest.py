@@ -15,7 +15,12 @@ from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
 from verity.reporting import render_cost_summary, write_step_summary
-from verity.security_report import build_security_summary, write_security_summary
+from verity.security_report import (
+    LOCAL_JSON_PATH,
+    LOCAL_MD_PATH,
+    build_security_summary,
+    write_security_summary,
+)
 
 _ADV_CASSETTE_DIR = Path("datasets/adversarial/cassettes")
 _PROBES_PATH = Path("datasets/adversarial/probes.yaml")
@@ -62,4 +67,9 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if ADVERSARIAL_SUMMARY:
         probes = load_probes(_PROBES_PATH)
         security_summary = build_security_summary(ADVERSARIAL_SUMMARY, probes)
-        write_security_summary(security_summary)
+        # Write to the untracked local path only -- each xdist worker under
+        # `pytest -n auto` only sees its own subset of probes, so writing the
+        # tracked reports/security/summary.* directly here would let the
+        # last worker/controller to finish overwrite it with incomplete
+        # data. `make redteam` regenerates the tracked files serially.
+        write_security_summary(security_summary, md_path=LOCAL_MD_PATH, json_path=LOCAL_JSON_PATH)

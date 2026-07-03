@@ -93,17 +93,11 @@ jobs:
           mkdir -p reports/allure-results/semantic reports/semantic
           uv run pytest tests/semantic/ -m semantic -v --tb=short \
             --alluredir reports/allure-results/semantic
-          if [ ! -s reports/semantic/results.json ]; then
-            echo "::error::Semantic eval completed without reports/semantic/results.json; no eval cases ran."
+          if [ ! -s reports/semantic/results-local.json ]; then
+            echo "::error::Semantic eval completed without reports/semantic/results-local.json; no eval cases ran."
             exit 1
           fi
-
-      - name: Write cost summary to job summary
-        if: steps.key_check.outputs.has_key == 'true'
-        run: |
-          if [ -f reports/cost-summary.md ]; then
-            cat reports/cost-summary.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+          cp reports/semantic/results-local.json reports/semantic/results.json
 
       - name: Upload semantic eval reports
         if: steps.key_check.outputs.has_key == 'true'
@@ -113,5 +107,4 @@ jobs:
           path: |
             reports/allure-results/semantic/
             reports/semantic/results.json
-            reports/cost-summary.md
           if-no-files-found: warn

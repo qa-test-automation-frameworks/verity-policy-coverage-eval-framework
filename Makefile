@@ -34,7 +34,12 @@ test-deterministic:
 
 eval-semantic:
 	@echo "Tier 2 — Semantic eval (DeepEval + RAGAS; live LLM) [M3]"
+	@echo "Runs serially (no xdist) so reports/semantic/results.json reflects the full run."
 	PYTHONPATH=src uv run pytest tests/semantic/ -m semantic -v
+	@if [ -f reports/semantic/results-local.json ]; then \
+		cp reports/semantic/results-local.json reports/semantic/results.json; \
+		echo "Refreshed reports/semantic/results.json"; \
+	fi
 
 hosted-models:
 	@echo "Ranking zero-price hosted open-weight models"
@@ -58,7 +63,13 @@ record:
 
 redteam:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest (no API key required)"
+	@echo "Runs serially (no xdist) so reports/security/summary.* reflects the full run."
 	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+	@if [ -f reports/security/summary-local.json ]; then \
+		cp reports/security/summary-local.json reports/security/summary.json; \
+		cp reports/security/summary-local.md reports/security/summary.md; \
+		echo "Refreshed reports/security/summary.json and summary.md"; \
+	fi
 
 flake-check:
 	@echo "Flake detection — repeated pytest runs, reports outcome variance per test"
@@ -68,6 +79,11 @@ flake-check:
 redteam-live:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest + promptfoo live eval"
 	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+	@if [ -f reports/security/summary-local.json ]; then \
+		cp reports/security/summary-local.json reports/security/summary.json; \
+		cp reports/security/summary-local.md reports/security/summary.md; \
+		echo "Refreshed reports/security/summary.json and summary.md"; \
+	fi
 	@if [ -z "$(VERITY_ZAI_API_KEY)$(VERITY_OPENROUTER_API_KEY)$(VERITY_TOGETHER_API_KEY)$(VERITY_NVIDIA_API_KEY)$(VERITY_GOOGLE_API_KEY)" ]; then \
 		echo "No provider API key set — skipping promptfoo live eval"; \
 	else \
