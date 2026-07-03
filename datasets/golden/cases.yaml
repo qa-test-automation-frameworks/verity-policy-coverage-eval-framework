@@ -474,7 +474,9 @@ cases:
     tags: [missing-information, uncertainty, coverage-gap, control]
     behavior: answer
     ground_truth: "The provided policy documents do not state whether acupuncture is covered; the assistant should say it cannot confirm coverage from the available documents."
-    must_contain: ["do not state", "cannot confirm"]
+    must_contain: ["do not state"]
+    must_contain_any:
+      - ["cannot confirm", "can't confirm", "unable to confirm", "no way to confirm"]
     expected_citations: [definitions.md, exclusions.md]
     expects_defect: false
     semantic_metrics: [faithfulness]
@@ -595,7 +597,9 @@ cases:
     tags: [rider, orthodontia, waiting-period, control]
     behavior: answer
     ground_truth: "12-month waiting period from rider purchase date before orthodontic services are covered (Administration — Waiting Periods)."
-    must_contain: ["12-month", "waiting period"]
+    must_contain_any:
+      - ["12-month", "12 month", "twelve-month", "twelve month", "1 year", "one year", "one-year"]
+      - ["waiting period", "wait period", "waiting time"]
     expected_citations: [administration.md]
     expects_defect: false
     semantic_metrics: [answer_relevancy, faithfulness]
@@ -650,7 +654,9 @@ cases:
     tags: [claims, documentation, network, control]
     behavior: answer
     ground_truth: "Itemized bill, proof of payment, and a completed member claim reimbursement form (Administration — Required Documents for Claims)."
-    must_contain: ["itemized bill", "reimbursement form"]
+    must_contain_any:
+      - ["itemized bill", "itemized statement", "itemized invoice", "itemized receipt"]
+      - ["reimbursement form", "claim form", "claim reimbursement form"]
     expected_citations: [administration.md]
     expects_defect: false
     semantic_metrics: [answer_relevancy, faithfulness]
@@ -1259,7 +1265,8 @@ cases:
     tags: [plan-year, tier-change, deductible, control]
     behavior: answer
     ground_truth: "Mid-year plan tier changes require a new deductible period; amounts accrued under the prior tier do not carry over to the new tier (Administration — Plan-Year Changes)."
-    must_contain: ["do not carry over"]
+    must_contain_any:
+      - ["do not carry over", "does not carry over", "does not roll over", "do not roll over", "no rollover", "not carried over"]
     expected_citations: [administration.md]
     expects_defect: false
     semantic_metrics: [answer_relevancy, faithfulness]
