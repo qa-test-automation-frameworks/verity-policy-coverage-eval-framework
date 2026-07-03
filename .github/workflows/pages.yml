@@ -49,7 +49,9 @@ jobs:
           mkdir -p reports/trends
           for tier in deterministic semantic adversarial; do
             curl -fsSL "$PAGES_BASE/trends-data/$tier.jsonl" \
-              -o "reports/trends/$tier.jsonl" || true
+              -o "reports/trends/$tier.jsonl" || {
+              echo "::warning::Trend history for $tier could not be restored; report site may show stale or missing trend inputs."
+            }
           done
 
       - name: Run hermetic test suites (unit + deterministic + adversarial)
@@ -62,6 +64,7 @@ jobs:
             -v --tb=short
 
       - name: Download latest semantic eval artifact
+        id: download_semantic
         uses: dawidd6/action-download-artifact@bf251b5aa9c2f7eeb574a96ee720e24f801b7c11  # v6
         continue-on-error: true
         with:
@@ -71,6 +74,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: Download latest adversarial report artifact
+        id: download_adversarial
         uses: dawidd6/action-download-artifact@bf251b5aa9c2f7eeb574a96ee720e24f801b7c11  # v6
         continue-on-error: true
         with:
@@ -78,6 +82,16 @@ jobs:
           name: adversarial-reports
           path: reports/
           if_no_artifact_found: warn
+
+      - name: Warn on missing live report inputs
+        if: steps.download_semantic.outcome == 'failure' || steps.download_adversarial.outcome == 'failure'
+        run: |
+          if [ "${{ steps.download_semantic.outcome }}" = "failure" ]; then
+            echo "::warning::Semantic report artifact was not downloaded; report site may use stale or missing live inputs."
+          fi
+          if [ "${{ steps.download_adversarial.outcome }}" = "failure" ]; then
+            echo "::warning::Adversarial report artifact was not downloaded; report site may use stale or missing live inputs."
+          fi
 
       - name: Generate defects-caught report
         env:
