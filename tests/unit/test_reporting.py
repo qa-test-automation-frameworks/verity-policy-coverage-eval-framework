@@ -117,3 +117,16 @@ class TestWriteStepSummary:
         content = (tmp_path / "reports" / "cost-summary-local.md").read_text()
         assert "first" in content
         assert "second" in content
+
+    def test_first_write_truncates_stale_content(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("GITHUB_STEP_SUMMARY", raising=False)
+        monkeypatch.chdir(tmp_path)
+        reports_dir = tmp_path / "reports"
+        reports_dir.mkdir()
+        (reports_dir / "cost-summary-local.md").write_text("stale from a previous run\n")
+        write_step_summary("fresh\n")
+        content = (reports_dir / "cost-summary-local.md").read_text()
+        assert "stale" not in content
+        assert "fresh" in content
