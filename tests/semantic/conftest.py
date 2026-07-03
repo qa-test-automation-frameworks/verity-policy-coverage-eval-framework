@@ -105,7 +105,8 @@ def record_defect_measurement(
     VERIFIED status itself is still captured in full for defects_report.py.
     """
     status = "NOT_REPRODUCED" if threshold_passed else "VERIFIED"
-    _SEMANTIC_MEASUREMENTS[case.id] = {
+    measurement_key = f"{case.id}::{metric}"
+    _SEMANTIC_MEASUREMENTS[measurement_key] = {
         "case_id": case.id,
         "defect_id": case.defect_id,
         "metric": metric,
