@@ -66,8 +66,16 @@ def test_human_review_signal_matches_case(case: GoldenCase, _settings: Settings)
 )
 def test_citations_match_expected_sources(case: GoldenCase, _settings: Settings) -> None:
     response = run_case(case, _settings)
-    retrieved_sources = [c.source for c in FixtureRetriever(case.id).retrieve(case.query)]
-    result = check_citations(case, response, retrieved_sources=retrieved_sources)
+    retrieved_chunks = FixtureRetriever(case.id).retrieve(case.query)
+    retrieved_sources = [c.source for c in retrieved_chunks]
+    # retrieved_chunks additionally verifies the exact section, catching a
+    # citation that names a retrieved file but a section within it that was
+    # not retrieved (source-file-level checking alone can't tell that apart
+    # from a real hit) — resolve_citations() always draws the section from a
+    # retrieved chunk, so this must still pass for every non-defect case.
+    result = check_citations(
+        case, response, retrieved_sources=retrieved_sources, retrieved_chunks=retrieved_chunks
+    )
     if case.expects_defect:
         # A seeded defect may legitimately fail to cite the expected source —
         # that is the behavior under test, not a gate on this suite.
