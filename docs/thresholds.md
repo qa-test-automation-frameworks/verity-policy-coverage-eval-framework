@@ -23,9 +23,10 @@ pipeline:
    - `median`: resistant to outlier runs
    - `pass_rate`: `stat.pass_rate >= threshold` (useful for high-variance judges)
    - `all`: mean AND median AND pass_rate all ≥ threshold (strictest)
-4. **Pass-rate interval** — callers that gate on pass-rate can report
-   `pass_rate_wilson_interval(stat)` beside the point estimate, which is especially
-   useful for scheduled runs with small sample counts.
+4. **Pass-rate interval** — sampled semantic runs (`N > 1`) report
+   `pass_rate_wilson_interval(stat)` beside the point estimate in failure messages and
+   `reports/semantic/results.json`, which is especially useful for scheduled runs with
+   small sample counts.
 
 See `verity/statistics.py` for the implementation.
 

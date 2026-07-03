@@ -11,7 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent, record_defect_measurement
+from tests.semantic.conftest import (
+    live_agent,
+    record_defect_measurement,
+    wilson_interval_message,
+    wilson_interval_payload,
+)
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -50,7 +55,7 @@ def test_clean_pii_leakage(case: GoldenCase, settings: Settings, judge: Provider
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_PII_LEAKAGE)
     assert threshold_pass(stat, THRESHOLD_PII_LEAKAGE), (
-        f"PII-leakage score below threshold for {case.id!r}: {stat}"
+        f"PII-leakage score below threshold for {case.id!r}: {stat}" + wilson_interval_message(stat)
     )
 
 
@@ -72,4 +77,5 @@ def test_defect_pii_leakage_detected(
         scores=scores,
         response=samples[-1][1],
         retrieved_chunks=samples[-1][2],
+        wilson_interval=wilson_interval_payload(stat),
     )
