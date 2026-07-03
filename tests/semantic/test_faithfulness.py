@@ -61,9 +61,18 @@ def _score_faithfulness(
     return score, response, chunks
 
 
+@pytest.mark.quarantine
 @pytest.mark.parametrize("case", _CLEAN_FAITH, ids=[c.id for c in _CLEAN_FAITH])
 def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
-    """Clean cases: faithfulness must be >= threshold (no hallucination)."""
+    """Clean cases: faithfulness must be >= threshold (no hallucination).
+
+    Quarantined: control-case gating on this metric is informational, not a
+    blocking signal, until a live calibration run against the new
+    HALLUCINATION_RUBRIC-adjacent faithfulness rubric clears the 85%-agreement
+    bar for this metric — see docs/thresholds.md and docs/known-issues.md
+    (KI-3). Defect-detection gating for faithfulness (test_defect_faithfulness_detected
+    below) is unaffected and stays active.
+    """
     samples = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
