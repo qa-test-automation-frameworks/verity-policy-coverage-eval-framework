@@ -128,6 +128,12 @@ def _trends_html(trends_dir: Path = Path("reports/trends")) -> str | None:
         return None
 
     table = "".join(rows)
+    sparse_note = (
+        '<p style="color:#a0aec0;">Trend history accumulates from nightly runs; '
+        "expect few data points shortly after project start.</p>"
+        if len(rows) < 5
+        else ""
+    )
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,6 +144,7 @@ def _trends_html(trends_dir: Path = Path("reports/trends")) -> str | None:
 <body>
 {_NAV}
 <h1>Trends</h1>
+{sparse_note}
 <table>
   <thead>
     <tr>
