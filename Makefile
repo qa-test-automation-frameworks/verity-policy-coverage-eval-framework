@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check release-check
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -154,6 +154,29 @@ demo:
 		exit 1; \
 	fi
 	PYTHONPATH=src uv run python -m sut.agent "$(QUERY)"
+
+# ---------------------------------------------------------------------------
+# Release verification
+# ---------------------------------------------------------------------------
+release-check:
+	@echo "Release verification — hermetic (no API key required); see docs/ci-policy.md"
+	uv run ruff check src tests scripts promptfoo
+	uv run ruff format --check src tests scripts promptfoo
+	uv run mypy src
+	PYTHONPATH=src uv run pytest -m "not live" --cov=src --cov-report=term-missing \
+		--cov-report=json:reports/coverage.json --cov-fail-under=80
+	uv run python scripts/check_module_coverage.py reports/coverage.json
+	uv run python scripts/check_vuln_exceptions.py
+	uv run pip-audit --desc $$(grep -vE '^\s*(#|$$)' .pip-audit-ignore | sed 's/^/--ignore-vuln /' | tr '\n' ' ')
+	uv run bandit -r src/ -ll -c pyproject.toml
+	PYTHONPATH=src uv run python scripts/run_calibration.py --out /tmp/calibration-release-check.md
+	PYTHONPATH=src:. uv run python scripts/defects_report.py
+	PYTHONPATH=src:. uv run python scripts/build_report_site.py
+	@echo ""
+	@echo "release-check passed. Not run here (requires CI or external tools):"
+	@echo "  - gitleaks secret scan (runs in pr-gate.yml)"
+	@echo "  - Trivy container scan (runs in docker-scan.yml)"
+	@echo "  - live Tier 2/3 evals (make eval-semantic / make redteam-live)"
 
 # ---------------------------------------------------------------------------
 # Container
