@@ -83,20 +83,7 @@
       "source": "definitions.md"
     }
   ],
-  "ctrl-missing-acupuncture-policy": [
-    {
-      "chunk_id": "128bf5e64c42b021",
-      "source": "bronze.md"
-    },
-    {
-      "chunk_id": "52fc2c4f8c59e9cd",
-      "source": "bronze.md"
-    },
-    {
-      "chunk_id": "aa8fb39e547bd431",
-      "source": "silver.md"
-    }
-  ],
+  "ctrl-missing-acupuncture-policy": [],
   "ctrl-network-tier-oon-cost": [
     {
       "chunk_id": "25eee3798a769b56",
