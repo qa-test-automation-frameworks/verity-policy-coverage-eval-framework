@@ -32,11 +32,11 @@ See `verity/statistics.py` for the implementation.
 
 > **Measured judge calibration** has been run live (2026-07-02): 93.8% raw
 > agreement, Cohen's kappa 0.870 — see `docs/calibration-report.md`. That run
-> used `openai/gpt-4o-mini` as the judge, not the GLM-4.5 this repo defaults
-> to, so per-metric score drift for the actual default judge is still
-> unmeasured. Run `make calibrate-live` with a GLM-4.5 judge key to close
-> that gap. The committed calibration report also marks faithfulness for review
-> in the current run because its per-metric agreement is 75% with MAE 0.238.
+> used `openai/gpt-4o-mini` as the judge, which is now the default judge model
+> in `Settings`. Score drift for the zai/GLM-4.5 alternative is unmeasured;
+> run `make calibrate-live` with a GLM-4.5 judge key to measure it. The
+> committed calibration report also marks faithfulness for review in the
+> current run because its per-metric agreement is 75% with MAE 0.238.
 
 ---
 
@@ -84,8 +84,8 @@ faithfulness or answer-relevancy assertions. This lines up with `docs/calibratio
 which independently flags faithfulness as the one metric below the 85%-agreement /
 0.20-MAE calibration bar (75% agreement, MAE 0.238) for this same judge — the calibration
 data and the live control failures are two independent signals pointing at the same
-weak metric, not an unrelated anomaly. Re-run `make eval-semantic` with a GLM-4.5 key (the
-ADR-0001 default) to see whether the failure rate is judge-specific.
+weak metric, not an unrelated anomaly. Re-run `make eval-semantic` with a GLM-4.5 key
+(`VERITY_PROVIDER=zai VERITY_MODEL=glm-4.5`) to see whether the failure rate is judge-specific.
 
 ---
 

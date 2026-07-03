@@ -36,7 +36,7 @@ The framework engineering is the portfolio artifact. The chatbot is the target.
 ├─────────────────────────────────────────────────────────────────┤
 │  Tier 2 — Semantic (nightly / merge to main)                    │
 │  DeepEval + RAGAS over versioned golden dataset                 │
-│  Statistical thresholds · GLM-4.5 judge · cost-tracked         │
+│  Statistical thresholds · configured judge model · cost-tracked │
 ├─────────────────────────────────────────────────────────────────┤
 │  Tier 1 — Deterministic (every PR)                              │
 │  Schema checks · guardrail assertions · cassette replay         │
@@ -92,10 +92,10 @@ make defects-report  # regenerate docs/defects-caught.md (hermetic proof)
 
 ```bash
 cp .env.example .env
-# Add VERITY_ZAI_API_KEY= to .env
-make smoke         # one live GLM-4.5 call; prints tokens + cost
+# Add VERITY_OPENROUTER_API_KEY= to .env (the default provider; see .env.example for the zai/GLM-4.5 alternative)
+make smoke         # one live model call; prints tokens + cost
 make demo QUERY="Is bariatric surgery covered on my Bronze plan?"
-make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1 on GLM-4.5 list pricing; see verity/cost.py)
+make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1; see verity/cost.py)
 ```
 
 `make demo` runs the hardened `clean` SUT profile by default (`VERITY_SUT_PROFILE`); the
@@ -179,9 +179,9 @@ docs/
 ## Limitations
 
 - **Tier 2 and Tier 3 require a live API key.** Hermetic Tier 1 needs no credentials. Semantic and adversarial evals require the API key matching `VERITY_PROVIDER`: `VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, `VERITY_TOGETHER_API_KEY`, `VERITY_NVIDIA_API_KEY`, or `VERITY_GOOGLE_API_KEY`.
-- **Committed live-run artifact, provider substitution noted.** `docs/defects-caught.md` and `reports/semantic/results.json` reflect a real Tier-2 run against defects #1–#4. It used `VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini` for both SUT and judge (2026-07-02) — not the ADR-0001 default of GLM-4.5 — because the NVIDIA NIM route was returning intermittent `DEGRADED function` errors and the OpenRouter free-tier route was rate-limited at run time. Re-run `make eval-semantic` with a configured GLM-4.5 key to refresh against the intended default model.
-- **Calibration measured against a substitute judge.** `docs/calibration-report.md` reflects a live `make calibrate-live` run (2026-07-02) — 93.8% raw agreement, Cohen's kappa 0.870 — but the human-authored *labels* in `datasets/calibration/labeled.yaml` are still synthetic ground truth, and the judge was `openai/gpt-4o-mini` via OpenRouter rather than the ADR-0004 GLM-4.5 target, so the measured self-preference delta does not reflect genuine GLM self-bias. Re-run with a GLM-4.5 judge key to measure that.
-- **Provider endpoint unverified.** The default `VERITY_MODEL=glm-4.5` and provider base URL in `.env.example` are configuration templates; verify the exact model slug and base URL for your provider before running live evals.
+- **Committed live-run artifact matches the default pairing.** `docs/defects-caught.md` and `reports/semantic/results.json` reflect a real Tier-2 run against defects #1–#4, using `VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini` for both SUT and judge (2026-07-02) — this is now the default in `src/verity/config.py`, chosen because the zai/GLM-4.5 route (NVIDIA NIM and Z.ai) was returning intermittent `DEGRADED function` errors at the time. zai/GLM-4.5 remains fully supported (see `docs/adr/0001-glm-4-5-model-choice.md`); re-run `make eval-semantic` with a working GLM-4.5 key to refresh evidence against that pairing instead.
+- **Calibration measured against the default judge.** `docs/calibration-report.md` reflects a live `make calibrate-live` run (2026-07-02) — 93.8% raw agreement, Cohen's kappa 0.870 — using `openai/gpt-4o-mini` via OpenRouter, the current judge default. The human-authored *labels* in `datasets/calibration/labeled.yaml` are still synthetic ground truth. Re-run with a GLM-4.5 judge key to measure GLM self-bias specifically.
+- **Provider endpoint unverified for non-default providers.** Base URLs in `.env.example` for providers other than the default are configuration templates; verify the exact model slug and base URL before running live evals against them.
 - **Golden dataset size.** The current dataset covers 41 cases across policy plans and defect types (including paraphrase variants of seeded defects for phrasing-robustness). This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
 - **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record` when the SUT changes.
 - **RAGAS is optional.** RAGAS faithfulness and context-precision metrics are importable but require compatible optional dependencies. They are included in `uv sync --extra semantic` and conditionally enabled.

@@ -36,8 +36,9 @@ Implement a **judge calibration suite** in `verity/calibration.py` with:
 ### Live Calibration Results (committed report)
 
 Measured 2026-07-02 with `VERITY_JUDGE_PROVIDER=openrouter VERITY_JUDGE_MODEL=openai/gpt-4o-mini`
-(not the GLM-4.5 default in this ADR's original context — see `docs/calibration-report.md` and
-the README Limitations section for why):
+(GLM-4.5 was this ADR's original context and remains fully supported; this pairing is now the
+`JudgeConfig` default — see `docs/calibration-report.md`, `docs/adr/0001-glm-4-5-model-choice.md`,
+and the README Limitations section for why):
 
 | Metric | Value |
 |--------|-------|

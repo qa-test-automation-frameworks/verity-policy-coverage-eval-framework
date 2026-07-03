@@ -83,7 +83,7 @@ class JudgeConfig(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", env_prefix="VERITY_JUDGE_", extra="ignore"
     )
 
-    model: str = "glm-4.5"
+    model: str = "openai/gpt-4o-mini"
     temperature: float = 0.0
     max_tokens: int = 1024
     # Optional: run the judge on a different provider than the SUT model.
@@ -118,9 +118,13 @@ class Settings(BaseSettings):
         populate_by_name=True,
     )
 
-    # Provider / model
-    provider: Provider = Provider.zai
-    model: str = "glm-4.5"
+    # Provider / model — defaults to the only provider/model pairing with a
+    # verified, reproducible live run committed in this repo (see the ADR-0001
+    # amendment and README Limitations). zai/glm-4.5 remains fully supported
+    # and is what the hermetic Tier-1/Tier-3 suites pin internally regardless
+    # of this setting.
+    provider: Provider = Provider.openrouter
+    model: str = "openai/gpt-4o-mini"
 
     # API keys (SecretStr keeps them out of repr/logs)
     zai_api_key: SecretStr | None = Field(

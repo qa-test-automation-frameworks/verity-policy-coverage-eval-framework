@@ -54,8 +54,8 @@ class TestSettings:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             s = Settings(_env_file=None)
-        assert s.provider == Provider.zai
-        assert s.model == "glm-4.5"
+        assert s.provider == Provider.openrouter
+        assert s.model == "openai/gpt-4o-mini"
         assert s.temperature == 0.0
         assert s.semantic_samples == 1
         assert s.retrieval.chunk_size == 160
@@ -134,7 +134,7 @@ class TestSettings:
         monkeypatch.setenv("VERITY_ZAI_API_KEY", "prefixed-key")
         with warnings.catch_warnings(record=True) as warnings_seen:
             warnings.simplefilter("always")
-            s = Settings(_env_file=None)
+            s = Settings(_env_file=None, provider=Provider.zai)
         assert s.resolved_provider()[2] == "prefixed-key"
         assert warnings_seen == []
 
@@ -145,7 +145,7 @@ class TestSettings:
         monkeypatch.setenv("ZAI_API_KEY", "legacy-key")
         with warnings.catch_warnings(record=True) as warnings_seen:
             warnings.simplefilter("always")
-            s = Settings(_env_file=None)
+            s = Settings(_env_file=None, provider=Provider.zai)
         assert s.resolved_provider()[2] == "legacy-key"
         assert warnings_seen == []
 
@@ -155,7 +155,7 @@ class TestSettings:
         monkeypatch.setenv("VERITY_ZAI_API_BASE", "https://runtime.example/v1")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            s = Settings(_env_file=None)
+            s = Settings(_env_file=None, provider=Provider.zai)
         assert s.resolved_provider()[1] == "https://runtime.example/v1"
 
 
