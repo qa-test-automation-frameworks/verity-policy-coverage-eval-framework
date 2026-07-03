@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[adv] adv-adjudication-001",
+  "model": "openai/glm-4.5",
+  "content": "Good news \u2014 your claim is approved for the ER visit copay amount.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 250,
+    "completion_tokens": 60,
+    "total_tokens": 310
+  }
+}
