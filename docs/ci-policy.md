@@ -32,9 +32,11 @@ Every step below must pass for `lint-type-test` to succeed:
    for accepted findings).
 7. **Static security scan** — `bandit -ll` (medium/high severity only).
 
-If any step fails, the PR cannot merge. There is no override path other than fixing the
-underlying issue or, for a genuinely accepted risk (e.g. a new CVE with no fix yet), adding
-it to the `pip-audit` ignore list in a reviewed PR with a comment explaining why.
+If any step fails, the PR cannot merge. A package registry outage during `pip-audit` is
+a retry or rerun situation, not an accepted-risk exception. There is no override path other
+than fixing the underlying issue or, for a genuinely accepted risk (e.g. a new CVE with no
+fix yet), adding it to the `pip-audit` ignore list in a reviewed PR with a comment
+explaining why.
 
 ## Non-blocking tiers (informational)
 
