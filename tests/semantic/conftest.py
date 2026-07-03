@@ -59,9 +59,13 @@ os.environ.setdefault("DEEPEVAL_ERROR_REPORTING_OPT_OUT", "1")
 
 @pytest.fixture(scope="session")
 def settings() -> Settings:
+    # Pinned to the seeded profile regardless of the configured default: the
+    # seeded-defect golden cases and their ground truth assume the seeded
+    # agent behavior (defects #5/#6/#8), so a "clean" default must not
+    # silently change what this suite measures.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return Settings()
+        return Settings(sut_profile="seeded")
 
 
 @pytest.fixture(scope="session")
@@ -126,10 +130,7 @@ def wilson_interval_message(stat: StatResult) -> str:
     interval = wilson_interval_payload(stat)
     if interval is None:
         return ""
-    return (
-        " Wilson 95% pass-rate interval="
-        f"[{interval['lower']:.3f}, {interval['upper']:.3f}]"
-    )
+    return f" Wilson 95% pass-rate interval=[{interval['lower']:.3f}, {interval['upper']:.3f}]"
 
 
 def record_defect_measurement(

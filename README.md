@@ -98,6 +98,10 @@ make demo QUERY="Is bariatric surgery covered on my Bronze plan?"
 make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1 on GLM-4.5 list pricing; see verity/cost.py)
 ```
 
+`make demo` runs the hardened `clean` SUT profile by default (`VERITY_SUT_PROFILE`); the
+deterministic and semantic test suites pin `seeded` explicitly, since the defect-detection
+golden cases are built around that profile's intentional gaps.
+
 ---
 
 ## Reports

@@ -50,9 +50,11 @@ _GOLDEN_DIR = Path("datasets/golden")
 
 
 def _settings_no_key() -> Settings:
+    # Pinned to the seeded profile: recorded cassettes must match the system
+    # prompt _build_system_prompt() builds by default (clean=False) below.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return Settings(cassette_mode="record", cassette_dir=_CASSETTE_DIR)
+        return Settings(cassette_mode="record", cassette_dir=_CASSETTE_DIR, sut_profile="seeded")
 
 
 def _compute_first_turn_key(
@@ -169,7 +171,11 @@ def run_author_mode(cases: list[GoldenCase]) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         settings = Settings(
-            _env_file=None, provider=Provider.zai, model="glm-4.5", cassette_dir=_CASSETTE_DIR
+            _env_file=None,
+            provider=Provider.zai,
+            model="glm-4.5",
+            cassette_dir=_CASSETTE_DIR,
+            sut_profile="seeded",
         )
     litellm_model, _, _ = settings.resolved_provider()
     temp = settings.temperature

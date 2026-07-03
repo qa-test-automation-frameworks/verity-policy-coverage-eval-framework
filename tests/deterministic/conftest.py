@@ -47,6 +47,7 @@ def _settings() -> Settings:
             model="glm-4.5",
             cassette_mode="replay",
             cassette_dir=_CASSETTE_DIR,
+            sut_profile="seeded",
         )
 
 
