@@ -64,6 +64,7 @@ def _require_provider_key(settings: Settings, context: str) -> None:
             f"{settings.provider.value!r}."
         )
 
+
 # ---------------------------------------------------------------------------
 # Authored judge scores (integer 0-10).
 # Designed to show ~97% raw agreement with human labels and a +0.056
