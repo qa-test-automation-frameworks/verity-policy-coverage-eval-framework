@@ -20,15 +20,6 @@ pytestmark = pytest.mark.deterministic
 
 _BENCHMARKS = load_retrieval_benchmarks(Path("datasets/retrieval/benchmarks.yaml"))
 
-# ctrl-missing-acupuncture-policy has no lexical or semantic signal to key off
-# of at all — the corpus never mentions acupuncture, so embedding distances
-# for every chunk cluster tightly together with no distinguishing overlap.
-# Real-embedding ranking of a "the corpus is silent on this" query is a much
-# harder problem than section/keyword-matched retrieval; the equivalent
-# FixtureRetriever benchmark in test_retrieval_benchmark.py still gates this
-# case deterministically. Tracked as a known gap rather than tuned away.
-_KNOWN_HARD_CASES = {"ctrl-missing-acupuncture-policy"}
-
 
 @pytest.fixture(scope="module")
 def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> object:
@@ -50,11 +41,16 @@ def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> object:
 def test_real_retrieval_supports_expected_evidence(
     benchmark: RetrievalBenchmark, real_retriever: object
 ) -> None:
-    if benchmark.case_id in _KNOWN_HARD_CASES:
-        pytest.xfail(
-            f"KI-1: {benchmark.case_id} has no lexical/semantic signal in the real corpus "
-            "(see docs/known-issues.md)"
-        )
     chunks = real_retriever.retrieve(benchmark.query)  # type: ignore[attr-defined]
+    if benchmark.no_answer:
+        # A query the corpus has no relevant section for at all must return no
+        # chunks, not the least-bad irrelevant ones (see KI-1 in
+        # docs/known-issues.md, now resolved by the retriever's absolute
+        # distance ceiling — see PolicyRetriever._MAX_RELEVANT_DISTANCE).
+        assert chunks == [], (
+            f"{benchmark.case_id} expected no relevant chunks but got: "
+            f"{[(c.source, c.section) for c in chunks]}"
+        )
+        return
     score = score_retrieval(chunks, benchmark)
     assert score.passed, score.message

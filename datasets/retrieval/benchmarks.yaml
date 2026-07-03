@@ -51,6 +51,11 @@ benchmarks:
     required_terms: ["Covered Service", "excluded"]
     min_source_precision: 1.0
     expected_chunk_ids: ["128bf5e64c42b021", "52fc2c4f8c59e9cd", "aa8fb39e547bd431"]
+    # no_answer only changes what the REAL embedding retriever is expected to
+    # return (nothing — see PolicyRetriever._MAX_RELEVANT_DISTANCE). The
+    # fields above still describe FixtureRetriever's hand-authored distractor
+    # context and are unaffected; see test_retrieval_benchmark.py.
+    no_answer: true
 
   - case_id: ctrl-silver-specialist-copay
     query: "What is the specialist visit copay for the Silver plan?"
