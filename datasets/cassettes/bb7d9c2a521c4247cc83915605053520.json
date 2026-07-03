@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Is there a limit on how many days of skilled nursing facility care my plan cover",
+  "model": "openai/glm-4.5",
+  "content": "Skilled nursing facility stays are limited to 90 days per calendar year on all plans (Exclusions \u2014 Lifetime and Annual Limits).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}

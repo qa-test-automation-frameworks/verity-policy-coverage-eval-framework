@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] How many physical therapy sessions does my Gold plan cover per year?",
+  "model": "openai/glm-4.5",
+  "content": "Physical therapy is covered up to 60 sessions per calendar year on the Gold plan (Exclusions \u2014 Lifetime and Annual Limits).\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 130,
+    "completion_tokens": 40,
+    "total_tokens": 170
+  }
+}
