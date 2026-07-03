@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import json
 
 from pydantic import SecretStr
@@ -30,4 +31,6 @@ def member_token_valid(
     if not required:
         return True
     expected = _load_tokens(tokens_json).get(member_id)
-    return bool(expected and provided_token and provided_token == expected)
+    if expected is None or provided_token is None:
+        return False
+    return hmac.compare_digest(provided_token, expected)
