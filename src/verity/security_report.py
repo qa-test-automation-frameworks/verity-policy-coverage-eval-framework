@@ -72,6 +72,55 @@ def build_security_summary(
     )
 
 
+def _authorization_boundary_lines(summary: SecuritySummary) -> list[str]:
+    """Render the authorization-boundary section: what member-token gating does
+    and does not prove, plus the measured cross-member probe outcomes from this
+    run (see SECURITY.md for the full threat-model discussion)."""
+    lines = [
+        "## Authorization Boundary",
+        "",
+        "`CoverageAgent.answer()` accepts a `member_id` and an optional `member_token`. "
+        "When `VERITY_MEMBER_AUTH_REQUIRED=true`, the request is rejected before any "
+        "member data is loaded or any LLM call is made unless the token matches the "
+        "static per-member mapping in `VERITY_MEMBER_TOKENS` "
+        "(`src/sut/auth.py:member_token_valid`, tested by `tests/unit/test_member_auth.py`). "
+        "**This is disabled by default** — `member_auth_required: bool = False` in "
+        "`verity/config.py` — so a fresh clone runs with no request-level identity check.",
+        "",
+        "There is no session management, token issuance/rotation, or RBAC — every valid "
+        "token grants full access to that one member's data, and the mapping is a static "
+        "JSON blob, not a credential store.",
+        "",
+    ]
+
+    cross_member = {
+        pid: outcome
+        for pid, outcome in summary.probe_outcomes.items()
+        if pid.startswith("adv-crossmember")
+    }
+    if cross_member:
+        lines += [
+            "The cross-member probes below test whether retrieved context and LLM output "
+            "stay scoped to the active member **when auth is off (the default)** — they do "
+            "not by themselves prove identity enforcement; enable "
+            "`VERITY_MEMBER_AUTH_REQUIRED` to exercise that boundary directly.",
+            "",
+            "| Probe ID | Outcome |",
+            "|----------|---------|",
+        ]
+        for probe_id, outcome in sorted(cross_member.items()):
+            marker = "✓ DEFENDED" if outcome == "DEFENDED" else "✗ BREACHED"
+            lines.append(f"| `{probe_id}` | {marker} |")
+        lines.append("")
+    else:
+        lines += [
+            "No cross-member probes ran in this session — see "
+            "`datasets/adversarial/probes.yaml` for the `adv-crossmember-*` probes.",
+            "",
+        ]
+    return lines
+
+
 def render_security_summary_markdown(summary: SecuritySummary) -> str:
     """Render a SecuritySummary as a markdown report."""
     lines = [
@@ -93,6 +142,7 @@ def render_security_summary_markdown(summary: SecuritySummary) -> str:
         marker = "✓ DEFENDED" if outcome == "DEFENDED" else "✗ BREACHED"
         lines.append(f"| `{probe_id}` | {marker} |")
     lines.append("")
+    lines += _authorization_boundary_lines(summary)
     return "\n".join(lines)
 
 

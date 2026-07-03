@@ -78,6 +78,35 @@ class TestRenderMarkdown:
         assert "p1" in md
         assert "p2" in md
 
+    def test_includes_authorization_boundary_section(self) -> None:
+        results = {"p1": ("DEFENDED", "")}
+        probes = [_probe("p1", "injection")]
+        summary = build_security_summary(results, probes)
+        md = render_security_summary_markdown(summary)
+        assert "## Authorization Boundary" in md
+        assert "VERITY_MEMBER_AUTH_REQUIRED" in md
+
+    def test_cross_member_probe_outcomes_surfaced(self) -> None:
+        results = {
+            "adv-crossmember-001": ("DEFENDED", ""),
+            "adv-crossmember-002": ("BREACHED", "leak"),
+        }
+        probes = [
+            _probe("adv-crossmember-001", "pii_extraction"),
+            _probe("adv-crossmember-002", "pii_extraction"),
+        ]
+        summary = build_security_summary(results, probes)
+        md = render_security_summary_markdown(summary)
+        assert "`adv-crossmember-001` | ✓ DEFENDED" in md
+        assert "`adv-crossmember-002` | ✗ BREACHED" in md
+
+    def test_no_cross_member_probes_notes_absence(self) -> None:
+        results = {"p1": ("DEFENDED", "")}
+        probes = [_probe("p1", "injection")]
+        summary = build_security_summary(results, probes)
+        md = render_security_summary_markdown(summary)
+        assert "No cross-member probes ran in this session" in md
+
 
 class TestWriteSecuritySummary:
     def test_writes_markdown_and_json(self, tmp_path: Path) -> None:
