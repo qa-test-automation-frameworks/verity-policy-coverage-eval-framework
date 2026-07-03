@@ -49,6 +49,16 @@ class RetrievalBenchmark(BaseModel):
     min_chunk_recall: float = Field(default=1.0, ge=0.0, le=1.0)
     diagnostic_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
 
+    # True for a query the corpus has no relevant section for at all (the
+    # "the corpus is silent on this" case). Only meaningful to the real
+    # embedding-based retriever, which returns no chunks for such a query
+    # (see PolicyRetriever._MAX_RELEVANT_DISTANCE); FixtureRetriever-backed
+    # tests are unaffected since their hand-authored distractor context tests
+    # a different thing (how the agent reasons over "not affirmatively
+    # covered" context) and continue to use expected_sources/expected_chunk_ids
+    # as before.
+    no_answer: bool = False
+
 
 class RetrievalScore(BaseModel):
     """Objective retrieval score for a benchmark."""

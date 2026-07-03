@@ -128,6 +128,17 @@ _PLAN_TIER_NAMES = ("bronze", "silver", "gold")
 # slightly behind the best match.
 _DISTANCE_MARGIN = 0.20
 
+# Absolute ceiling on the best (lexical-adjusted) candidate distance: when even
+# the closest match is farther than this, the corpus has no section actually
+# relevant to the query, and top-k should return nothing rather than padding
+# the result with the least-bad irrelevant chunks. Empirically, queries this
+# corpus can answer keep their best match under ~0.40; queries the corpus is
+# silent on (e.g. "does my plan cover acupuncture?", never mentioned anywhere)
+# sit at ~0.50+. 0.45 sits in the gap between those two clusters — see
+# scripts/retrieval_ablation.py for the measurement. Hand-tuned for this small,
+# fixed corpus; would need re-tuning if the corpus grows or changes topic mix.
+_MAX_RELEVANT_DISTANCE = 0.45
+
 
 def _mentioned_plan(query: str) -> str | None:
     """Return the single plan tier named in the query, or None if zero or several are named."""
@@ -361,7 +372,13 @@ class PolicyRetriever:
 
         if candidates:
             best = candidates[0][2]
-            candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
+            if best > _MAX_RELEVANT_DISTANCE:
+                # Even the closest match is too far to be relevant — the corpus
+                # has nothing on this topic. Return no chunks rather than the
+                # least-bad irrelevant ones.
+                candidates = []
+            else:
+                candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
 
         fingerprint = self.corpus_fingerprint()
         chunks: list[Chunk] = []
