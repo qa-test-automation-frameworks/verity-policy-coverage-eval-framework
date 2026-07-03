@@ -6,6 +6,11 @@ is fully local and reproducible — no external embedding API calls.
 The ONNX model is downloaded and cached by Chroma on first use; subsequent runs
 are offline. Document this in CONTRIBUTING and cache in CI if needed (M2).
 
+InMemoryCosineRetriever uses the same ONNX embedding function but stores
+vectors in a plain numpy array and ranks by brute-force cosine similarity
+instead of a Chroma index — a second concrete backend for the Retriever
+protocol.
+
 FixtureRetriever is a drop-in replacement for deterministic tests: it serves
 pre-authored Chunk lists from JSON files in datasets/cassettes/retrieval/
 so Tier-1 tests need no Chroma instance and no ONNX download.
@@ -21,6 +26,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import chromadb
+import numpy as np
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from verity.config import RetrievalConfig
@@ -378,6 +384,151 @@ class PolicyRetriever:
                 # Even the closest match is too far to be relevant — the corpus
                 # has nothing on this topic. Return no chunks rather than the
                 # least-bad irrelevant ones.
+                candidates = []
+            else:
+                candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
+
+        fingerprint = self.corpus_fingerprint()
+        chunks: list[Chunk] = []
+        for rank, (doc, meta, dist) in enumerate(candidates[:k], start=1):
+            chunks.append(
+                Chunk(
+                    text=doc,
+                    source=meta.get("source", ""),
+                    section=meta.get("section", ""),
+                    chunk_id=_stable_id(meta.get("source", ""), doc),
+                    rank=rank,
+                    score=dist,
+                    corpus_fingerprint=fingerprint,
+                )
+            )
+        return chunks
+
+
+# ---------------------------------------------------------------------------
+# In-memory cosine retriever — same embeddings, no Chroma index
+# ---------------------------------------------------------------------------
+
+
+class InMemoryCosineRetriever:
+    """Embeds the corpus with the same ONNX embedding function as PolicyRetriever,
+    but stores vectors in a plain numpy array and ranks by brute-force cosine
+    similarity instead of a Chroma index.
+
+    Demonstrates that the Retriever protocol is satisfied by more than one
+    storage/search mechanism, not just Chroma — same embedding source, same
+    chunking and re-ranking logic (both reused from module-level helpers), a
+    different retrieval backend underneath. Brute-force search is fine at this
+    corpus's scale; it would not be the right choice for a larger index.
+    """
+
+    def __init__(self, config: RetrievalConfig | None = None) -> None:
+        self._config = config or RetrievalConfig()
+        self._embedding_fn: Any = DefaultEmbeddingFunction()
+        self._ids: list[str] = []
+        self._documents: list[str] = []
+        self._metadatas: list[dict[str, str]] = []
+        self._embeddings: Any = None  # numpy array, shape (n_chunks, dim); set on index
+        self._fingerprint: str = ""
+
+    def index_corpus(self, force: bool = False) -> int:
+        """Chunk and embed all markdown files in corpus_dir. Returns chunks added."""
+        corpus_dir = self._config.corpus_dir
+
+        if not corpus_dir.is_dir():
+            raise FileNotFoundError(f"Corpus directory not found: {corpus_dir}")
+
+        md_files = sorted(corpus_dir.glob("*.md"))
+        if not md_files:
+            raise FileNotFoundError(f"No markdown files found in {corpus_dir}")
+
+        current_fingerprint = _corpus_fingerprint(corpus_dir)
+        stale = current_fingerprint != self._fingerprint
+
+        if not force and not stale and self._embeddings is not None:
+            return 0  # already indexed and up to date
+
+        ids: list[str] = []
+        documents: list[str] = []
+        metadatas: list[dict[str, str]] = []
+
+        for md_file in md_files:
+            raw = _strip_html_comments(md_file.read_text(encoding="utf-8"))
+            title_match = re.match(r"^#\s+(.+)$", raw, re.MULTILINE)
+            title = title_match.group(1).strip() if title_match else md_file.stem
+
+            for heading, section_text in _split_into_sections(raw):
+                titled_text = f"{title}\n\n{section_text}"
+                sub_chunks = _chunk_text(
+                    titled_text, self._config.chunk_size, self._config.chunk_overlap
+                )
+                for chunk_text in sub_chunks:
+                    chunk_id = _stable_id(md_file.name, chunk_text)
+                    section = heading or _extract_section_heading(chunk_text)
+                    ids.append(chunk_id)
+                    documents.append(chunk_text)
+                    metadatas.append({"source": md_file.name, "section": section})
+
+        if ids:
+            embeddings = np.asarray(self._embedding_fn(documents), dtype=np.float64)
+        else:
+            embeddings = np.zeros((0, 0))
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+
+        self._ids = ids
+        self._documents = documents
+        self._metadatas = metadatas
+        self._embeddings = embeddings / norms
+        self._fingerprint = current_fingerprint
+
+        return len(ids)
+
+    def corpus_fingerprint(self) -> str:
+        """Fingerprint of the corpus as currently indexed (empty if never indexed)."""
+        return self._fingerprint
+
+    def retrieve(self, query: str, top_k: int | None = None) -> list[Chunk]:
+        """Return the top-k most relevant chunks for the given query.
+
+        Mirrors PolicyRetriever.retrieve's re-ranking: plan-tier query
+        matching, a lexical-overlap bonus on top of cosine distance, and a
+        distance-margin cutoff — see that method's docstring for why each
+        step exists.
+        """
+        k = top_k if top_k is not None else self._config.top_k
+
+        if self._embeddings is None or len(self._ids) == 0:
+            self.index_corpus()
+
+        if not self._ids:
+            return []
+
+        query_vec = np.asarray(self._embedding_fn([query]), dtype=np.float64)[0]
+        query_norm = np.linalg.norm(query_vec)
+        if query_norm > 0:
+            query_vec = query_vec / query_norm
+
+        similarities = self._embeddings @ query_vec
+        distances = 1.0 - similarities
+
+        candidates = [
+            (doc, meta, float(dist) - _LEXICAL_WEIGHT * _keyword_overlap_bonus(query, doc))
+            for doc, meta, dist in zip(self._documents, self._metadatas, distances, strict=True)
+        ]
+        candidates.sort(key=lambda c: c[2])
+
+        plan = _mentioned_plan(query)
+        if plan:
+            candidates = [
+                (doc, meta, dist)
+                for doc, meta, dist in candidates
+                if _plan_scoped_source(meta.get("source", ""), plan)
+            ]
+
+        if candidates:
+            best = candidates[0][2]
+            if best > _MAX_RELEVANT_DISTANCE:
                 candidates = []
             else:
                 candidates = [c for c in candidates if c[2] <= best + _DISTANCE_MARGIN]
