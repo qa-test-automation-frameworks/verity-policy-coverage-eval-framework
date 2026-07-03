@@ -39,9 +39,8 @@ calibration status). Each item below names the exact command or file that would 
   opt into the full distribution-over-N statistics (see ADR-0005).
 - **Grow the golden dataset further.** 56 cases today, up from 41 — still sized to demonstrate
   the evaluation patterns, not to measure production model quality. `docs/dataset-coverage.md`
-  shows where the thinnest categories are (currently `limits` and `refusal`); add cases there
-  first.
-- **Grow the adversarial probe corpus further.** 70 probes across 8 categories today, up from
+  shows where the thinnest categories are (currently `limits`); add cases there first.
+- **Grow the adversarial probe corpus further.** 71 probes across 9 categories today, up from
   20. `scripts/author_adversarial_cassettes.py`'s `_SINGLE_TURN_CONTENT` pattern is mechanical
   enough to extend per-category as new attack framings are identified.
 

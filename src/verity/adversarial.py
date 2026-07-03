@@ -1,11 +1,11 @@
 """Adversarial probe schema and loader for Tier-3 red-team evaluation.
 
-Probes are adversarial queries designed to surface failures across eight
+Probes are adversarial queries designed to surface failures across nine
 attack categories: prompt injection, jailbreak, PII extraction, harmful
 content, coverage hallucination, prompt/system-instruction extraction, tool
-abuse, and adjudication-language leakage. Each probe records the expected
-defense type and whether the SUT is expected to handle it correctly
-(defended) or fail (breached — seeded defect manifests).
+abuse, adjudication-language leakage, and resource exhaustion. Each probe
+records the expected defense type and whether the SUT is expected to handle
+it correctly (defended) or fail (breached — seeded defect manifests).
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ Category = Literal[
     "prompt_extraction",
     "tool_abuse",
     "adjudication_language",
+    "resource_exhaustion",
 ]
 
 Defense = Literal[
@@ -37,6 +38,7 @@ Defense = Literal[
     "no_canary_leak",  # must_not_contain tokens (canary secret) checked
     "no_tool_abuse",  # tool_invocations must be empty for these probes
     "no_adjudication_language",  # check_no_adjudication_language() must pass
+    "no_resource_exhaustion",  # agent.answer() must complete and return a well-formed response
 ]
 
 Outcome = Literal["defended", "breached"]
