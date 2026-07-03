@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dataset Coverage Matrix | verity eval</title>
+  
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto;
+         padding: 0 1rem 2rem; color: #1a202c; background-color: #ffffff;
+         color-scheme: light; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #e2e8f0; padding: 0.5rem 0.75rem; text-align: left; }
+  th { background: #f7fafc; font-weight: 600; }
+  tr:nth-child(even) { background: #f7fafc; }
+  code { background: #edf2f7; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.9em; }
+  pre code { background: none; padding: 0; }
+  pre { background: #2d3748; color: #e2e8f0; padding: 1rem; border-radius: 6px;
+        overflow-x: auto; }
+  h1, h2, h3 { margin-top: 1.5rem; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+</style>
+
+</head>
+<body>
+
+<nav style="font-family:sans-serif;background:#1a1a2e;padding:0.75rem 1.5rem;
+            display:flex;gap:1.5rem;align-items:center;margin-bottom:1.5rem;">
+  <strong style="color:#e2e8f0;font-size:1.1rem;">verity eval reports</strong>
+  <a href="index.html" style="color:#90cdf4;text-decoration:none;">Defects Caught</a>
+  <a href="calibration.html" style="color:#90cdf4;text-decoration:none;">Calibration</a>
+  <a href="cost.html" style="color:#90cdf4;text-decoration:none;">Cost</a>
+  <a href="vulnerabilities.html" style="color:#90cdf4;text-decoration:none;">Vulnerabilities</a>
+  <a href="security.html" style="color:#90cdf4;text-decoration:none;">Security Summary</a>
+  <a href="trends.html" style="color:#90cdf4;text-decoration:none;">Trends</a>
+  <a href="dataset-coverage.html" style="color:#90cdf4;text-decoration:none;">Dataset Coverage</a>
+  <a href="allure/index.html" style="color:#90cdf4;text-decoration:none;">Allure</a>
+</nav>
+<div style="background:#fffbea;border:1px solid #f6cf5b;color:#7a5a00;padding:0.75rem 1.5rem;margin:0 0 1rem;font-family:sans-serif;font-size:0.9rem;">Point-in-time snapshot generated 2026-07-03, not auto-updated. Live report: <a href="https://qa-test-automation-frameworks.github.io/verity-policy-coverage-eval-framework/">https://qa-test-automation-frameworks.github.io/verity-policy-coverage-eval-framework/</a></div>
+
+<h1 id="dataset-coverage-matrix">Dataset Coverage Matrix</h1>
+<p>Cross-tabulation of all 56 cases in <code>datasets/golden/*.yaml</code> by plan tier, risk weight, expectation category, and seeded-defect linkage. Regenerate after adding cases so this stays a true picture of dataset breadth rather than a stale snapshot.</p>
+<h2 id="by-plan-tier">By plan tier</h2>
+<table>
+<thead>
+<tr>
+<th>Plan</th>
+<th style="text-align: right;">Cases</th>
+<th style="text-align: right;">Share</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bronze</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">18%</td>
+</tr>
+<tr>
+<td>cross-plan</td>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;">52%</td>
+</tr>
+<tr>
+<td>gold</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">12%</td>
+</tr>
+<tr>
+<td>silver</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">18%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="by-risk-weight">By risk weight</h2>
+<table>
+<thead>
+<tr>
+<th>Risk weight</th>
+<th style="text-align: right;">Cases</th>
+<th style="text-align: right;">Share</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>high</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">29%</td>
+</tr>
+<tr>
+<td>medium</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">71%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="by-behavior">By behavior</h2>
+<table>
+<thead>
+<tr>
+<th>Behavior</th>
+<th style="text-align: right;">Cases</th>
+<th style="text-align: right;">Share</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>answer</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">95%</td>
+</tr>
+<tr>
+<td>refuse</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">5%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="by-expectation-category">By expectation category</h2>
+<p>A case may declare more than one category, so counts sum to more than 56.</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Cases</th>
+<th style="text-align: right;">Share of dataset</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>amount</td>
+<td style="text-align: right;">34</td>
+<td style="text-align: right;">61%</td>
+</tr>
+<tr>
+<td>coverage_decision</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">34%</td>
+</tr>
+<tr>
+<td>evidence</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">75%</td>
+</tr>
+<tr>
+<td>limits</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">12%</td>
+</tr>
+<tr>
+<td>refusal</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">5%</td>
+</tr>
+<tr>
+<td>tool_behavior</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">14%</td>
+</tr>
+<tr>
+<td>uncertainty</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">5%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="seeded-defect-linkage">Seeded-defect linkage</h2>
+<p>8/8 seeded defects have at least one golden case with a matching <code>defect_id</code> (see <code>docs/seeded-defects.md</code> for the full catalog).</p>
+<table>
+<thead>
+<tr>
+<th>Defect</th>
+<th>Cases</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#1</td>
+<td><code>defect-1-bariatric-bronze-hallucination</code>, <code>defect-1-bariatric-bronze-hallucination-v2</code></td>
+</tr>
+<tr>
+<td>#2</td>
+<td><code>defect-2-silver-premium-stale</code>, <code>defect-2-silver-premium-stale-v2</code></td>
+</tr>
+<tr>
+<td>#3</td>
+<td><code>defect-3-silver-multihop-cost</code>, <code>defect-3-silver-multihop-cost-v2</code></td>
+</tr>
+<tr>
+<td>#4</td>
+<td><code>defect-4-urgent-care-contradiction</code>, <code>defect-4-urgent-care-contradiction-v2</code></td>
+</tr>
+<tr>
+<td>#5</td>
+<td><code>defect-5-tool-arg-transposition</code>, <code>defect-5-tool-arg-transposition-v2</code></td>
+</tr>
+<tr>
+<td>#6</td>
+<td><code>defect-6-refusal-breach</code>, <code>defect-6-refusal-breach-v2</code></td>
+</tr>
+<tr>
+<td>#7</td>
+<td><code>defect-7-prompt-injection</code>, <code>defect-7-prompt-injection-v2</code></td>
+</tr>
+<tr>
+<td>#8</td>
+<td><code>defect-8-pii-leakage</code>, <code>defect-8-pii-leakage-v2</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Regenerate: <code>make dataset-matrix</code>.</em></p>
+</body>
+</html>

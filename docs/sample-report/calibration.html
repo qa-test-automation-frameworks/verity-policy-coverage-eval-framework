@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Judge Calibration | verity eval</title>
+  
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto;
+         padding: 0 1rem 2rem; color: #1a202c; background-color: #ffffff;
+         color-scheme: light; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #e2e8f0; padding: 0.5rem 0.75rem; text-align: left; }
+  th { background: #f7fafc; font-weight: 600; }
+  tr:nth-child(even) { background: #f7fafc; }
+  code { background: #edf2f7; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.9em; }
+  pre code { background: none; padding: 0; }
+  pre { background: #2d3748; color: #e2e8f0; padding: 1rem; border-radius: 6px;
+        overflow-x: auto; }
+  h1, h2, h3 { margin-top: 1.5rem; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+</style>
+
+</head>
+<body>
+
+<nav style="font-family:sans-serif;background:#1a1a2e;padding:0.75rem 1.5rem;
+            display:flex;gap:1.5rem;align-items:center;margin-bottom:1.5rem;">
+  <strong style="color:#e2e8f0;font-size:1.1rem;">verity eval reports</strong>
+  <a href="index.html" style="color:#90cdf4;text-decoration:none;">Defects Caught</a>
+  <a href="calibration.html" style="color:#90cdf4;text-decoration:none;">Calibration</a>
+  <a href="cost.html" style="color:#90cdf4;text-decoration:none;">Cost</a>
+  <a href="vulnerabilities.html" style="color:#90cdf4;text-decoration:none;">Vulnerabilities</a>
+  <a href="security.html" style="color:#90cdf4;text-decoration:none;">Security Summary</a>
+  <a href="trends.html" style="color:#90cdf4;text-decoration:none;">Trends</a>
+  <a href="dataset-coverage.html" style="color:#90cdf4;text-decoration:none;">Dataset Coverage</a>
+  <a href="allure/index.html" style="color:#90cdf4;text-decoration:none;">Allure</a>
+</nav>
+<div style="background:#fffbea;border:1px solid #f6cf5b;color:#7a5a00;padding:0.75rem 1.5rem;margin:0 0 1rem;font-family:sans-serif;font-size:0.9rem;">Point-in-time snapshot generated 2026-07-03, not auto-updated. Live report: <a href="https://qa-test-automation-frameworks.github.io/verity-policy-coverage-eval-framework/">https://qa-test-automation-frameworks.github.io/verity-policy-coverage-eval-framework/</a></div>
+
+<h1 id="judge-calibration-report">Judge Calibration Report</h1>
+<p><strong>Generated:</strong> 2026-07-02<br />
+<strong>Judge model:</strong> <code>openrouter/openai/gpt-4o-mini</code><br />
+<strong>Dataset:</strong> <code>datasets/calibration/labeled.yaml</code> (32 cases)<br />
+<strong>Mode:</strong> live (recorded to datasets/calibration/cassettes)</p>
+<hr />
+<h2 id="agreement-with-human-labels">Agreement with Human Labels</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raw agreement</td>
+<td><strong>93.8%</strong></td>
+</tr>
+<tr>
+<td>Cohen's kappa</td>
+<td><strong>0.870</strong></td>
+</tr>
+<tr>
+<td>MAE (0–1 scale)</td>
+<td><strong>0.125</strong></td>
+</tr>
+<tr>
+<td>N</td>
+<td>32</td>
+</tr>
+</tbody>
+</table>
+<h3 id="per-metric-breakdown">Per-metric breakdown</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>N</th>
+<th>Raw agreement</th>
+<th>MAE</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>completeness</td>
+<td>8</td>
+<td>100%</td>
+<td>0.075</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>disambiguation</td>
+<td>8</td>
+<td>100%</td>
+<td>0.050</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>faithfulness</td>
+<td>8</td>
+<td>75%</td>
+<td>0.238</td>
+<td>REVIEW</td>
+</tr>
+<tr>
+<td>refusal</td>
+<td>8</td>
+<td>100%</td>
+<td>0.137</td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Metrics marked REVIEW missed the per-metric target of raw agreement &gt;= 85% and MAE &lt;= 0.20 for this run: faithfulness.</p>
+</blockquote>
+<hr />
+<h2 id="self-preference-bias">Self-Preference Bias</h2>
+<p>Self-preference delta measures whether the judge inflates scores for outputs from its own model family (OTHER) compared to outputs from other families.</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>N</th>
+<th>Mean Δ (judge − human)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OTHER (own family)</td>
+<td>16</td>
+<td><strong>+0.044</strong></td>
+</tr>
+<tr>
+<td>Other family</td>
+<td>16</td>
+<td><strong>+0.081</strong></td>
+</tr>
+<tr>
+<td><strong>Self-preference delta</strong></td>
+<td>—</td>
+<td><strong>-0.037</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Negligible self-preference bias (|delta| &lt; 0.05). Thresholds are not materially affected.</p>
+</blockquote>
+<hr />
+<h2 id="threshold-traceability">Threshold Traceability</h2>
+<p>The semantic tier thresholds in <code>docs/thresholds.md</code> were set with this calibration data in mind:</p>
+<ul>
+<li><strong>Raw agreement ≥ 85%</strong>: this judge's measured agreement is 93.8%, which is within acceptable range.</li>
+<li><strong>Cohen's kappa ≥ 0.60</strong> (substantial agreement): measured kappa = 0.870.</li>
+<li><strong>Self-preference delta</strong>: -0.037 — see interpretation above.</li>
+</ul>
+<p>See <a href="thresholds.md"><code>docs/thresholds.md</code></a> for per-metric threshold values and the statistical method used.</p>
+<blockquote>
+<p>Scope note: this calibration path scores the shared rubric text through <code>verity.calibration.build_scoring_prompt()</code>. Tier-2 DeepEval and RAGAS adapters wrap those rubrics in their own prompt and parsing paths, so this report measures judge/rubric agreement rather than every runtime metric adapter end to end.</p>
+</blockquote>
+<hr />
+<h2 id="individual-case-scores">Individual Case Scores</h2>
+<table>
+<thead>
+<tr>
+<th>Case ID</th>
+<th>Metric</th>
+<th>Family</th>
+<th>Human</th>
+<th>Judge</th>
+<th>Δ</th>
+<th>Agreement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>calib-completeness-001</code></td>
+<td>completeness</td>
+<td>glm</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-completeness-002</code></td>
+<td>completeness</td>
+<td>glm</td>
+<td>0.3</td>
+<td>0.4</td>
+<td>+0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-completeness-003</code></td>
+<td>completeness</td>
+<td>other</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-completeness-004</code></td>
+<td>completeness</td>
+<td>other</td>
+<td>0.1</td>
+<td>0.1</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-completeness-005</code></td>
+<td>completeness</td>
+<td>glm</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-completeness-006</code></td>
+<td>completeness</td>
+<td>other</td>
+<td>0.2</td>
+<td>0.4</td>
+<td>+0.2</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-completeness-007</code></td>
+<td>completeness</td>
+<td>glm</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-completeness-008</code></td>
+<td>completeness</td>
+<td>other</td>
+<td>0.1</td>
+<td>0.4</td>
+<td>+0.3</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-001</code></td>
+<td>disambiguation</td>
+<td>glm</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-002</code></td>
+<td>disambiguation</td>
+<td>glm</td>
+<td>0.3</td>
+<td>0.3</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-003</code></td>
+<td>disambiguation</td>
+<td>other</td>
+<td>0.9</td>
+<td>1.0</td>
+<td>+0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-004</code></td>
+<td>disambiguation</td>
+<td>other</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-005</code></td>
+<td>disambiguation</td>
+<td>glm</td>
+<td>0.8</td>
+<td>1.0</td>
+<td>+0.2</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-006</code></td>
+<td>disambiguation</td>
+<td>other</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-007</code></td>
+<td>disambiguation</td>
+<td>glm</td>
+<td>0.2</td>
+<td>0.3</td>
+<td>+0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-disambiguation-008</code></td>
+<td>disambiguation</td>
+<td>other</td>
+<td>0.6</td>
+<td>0.6</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-001</code></td>
+<td>refusal</td>
+<td>glm</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-002</code></td>
+<td>refusal</td>
+<td>glm</td>
+<td>0.0</td>
+<td>0.3</td>
+<td>+0.3</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-003</code></td>
+<td>refusal</td>
+<td>other</td>
+<td>0.9</td>
+<td>1.0</td>
+<td>+0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-004</code></td>
+<td>refusal</td>
+<td>other</td>
+<td>0.7</td>
+<td>1.0</td>
+<td>+0.3</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-005</code></td>
+<td>refusal</td>
+<td>glm</td>
+<td>0.2</td>
+<td>0.3</td>
+<td>+0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-006</code></td>
+<td>refusal</td>
+<td>other</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-007</code></td>
+<td>refusal</td>
+<td>glm</td>
+<td>0.9</td>
+<td>1.0</td>
+<td>+0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-refusal-008</code></td>
+<td>refusal</td>
+<td>other</td>
+<td>0.1</td>
+<td>0.3</td>
+<td>+0.2</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-001</code></td>
+<td>faithfulness</td>
+<td>glm</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-002</code></td>
+<td>faithfulness</td>
+<td>glm</td>
+<td>0.1</td>
+<td>0.0</td>
+<td>-0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-003</code></td>
+<td>faithfulness</td>
+<td>other</td>
+<td>1.0</td>
+<td>0.1</td>
+<td>-0.9</td>
+<td>✗</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-004</code></td>
+<td>faithfulness</td>
+<td>other</td>
+<td>0.0</td>
+<td>0.1</td>
+<td>+0.1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-005</code></td>
+<td>faithfulness</td>
+<td>glm</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-006</code></td>
+<td>faithfulness</td>
+<td>glm</td>
+<td>0.5</td>
+<td>1.0</td>
+<td>+0.5</td>
+<td>✗</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-007</code></td>
+<td>faithfulness</td>
+<td>other</td>
+<td>1.0</td>
+<td>1.0</td>
+<td>+0.0</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>calib-faithfulness-008</code></td>
+<td>faithfulness</td>
+<td>other</td>
+<td>0.6</td>
+<td>0.9</td>
+<td>+0.3</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Report generated by <code>scripts/run_calibration.py</code>.</em></p>
+</body>
+</html>
