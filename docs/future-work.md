@@ -56,9 +56,10 @@ calibration status). Each item below names the exact command or file that would 
 
 ## Framework
 
-- **Retrieval backend diversity.** `Retriever` is a `Protocol` with one concrete embedding-based
-  implementation (`PolicyRetriever`) plus the fixture-backed test double. A second backend
-  (even an in-memory keyword-only implementation) would prove the seam is real, not aspirational.
+- **Retrieval backend diversity.** `Retriever` is a `Protocol` with two concrete embedding-based
+  implementations — `PolicyRetriever` (Chroma-backed) and `InMemoryCosineRetriever`
+  (numpy array + brute-force cosine similarity) — plus the fixture-backed test double, all
+  proven against the same benchmark contract in `tests/deterministic/`.
 - **Wire `pass_rate_wilson_interval` more broadly.** Currently surfaced in semantic test failure
   messages and evidence payloads when `n > 1`; consider also rendering it in a future nightly
   trend summary once the nightly N=5 schedule accumulates enough runs to make a trend chart
