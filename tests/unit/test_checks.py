@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 
+import sut.tools.coverage_calculator  # noqa: F401
 from verity.checks import (
     CheckResult,
     _extract_dates,
