@@ -1,0 +1,114 @@
+name: Model Comparison (on-demand)
+
+on:
+  workflow_dispatch:
+    inputs:
+      left_provider:
+        description: "Left-side provider (zai, openrouter, together, nvidia, google)"
+        required: true
+        default: "zai"
+      left_model:
+        description: "Left-side model slug"
+        required: true
+        default: "glm-4.5"
+      right_provider:
+        description: "Right-side provider"
+        required: true
+        default: "openrouter"
+      right_model:
+        description: "Right-side model slug"
+        required: true
+        default: "openai/gpt-4o-mini"
+      limit:
+        description: "Max golden cases to compare (blank = all)"
+        required: false
+        default: ""
+
+jobs:
+  compare:
+    name: Compare two provider/model configurations
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      VERITY_ZAI_API_KEY: ${{ secrets.VERITY_ZAI_API_KEY }}
+      VERITY_OPENROUTER_API_KEY: ${{ secrets.VERITY_OPENROUTER_API_KEY }}
+      VERITY_TOGETHER_API_KEY: ${{ secrets.VERITY_TOGETHER_API_KEY }}
+      VERITY_NVIDIA_API_KEY: ${{ secrets.VERITY_NVIDIA_API_KEY }}
+      VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
+      PYTHONPATH: src:.
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a  # v4
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --frozen --all-extras
+
+      - name: Check provider keys
+        id: key_check
+        run: |
+          check_key() {
+            case "$1" in
+              zai) [ -n "$VERITY_ZAI_API_KEY" ] ;;
+              openrouter) [ -n "$VERITY_OPENROUTER_API_KEY" ] ;;
+              together) [ -n "$VERITY_TOGETHER_API_KEY" ] ;;
+              nvidia) [ -n "$VERITY_NVIDIA_API_KEY" ] ;;
+              google) [ -n "$VERITY_GOOGLE_API_KEY" ] ;;
+              *) echo "::error::Unsupported provider: $1"; exit 1 ;;
+            esac
+          }
+          if check_key "${{ inputs.left_provider }}" && check_key "${{ inputs.right_provider }}"; then
+            echo "has_keys=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_keys=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Missing API key secret for left_provider or right_provider"
+            exit 1
+          fi
+
+      - name: Index corpus
+        if: steps.key_check.outputs.has_keys == 'true'
+        run: |
+          uv run python -c "
+          import warnings; warnings.filterwarnings('ignore')
+          from sut.retriever import PolicyRetriever
+          from verity.config import RetrievalConfig
+          r = PolicyRetriever(RetrievalConfig())
+          n = r.index_corpus()
+          print(f'Indexed {n} chunks')
+          "
+
+      - name: Run model comparison
+        if: steps.key_check.outputs.has_keys == 'true'
+        run: |
+          mkdir -p reports
+          uv run python scripts/model_comparison.py \
+            --left-provider "${{ inputs.left_provider }}" --left-model "${{ inputs.left_model }}" \
+            --right-provider "${{ inputs.right_provider }}" --right-model "${{ inputs.right_model }}" \
+            ${{ inputs.limit != '' && format('--limit {0}', inputs.limit) || '' }}
+
+      - name: Write summary to job summary
+        if: steps.key_check.outputs.has_keys == 'true'
+        run: |
+          if [ -f reports/model-comparison.md ]; then
+            cat reports/model-comparison.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload comparison report
+        if: steps.key_check.outputs.has_keys == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: model-comparison-report
+          path: |
+            reports/model-comparison.md
+            reports/model-comparison.json
+          if-no-files-found: warn
