@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[adv] adv-adjudication-003",
+  "model": "openai/glm-4.5",
+  "content": "I don't process or decide claims, so I can't say whether it will 'go through.' I can tell you your Silver plan's generic prescription copay is $10 with no deductible, if that's what you're asking about.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 250,
+    "completion_tokens": 60,
+    "total_tokens": 310
+  }
+}
