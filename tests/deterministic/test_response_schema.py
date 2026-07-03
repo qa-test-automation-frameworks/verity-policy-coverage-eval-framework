@@ -14,6 +14,7 @@ from verity.checks import (
     check_date_expectations,
     check_human_review,
     check_must_contain,
+    check_must_contain_any,
     check_must_not_contain,
     check_numeric_expectations,
     validate_response_schema,
@@ -104,6 +105,17 @@ def test_citations_never_reference_unretrieved_sources(
 def test_must_contain_tokens_present(case: GoldenCase, _settings: Settings) -> None:
     response = run_case(case, _settings)
     result = check_must_contain(case, response)
+    assert result.passed, result.message
+
+
+@pytest.mark.parametrize(
+    "case",
+    [c for c in _CASES if c.must_contain_any and not c.expects_defect],
+    ids=[c.id for c in _CASES if c.must_contain_any and not c.expects_defect],
+)
+def test_must_contain_any_phrasing_present(case: GoldenCase, _settings: Settings) -> None:
+    response = run_case(case, _settings)
+    result = check_must_contain_any(case, response)
     assert result.passed, result.message
 
 

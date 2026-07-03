@@ -529,6 +529,20 @@ def check_must_contain(case: GoldenCase, response: Any) -> CheckResult:
     return CheckResult(True)
 
 
+def check_must_contain_any(case: GoldenCase, response: Any) -> CheckResult:
+    """Verify each must_contain_any group has at least one alternate phrasing
+    present (case-insensitive) in the answer."""
+    answer = _normalize_numerics(str(getattr(response, "answer", "")).lower())
+    unsatisfied = [
+        group
+        for group in case.must_contain_any
+        if not any(_normalize_numerics(phrase.lower()) in answer for phrase in group)
+    ]
+    if unsatisfied:
+        return CheckResult(False, f"Answer missing all alternate phrasings for: {unsatisfied}")
+    return CheckResult(True)
+
+
 def check_must_not_contain(case: GoldenCase, response: Any) -> CheckResult:
     """Verify none of the must_not_contain tokens appear (case-insensitive) in the answer."""
     answer = _normalize_numerics(str(getattr(response, "answer", "")).lower())

@@ -79,6 +79,13 @@ class GoldenCase(BaseModel):
     behavior: Literal["answer", "refuse"] = "answer"
     ground_truth: str = ""
     must_contain: list[str] = Field(default_factory=list)
+    # A list of phrasing-alternative groups: each inner list is a set of
+    # acceptable alternate phrasings for one required claim, and the case
+    # passes that group if ANY one of its phrasings is present. Use this
+    # instead of must_contain for claims where a correct paraphrase would
+    # otherwise false-fail a single rigid literal (e.g. "do not carry over"
+    # vs. "does not roll over" vs. "no rollover").
+    must_contain_any: list[list[str]] = Field(default_factory=list)
     must_not_contain: list[str] = Field(default_factory=list)
     numeric_expectations: list[NumericExpectation] = Field(default_factory=list)
     date_expectations: list[DateExpectation] = Field(default_factory=list)

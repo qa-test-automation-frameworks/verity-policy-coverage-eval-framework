@@ -17,6 +17,7 @@ from verity.checks import (
     check_human_review,
     check_injection,
     check_must_contain,
+    check_must_contain_any,
     check_must_not_contain,
     check_no_adjudication_language,
     check_numeric_expectations,
@@ -470,6 +471,50 @@ class TestMustContain:
         case = _case(must_contain=["1,660"])
         resp = _Response(answer="Total member cost is $1660.")
         assert check_must_contain(case, resp).passed
+
+
+class TestMustContainAny:
+    def test_any_phrasing_present_passes(self) -> None:
+        case = _case(must_contain_any=[["do not carry over", "do not roll over", "no rollover"]])
+        resp = _Response(answer="Unused FSA funds do not roll over to next year.")
+        assert check_must_contain_any(case, resp).passed
+
+    def test_no_phrasing_present_fails(self) -> None:
+        case = _case(must_contain_any=[["do not carry over", "does not roll over"]])
+        resp = _Response(answer="Funds remain available indefinitely.")
+        result = check_must_contain_any(case, resp)
+        assert not result.passed
+        assert "do not carry over" in result.message
+
+    def test_empty_must_contain_any_always_passes(self) -> None:
+        case = _case()
+        assert check_must_contain_any(case, _Response(answer="anything")).passed
+
+    def test_case_insensitive(self) -> None:
+        case = _case(must_contain_any=[["silver plan"]])
+        resp = _Response(answer="Your SILVER PLAN premium is $445.")
+        assert check_must_contain_any(case, resp).passed
+
+    def test_multiple_groups_each_must_be_satisfied(self) -> None:
+        case = _case(
+            must_contain_any=[
+                ["do not carry over", "do not roll over"],
+                ["itemized bill", "itemized statement", "itemized invoice"],
+            ]
+        )
+        resp = _Response(answer="Funds do not roll over. Please submit an itemized statement.")
+        assert check_must_contain_any(case, resp).passed
+
+    def test_one_unsatisfied_group_fails(self) -> None:
+        case = _case(
+            must_contain_any=[
+                ["do not carry over", "does not roll over"],
+                ["itemized bill", "itemized statement"],
+            ]
+        )
+        resp = _Response(answer="Funds do not roll over. Please submit proof of payment.")
+        result = check_must_contain_any(case, resp)
+        assert not result.passed
 
 
 class TestMustNotContain:
