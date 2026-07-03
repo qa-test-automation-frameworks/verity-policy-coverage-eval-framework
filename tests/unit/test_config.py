@@ -44,6 +44,20 @@ class TestResolveProvider:
         )
         assert base == "https://custom.host/v1"
 
+    def test_default_settings_provider_model_pairing(self) -> None:
+        # Documents the actual resolved pairing for the framework-wide
+        # default: Settings.provider/model do not have to match a
+        # provider's own canonical_model — resolve_provider() falls back to
+        # prefix + model for any model that isn't that provider's shortcut.
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            s = Settings(_env_file=None)
+        model, base = resolve_provider(s.provider, s.model)
+        assert model == "openrouter/openai/gpt-4o-mini"
+        assert "openrouter.ai" in base
+
 
 class TestSettings:
     def test_defaults_do_not_raise(self) -> None:

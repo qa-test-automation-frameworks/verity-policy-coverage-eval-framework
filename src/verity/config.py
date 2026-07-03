@@ -19,41 +19,45 @@ class Provider(StrEnum):
 
 
 # ---------------------------------------------------------------------------
-# Per-provider routing table: default model slug, litellm model prefix, the
-# exact litellm model string for that default (which may not simply be
-# prefix + default_model — e.g. openrouter's default routes through the
-# "z-ai/" org namespace), and default api_base.
+# Per-provider routing table: canonical model slug, litellm model prefix, the
+# exact litellm model string for that canonical slug (which may not simply be
+# prefix + canonical_model — e.g. openrouter's canonical slug routes through
+# the "z-ai/" org namespace), and default api_base.
+#
+# "canonical_model" is each provider's own recommended/shortcut model slug —
+# it is independent of Settings.model, which is the framework-wide default
+# and may point at a different provider/model pairing entirely.
 # ---------------------------------------------------------------------------
 # api_base is "" for providers whose litellm handler resolves its own endpoint
 # natively (e.g. gemini/*) and should not receive a custom api_base unless
 # explicitly overridden.
 _PROVIDER_DEFAULTS: dict[Provider, dict[str, str]] = {
     Provider.zai: {
-        "default_model": "glm-4.5",
+        "canonical_model": "glm-4.5",
         "litellm_prefix": "openai/",
         "litellm_model": "openai/glm-4.5",
         "api_base": "https://api.z.ai/v1",
     },
     Provider.openrouter: {
-        "default_model": "glm-4.5",
+        "canonical_model": "glm-4.5",
         "litellm_prefix": "openrouter/",
         "litellm_model": "openrouter/z-ai/glm-4.5",
         "api_base": "https://openrouter.ai/api/v1",
     },
     Provider.together: {
-        "default_model": "glm-4.5",
+        "canonical_model": "glm-4.5",
         "litellm_prefix": "together_ai/",
         "litellm_model": "together_ai/zai-org/GLM-4.5",
         "api_base": "https://api.together.xyz/v1",
     },
     Provider.nvidia: {
-        "default_model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "canonical_model": "nvidia/nemotron-3-ultra-550b-a55b",
         "litellm_prefix": "nvidia_nim/",
         "litellm_model": "nvidia_nim/nvidia/nemotron-3-ultra-550b-a55b",
         "api_base": "https://integrate.api.nvidia.com/v1",
     },
     Provider.google: {
-        "default_model": "gemini-3-flash",
+        "canonical_model": "gemini-3-flash",
         "litellm_prefix": "gemini/",
         "litellm_model": "gemini/gemini-3-flash",
         "api_base": "",
@@ -68,7 +72,7 @@ def resolve_provider(
 ) -> tuple[str, str]:
     """Return (litellm_model_string, api_base) for a given provider + model."""
     defaults = _PROVIDER_DEFAULTS[provider]
-    if model == defaults["default_model"]:
+    if model == defaults["canonical_model"]:
         litellm_model = defaults["litellm_model"]
     else:
         litellm_model = f"{defaults['litellm_prefix']}{model}"
