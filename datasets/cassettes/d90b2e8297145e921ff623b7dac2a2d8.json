@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] How many physical therapy visits have I used so far this year?",
+  "model": "openai/glm-4.5",
+  "content": "Your Silver plan covers up to 45 physical therapy sessions per calendar year, but I **cannot confirm** how many of those sessions you've used so far \u2014 that's claims-history data, not something in the plan benefit summaries. Please contact member services to check your visits used to date.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 112,
+    "completion_tokens": 46,
+    "total_tokens": 158
+  }
+}

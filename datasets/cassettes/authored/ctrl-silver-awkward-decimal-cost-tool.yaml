@@ -1,0 +1,16 @@
+turns:
+  - content: ""
+    tool_calls:
+      - id: call_silver_awkward_decimal
+        function:
+          name: coverage_calculator
+          arguments: '{"claim_amount": 1750.55, "plan_deductible": 2000.0, "accrued_deductible": 800.0, "plan_oop_max": 6000.0, "accrued_oop": 800.0, "coinsurance_member": 0.20}'
+    prompt_tokens: 145
+    completion_tokens: 34
+  - content: >
+      You have $1,200 remaining on your $2,000 Silver deductible. For a $1,750.55
+      outpatient procedure, that remaining deductible applies first, and the leftover
+      $550.55 is subject to 20% member coinsurance ($110.11). In total you owe
+      **$1,310.11**, and the plan pays **$440.44**.
+    prompt_tokens: 175
+    completion_tokens: 60

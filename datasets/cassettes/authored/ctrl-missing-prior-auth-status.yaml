@@ -1,0 +1,9 @@
+turns:
+  - content: >
+      Your Gold plan's policy documents state that surgical procedures require prior
+      authorization, but I **cannot confirm** whether your specific knee replacement
+      surgery has been authorized — that's account-specific claims data, not something
+      in the plan benefit summaries. Please contact member services to check your
+      authorization status directly.
+    prompt_tokens: 115
+    completion_tokens: 48

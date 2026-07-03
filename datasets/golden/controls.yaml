@@ -459,6 +459,104 @@ cases:
     dataset_version: "1.0.0"
 
 
+  - id: ctrl-missing-prior-auth-status
+    query: "Has my upcoming knee replacement surgery been prior-authorized?"
+    member_id: MBR-002
+    tags: [missing-information, uncertainty, prior-authorization, control]
+    behavior: answer
+    ground_truth: >
+      The policy documents state that surgical benefits require prior authorization, but a
+      member's own authorization status is account-specific claims data, not something the
+      plan benefit summaries record. The assistant should say it cannot confirm this
+      member's authorization status from the available documents and should direct the
+      member to plan support.
+    must_contain: ["cannot confirm"]
+    must_contain_any:
+      - ["contact member services", "contact plan support", "call member services"]
+    expected_citations: [gold.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+    notes: >
+      Missing-information behavior distinct from ctrl-missing-acupuncture-policy: the
+      *policy rule* (prior auth required) is in the corpus, but this specific member's
+      authorization status is not — the assistant must not fabricate a yes/no answer
+      about the member's own case.
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-03"
+    evidence_ids: [ev-ctrl-missing-prior-auth-status]
+    expectation_categories: [uncertainty, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-missing-pt-visits-used
+    query: "How many physical therapy visits have I used so far this year?"
+    member_id: MBR-001
+    tags: [missing-information, uncertainty, physical-therapy, control]
+    behavior: answer
+    ground_truth: >
+      The policy documents state the plan's physical therapy visit limit, but a member's
+      year-to-date usage against that limit is claims-history data, not something the
+      benefit summaries record. The assistant should say it cannot confirm the member's
+      visits used from the available documents and should direct the member to plan support.
+    must_contain: ["cannot confirm"]
+    must_contain_any:
+      - ["contact member services", "contact plan support", "call member services"]
+    expected_citations: [silver.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness]
+    notes: >
+      Distinct from the physical-therapy *limit* control case: the plan's visit cap is
+      in the corpus, but a member's own usage-to-date against that cap is not.
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-03"
+    evidence_ids: [ev-ctrl-missing-pt-visits-used]
+    expectation_categories: [uncertainty, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-silver-awkward-decimal-cost-tool
+    query: "How much will I owe for a $1,750.55 outpatient procedure on my Silver plan?"
+    member_id: MBR-001
+    tags: [silver, cost-calculation, tool-use, control]
+    behavior: answer
+    ground_truth: >
+      MBR-001 Silver has $1,200 remaining deductible ($800 of the $2,000 deductible already
+      met). On a $1,750.55 claim, the remaining deductible ($1,200) applies first; the
+      remaining $550.55 is subject to 20% member coinsurance ($110.11), so the member owes
+      $1,310.11 total and the plan pays $440.44.
+    must_contain: ["1,310.11"]
+    numeric_expectations:
+      - description: "member owes exactly $1,310.11 (remaining deductible plus 20% coinsurance)"
+        comparator: eq
+        value: 1310.11
+        tolerance: 0.01
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 1750.55
+        plan_deductible: 2000.0
+        accrued_deductible: 800.0
+        plan_oop_max: 6000.0
+        accrued_oop: 800.0
+        coinsurance_member: 0.20
+    expected_citations: [silver.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: >
+      Non-round claim amount and resulting cent-level coinsurance split, exercising the
+      calculator's decimal handling end-to-end through the agent and tool path rather than
+      only the round dollar amounts used elsewhere in the golden dataset.
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-03"
+    evidence_ids: [ev-ctrl-silver-awkward-decimal-cost-tool]
+    expectation_categories: [tool_behavior, amount, evidence]
+    dataset_version: "1.0.0"
+
+
   - id: ctrl-gold-lab-cost-tool
     query: "How much will I owe for a $1,000 diagnostic lab on my Gold plan?"
     member_id: MBR-002

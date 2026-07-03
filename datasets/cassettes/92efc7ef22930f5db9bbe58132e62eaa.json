@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-2] How much will I owe for a $1,750.55 outpatient procedure on my Silver plan?",
+  "model": "openai/glm-4.5",
+  "content": "You have $1,200 remaining on your $2,000 Silver deductible. For a $1,750.55 outpatient procedure, that remaining deductible applies first, and the leftover $550.55 is subject to 20% member coinsurance ($110.11). In total you owe **$1,310.11**, and the plan pays **$440.44**.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 175,
+    "completion_tokens": 60,
+    "total_tokens": 235
+  }
+}

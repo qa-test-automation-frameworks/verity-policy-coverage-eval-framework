@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[turn-1] Has my upcoming knee replacement surgery been prior-authorized?",
+  "model": "openai/glm-4.5",
+  "content": "Your Gold plan's policy documents state that surgical procedures require prior authorization, but I **cannot confirm** whether your specific knee replacement surgery has been authorized \u2014 that's account-specific claims data, not something in the plan benefit summaries. Please contact member services to check your authorization status directly.\n",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 115,
+    "completion_tokens": 48,
+    "total_tokens": 163
+  }
+}
