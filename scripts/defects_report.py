@@ -612,7 +612,7 @@ def render_markdown(
         "",
         "These defects require live LLM judge calls to verify. "
         "The ground-truth, metric choice, and threshold are committed in "
-        "`datasets/golden/cases.yaml` and `docs/thresholds.md`.",
+        "`datasets/golden/*.yaml` and `docs/thresholds.md`.",
         "",
     ]
 

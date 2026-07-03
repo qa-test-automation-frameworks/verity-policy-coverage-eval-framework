@@ -1,6 +1,6 @@
 # Dataset Coverage Matrix
 
-Cross-tabulation of all 56 cases in `datasets/golden/cases.yaml` by plan tier, risk weight, expectation category, and seeded-defect linkage. Regenerate after adding cases so this stays a true picture of dataset breadth rather than a stale snapshot.
+Cross-tabulation of all 56 cases in `datasets/golden/*.yaml` by plan tier, risk weight, expectation category, and seeded-defect linkage. Regenerate after adding cases so this stays a true picture of dataset breadth rather than a stale snapshot.
 
 ## By plan tier
 

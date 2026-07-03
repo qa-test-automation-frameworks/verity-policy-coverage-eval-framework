@@ -123,7 +123,7 @@ Tier-1 (`tests/deterministic/`) runs against pre-recorded cassette JSON files so
 
 **To add a new golden case:**
 
-1. Add the case to `datasets/golden/cases.yaml` with `id`, `query`, `member_id`, behavior, etc.
+1. Add the case to the appropriate file under `datasets/golden/` (`controls.yaml`, `defects.yaml`, `boundaries.yaml`, or `riders.yaml`) with `id`, `query`, `member_id`, behavior, etc.
 2. Add a retrieval fixture: `datasets/cassettes/retrieval/<case_id>.json` — a JSON array of `{text, source, section, chunk_id}` objects matching the corpus chunks the agent should "see" for this query.
 3. If `expects_defect: false` (clean control), author a correct response in `datasets/cassettes/authored/<case_id>.yaml`:
    ```yaml

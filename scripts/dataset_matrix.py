@@ -1,5 +1,5 @@
 """Golden dataset coverage matrix: cross-tabulates every case in
-datasets/golden/cases.yaml by plan tier, risk weight, expectation category,
+datasets/golden/*.yaml by plan tier, risk weight, expectation category,
 and seeded-defect linkage, so dataset breadth (and gaps) are visible without
 reading all 56 cases by hand.
 
@@ -59,7 +59,7 @@ def render_matrix(cases: list[GoldenCase]) -> str:
     lines = [
         "# Dataset Coverage Matrix",
         "",
-        f"Cross-tabulation of all {n} cases in `datasets/golden/cases.yaml` by plan "
+        f"Cross-tabulation of all {n} cases in `datasets/golden/*.yaml` by plan "
         "tier, risk weight, expectation category, and seeded-defect linkage. "
         "Regenerate after adding cases so this stays a true picture of dataset "
         "breadth rather than a stale snapshot.",

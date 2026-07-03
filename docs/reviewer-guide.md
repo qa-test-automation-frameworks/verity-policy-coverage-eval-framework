@@ -59,7 +59,7 @@ Add to the above:
 - `docs/retrieval-ablation.md` for measured evidence behind the retriever's hand-tuned
   constants (`_LEXICAL_WEIGHT`, `_DISTANCE_MARGIN`, `_MAX_RELEVANT_DISTANCE`) rather than
   taking the "hand-tuned starting point" code comments on faith.
-- `datasets/golden/cases.yaml` and `datasets/adversarial/probes.yaml` for the actual test
+- `datasets/golden/*.yaml` and `datasets/adversarial/probes.yaml` for the actual test
   data — read a handful of cases end to end rather than trusting the summary counts.
 - `src/sut/agent.py` for the orchestration path (auth/guardrails/retrieval/tool-calls/
   citations/review-flagging split across `answer()` and `_prepare_request()` — a known

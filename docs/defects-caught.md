@@ -119,7 +119,7 @@ Defect-catalog status grouped by the risk_weight of its golden case (pending = â
 
 ## Semantic-Tier Coverage (Defects 1-4)
 
-These defects require live LLM judge calls to verify. The ground-truth, metric choice, and threshold are committed in `datasets/golden/cases.yaml` and `docs/thresholds.md`.
+These defects require live LLM judge calls to verify. The ground-truth, metric choice, and threshold are committed in `datasets/golden/*.yaml` and `docs/thresholds.md`.
 
 ### Defect #1 - Coverage Hallucination (Bariatric Surgery)
 

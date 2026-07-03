@@ -1,0 +1,246 @@
+cases:
+
+  - id: ctrl-silver-physical-therapy-limit
+    query: "How many physical therapy sessions does Silver cover, and what is the copay?"
+    member_id: MBR-001
+    tags: [silver, physical-therapy, annual-limit, copay, control]
+    behavior: answer
+    ground_truth: "Silver covers up to 45 physical therapy sessions per calendar year at a $40 copay per session."
+    must_contain: ["45", "40"]
+    expected_citations: [silver.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-silver-physical-therapy-limit]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-home-health-pa-limit
+    query: "Are home health aide visits limited, and do home health services require prior authorization?"
+    member_id: MBR-004
+    tags: [home-health, annual-limit, prior-authorization, control]
+    behavior: answer
+    ground_truth: "Home health aide visits are limited to 60 visits per calendar year, and home health services require prior authorization."
+    must_contain: ["60", "prior authorization"]
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [faithfulness, answer_relevancy]
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-06-15"
+    evidence_ids: [ev-ctrl-home-health-pa-limit]
+    expectation_categories: [evidence, amount]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-silver-deductible-exact-boundary
+    query: "I have $1,500 of my $2,000 Silver deductible paid. What do I owe for a $500 claim?"
+    member_id: MBR-001
+    tags: [silver, deductible, boundary, tool-use, control]
+    behavior: answer
+    ground_truth: "The $500 claim exactly exhausts the remaining deductible; member pays $500, plan pays $0."
+    must_contain: ["500"]
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 500.0
+        plan_deductible: 2000.0
+        accrued_deductible: 1500.0
+        plan_oop_max: 6000.0
+        accrued_oop: 1500.0
+        coinsurance_member: 0.20
+    expected_citations: [silver.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: "Numerical boundary case: claim amount exactly equals remaining deductible."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-silver-deductible-exact-boundary]
+    expectation_categories: [tool_behavior, amount, limits, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-bronze-oop-exact-boundary
+    query: "I'm at $7,600 of my $8,000 Bronze out-of-pocket max, deductible met. What do I owe for a $1,000 claim?"
+    member_id: MBR-003
+    tags: [bronze, oop-max, boundary, tool-use, control]
+    behavior: answer
+    ground_truth: "40% coinsurance on $1,000 is $400, which brings accrued OOP to exactly $8,000 — at, not over, the cap."
+    must_contain: ["400", "8,000"]
+    numeric_expectations:
+      - description: "member owes exactly $400 (40% coinsurance on $1,000)"
+        comparator: eq
+        value: 400
+      - description: "resulting accrued OOP is at the $8,000 cap, not over it"
+        comparator: range
+        min_value: 8000
+        max_value: 8000
+    expected_tool:
+      name: coverage_calculator
+      required_args: [claim_amount, plan_deductible, accrued_deductible, plan_oop_max, accrued_oop, coinsurance_member]
+      expected_arg_values:
+        claim_amount: 1000.0
+        plan_deductible: 4000.0
+        accrued_deductible: 4000.0
+        plan_oop_max: 8000.0
+        accrued_oop: 7600.0
+        coinsurance_member: 0.40
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [task_completion]
+    notes: "Numerical boundary case: member cost lands exactly at the OOP maximum (not over it)."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-01"
+    evidence_ids: [ev-ctrl-bronze-oop-exact-boundary]
+    expectation_categories: [tool_behavior, amount, limits, evidence]
+    dataset_version: "1.0.0"
+
+  # ── Paraphrase variants of seeded defects (robustness) ───────────────────
+  # Each of the 8 seeded defects previously had exactly one query phrasing.
+  # A model could pass every case here and still fail a trivial rephrase of
+  # the same question, so these -v2 cases exercise the same defect and the
+  # same detector via different wording, not a new failure mode.
+
+
+  - id: ctrl-snf-annual-limit
+    query: "Is there a limit on how many days of skilled nursing facility care my plan covers per year?"
+    member_id: MBR-004
+    tags: [limits, snf, control]
+    behavior: answer
+    ground_truth: "Skilled nursing facility stays are limited to 90 days per calendar year on all plans (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["90 days"]
+    numeric_expectations:
+      - description: "SNF annual limit is exactly 90 days"
+        comparator: eq
+        value: 90
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Annual limit on skilled nursing facility stays."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-snf-annual-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-home-health-visit-limit
+    query: "How many home health aide visits does my plan cover per year?"
+    member_id: MBR-006
+    tags: [limits, home-health, control]
+    behavior: answer
+    ground_truth: "Home health aide visits are limited to 60 visits per calendar year on all plans (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["60 visits"]
+    numeric_expectations:
+      - description: "home health aide annual limit is exactly 60 visits"
+        comparator: eq
+        value: 60
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Annual limit on home health aide visits."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-home-health-visit-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-gold-pt-session-limit
+    query: "How many physical therapy sessions does my Gold plan cover per year?"
+    member_id: MBR-002
+    tags: [gold, limits, physical-therapy, control]
+    behavior: answer
+    ground_truth: "Physical therapy is covered up to 60 sessions per calendar year on the Gold plan (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["60 sessions"]
+    numeric_expectations:
+      - description: "Gold physical therapy annual limit is exactly 60 sessions"
+        comparator: eq
+        value: 60
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Plan-tier-specific PT session limit — Gold."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-gold-pt-session-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-bronze-pt-session-limit
+    query: "How many physical therapy sessions does my Bronze plan cover per year?"
+    member_id: MBR-003
+    tags: [bronze, limits, physical-therapy, control]
+    behavior: answer
+    ground_truth: "Physical therapy is covered up to 30 sessions per calendar year on the Bronze plan (Exclusions — Lifetime and Annual Limits)."
+    must_contain: ["30 sessions"]
+    numeric_expectations:
+      - description: "Bronze physical therapy annual limit is exactly 30 sessions"
+        comparator: eq
+        value: 30
+    expected_citations: [exclusions.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Plan-tier-specific PT session limit — Bronze, boundary contrast with Gold's 60."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-bronze-pt-session-limit]
+    expectation_categories: [limits, amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-family-oop-max-gold
+    query: "What is the family out-of-pocket maximum for the Gold plan?"
+    member_id: MBR-002
+    tags: [gold, oop-max, family, control]
+    behavior: answer
+    ground_truth: "The Gold plan family out-of-pocket maximum is $8,000 (Gold §1)."
+    must_contain: ["8,000"]
+    numeric_expectations:
+      - description: "Gold family OOP max is exactly $8,000"
+        comparator: eq
+        value: 8000
+    expected_citations: [gold.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Family-tier OOP max, distinct from ctrl-gold-family-deductible (deductible, not OOP max)."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-family-oop-max-gold]
+    expectation_categories: [amount, evidence]
+    dataset_version: "1.0.0"
+
+
+  - id: ctrl-family-oop-max-bronze
+    query: "What is the family out-of-pocket maximum for the Bronze plan?"
+    member_id: MBR-006
+    tags: [bronze, oop-max, family, control]
+    behavior: answer
+    ground_truth: "The Bronze plan family out-of-pocket maximum is $16,000 (Bronze §1)."
+    must_contain: ["16,000"]
+    numeric_expectations:
+      - description: "Bronze family OOP max is exactly $16,000"
+        comparator: eq
+        value: 16000
+    expected_citations: [bronze.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Family-tier OOP max for the Bronze plan."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-family-oop-max-bronze]
+    expectation_categories: [amount, evidence]
+    dataset_version: "1.0.0"
