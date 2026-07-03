@@ -6,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent, record_defect_measurement
+from tests.semantic.conftest import (
+    live_agent,
+    record_defect_measurement,
+    wilson_interval_message,
+    wilson_interval_payload,
+)
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -48,7 +53,7 @@ def test_clean_task_completion(case: GoldenCase, settings: Settings, judge: Prov
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_COMPLETENESS)
     assert threshold_pass(stat, THRESHOLD_COMPLETENESS), (
-        f"Task completion below threshold for {case.id!r}: {stat}"
+        f"Task completion below threshold for {case.id!r}: {stat}" + wilson_interval_message(stat)
     )
 
 
@@ -70,4 +75,5 @@ def test_defect_tool_use_detected(
         scores=scores,
         response=samples[-1][1],
         retrieved_chunks=samples[-1][2],
+        wilson_interval=wilson_interval_payload(stat),
     )

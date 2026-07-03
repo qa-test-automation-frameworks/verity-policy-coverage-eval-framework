@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent
+from tests.semantic.conftest import live_agent, wilson_interval_message
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -48,5 +48,5 @@ def test_answer_relevancy(case: GoldenCase, settings: Settings, judge: ProviderJ
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_ANSWER_RELEVANCY)
     assert threshold_pass(stat, THRESHOLD_ANSWER_RELEVANCY), (
-        f"Answer relevancy below threshold for {case.id!r}: {stat}"
+        f"Answer relevancy below threshold for {case.id!r}: {stat}" + wilson_interval_message(stat)
     )

@@ -26,6 +26,7 @@ from verity.judges import ProviderJudge
 from verity.latency import LIVE_BUDGET_MS
 from verity.providers import LLMProvider
 from verity.reporting import render_cost_summary, write_step_summary
+from verity.statistics import StatResult, pass_rate_wilson_interval
 from verity.trends import append_trend, compute_trend_record
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -114,6 +115,23 @@ def _response_evidence(response: AgentResponse | None) -> dict[str, object]:
     }
 
 
+def wilson_interval_payload(stat: StatResult) -> dict[str, float] | None:
+    if stat.n <= 1:
+        return None
+    lower, upper = pass_rate_wilson_interval(stat)
+    return {"lower": lower, "upper": upper, "confidence_z": 1.96}
+
+
+def wilson_interval_message(stat: StatResult) -> str:
+    interval = wilson_interval_payload(stat)
+    if interval is None:
+        return ""
+    return (
+        " Wilson 95% pass-rate interval="
+        f"[{interval['lower']:.3f}, {interval['upper']:.3f}]"
+    )
+
+
 def record_defect_measurement(
     case: GoldenCase,
     *,
@@ -124,6 +142,7 @@ def record_defect_measurement(
     scores: list[float] | None = None,
     response: AgentResponse | None = None,
     retrieved_chunks: list[Chunk] | None = None,
+    wilson_interval: dict[str, float] | None = None,
 ) -> None:
     """Record whether a seeded defect reproduced under the current live model/judge pairing.
 
@@ -147,6 +166,7 @@ def record_defect_measurement(
         "scores": scores or [score],
         "retrieved_chunks": _chunk_evidence(retrieved_chunks or []),
         "response": _response_evidence(response),
+        "wilson_interval": wilson_interval,
     }
     if threshold_passed:
         pytest.xfail(

@@ -11,7 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent, record_defect_measurement
+from tests.semantic.conftest import (
+    live_agent,
+    record_defect_measurement,
+    wilson_interval_message,
+    wilson_interval_payload,
+)
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -63,7 +68,7 @@ def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: Provide
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
     assert threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
-        f"Faithfulness below threshold for {case.id!r}: {stat}"
+        f"Faithfulness below threshold for {case.id!r}: {stat}" + wilson_interval_message(stat)
     )
 
 
@@ -85,4 +90,5 @@ def test_defect_faithfulness_detected(
         scores=scores,
         response=samples[-1][1],
         retrieved_chunks=samples[-1][2],
+        wilson_interval=wilson_interval_payload(stat),
     )
