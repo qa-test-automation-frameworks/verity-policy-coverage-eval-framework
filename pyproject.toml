@@ -7,7 +7,7 @@ name = "verity-policy-coverage-eval-framework"
 version = "0.1.0"
 description = "A structured, multi-tier evaluation framework for LLM applications — demonstrated on a policy coverage RAG + tool-use assistant."
 license = { text = "MIT" }
-authors = [{ name = "Verity contributors" }]
+authors = [{ name = "prayagv" }]
 requires-python = ">=3.12"
 readme = "README.md"
 keywords = ["evaluation", "rag", "testing", "quality", "policy", "guardrails"]
