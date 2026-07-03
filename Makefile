@@ -187,6 +187,7 @@ release-check:
 	uv run bandit -r src/ -ll -c pyproject.toml
 	PYTHONPATH=src uv run python scripts/run_calibration.py --out /tmp/calibration-release-check.md
 	PYTHONPATH=src:. uv run python scripts/defects_report.py
+	git diff --exit-code docs/defects-caught.md
 	PYTHONPATH=src:. uv run python scripts/build_report_site.py
 	@echo ""
 	@echo "release-check passed. Not run here (requires CI or external tools):"
