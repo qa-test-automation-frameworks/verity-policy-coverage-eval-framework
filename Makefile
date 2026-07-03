@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check
+.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -113,6 +113,10 @@ profile-comparison:
 retrieval-ablation:
 	@echo "Retrieval parameter ablation — real embedding retriever, no API key required"
 	PYTHONPATH=src:. uv run python scripts/retrieval_ablation.py
+
+dataset-matrix:
+	@echo "Golden dataset coverage matrix — hermetic, no API key required"
+	PYTHONPATH=src:. uv run python scripts/dataset_matrix.py
 
 model-comparison:
 	@if [ -z "$(LEFT_PROVIDER)$(LEFT_MODEL)$(RIGHT_PROVIDER)$(RIGHT_MODEL)" ]; then \

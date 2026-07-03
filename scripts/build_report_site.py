@@ -11,6 +11,7 @@ Pages produced:
   site/vulnerabilities.html - seeded-defect adversarial design catalog
   site/security.html       - measured adversarial run summary (reports/security/summary.md)
   site/trends.html         - local/CI trend history from reports/trends/*.jsonl
+  site/dataset-coverage.html - golden dataset coverage matrix
   site/allure/             - Allure HTML report copy (when present)
 """
 
@@ -32,6 +33,7 @@ _NAV = """
   <a href="vulnerabilities.html" style="color:#90cdf4;text-decoration:none;">Vulnerabilities</a>
   <a href="security.html" style="color:#90cdf4;text-decoration:none;">Security Summary</a>
   <a href="trends.html" style="color:#90cdf4;text-decoration:none;">Trends</a>
+  <a href="dataset-coverage.html" style="color:#90cdf4;text-decoration:none;">Dataset Coverage</a>
   <a href="allure/index.html" style="color:#90cdf4;text-decoration:none;">Allure</a>
 </nav>
 """
@@ -261,6 +263,24 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
             encoding="utf-8",
         )
         generated["trends.html"] = False
+
+    # dataset-coverage.html
+    dataset_matrix_md = Path("docs/dataset-coverage.md")
+    if dataset_matrix_md.exists():
+        (site_dir / "dataset-coverage.html").write_text(
+            _md_to_html(dataset_matrix_md, "Dataset Coverage Matrix"),
+            encoding="utf-8",
+        )
+        generated["dataset-coverage.html"] = True
+    else:
+        (site_dir / "dataset-coverage.html").write_text(
+            _placeholder_html(
+                "Dataset Coverage Matrix",
+                "Run `make dataset-matrix` to generate docs/dataset-coverage.md",
+            ),
+            encoding="utf-8",
+        )
+        generated["dataset-coverage.html"] = False
 
     # allure/  - copy if already built
     allure_src = Path("reports/allure-report")

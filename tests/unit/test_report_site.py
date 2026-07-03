@@ -65,6 +65,7 @@ class TestBuildSite:
             "vulnerabilities.html",
             "security.html",
             "trends.html",
+            "dataset-coverage.html",
             "allure/",
         )
         for page in expected:
@@ -110,6 +111,7 @@ class TestNavContent:
             "vulnerabilities.html",
             "security.html",
             "trends.html",
+            "dataset-coverage.html",
             "allure/index.html",
         )
         for href in expected_hrefs:
