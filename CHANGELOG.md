@@ -23,7 +23,7 @@ Python 3.12/3.13 CI matrix, SHA-pinned GitHub Actions, and CI status badges.
   - `0001-glm-4-5-model-choice.md` — GLM-4.5 via LiteLLM; cost, OpenAI-compat, multi-provider portability
   - `0002-three-layer-eval-pyramid.md` — solves non-determinism, cost, and provider coupling
   - `0003-cassette-replay-for-ci.md` — SHA-256 keyed VCR-style replay; zero live calls in PR gate
-  - `0004-judge-calibration-and-self-bias.md` — kappa=0.934, self-bias delta=+0.056 documented from the replay baseline; superseded by the committed live run above
+  - `0004-judge-calibration-and-self-bias.md` — kappa=0.934 (historical, replay-based; superseded by the committed live run), self-bias delta=+0.056 documented from the replay baseline; superseded by the committed live run above
   - `0005-statistical-thresholds.md` — distribution-over-N replaces brittle single-run assertions
   - `docs/adr/README.md` — index table + MADR template
 - `README.md`: Reports table linking all committed docs; quickstart updated with `make defects-report` and Tier-2 cost note; repo structure block expanded with `promptfoo/`, `scripts/`, populated `docs/` and CI workflows; status line updated to M0-M8 complete
