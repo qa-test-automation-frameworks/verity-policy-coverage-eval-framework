@@ -89,6 +89,7 @@ promptfoo/.cache/
 *.ipynb_checkpoints/
 
 # Planning / internal docs (not for version control)
+AGENTS.md
 docs/*-roadmap.md
 .claude/
 CLAUDE.md
