@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 
 from sut.retriever import FixtureRetriever
-from verity.retrieval_eval import RetrievalBenchmark, load_retrieval_benchmarks, score_retrieval
+from tests.deterministic.retrieval_contract import assert_retriever_supports_benchmark
+from verity.retrieval_eval import RetrievalBenchmark, load_retrieval_benchmarks
 
 pytestmark = pytest.mark.deterministic
 
@@ -16,9 +17,7 @@ _BENCHMARKS = load_retrieval_benchmarks(Path("datasets/retrieval/benchmarks.yaml
 
 @pytest.mark.parametrize("benchmark", _BENCHMARKS, ids=[b.case_id for b in _BENCHMARKS])
 def test_fixture_retrieval_supports_expected_evidence(benchmark: RetrievalBenchmark) -> None:
-    chunks = FixtureRetriever(benchmark.case_id).retrieve(benchmark.query)
-    score = score_retrieval(chunks, benchmark)
-    assert score.passed, score.message
+    assert_retriever_supports_benchmark(FixtureRetriever(benchmark.case_id), benchmark)
 
 
 def test_retrieval_benchmark_dataset_not_empty() -> None:

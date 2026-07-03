@@ -13,8 +13,10 @@ from pathlib import Path
 
 import pytest
 
+from sut.retriever import Retriever
+from tests.deterministic.retrieval_contract import assert_retriever_supports_benchmark
 from verity.config import RetrievalConfig
-from verity.retrieval_eval import RetrievalBenchmark, load_retrieval_benchmarks, score_retrieval
+from verity.retrieval_eval import RetrievalBenchmark, load_retrieval_benchmarks
 
 pytestmark = pytest.mark.deterministic
 
@@ -22,7 +24,7 @@ _BENCHMARKS = load_retrieval_benchmarks(Path("datasets/retrieval/benchmarks.yaml
 
 
 @pytest.fixture(scope="module")
-def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> object:
+def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> Retriever:
     """A PolicyRetriever backed by a throwaway Chroma index for this test module."""
     from sut.retriever import PolicyRetriever
 
@@ -39,18 +41,6 @@ def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> object:
 @pytest.mark.needs_onnx_download
 @pytest.mark.parametrize("benchmark", _BENCHMARKS, ids=[b.case_id for b in _BENCHMARKS])
 def test_real_retrieval_supports_expected_evidence(
-    benchmark: RetrievalBenchmark, real_retriever: object
+    benchmark: RetrievalBenchmark, real_retriever: Retriever
 ) -> None:
-    chunks = real_retriever.retrieve(benchmark.query)  # type: ignore[attr-defined]
-    if benchmark.no_answer:
-        # A query the corpus has no relevant section for at all must return no
-        # chunks, not the least-bad irrelevant ones (see KI-1 in
-        # docs/known-issues.md, now resolved by the retriever's absolute
-        # distance ceiling — see PolicyRetriever._MAX_RELEVANT_DISTANCE).
-        assert chunks == [], (
-            f"{benchmark.case_id} expected no relevant chunks but got: "
-            f"{[(c.source, c.section) for c in chunks]}"
-        )
-        return
-    score = score_retrieval(chunks, benchmark)
-    assert score.passed, score.message
+    assert_retriever_supports_benchmark(real_retriever, benchmark, enforce_no_answer=True)
