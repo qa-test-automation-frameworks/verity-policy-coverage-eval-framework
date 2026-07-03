@@ -117,6 +117,7 @@ golden cases are built around that profile's intentional gaps.
 | Extension guide | How to add providers, datasets, evaluators, and reports | [docs/extending.md](docs/extending.md) |
 | Profile comparison | Seeded vs. clean SUT profile — structural diff across every golden case, hermetic | [docs/profile-comparison.md](docs/profile-comparison.md) |
 | Retrieval ablation | Pass-rate/precision curve for each hand-tuned retrieval constant, real embedding retriever | [docs/retrieval-ablation.md](docs/retrieval-ablation.md) |
+| Dataset coverage | Golden case matrix by plan tier, risk weight, expectation category, and seeded-defect linkage | [docs/dataset-coverage.md](docs/dataset-coverage.md) |
 
 The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages.
 
