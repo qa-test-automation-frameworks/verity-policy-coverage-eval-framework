@@ -65,7 +65,9 @@ reports/defects/*
 reports/security/*
 !reports/security/summary.json
 !reports/security/summary.md
-!reports/cost-summary.md
+!reports/evidence/
+reports/evidence/*
+!reports/evidence/cost-summary-2026-07-02.md
 allure-report/
 allure-results/
 site/

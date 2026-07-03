@@ -190,8 +190,10 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
         )
         generated["calibration.html"] = False
 
-    # cost.html
-    cost_md = Path("reports/cost-summary.md")
+    # cost.html — local scratch summary from the most recent eval run
+    # (reports/cost-summary-local.md; see verity.reporting.write_step_summary).
+    # CI writes cost directly to $GITHUB_STEP_SUMMARY instead of a tracked file.
+    cost_md = Path("reports/cost-summary-local.md")
     if cost_md.exists():
         (site_dir / "cost.html").write_text(
             _md_to_html(cost_md, "Token & Cost Summary"),
@@ -202,7 +204,7 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
         (site_dir / "cost.html").write_text(
             _placeholder_html(
                 "Token & Cost Summary",
-                "Run any eval suite to produce reports/cost-summary.md",
+                "Run any eval suite to produce reports/cost-summary-local.md",
             ),
             encoding="utf-8",
         )
