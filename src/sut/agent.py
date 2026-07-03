@@ -567,6 +567,19 @@ class CoverageAgent:
         )
 
 
+def _provider_key_name(settings: Settings) -> str:
+    return f"VERITY_{settings.provider.value.upper()}_API_KEY"
+
+
+def _require_provider_key(settings: Settings) -> None:
+    _, _, key = settings.resolved_provider()
+    if key is None:
+        raise SystemExit(
+            f"Policy Coverage Copilot CLI requires {_provider_key_name(settings)} for provider "
+            f"{settings.provider.value!r}."
+        )
+
+
 # ---------------------------------------------------------------------------
 # CLI entrypoint
 # ---------------------------------------------------------------------------
@@ -583,7 +596,9 @@ def main() -> None:
     parser.add_argument("--member-id", default="MBR-001", help="Member ID (default: MBR-001)")
     args = parser.parse_args()
 
-    agent = CoverageAgent()
+    settings = Settings()
+    _require_provider_key(settings)
+    agent = CoverageAgent(settings=settings)
 
     # Index corpus if not already done
     n = agent.retriever.index_corpus()  # type: ignore[union-attr]
