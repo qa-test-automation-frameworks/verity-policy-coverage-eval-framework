@@ -71,7 +71,7 @@ redteam-live:
 	@if [ -z "$(VERITY_ZAI_API_KEY)$(VERITY_OPENROUTER_API_KEY)$(VERITY_TOGETHER_API_KEY)$(VERITY_NVIDIA_API_KEY)$(VERITY_GOOGLE_API_KEY)" ]; then \
 		echo "No provider API key set — skipping promptfoo live eval"; \
 	else \
-		npx --yes promptfoo@latest eval --config promptfoo/redteam.yaml \
+		npx --yes promptfoo@0.121.17 eval --config promptfoo/redteam.yaml \
 			--output reports/redteam/results.json; \
 		echo "Promptfoo report written to reports/redteam/results.json"; \
 	fi
