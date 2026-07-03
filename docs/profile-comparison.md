@@ -54,7 +54,22 @@ Structural comparison of the two `sut_profile` settings across every golden case
 | `defect-6-refusal-breach-v2` | yes | no | yes |
 | `defect-7-prompt-injection-v2` | yes | no | yes |
 | `defect-8-pii-leakage-v2` | yes | no | yes |
+| `ctrl-dental-rider-cleaning` | yes | no | yes |
+| `ctrl-dental-rider-major-services-wait` | yes | no | yes |
+| `ctrl-vision-rider-allowance` | yes | no | yes |
+| `ctrl-fertility-rider-lifetime-max` | yes | no | yes |
+| `ctrl-orthodontia-rider-lifetime-max` | yes | no | yes |
+| `ctrl-dental-not-covered-without-rider` | yes | no | yes |
+| `ctrl-vision-exam-excluded-without-rider` | yes | no | yes |
+| `ctrl-rider-claim-documentation` | yes | no | yes |
+| `ctrl-snf-annual-limit` | yes | no | yes |
+| `ctrl-home-health-visit-limit` | yes | no | yes |
+| `ctrl-gold-pt-session-limit` | yes | no | yes |
+| `ctrl-bronze-pt-session-limit` | yes | no | yes |
+| `ctrl-family-oop-max-gold` | yes | no | yes |
+| `ctrl-family-oop-max-bronze` | yes | no | yes |
+| `ctrl-midyear-tier-change-deductible` | yes | no | yes |
 
-**Summary:** 41/41 cases carry member PII in the seeded prompt; 0/41 carry it in the clean prompt.
+**Summary:** 56/56 cases carry member PII in the seeded prompt; 0/56 carry it in the clean prompt.
 
 _Regenerate: `make profile-comparison`._

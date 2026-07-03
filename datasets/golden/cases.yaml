@@ -1253,3 +1253,20 @@ cases:
     expectation_categories: [amount, evidence]
     dataset_version: "1.0.0"
 
+  - id: ctrl-midyear-tier-change-deductible
+    query: "If I switch from Bronze to Gold partway through the year, does my Bronze deductible carry over?"
+    member_id: MBR-003
+    tags: [plan-year, tier-change, deductible, control]
+    behavior: answer
+    ground_truth: "Mid-year plan tier changes require a new deductible period; amounts accrued under the prior tier do not carry over to the new tier (Administration — Plan-Year Changes)."
+    must_contain: ["do not carry over"]
+    expected_citations: [administration.md]
+    expects_defect: false
+    semantic_metrics: [answer_relevancy, faithfulness]
+    notes: "Mid-year tier change deductible reset — distinct from ctrl-plan-year-reset's calendar-year accumulator reset."
+    risk_weight: "medium"
+    owner: "policy-eval-team"
+    last_reviewed: "2026-07-02"
+    evidence_ids: [ev-ctrl-midyear-tier-change-deductible]
+    expectation_categories: [coverage_decision, evidence]
+    dataset_version: "1.0.0"

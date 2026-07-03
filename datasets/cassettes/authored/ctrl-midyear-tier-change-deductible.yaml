@@ -1,0 +1,5 @@
+turns:
+  - content: >
+      No — mid-year plan tier changes like Bronze to Gold require a new deductible period; amounts accrued under the prior tier do not carry over to the new tier (Administration — Plan-Year Changes).
+    prompt_tokens: 130
+    completion_tokens: 40
