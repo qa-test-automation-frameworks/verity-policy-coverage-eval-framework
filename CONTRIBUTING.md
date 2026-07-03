@@ -139,10 +139,12 @@ Note: changing any input to the agent (model, temperature, system prompt templat
 
 ### Mutation testing
 
-`src/sut/tools/coverage_calculator.py` (the pricing arithmetic) has a mutation-testing gate
-via [mutmut](https://mutmut.readthedocs.io/), scoped to that one module — it's pure, has no
-I/O, and is where a 100% line-coverage number is least trustworthy on its own (line coverage
-proves a line ran, not that its output was checked). Mutation testing proves the latter.
+`src/sut/tools/coverage_calculator.py` (the pricing arithmetic) and
+`src/verity/checks.py` (the core response checks) have a mutation-testing gate via
+[mutmut](https://mutmut.readthedocs.io/), scoped to those two modules because they are pure,
+have no I/O, and are where a 100% line-coverage number is least trustworthy on its own (line
+coverage proves a line ran, not that its output was checked). Mutation testing proves the
+latter.
 
 ```bash
 uv sync --extra mutation
