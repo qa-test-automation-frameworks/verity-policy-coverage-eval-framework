@@ -16,6 +16,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from verity.checks import register_tool_arg_validator
+
 # ---------------------------------------------------------------------------
 # Input / output models (Pydantic v2)
 # ---------------------------------------------------------------------------
@@ -57,6 +59,13 @@ class CoverageInput(BaseModel):
         if v > plan_oop:
             raise ValueError("accrued_oop cannot exceed plan_oop_max")
         return v
+
+
+def _validate_coverage_input(args: dict[str, Any]) -> None:
+    CoverageInput(**args)
+
+
+register_tool_arg_validator("coverage_calculator", _validate_coverage_input, label="CoverageInput")
 
 
 class CoverageResult(BaseModel):

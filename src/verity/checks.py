@@ -5,13 +5,16 @@ SUT output) and returns a CheckResult. Checks are intentionally pure functions
 with no side effects, so they compose freely and are trivially unit-testable.
 
 Import note: response parameters are typed as Any to avoid a circular package
-dependency (verity → sut → verity). All attribute access is explicit and
-guarded so type errors surface as CheckResult failures, not exceptions.
+dependency (verity -> sut -> verity). Tool-specific argument schemas are registered
+by target packages through register_tool_arg_validator(), so framework checks do not
+import the demo target. All attribute access is explicit and guarded so type errors
+surface as CheckResult failures, not exceptions.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -167,6 +170,16 @@ def check_human_review(case: GoldenCase, response: Any) -> CheckResult:
 # Tool-argument check (#5)
 # ---------------------------------------------------------------------------
 
+ToolArgValidator = Callable[[dict[str, Any]], None]
+_TOOL_ARG_VALIDATORS: dict[str, tuple[ToolArgValidator, str]] = {}
+
+
+def register_tool_arg_validator(
+    name: str, fn: ToolArgValidator, *, label: str | None = None
+) -> None:
+    """Register target-owned validation for a named tool's argument schema."""
+    _TOOL_ARG_VALIDATORS[name] = (fn, label or name)
+
 
 def _check_single_invocation(expected: Any, args: dict[str, Any]) -> str | None:
     """Return an error message for one invocation's args, or None if it's valid."""
@@ -174,13 +187,13 @@ def _check_single_invocation(expected: Any, args: dict[str, Any]) -> str | None:
     if missing_args:
         return f"missing required args: {missing_args}"
 
-    if expected.name == "coverage_calculator":
+    registered = _TOOL_ARG_VALIDATORS.get(expected.name)
+    if registered is not None:
+        validator, label = registered
         try:
-            from sut.tools.coverage_calculator import CoverageInput
-
-            CoverageInput(**args)
+            validator(args)
         except Exception as exc:
-            return f"failed CoverageInput validation: {exc}"
+            return f"failed {label} validation: {exc}"
 
     mismatches: list[str] = []
     for arg_name, expected_val in expected.expected_arg_values.items():
@@ -201,7 +214,7 @@ def check_tool_args(case: GoldenCase, response: Any) -> CheckResult:
     - Any call to a tool other than the expected one (unauthorized/hallucinated tool use)
     - Redundant duplicate calls to the expected tool (a model that calls the tool twice,
       once wrong and once right, must not pass just because one call looked correct)
-    - Arguments that fail CoverageInput validation (wrong types / constraints)
+    - Arguments that fail registered tool-specific validation (wrong types / constraints)
     - Arguments that differ from expected_arg_values (transposition detection)
     """
     expected = case.expected_tool
