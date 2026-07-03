@@ -191,12 +191,14 @@ def pytest_runtest_makereport(
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     summary = render_cost_summary(_SESSION_ACCUMULATOR)
     write_step_summary(summary)
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        # `make eval-semantic` runs this tier serially specifically so this
+        # hook sees every case; under `pytest -n auto` each worker/controller
+        # would otherwise write its own partial results-local.json and trend
+        # row, silently overwriting one another (see the deterministic
+        # conftest's matching guard on its own trend append).
+        return
     if _NODE_RESULTS:
-        # Write to the untracked local path only -- each xdist worker under
-        # `pytest -n auto` only sees its own subset of cases, so writing the
-        # tracked reports/semantic/results.json directly here would let the
-        # last worker/controller to finish overwrite it with incomplete
-        # data. `make eval-semantic` regenerates the tracked file serially.
         out = Path("reports/semantic/results-local.json")
         out.parent.mkdir(parents=True, exist_ok=True)
         record = compute_trend_record(
