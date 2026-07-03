@@ -479,13 +479,39 @@ def render_markdown(
     """
     hermetically_proven = [e for e in catalog if e.status == "CAUGHT"]
     semantic_tier = [e for e in catalog if e.id <= 4]
-    semantic_live = [e for e in semantic_tier if e.status in ("NOT_REPRODUCED", "VERIFIED")]
+    verified = [e for e in semantic_tier if e.status == "VERIFIED"]
+    not_reproduced = [e for e in semantic_tier if e.status == "NOT_REPRODUCED"]
 
-    if semantic_live:
+    def _ids(entries: list[DefectEntry]) -> str:
+        """Render defect ids as '#1-#3' for a contiguous run, else '#1, #2, #5'."""
+        ids = sorted(e.id for e in entries)
+        if len(ids) > 1 and ids == list(range(ids[0], ids[-1] + 1)):
+            return f"#{ids[0]}-#{ids[-1]}"
+        return ", ".join(f"#{i}" for i in ids)
+
+    if verified and not_reproduced:
+        semantic_summary = (
+            f"Defects 1-4 have a live Tier-2 semantic run committed, but only "
+            f"defect{'s' if len(verified) > 1 else ''} {_ids(verified)} reproduced for the "
+            f"provider/model pairing in that run; defect{'s' if len(not_reproduced) > 1 else ''} "
+            f"{_ids(not_reproduced)} are `NOT_REPRODUCED` and should be read as retained "
+            f"regression tripwires, not as live failures from that run. "
+            f"Re-run `make eval-semantic` to refresh."
+        )
+    elif verified:
         semantic_summary = (
             f"Defects 1-4 have a live Tier-2 semantic run committed "
-            f"({len(semantic_live)} of {len(semantic_tier)} defects have live evidence; "
-            f"see per-defect status below). Re-run `make eval-semantic` to refresh."
+            f"({len(verified)} of {len(semantic_tier)} defects reproduced for the "
+            f"provider/model pairing in that run; see per-defect status below). "
+            f"Re-run `make eval-semantic` to refresh."
+        )
+    elif not_reproduced:
+        semantic_summary = (
+            f"Defects 1-4 have a live Tier-2 semantic run committed, but none reproduced "
+            f"for the provider/model pairing in that run; "
+            f"defect{'s' if len(not_reproduced) > 1 else ''} {_ids(not_reproduced)} are "
+            f"`NOT_REPRODUCED` and should be read as retained regression tripwires, not as "
+            f"live failures from that run. Re-run `make eval-semantic` to refresh."
         )
     else:
         semantic_summary = (
@@ -505,10 +531,12 @@ def render_markdown(
         "candidate output that trips the check was written by the case author, not "
         "produced by a live model run. This proves the *detector* (regex/schema/"
         "check function) fires on a known-bad output; it does not by itself prove the "
-        "SUT ever produces that output live. ⬜ COVERED rows have no run at all yet — "
-        "ground truth and thresholds are committed, but nothing has executed against "
-        "them. See `docs/architecture.md` and the Limitations section of `README.md` "
-        "for the full evidence caveat.",
+        "SUT ever produces that output live. ✅ VERIFIED rows mean a live semantic run "
+        "reproduced the seeded behavior. 🟡 NOT REPRODUCED rows mean the live run passed "
+        "the relevant threshold for that provider/model pairing. ⬜ COVERED rows have no "
+        "run at all yet — ground truth and thresholds are committed, but nothing has "
+        "executed against them. See `docs/architecture.md` and the Limitations section "
+        "of `README.md` for the full evidence caveat.",
         "",
     ]
 

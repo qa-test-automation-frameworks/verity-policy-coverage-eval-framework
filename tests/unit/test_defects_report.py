@@ -13,8 +13,10 @@ from pathlib import Path
 from scripts.defects_report import (
     DEFECT_CATALOG,
     DefectEntry,
+    _load_defect_risk_weights,
     build_json,
     render_markdown,
+    run,
 )
 
 # ---------------------------------------------------------------------------
@@ -448,3 +450,26 @@ class TestIngestSemanticResults:
 
         defect_1 = next(e for e in catalog if e.id == 1)
         assert defect_1.status == "VERIFIED"
+
+
+# ---------------------------------------------------------------------------
+# Regeneration consistency — the committed doc must match a fresh run
+# ---------------------------------------------------------------------------
+
+
+class TestRegenerationMatchesCommittedDoc:
+    def test_committed_doc_is_byte_identical_to_a_fresh_run(self) -> None:
+        """`make defects-report` must reproduce docs/defects-caught.md exactly.
+
+        A hand-edit to the committed doc without a matching generator change
+        would otherwise go unnoticed until someone runs the regenerate
+        command and finds their improvements silently reverted.
+        """
+        catalog = run()
+        fresh_md = render_markdown(catalog, defect_risk_weights=_load_defect_risk_weights())
+        committed_md = Path("docs/defects-caught.md").read_text(encoding="utf-8")
+        assert fresh_md == committed_md, (
+            "docs/defects-caught.md has drifted from scripts/defects_report.py's output. "
+            "Run `make defects-report` and commit the result, or update the generator "
+            "to match the intended committed prose."
+        )
