@@ -33,3 +33,11 @@ jobs:
         run: |
           uv run mutmut run
           uv run mutmut results
+
+      - name: Publish mutation results summary
+        if: always()
+        run: |
+          echo "## Mutation results" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          uv run mutmut results >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
