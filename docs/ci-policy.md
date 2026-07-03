@@ -72,6 +72,11 @@ A change is releasable when:
   intentionally seeded defect the PR is demonstrating) or has been triaged and is being
   tracked, not silently ignored.
 
+`make release-check` runs every hermetic step above in one command from a fresh clone (lint,
+format check, mypy, unit + deterministic tests with coverage gates, dependency/static security
+scans, and evidence regeneration) — useful as a single local pre-publish/pre-tag verification
+pass, though it does not replace the actual required PR gate check.
+
 ## Changing a threshold
 
 Coverage floors and module-sensitive thresholds are deliberately conservative and

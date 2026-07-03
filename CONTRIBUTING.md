@@ -41,6 +41,7 @@ make test-deterministic  # Tier-1 deterministic eval (cassette replay; no API ke
 make record            # regenerate cassettes from authored YAML fixtures
 make smoke             # one live provider call (requires API key in .env)
 make demo QUERY="What is my Silver plan deductible?"
+make release-check     # lint + type + tests + coverage gates + security scans + evidence regen (hermetic)
 ```
 
 Tier 1 tests run serially by default. For a faster local loop, run them in
