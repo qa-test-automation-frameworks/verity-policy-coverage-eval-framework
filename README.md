@@ -1,4 +1,4 @@
-# verity-policy-coverage-eval-framework
+# Verity Policy Coverage Evaluation Framework
 
 > A structured, multi-tier evaluation framework for LLM applications — addressing non-determinism, cost, provider-coupling, and judge trust — demonstrated on a RAG + tool-use assistant.
 
@@ -142,6 +142,8 @@ golden cases are built around that profile's intentional gaps.
 | Dataset coverage | Golden case matrix by plan tier, risk weight, expectation category, and seeded-defect linkage | [docs/dataset-coverage.md](docs/dataset-coverage.md) |
 | OWASP LLM coverage | Adversarial probes, checks, and metrics mapped to the OWASP Top 10 for LLM Applications | [docs/owasp-llm-coverage.md](docs/owasp-llm-coverage.md) |
 | Planned work | Concrete next steps not yet done, each tied to a specific command or file | [docs/future-work.md](docs/future-work.md) |
+| Contributor guide | Local setup, architecture map, and change workflow | [CONTRIBUTING.md](CONTRIBUTING.md) · [CONTRIBUTOR_ARCHITECTURE_GUIDE.md](CONTRIBUTOR_ARCHITECTURE_GUIDE.md) |
+| Calibration review workflow | Independent label-review protocol and data capture template | [docs/calibration-review-workflow.md](docs/calibration-review-workflow.md) |
 
 The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages. A static snapshot committed at [`docs/sample-report/`](docs/sample-report/) lets a reviewer see the rendered output without visiting the live Pages URL.
 
