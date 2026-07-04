@@ -3,6 +3,15 @@ name: Semantic Eval (Tier 2 — DeepEval · RAGAS)
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "tests/semantic/**"
+      - "datasets/**"
+      - "promptfoo/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/semantic-eval.yml"
   schedule:
     # Nightly at 02:00 UTC
     - cron: "0 2 * * *"

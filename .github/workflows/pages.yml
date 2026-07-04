@@ -3,6 +3,15 @@ name: Publish Evaluation Reports
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "datasets/**"
+      - "docs/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
   workflow_run:
     workflows: ["Semantic Eval (Tier 2 — DeepEval · RAGAS)", "Adversarial Red-Team"]

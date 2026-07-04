@@ -30,9 +30,7 @@ jobs:
       - name: Run mutation checks
         env:
           PYTHONPATH: src
-        run: |
-          uv run mutmut run
-          uv run mutmut results
+        run: make mutation-test
 
       - name: Publish mutation results summary
         if: always()
