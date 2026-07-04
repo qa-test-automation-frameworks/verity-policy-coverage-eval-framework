@@ -49,6 +49,7 @@ mutants/
 # codebase-memory-mcp local/shared graph artifacts
 .codebase-memory/
 codebase-memory/
+.agent/index-codebase-memory.sh
 
 # Reports (generated artifacts) — with exceptions for the committed
 # evidence files that back the defects-caught / calibration / security docs.
