@@ -10,6 +10,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest@sha256:3d868e555f8f1dbc324afa005066cd11e
 
 # Copy dependency manifests first for layer caching
 COPY pyproject.toml uv.lock ./
+COPY README.md LICENSE ./
 
 # Install all extras (no API key required for Tier-1 checks)
 RUN uv sync --all-extras --no-install-project
@@ -27,7 +28,6 @@ COPY tests/ ./tests/
 COPY datasets/ ./datasets/
 COPY scripts/ ./scripts/
 COPY docs/ ./docs/
-COPY README.md LICENSE ./
 COPY Makefile ./
 
 # Install the project itself
