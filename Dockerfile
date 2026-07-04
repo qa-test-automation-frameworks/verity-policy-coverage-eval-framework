@@ -27,6 +27,7 @@ COPY tests/ ./tests/
 COPY datasets/ ./datasets/
 COPY scripts/ ./scripts/
 COPY docs/ ./docs/
+COPY README.md LICENSE ./
 COPY Makefile ./
 
 # Install the project itself
