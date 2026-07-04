@@ -25,7 +25,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --frozen --extra mutation
+        run: uv sync --frozen --all-extras
 
       - name: Run mutation checks
         env:
