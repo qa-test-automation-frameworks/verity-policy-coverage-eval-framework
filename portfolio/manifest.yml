@@ -1,0 +1,12 @@
+schemaVersion: 1
+repository: verity-policy-coverage-eval-framework
+framework: Python, pytest, DeepEval/RAGAS, promptfoo
+defaultGate: make test
+metrics: reports/semantic/results.json
+liveReport: https://qa-test-automation-frameworks.github.io/verity-policy-coverage-eval-framework/
+release: https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/releases/tag/v0.1.0
+evidence: docs/calibration-report.md
+knownIssues: docs/known-issues.md
+reliabilityPolicy: docs/ci-policy.md
+quarantine: reliability/quarantine.yml
+

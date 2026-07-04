@@ -1,0 +1,18 @@
+schemaVersion: 1
+repository: verity-policy-coverage-eval-framework
+items:
+  - id: KI-3
+    status: active
+    source: docs/known-issues.md
+    tests:
+      - tests/semantic/test_faithfulness.py::test_clean_faithfulness
+      - tests/semantic/test_relevancy.py::test_answer_relevancy
+    reason: >
+      Clean-control faithfulness and answer-relevancy gates collect signal but
+      do not block until a fresh live calibration/control run clears them.
+policy:
+  summary: >
+    Quarantine entries must point to docs/known-issues.md and name the exact
+    test or metric held out of blocking status.
+  reviewCadence: per-calibration-refresh
+
