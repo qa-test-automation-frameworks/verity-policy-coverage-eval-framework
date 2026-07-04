@@ -445,10 +445,10 @@ def render_report(
         "See [`docs/thresholds.md`](thresholds.md) for per-metric threshold values "
         "and the statistical method used.",
         "",
-        "> Scope note: this calibration path scores the shared rubric text through "
-        "> `verity.calibration.build_scoring_prompt()`. Tier-2 DeepEval and RAGAS "
-        "> adapters wrap those rubrics in their own prompt and parsing paths, so "
-        "> this report measures judge/rubric agreement rather than every runtime "
+        "> Scope note: this calibration path scores the shared rubric text through",
+        "> `verity.calibration.build_scoring_prompt()`. Tier-2 DeepEval and RAGAS",
+        "> adapters wrap those rubrics in their own prompt and parsing paths, so",
+        "> this report measures judge/rubric agreement rather than every runtime",
         "> metric adapter end to end.",
         "",
         "---",

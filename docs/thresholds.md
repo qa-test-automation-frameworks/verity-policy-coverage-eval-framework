@@ -30,13 +30,12 @@ pipeline:
 
 See `verity/statistics.py` for the implementation.
 
-> **Measured judge calibration** has been run live (2026-07-02): 93.8% raw
-> agreement, Cohen's kappa 0.870 — see `docs/calibration-report.md`. That run
-> used `openai/gpt-4o-mini` as the judge, which is now the default judge model
-> in `Settings`. Score drift for the zai/GLM-4.5 alternative is unmeasured;
-> run `make calibrate-live` with a GLM-4.5 judge key to measure it. The
-> committed calibration report also marks faithfulness for review in the
-> current run because its per-metric agreement is 75% with MAE 0.238.
+> **Committed judge-calibration artifact:** `docs/calibration-report.md`
+> is a 56-case, 7-metric synthetic replay that demonstrates the agreement,
+> kappa, MAE, and self-preference calculations without live API spend. It is
+> not a live judge distribution. Run `make calibrate-live` with the configured
+> judge key before treating these thresholds as measured judge-performance
+> thresholds.
 
 ---
 
@@ -46,11 +45,11 @@ See `verity/statistics.py` for the implementation.
 
 | Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
 |---|---|---|---|---|---|
-| Hallucination | `THRESHOLD_HALLUCINATION` | 0.50 | mean | #1, #7 | cases authored; agreement measurement pending a live run |
-| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | cases authored; agreement measurement pending a live run |
-| G-Eval Completeness | `THRESHOLD_COMPLETENESS` | 0.70 | mean | #3 | PASS (100% agreement) |
-| G-Eval Disambiguation | `THRESHOLD_DISAMBIGUATION` | 0.60 | mean | #4 | PASS (100% agreement) |
-| G-Eval Refusal | `THRESHOLD_REFUSAL` | 0.70 | mean | #6 | PASS (100% agreement) |
+| Hallucination | `THRESHOLD_HALLUCINATION` | 0.50 | mean | #1, #7 | synthetic PASS (88% agreement) |
+| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | synthetic PASS (100% agreement) |
+| G-Eval Completeness | `THRESHOLD_COMPLETENESS` | 0.70 | mean | #3 | synthetic PASS (100% agreement) |
+| G-Eval Disambiguation | `THRESHOLD_DISAMBIGUATION` | 0.60 | mean | #4 | synthetic PASS (100% agreement) |
+| G-Eval Refusal | `THRESHOLD_REFUSAL` | 0.70 | mean | #6 | synthetic PASS (100% agreement) |
 | Tool Correctness (optional factory) | `THRESHOLD_TOOL_CORRECTNESS` | 0.60 | mean | #5 | not yet run |
 
 Hallucination (DeepEval) is scored as the fraction of claims NOT grounded in
@@ -61,29 +60,25 @@ cases are expected to score well above this; defect cases should score ≥ 0.5.
 
 | Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
 |---|---|---|---|---|---|
-| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #2, #7 | **REVIEW** (75% agreement, MAE 0.238) |
-| Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) | cases authored; agreement measurement pending a live run |
-| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | cases authored; agreement measurement pending a live run |
+| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #2, #7 | synthetic PASS (88% agreement) |
+| Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) | synthetic PASS (100% agreement) |
+| Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | synthetic PASS (100% agreement) |
 
 The Calibration column reflects `docs/calibration-report.md`'s per-metric breakdown.
 `not yet run` means the metric has no dedicated calibration cases in
-`datasets/calibration/labeled.yaml` at all. `cases authored; agreement measurement
-pending a live run` means 8 calibration cases exist for the metric (with rubric
-text in `verity/metrics/rubrics.py` and hermetic authored-score cassettes), but no
-live judge run has measured agreement against them yet — run `make calibrate-live`
-to close that gap. Treat both statuses as conservative-by-convention (see rationale
-below) rather than empirically tuned. Faithfulness is the one metric that *has* been
-measured live and did not clear the bar; its threshold should be treated as the
-least trustworthy of the three RAGAS metrics until a passing calibration run
-replaces this entry.
+`datasets/calibration/labeled.yaml` at all. `synthetic PASS` means 8 calibration
+cases exist for the metric and the committed authored-score replay clears the
+agreement/MAE bar. It is still conservative-by-convention rather than a live
+judge-performance measurement until `make calibrate-live` is run with the
+configured judge and committed as a live report.
 
 **Control-case gating on faithfulness and answer relevancy is quarantined**
 (`@pytest.mark.quarantine` on `test_clean_faithfulness` in
 `tests/semantic/test_faithfulness.py` and `test_answer_relevancy` in
 `tests/semantic/test_relevancy.py`) — both tests still run and report signal,
 but a failure on either does not block a merge, since the live control
-failures below and the calibration disagreement above point at the same two
-metrics. Defect-detection gating (`test_defect_faithfulness_detected`) is
+failures below have not yet been cleared by a fresh live calibration/control
+run. Defect-detection gating (`test_defect_faithfulness_detected`) is
 unaffected. See `docs/known-issues.md` (KI-3) for the tracked entry.
 
 ---

@@ -138,6 +138,6 @@ See `docs/adr/` for full records. Summary:
 - [docs/seeded-defects.md](seeded-defects.md) - all 8 defects, where baked in, and caught-by reference
 - [docs/defects-caught.md](defects-caught.md) - hermetic proof matrix (regenerate: `make defects-report`)
 - [docs/thresholds.md](thresholds.md) - per-metric threshold table with defect coverage map
-- [docs/calibration-report.md](calibration-report.md) - live judge calibration report (kappa, self-bias)
+- [docs/calibration-report.md](calibration-report.md) - synthetic judge-calibration methodology report (kappa, self-bias)
 - [docs/observability.md](observability.md) - tracing architecture, span table, env vars
 - [docs/adr/](adr/) - architecture decision records
