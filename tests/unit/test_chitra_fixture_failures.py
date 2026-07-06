@@ -112,3 +112,16 @@ def test_flaky_retriever_ordering() -> None:
 def test_flaky_judge_latency_budget() -> None:
     count = _next_count("judge_latency_budget")
     assert count % 3 != 0, f"judge call exceeded latency budget on invocation {count}"
+
+
+# --- regression: fails, gets "fixed", then breaks its own fix promise -------
+#
+# Fails on invocations 1-2 (introduced/active), passes on 3-4 (fixed), fails again
+# from 5 onward (regressed) -- exactly two status flips across the sequence, so it
+# stays "regressed" rather than tipping into "intermittent" (min_oscillations=3).
+
+
+def test_policy_sync_promise_regression() -> None:
+    count = _next_count("policy_sync_promise_regression")
+    if count <= 2 or count >= 5:
+        assert False, "policy replica drifted from source of truth"
