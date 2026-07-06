@@ -116,12 +116,19 @@ def test_flaky_judge_latency_budget() -> None:
 
 # --- regression: fails, gets "fixed", then breaks its own fix promise -------
 #
-# Fails on invocations 1-2 (introduced/active), passes on 3-4 (fixed), fails again
-# from 5 onward (regressed) -- exactly two status flips across the sequence, so it
-# stays "regressed" rather than tipping into "intermittent" (min_oscillations=3).
+# Invocations 1-2 fail (introduced/active), 3-4 pass (fixed), 5+ fail again
+# (regressed, then active on any further run) -- exactly two status flips
+# across the sequence, so it stays out of "intermittent" (min_oscillations=3).
+# Needs *exactly* 5 ingested runs total so the latest persisted state is the
+# fresh "regressed" transition itself, not the "active" state a 6th run would
+# settle into -- stop seeding this fixture at 5 runs.
+#
+# (v2: a fresh test_key/counter -- an earlier attempt at this same fixture
+# overshot to 6 runs and settled on "active"; rather than surgically edit the
+# hash-chained lifecycle ledger, this starts a clean sequence.)
 
 
-def test_policy_sync_promise_regression() -> None:
-    count = _next_count("policy_sync_promise_regression")
+def test_policy_sync_promise_regression_v2() -> None:
+    count = _next_count("policy_sync_promise_regression_v2")
     if count <= 2 or count >= 5:
         assert False, "policy replica drifted from source of truth"
