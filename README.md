@@ -131,7 +131,7 @@ golden cases are built around that profile's intentional gaps.
 | Report | Description | Link |
 |--------|-------------|------|
 | Defects Caught | Proof matrix — 4/8 defects caught deterministically (no API key); defects 1–4 have a committed live Tier-2 run (see provider note below) | [docs/defects-caught.md](docs/defects-caught.md) |
-| Calibration | Synthetic judge-calibration replay — 56 cases, 7 metrics, 96.4% raw agreement, Cohen's kappa 0.926, self-preference delta +0.036 | [docs/calibration-report.md](docs/calibration-report.md) |
+| Calibration | Synthetic judge-calibration replay — 56 calibration cases, 7 metrics, 96.4% raw agreement, Cohen's kappa 0.926, self-preference delta +0.036 | [docs/calibration-report.md](docs/calibration-report.md) · [dataset inventory](scripts/dataset_inventory.py) |
 | Thresholds | Per-metric threshold table with defect coverage map | [docs/thresholds.md](docs/thresholds.md) |
 | Observability | OTel span table, env vars, cost summary | [docs/observability.md](docs/observability.md) |
 | Architecture | Component walk-through, data flow, CI table | [docs/architecture.md](docs/architecture.md) |
@@ -143,6 +143,7 @@ golden cases are built around that profile's intentional gaps.
 | OWASP LLM coverage | Adversarial probes, checks, and metrics mapped to the OWASP Top 10 for LLM Applications | [docs/owasp-llm-coverage.md](docs/owasp-llm-coverage.md) |
 | Planned work | Concrete next steps not yet done, each tied to a specific command or file | [docs/future-work.md](docs/future-work.md) |
 | Contributor guide | Local setup, architecture map, and change workflow | [CONTRIBUTING.md](CONTRIBUTING.md) · [CONTRIBUTOR_ARCHITECTURE_GUIDE.md](CONTRIBUTOR_ARCHITECTURE_GUIDE.md) |
+| Current verification | Provider/model/run provenance and explicit live-evidence state | [docs/evidence/latest-verification.md](docs/evidence/latest-verification.md) |
 | Calibration review workflow | Independent label-review protocol and data capture template | [docs/calibration-review-workflow.md](docs/calibration-review-workflow.md) |
 
 The full report site (Allure + defects-caught landing + calibration + cost + trends) can be published to GitHub Pages on every push to `main` via `pages.yml` after the repository is configured for Pages. A static snapshot committed at [`docs/sample-report/`](docs/sample-report/) lets a reviewer see the rendered output without visiting the live Pages URL.
@@ -213,7 +214,7 @@ docs/
 - **Calibration is a synthetic methodology artifact.** `docs/calibration-report.md` reflects a hermetic `make calibrate` replay over all 56 hand-authored calibration cases across 7 metrics. It verifies the agreement, kappa, MAE, and self-preference calculations without spending API credits. Run `make calibrate-live` with a configured judge key when changing the judge or promoting thresholds from methodology demonstration to live measurement.
 - **Semantic control gates are not all enforced.** Faithfulness and answer-relevancy control checks currently run for signal but are quarantined because the committed live control run does not yet justify making them release blockers. See `docs/known-issues.md` and `docs/thresholds.md`.
 - **Provider endpoint unverified for non-default providers.** Base URLs in `.env.example` for providers other than the default are configuration templates; verify the exact model slug and base URL before running live evals against them.
-- **Golden dataset size.** The current dataset covers 69 cases across policy plans and defect types (including paraphrase variants of seeded defects for phrasing-robustness, rider/limit/boundary cases, refusal-boundary controls covering each out-of-scope pattern plus two neighbor cases that must not be refused, and missing-information/awkward-decimal cost cases). This is sufficient to demonstrate the evaluation patterns, not to measure production model quality.
+- **Dataset sizes.** The generated inventory currently reports 69 golden evaluation cases and 56 calibration cases. These are separate datasets and are sufficient to demonstrate the evaluation patterns, not to measure production model quality.
 - **Cassette replay.** Tier 1 runs against pre-recorded LLM responses. Cassettes capture the SUT's current behavior; refresh them with `make record` when the SUT changes.
 - **RAGAS is optional.** RAGAS faithfulness and context-precision metrics are importable but require compatible optional dependencies. They are included in `uv sync --extra semantic` and conditionally enabled.
 

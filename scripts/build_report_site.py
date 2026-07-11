@@ -23,6 +23,25 @@ from pathlib import Path
 
 _SITE = Path("site")
 
+
+def _semantic_provenance_html() -> str:
+    """Render explicit live-evidence state instead of silently mixing stale artifacts."""
+    path = Path("reports/semantic/results.json")
+    if not path.exists():
+        return '<aside><strong>Live semantic evidence unavailable.</strong> No credentialed report artifact was supplied to this build.</aside>'
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    run = payload.get("run", {})
+    required = ("provider", "model", "judge_model", "samples", "git_sha", "timestamp", "corpus_fingerprint")
+    if any(not run.get(field) for field in required):
+        return '<aside><strong>Live semantic evidence unavailable.</strong> The supplied artifact is missing required provenance.</aside>'
+    return (
+        "<aside><strong>Live semantic evidence:</strong> "
+        f"{run['provider']} / {run['model']} · judge {run['judge_model']} · "
+        f"samples={run['samples']} · commit {run['git_sha']} · "
+        f"run {run.get('run_id', 'unknown')} · corpus {run['corpus_fingerprint'][:12]}… · "
+        f"completed {run['timestamp']}</aside>"
+    )
+
 _NAV = """
 <nav style="font-family:sans-serif;background:#1a1a2e;padding:0.75rem 1.5rem;
             display:flex;gap:1.5rem;align-items:center;margin-bottom:1.5rem;">
@@ -168,7 +187,7 @@ def build_site(site_dir: Path = _SITE) -> dict[str, bool]:
     defects_md = Path("docs/defects-caught.md")
     if defects_md.exists():
         (site_dir / "index.html").write_text(
-            _md_to_html(defects_md, "Defects Caught"),
+            _md_to_html(defects_md, "Defects Caught").replace("<body>", f"<body>{_semantic_provenance_html()}", 1),
             encoding="utf-8",
         )
         generated["index.html"] = True

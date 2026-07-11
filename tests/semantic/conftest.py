@@ -28,6 +28,7 @@ from verity.providers import LLMProvider
 from verity.reporting import render_cost_summary, write_step_summary
 from verity.statistics import StatResult, pass_rate_wilson_interval
 from verity.trends import append_trend, compute_trend_record
+from scripts.dataset_inventory import inventory
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
 
@@ -217,6 +218,11 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                 "timestamp": record.timestamp,
                 "git_sha": record.git_sha,
                 "run_id": record.run_id,
+                "workflow_run_url": os.environ.get("GITHUB_SERVER_URL", "")
+                + (f"/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}" if os.environ.get("GITHUB_RUN_ID") else ""),
+                "corpus_fingerprint": inventory()["corpus_fingerprint"],
+                "dataset_inventory": inventory(),
+                "evidence_class": "credentialed",
                 "totals": {
                     "tokens": record.total_tokens,
                     "cost_usd": record.total_cost_usd,

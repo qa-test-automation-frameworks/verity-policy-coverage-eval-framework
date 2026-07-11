@@ -41,7 +41,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a  # v4
         with:
-          version: "latest"
+          version: "0.11.25"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
@@ -97,6 +97,24 @@ jobs:
         run: |
           if [ "${{ steps.download_semantic.outcome }}" = "failure" ]; then
             echo "::warning::Semantic report artifact was not downloaded; report site may use stale or missing live inputs."
+          fi
+
+      - name: Validate live evidence provenance
+        run: |
+          if [ -f reports/semantic/results.json ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('reports/semantic/results.json').read_text())
+          run = payload.get('run', {})
+          required = ('provider', 'model', 'judge_model', 'samples', 'git_sha', 'timestamp', 'corpus_fingerprint')
+          missing = [key for key in required if not run.get(key)]
+          if missing:
+              raise SystemExit(f'Missing semantic provenance: {missing}')
+          print('Validated semantic provenance for', run['git_sha'])
+          PY
+          else
+            echo '::warning::No semantic evidence is available; the report will display an unavailable state.'
           fi
           if [ "${{ steps.download_adversarial.outcome }}" = "failure" ]; then
             echo "::warning::Adversarial report artifact was not downloaded; report site may use stale or missing live inputs."

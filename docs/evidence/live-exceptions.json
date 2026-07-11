@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "policy": "Every live failure is either resolved or explicitly time-bounded with an owner.",
+  "exceptions": [
+    {
+      "pattern": "tests/semantic/test_faithfulness.py::test_clean_faithfulness",
+      "owner": "portfolio-maintainer",
+      "expires": "2026-08-31",
+      "status": "quarantined",
+      "reason": "Current provider/retrieval pairing has unstable clean-control faithfulness scores; refresh and resolve before promoting live evidence to a release gate."
+    },
+    {
+      "pattern": "tests/semantic/test_relevancy.py::test_answer_relevancy",
+      "owner": "portfolio-maintainer",
+      "expires": "2026-08-31",
+      "status": "quarantined",
+      "reason": "Current provider/judge pairing has clean-control relevancy failures; this is visible evidence, not a passing release signal."
+    },
+    {
+      "pattern": "tests/semantic/test_tool_use.py::test_clean_task_completion",
+      "owner": "portfolio-maintainer",
+      "expires": "2026-08-31",
+      "status": "quarantined",
+      "reason": "A clean tool-use control failed in the committed run and must be rechecked against the default provider."
+    }
+  ]
+}

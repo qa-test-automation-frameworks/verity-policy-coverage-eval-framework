@@ -1,0 +1,17 @@
+# Trivy ignore list — CRITICAL/HIGH CVEs with no fixed version available upstream
+# as of 2026-07-04. Each entry blocks the CI gate otherwise, with no remediation
+# possible until a fix is published. Re-evaluate at next base-image bump.
+# Review-by: 2026-08-04
+
+# Debian base image (perl, ncurses, acl, gzip) — no packaged fix yet
+CVE-2026-42496
+CVE-2026-8376
+CVE-2026-42497
+CVE-2026-48962
+CVE-2026-9538
+CVE-2025-69720
+CVE-2026-54369
+CVE-2026-41992
+
+# chromadb 1.5.9 — no patched release available upstream yet
+CVE-2026-45829

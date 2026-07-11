@@ -37,7 +37,7 @@ calibration status). Each item below names the exact command or file that would 
   uses `VERITY_SEMANTIC_SAMPLES=1` like push runs; only the nightly schedule uses N=5. Consider
   a `samples` input on `workflow_dispatch` so a reviewer triggering the workflow manually can
   opt into the full distribution-over-N statistics (see ADR-0005).
-- **Grow the golden dataset further.** 56 cases today, up from 41 — still sized to demonstrate
+- **Grow the golden dataset further.** 69 golden cases today, up from 41 — still sized to demonstrate
   the evaluation patterns, not to measure production model quality. `docs/dataset-coverage.md`
   shows where the thinnest categories are (currently `limits`); add cases there first.
 - **Grow the adversarial probe corpus further.** 71 probes across 9 categories today, up from

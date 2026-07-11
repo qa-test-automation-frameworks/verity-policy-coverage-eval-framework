@@ -38,6 +38,17 @@ class TestBuildSite:
         assert result.get("index.html") is True
         assert (tmp_path / "index.html").exists()
 
+    def test_index_marks_live_evidence_unavailable_without_provenance(self, tmp_path: Path) -> None:
+        import scripts.build_report_site as mod
+        from unittest.mock import patch
+
+        if not Path("docs/defects-caught.md").exists():
+            return
+        with patch.object(mod, "_md_to_html", return_value="<html><body>report</body></html>"):
+            result = mod.build_site(site_dir=tmp_path)
+        assert result["index.html"] is True
+        assert "Live semantic evidence unavailable" in (tmp_path / "index.html").read_text()
+
     def test_calibration_html_generated_when_md_present(self, tmp_path: Path) -> None:
         cal = Path("docs/calibration-report.md")
         if not cal.exists():

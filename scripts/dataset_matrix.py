@@ -1,7 +1,7 @@
 """Golden dataset coverage matrix: cross-tabulates every case in
 datasets/golden/*.yaml by plan tier, risk weight, expectation category,
 and seeded-defect linkage, so dataset breadth (and gaps) are visible without
-reading all 56 cases by hand.
+reading the generated golden-case inventory rather than duplicating a hand-maintained count.
 
 Makes no live model calls. Usage:
   uv run python scripts/dataset_matrix.py [--out PATH]
