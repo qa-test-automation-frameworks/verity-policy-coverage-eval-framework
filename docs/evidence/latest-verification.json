@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "repository": "verity-policy-coverage-eval-framework",
+  "evidenceState": "evidence-unavailable",
+  "evidenceClass": ["hermetic", "credentialed"],
+  "verifiedRef": "main",
+  "verifiedSha": null,
+  "workflow": {"name": "semantic-eval.yml", "runId": null, "runUrl": null, "branch": "main", "event": null, "conclusion": null, "completedAt": null},
+  "target": {"name": "fictional policy RAG and tool-use SUT", "environment": "repository-controlled"},
+  "results": [],
+  "reportUrl": "https://qa-test-automation-frameworks.github.io/verity-policy-coverage-eval-framework/",
+  "artifactRetention": "Published report only when provider provenance is complete",
+  "limitationsUrl": "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/blob/main/docs/known-issues.md",
+  "generatedAt": "2026-07-11T00:00:00Z"
+}
