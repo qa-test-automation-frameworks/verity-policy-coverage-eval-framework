@@ -1,15 +1,24 @@
 {
   "schemaVersion": 1,
   "repository": "verity-policy-coverage-eval-framework",
-  "evidenceState": "evidence-unavailable",
+  "evidenceState": "review-ready",
   "evidenceClass": ["hermetic", "credentialed"],
   "verifiedRef": "main",
-  "verifiedSha": null,
-  "workflow": {"name": "semantic-eval.yml", "runId": null, "runUrl": null, "branch": "main", "event": null, "conclusion": null, "completedAt": null},
+  "verifiedSha": "a9de8e6b7d4181448b11bd4294a6ad440090e479",
+  "workflow": {"name": "pr-gate.yml", "runId": 29137796809, "runUrl": "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/runs/29137796809", "branch": "main", "event": "push", "conclusion": "success", "completedAt": "2026-07-11T03:20:56Z"},
   "target": {"name": "fictional policy RAG and tool-use SUT", "environment": "repository-controlled"},
-  "results": [],
+  "results": [
+    {"command": "pytest (Python 3.13, hermetic)", "total": 1683, "passed": 1679, "failed": 0, "skipped": 4, "durationSeconds": 52.72}
+  ],
+  "liveSemanticEval": {
+    "workflow": "semantic-eval.yml",
+    "runId": 29137796817,
+    "runUrl": "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/runs/29137796817",
+    "conclusion": "success",
+    "disposition": "skipped: no VERITY_PROVIDER secret configured on this run, so the credentialed judge tier did not execute; the hermetic pytest gate above is the only verified evidence for this SHA"
+  },
   "reportUrl": "https://qa-test-automation-frameworks.github.io/verity-policy-coverage-eval-framework/",
   "artifactRetention": "Published report only when provider provenance is complete",
   "limitationsUrl": "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/blob/main/docs/known-issues.md",
-  "generatedAt": "2026-07-11T00:00:00Z"
+  "generatedAt": "2026-07-11T04:40:00Z"
 }
