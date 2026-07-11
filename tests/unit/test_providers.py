@@ -298,9 +298,11 @@ class TestKeyFallback:
     def test_does_not_retry_other_status_codes(self, settings_with_fallback: Settings) -> None:
         provider = LLMProvider(settings_with_fallback, RunAccumulator())
 
-        with patch(_PATCH, side_effect=_quota_error(500)) as mock_call:
-            with pytest.raises(litellm.exceptions.APIError):
-                provider.complete([{"role": "user", "content": "hi"}])
+        with (
+            patch(_PATCH, side_effect=_quota_error(500)) as mock_call,
+            pytest.raises(litellm.exceptions.APIError),
+        ):
+            provider.complete([{"role": "user", "content": "hi"}])
 
         mock_call.assert_called_once()
 
@@ -309,8 +311,10 @@ class TestKeyFallback:
     ) -> None:
         provider = LLMProvider(settings_no_key, RunAccumulator())
 
-        with patch(_PATCH, side_effect=_quota_error(402)) as mock_call:
-            with pytest.raises(litellm.exceptions.APIError):
-                provider.complete([{"role": "user", "content": "hi"}])
+        with (
+            patch(_PATCH, side_effect=_quota_error(402)) as mock_call,
+            pytest.raises(litellm.exceptions.APIError),
+        ):
+            provider.complete([{"role": "user", "content": "hi"}])
 
         mock_call.assert_called_once()
