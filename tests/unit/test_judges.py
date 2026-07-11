@@ -60,6 +60,21 @@ class TestProviderJudge:
         result = judge.generate("")
         assert isinstance(result, str)
 
+    def test_judge_settings_inherit_fallback_key(self) -> None:
+        """The judge makes its own Settings copy; every credential field on the
+        outer Settings — including the fallback key — must carry over, or the
+        judge silently loses fallback coverage while the SUT keeps it."""
+        from verity.config import Provider, Settings
+
+        settings = Settings(
+            _env_file=None,
+            provider=Provider.openrouter,
+            openrouter_api_key="primary-key",
+            openrouter_api_key_2="fallback-key",
+        )
+        judge = ProviderJudge(settings)
+        assert judge._judge_settings.resolved_fallback_api_key() == "fallback-key"
+
 
 # ---------------------------------------------------------------------------
 # DeepEvalJudge

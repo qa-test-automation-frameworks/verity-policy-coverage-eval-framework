@@ -62,6 +62,7 @@ class ProviderJudge:
                 max_tokens=self._judge_cfg.max_tokens,
                 zai_api_key=self._settings.zai_api_key,
                 openrouter_api_key=self._settings.openrouter_api_key,
+                openrouter_api_key_2=self._settings.openrouter_api_key_2,
                 together_api_key=self._settings.together_api_key,
                 nvidia_api_key=self._settings.nvidia_api_key,
                 google_api_key=self._settings.google_api_key,
