@@ -169,6 +169,16 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("VERITY_GOOGLE_API_KEY", "GOOGLE_API_KEY", "GEMINI_API_KEY"),
     )
 
+    # Optional secondary key for a provider, used only as a one-time retry
+    # target when the primary key fails for a quota/billing reason (HTTP 402
+    # or 429) rather than an auth or request-shape problem. Add one field per
+    # provider here (and a matching entry in resolved_fallback_api_key) only
+    # once that provider actually needs it.
+    openrouter_api_key_2: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("VERITY_OPENROUTER_API_KEY_2", "OPENROUTER_API_KEY_2"),
+    )
+
     # API base overrides
     zai_api_base: str | None = Field(
         default=None,
@@ -290,6 +300,14 @@ class Settings(BaseSettings):
         )
         secret = self._active_api_key()
         return litellm_model, api_base, secret.get_secret_value() if secret else None
+
+    def resolved_fallback_api_key(self) -> str | None:
+        """Return the active provider's secondary key, if one is configured."""
+        mapping: dict[Provider, SecretStr | None] = {
+            Provider.openrouter: self.openrouter_api_key_2,
+        }
+        secret = mapping.get(self.provider)
+        return secret.get_secret_value() if secret else None
 
 
 # Module-level singleton (lazy; tests can override by passing settings explicitly)

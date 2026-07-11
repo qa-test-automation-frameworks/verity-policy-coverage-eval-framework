@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import litellm.exceptions
 import pytest
 
 from verity.cassettes import CassetteLibrary, CassetteMissError, CassettePayload, ReplayToolCall
@@ -241,3 +242,75 @@ class TestCassetteReplay:
         result = provider.complete(msgs)
         assert len(result.tool_calls) == 1
         assert result.tool_calls[0].function.name == "coverage_calculator"
+
+
+def _quota_error(status_code: int) -> litellm.exceptions.APIError:
+    return litellm.exceptions.APIError(
+        status_code=status_code,
+        message="insufficient credits",
+        llm_provider="openrouter",
+        model="openai/gpt-4o-mini",
+    )
+
+
+class TestKeyFallback:
+    """The primary key retries once against a secondary key on 402/429 only."""
+
+    @pytest.fixture()
+    def settings_with_fallback(self) -> Settings:
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return Settings(
+                _env_file=None,
+                provider=Provider.openrouter,
+                model="openai/gpt-4o-mini",
+                openrouter_api_key="primary-key",
+                openrouter_api_key_2="fallback-key",
+            )
+
+    def test_retries_with_fallback_key_on_402(self, settings_with_fallback: Settings) -> None:
+        provider = LLMProvider(settings_with_fallback, RunAccumulator())
+
+        with patch(
+            _PATCH,
+            side_effect=[_quota_error(402), _mock_response("recovered")],
+        ) as mock_call:
+            result = provider.complete([{"role": "user", "content": "hi"}])
+
+        assert result.content == "recovered"
+        assert mock_call.call_count == 2
+        assert mock_call.call_args_list[0].kwargs["api_key"] == "primary-key"
+        assert mock_call.call_args_list[1].kwargs["api_key"] == "fallback-key"
+
+    def test_retries_with_fallback_key_on_429(self, settings_with_fallback: Settings) -> None:
+        provider = LLMProvider(settings_with_fallback, RunAccumulator())
+
+        with patch(
+            _PATCH,
+            side_effect=[_quota_error(429), _mock_response("recovered")],
+        ):
+            result = provider.complete([{"role": "user", "content": "hi"}])
+
+        assert result.content == "recovered"
+
+    def test_does_not_retry_other_status_codes(self, settings_with_fallback: Settings) -> None:
+        provider = LLMProvider(settings_with_fallback, RunAccumulator())
+
+        with patch(_PATCH, side_effect=_quota_error(500)) as mock_call:
+            with pytest.raises(litellm.exceptions.APIError):
+                provider.complete([{"role": "user", "content": "hi"}])
+
+        mock_call.assert_called_once()
+
+    def test_raises_original_error_when_no_fallback_configured(
+        self, settings_no_key: Settings
+    ) -> None:
+        provider = LLMProvider(settings_no_key, RunAccumulator())
+
+        with patch(_PATCH, side_effect=_quota_error(402)) as mock_call:
+            with pytest.raises(litellm.exceptions.APIError):
+                provider.complete([{"role": "user", "content": "hi"}])
+
+        mock_call.assert_called_once()

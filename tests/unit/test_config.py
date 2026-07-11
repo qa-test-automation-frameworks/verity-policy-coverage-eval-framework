@@ -172,6 +172,28 @@ class TestSettings:
             s = Settings(_env_file=None, provider=Provider.zai)
         assert s.resolved_provider()[1] == "https://runtime.example/v1"
 
+    def test_resolved_fallback_api_key_for_openrouter(self) -> None:
+        s = Settings(
+            _env_file=None,
+            provider=Provider.openrouter,
+            openrouter_api_key="primary-key",
+            openrouter_api_key_2="fallback-key",
+        )
+        assert s.resolved_fallback_api_key() == "fallback-key"
+
+    def test_resolved_fallback_api_key_absent_when_unset(self) -> None:
+        with pytest.warns(UserWarning, match="No API key found"):
+            s = Settings(_env_file=None, provider=Provider.openrouter, openrouter_api_key=None)
+        assert s.resolved_fallback_api_key() is None
+
+    def test_resolved_fallback_api_key_unsupported_provider_returns_none(self) -> None:
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            s = Settings(_env_file=None, provider=Provider.zai, zai_api_key="only-key")
+        assert s.resolved_fallback_api_key() is None
+
 
 class TestSettingsSingleton:
     def test_reset_settings_reloads_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:

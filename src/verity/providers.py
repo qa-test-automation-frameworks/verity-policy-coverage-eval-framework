@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import litellm
+import openai
 
 from verity.cassettes import (
     CassetteLibrary,
@@ -107,7 +108,7 @@ class LLMProvider:
             kwargs["tools"] = tools
 
         start = time.monotonic()
-        response = litellm.completion(**kwargs)
+        response = self._complete_with_key_fallback(kwargs)
         latency_ms = (time.monotonic() - start) * 1000
 
         usage = usage_from_litellm(response)
@@ -152,6 +153,24 @@ class LLMProvider:
             raw_response=response,
             call_record=record,
         )
+
+    def _complete_with_key_fallback(self, kwargs: dict[str, Any]) -> Any:
+        """Call litellm.completion, retrying once with a secondary key on a quota/billing error.
+
+        Only triggers on HTTP 402 (insufficient credits) or 429 (rate limit),
+        which indicate the credential itself is exhausted rather than the
+        request being malformed. Any other error propagates immediately.
+        """
+        try:
+            return litellm.completion(**kwargs)
+        except openai.APIError as exc:
+            if getattr(exc, "status_code", None) not in (402, 429):
+                raise
+            fallback_key = self._settings.resolved_fallback_api_key()
+            if not fallback_key or fallback_key == kwargs.get("api_key"):
+                raise
+            fallback_kwargs = {**kwargs, "api_key": fallback_key}
+            return litellm.completion(**fallback_kwargs)
 
     def _result_from_payload(self, payload: CassettePayload, label: str) -> CompletionResult:
         """Reconstruct a CompletionResult from a cassette payload."""
