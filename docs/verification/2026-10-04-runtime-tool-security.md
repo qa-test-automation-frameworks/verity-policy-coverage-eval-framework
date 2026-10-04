@@ -25,3 +25,20 @@ Native output, previous finding, publisher/version/checksum and current source
 hashes are retained in `evidence/2026-10-04-runtime-tool/`. Project advisories
 remain unresolved without new exclusions. Docker appuser model-cache portability
 and portfolio-wide R03 remain required.
+
+## Exact tool-patch remote outcome
+
+At516ec90f0758a8c6e2c8f4b536fb6dd7104cce06,
+[PR Gate37205078143](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/runs/37205078143)
+passed quality, deterministic tests, module coverage, hermetic evidence and
+governance steps on actual Python3.12.15 and3.13.16. Both jobs then failed their
+dependency scanner with nine native records in Chroma/diskcache/RAGAS; subsequent
+secret/static-security steps were skipped. The gate is failed, not passed.
+
+[Container37205078186](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/runs/37205078186)
+built and scanned the image. The prior uv/quinn finding is absent from the new
+native scan. The scan still fails on45 HIGH Debian OS findings and four Chroma
+findings (two HIGH/two CRITICAL); the same45 OS findings were already present in
+the previous runtime image scan. No exclusion or risk acceptance was added.
+The tool remediation is scoped-verified; overall container security is unresolved.
+Native failure logs and both matrix job/step records are retained.
