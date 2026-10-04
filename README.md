@@ -103,12 +103,13 @@ git clone <repo-url>
 cd verity-policy-coverage-eval-framework
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --all-extras
+make prepare-embeddings   # provision and verify the public ONNX model before parallel workers
 make test-deterministic  # replayed SUT checks; zero live calls
 make test                # unit + deterministic + adversarial checks; zero live calls
 make defects-report      # regenerate docs/defects-caught.md from local evidence
 ```
 
-Expected first success: `make test-deterministic` should run without provider credentials, network calls, or paid services. If pytest plugin socket creation is blocked by a local sandbox, run the targeted command with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` and keep `UV_CACHE_DIR` pointed at a writable directory.
+Expected first success: `make test-deterministic` needs no provider credentials or paid service. Dependency installation and first model preparation require network access; `make prepare-embeddings` downloads Chroma's checksum-verified public ONNX asset when absent. Prepare it before starting parallel workers so they do not race over a cold archive. Provider-free execution alone is not a claim of offline operation. If pytest plugin socket creation is blocked by a local sandbox, run the targeted command with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` and keep `UV_CACHE_DIR` pointed at a writable directory.
 
 **With an API key (Tier 2 demo):**
 

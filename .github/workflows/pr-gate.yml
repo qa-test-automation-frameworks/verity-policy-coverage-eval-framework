@@ -52,6 +52,11 @@ jobs:
       - name: mypy strict
         run: uv run mypy src
 
+      # Multiple xdist workers must not download/extract the same cold archive.
+      # Preparation can download a public model asset; the tests still use real embeddings.
+      - name: Prepare verified ONNX embedding model before parallel tests
+        run: uv run --no-sync python scripts/prepare_embedding_model.py
+
       - name: Unit + Deterministic tests (no live calls)
         run: |
           uv run pytest -m "not live" -n auto --cov=src --cov-report=term-missing \
