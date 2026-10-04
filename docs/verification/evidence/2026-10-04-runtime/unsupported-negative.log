@@ -1,0 +1,2 @@
+Using CPython 3.14.8 interpreter at: /tmp/portfolio-tools/verity-runtime-python/cpython-3.14.8-linux-x86_64-gnu/bin/python3.14
+error: The requested interpreter resolved to Python 3.14.8, which is incompatible with the project's Python requirement: `>=3.12, <3.14` (from `project.requires-python`)

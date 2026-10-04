@@ -1,0 +1,117 @@
+{
+  "python": "3.13.16",
+  "uv": "0.11.25",
+  "unchangedLockedNameVersionPairs": 196,
+  "sources": [
+    {
+      "path": ".python-version",
+      "sha256": "2d82946ffb2ecf549699ebb86ecbbe663bbc19d53c49c681a1a425f003f80ddb"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "11eab33a5352cbd5b22dfda8593ccdc090f442b17bea7fd4aad2156295741760"
+    },
+    {
+      "path": "uv.lock",
+      "sha256": "a337e4a318ca45619dab2e722b80ff1296598eba1100d86fed96024c0a8d1c78"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "22ca9d416b2ca17f40eab4aae70337b2cdd2e3821dd3dcb4d4e16a5f98db5a67"
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "6ecba0bd68e346585ee1a95b1c6d4eea0f4b3a69701f03d7c9e32f953ef4763d"
+    },
+    {
+      "path": "scripts/install-python.sh",
+      "sha256": "396d759660aa6d789cb79fb1f3e895f60ce21a4bca7ee84df839f11198273f1e"
+    },
+    {
+      "path": ".github/workflows/model-compare.yml",
+      "sha256": "52738dfbf5aa4e931fb80880762f4ae1ca3b96ddc1ead2b0ec5ae9c7da32e1c7"
+    },
+    {
+      "path": ".github/workflows/mutation.yml",
+      "sha256": "cfed1a2189185219dada3cdc79af78acf1a49c7d93861171a2b638d10a004f34"
+    },
+    {
+      "path": ".github/workflows/pages.yml",
+      "sha256": "abc88fed09255057bda31999fc0b7a97f28ed00a823988227ec5574f1e9f26d5"
+    },
+    {
+      "path": ".github/workflows/pr-gate.yml",
+      "sha256": "9f982f9c9895774023ea87c9249e4f90129703390b9fd5bb11472af92098189c"
+    },
+    {
+      "path": ".github/workflows/adversarial.yml",
+      "sha256": "c127cc6bf2dae548894de0f3b18cc1478eae85f1f16705ad4346a24e22a81bab"
+    },
+    {
+      "path": ".github/workflows/docs.yml",
+      "sha256": "856d1cd0fbe97573e1f4e2444fc9d6b44bb284fb035914e5ff2381383debb02d"
+    },
+    {
+      "path": ".github/workflows/semantic-eval.yml",
+      "sha256": "5f8d6910f298ceeb970764e9d1f49b1eea5f033cf096251d61621f8fb5dedec6"
+    },
+    {
+      "path": ".github/workflows/docker-scan.yml",
+      "sha256": "35209dd56e63db64af55c66c9fcd1b6a32af74cc7f1ead5a1b0aed2f67e947ac"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "bootstrap.log",
+      "sha256": "fd349f746935c3ef226bcdd4e3a4fc6b4be859f3f11d7d524cdedfffc8975396"
+    },
+    {
+      "path": "coverage-totals.json",
+      "sha256": "9941e89836bca5831705d3171e30aa51ebca7659fec4dacfa072f1ee42ec08f8"
+    },
+    {
+      "path": "final-sync.log",
+      "sha256": "d7e4a3d7183c900f9af8a17145abfad3e03ece7cac18511d4e53c670901a6d22"
+    },
+    {
+      "path": "managed-interpreters.json",
+      "sha256": "6f4e116da636a32b602157a4e0affb1ca67e0ac9ea9d76f478596fb5f0af4a31"
+    },
+    {
+      "path": "policy-lock.log",
+      "sha256": "8d520e9314e90803a5be3f03bc83b2855cc3b28d519993c5e334e87c7dd3a50f"
+    },
+    {
+      "path": "py31316-model.log",
+      "sha256": "8ab986e4928f03f36c41575ca99070958d31a1ec1607f20e1d59fe43dfa7d464"
+    },
+    {
+      "path": "py31316-sync.log",
+      "sha256": "422967811bcccd40be26a2e459a4a79ce3079fa46c657b63dcb9d6dcc163d439"
+    },
+    {
+      "path": "py31316-tests.log",
+      "sha256": "ef64fe9c7ec7890ad7e54f068d7e10a9042ccb2b1fd6413b1f558555ab1ffee9"
+    },
+    {
+      "path": "python-image.json",
+      "sha256": "5985f3d598ae8249e23f97fff73d438d8b49cd6b33b6273d3415347c9e3ddbd1"
+    },
+    {
+      "path": "python-install-current.log",
+      "sha256": "6a99c5ece65ba75be017d909474adc60737e532beac2ad5950ccf3292a1d197f"
+    },
+    {
+      "path": "quality.log",
+      "sha256": "0e283cfa4b3ee6767358f0eb9297c2e7eadf34dc1fa46f61cab8a3087eff35c6"
+    },
+    {
+      "path": "unsupported-negative.log",
+      "sha256": "db8a90e89d4e6763183125a233e82ba7921d1e86f945405e4315e5848f8aef11"
+    },
+    {
+      "path": "uv-image.json",
+      "sha256": "c50365dfafe25022b38701e788a02c797ead0d25582d4324f3fe4d6dda8502e3"
+    }
+  ]
+}

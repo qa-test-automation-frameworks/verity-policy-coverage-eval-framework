@@ -4,7 +4,8 @@
 # Setup
 # ---------------------------------------------------------------------------
 install:
-	uv sync --all-extras
+	bash scripts/install-python.sh
+	uv sync --frozen --all-extras
 
 # ---------------------------------------------------------------------------
 # Code quality

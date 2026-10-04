@@ -98,11 +98,14 @@ Status terms are precise: `CAUGHT` means an authored replay proves the detector 
 
 ## Quickstart (no API key needed for Tier 1)
 
+The tested default is Python3.13.16 with uv0.11.25; Python3.12.15 is the secondary
+CI compatibility baseline. See [runtime policy](docs/runtime-policy.md).
+
 ```bash
 git clone <repo-url>
 cd verity-policy-coverage-eval-framework
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv sync --all-extras
+curl -LsSf https://astral.sh/uv/0.11.25/install.sh | sh
+make install
 make prepare-embeddings   # provision and verify the public ONNX model before parallel workers
 make test-deterministic  # replayed SUT checks; zero live calls
 make test                # unit + deterministic + adversarial checks; zero live calls
