@@ -3,6 +3,14 @@ repository: verity-policy-coverage-eval-framework
 items:
   - id: KI-3
     status: active
+    ownerRole: repository-maintainer
+    reviewedOn: "2026-10-04"
+    reviewDue: "2026-10-18"
+    expires: "2026-11-03"
+    promotionCriteria: >
+      Independent blinded labels and held-out live evidence must clear the
+      predeclared agreement criteria for both metrics and pass their unchanged
+      clean-control thresholds; replay/synthetic calibration cannot promote them.
     source: docs/known-issues.md
     tests:
       - tests/semantic/test_faithfulness.py::test_clean_faithfulness
@@ -14,5 +22,7 @@ policy:
   summary: >
     Quarantine entries must point to docs/known-issues.md and name the exact
     test or metric held out of blocking status.
-  reviewCadence: per-calibration-refresh
+  reviewCadence: at-least-every-14-days
+  maxReviewDays: 14
+  maxExpiryDays: 30
 

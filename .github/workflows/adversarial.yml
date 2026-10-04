@@ -42,6 +42,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --extra dev --extra report
 
+      - name: Quarantine ownership and calendar review gate
+        run: uv run --no-sync python scripts/check_quarantine_policy.py
+
       - name: Hermetic adversarial suite
         run: |
           mkdir -p reports/allure-results/adversarial
