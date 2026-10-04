@@ -165,8 +165,10 @@ constraint-dependencies = [
     "anyio>=4.14.2",
     "datasets>=5.0.1",
     "litellm>=1.90.7",
+    "oauthlib>=4.0.0",
     "pillow>=12.3.0",
     "pip>=26.2",
+    "setuptools>=83.0.0",
     "urllib3>=2.8.0",
     "virtualenv>=21.7.13",
 ]
