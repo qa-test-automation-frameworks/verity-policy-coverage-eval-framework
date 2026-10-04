@@ -156,3 +156,17 @@ source_paths = ["src"]
 only_mutate = ["src/sut/tools/coverage_calculator.py", "src/verity/checks.py"]
 pytest_add_cli_args_test_selection = ["tests/unit/test_coverage_calculator.py", "tests/unit/test_checks.py"]
 runner = "python -m pytest -x -q"
+
+# Advisory fix floors for resolved transitive dependencies. These constraints do
+# not install otherwise unused packages and prevent a later resolution downgrade.
+[tool.uv]
+constraint-dependencies = [
+    "aiohttp>=3.14.3",
+    "anyio>=4.14.2",
+    "datasets>=5.0.1",
+    "litellm>=1.90.7",
+    "pillow>=12.3.0",
+    "pip>=26.2",
+    "urllib3>=2.8.0",
+    "virtualenv>=21.7.13",
+]
