@@ -1,0 +1,78 @@
+{
+  "sources": [
+    {
+      "path": "Dockerfile",
+      "sha256": "8819ba9bd2272419bcdd03ff0ed9b078a047c720e8bb4310e5b34cc593ba7cc4"
+    },
+    {
+      "path": "scripts/install-python.sh",
+      "sha256": "b8eef2a2c33c1d88d4aaf9bc87af522cd9425ba7ee21ab1550599dcd4c77fa59"
+    },
+    {
+      "path": "README.md",
+      "sha256": "5fd4982acfc05595ef4bfe72118ddd03718dc8ec2bc2c12c10ccf471d497f6ad"
+    },
+    {
+      "path": "docs/runtime-policy.md",
+      "sha256": "0329c02a766d7a484e9fedf4d65c54c3137df53eb4aedab3d479ed43e1e66a38"
+    },
+    {
+      "path": ".github/workflows/model-compare.yml",
+      "sha256": "308f5fb947e70c5dedf98191326a612cb7fa17d55e8da93c6ba640d9a2e4671e"
+    },
+    {
+      "path": ".github/workflows/mutation.yml",
+      "sha256": "c0764f0a5a21a50424a8879f8a35e812b20c6ccc9dbbc829e07e3573cc6dd315"
+    },
+    {
+      "path": ".github/workflows/pages.yml",
+      "sha256": "06138bd033cd6401782bd822edb968b46151adda8b4516309a94c553c0d0d4fe"
+    },
+    {
+      "path": ".github/workflows/pr-gate.yml",
+      "sha256": "1dbb26bae1a2cf5c11f6fdbe32efec30577581a465845c41913b3507459a2c52"
+    },
+    {
+      "path": ".github/workflows/adversarial.yml",
+      "sha256": "90aab72f490ddb6c0e6fc2d9f0e81e274a986d34621b6a1242ba7aae47119aad"
+    },
+    {
+      "path": ".github/workflows/docs.yml",
+      "sha256": "856d1cd0fbe97573e1f4e2444fc9d6b44bb284fb035914e5ff2381383debb02d"
+    },
+    {
+      "path": ".github/workflows/semantic-eval.yml",
+      "sha256": "acb53f9966bd5e65e57cc6feba5c8596ad979eaf09c0dcf90eb5a0d127260084"
+    },
+    {
+      "path": ".github/workflows/docker-scan.yml",
+      "sha256": "35209dd56e63db64af55c66c9fcd1b6a32af74cc7f1ead5a1b0aed2f67e947ac"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "bootstrap.log",
+      "sha256": "fd349f746935c3ef226bcdd4e3a4fc6b4be859f3f11d7d524cdedfffc8975396"
+    },
+    {
+      "path": "checks.log",
+      "sha256": "2528f61b3a4679c36af309788b801e3d8887149523c5d21de4bf268028bee2f2"
+    },
+    {
+      "path": "original-tool-advisory.txt",
+      "sha256": "8d48c3cee6ff77b1f45533229a4fd734f3d02758a5c8402fbb6eb16aeae452e5"
+    },
+    {
+      "path": "release-proof.json",
+      "sha256": "3d46acf262b2d4338eaa003932037888ef19ad793767e1aad4119b7cbaa24440"
+    },
+    {
+      "path": "sync.log",
+      "sha256": "128b1fd4f17735f4648fb6abc28d411f448df41f5f8449eae9df027489868e95"
+    },
+    {
+      "path": "uv-image.json",
+      "sha256": "ab61e7ea817b831e75d730c6f35d2c8849293bf1e0313a65ec7d51d552ca90bc"
+    }
+  ]
+}

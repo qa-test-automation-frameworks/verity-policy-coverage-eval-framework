@@ -1,0 +1,2 @@
+Build image and scan with Trivy	Scan image with Trivy	2026-10-04T12:51:58.7893110Z │ quinn-proto │ GHSA-4w2j-m93h-cj5j │ HIGH     │ fixed  │ 0.11.14           │ 0.11.15       │ Quinn: Remote memory exhaustion in quinn-proto from │
+Build image and scan with Trivy	Scan image with Trivy	2026-10-04T12:51:58.7894240Z │             │                     │          │        │                   │               │ https://github.com/advisories/GHSA-4w2j-m93h-cj5j   │
