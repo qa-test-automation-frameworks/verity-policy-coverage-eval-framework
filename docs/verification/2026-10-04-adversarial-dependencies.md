@@ -40,3 +40,8 @@ post-test summary copy. Test failure still fails the job.
 Remote workflow execution and optional live-provider results require separate
 verification. These local checks do not establish the precise exception in an
 older inaccessible CI log.
+
+Manual dispatch defaults to the no-provider suite. Set `run_live: true` only
+for an explicitly authorized credentialed evaluation. Existing scheduled live
+eligibility remains unchanged. This allows the frozen hermetic job to be
+verified remotely without spending on a provider.

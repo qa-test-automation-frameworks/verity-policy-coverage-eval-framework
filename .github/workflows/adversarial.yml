@@ -5,6 +5,12 @@ on:
     # Weekly: every Monday at 06:00 UTC
     - cron: "0 6 * * 1"
   workflow_dispatch:
+    inputs:
+      run_live:
+        description: "Run credentialed provider evaluations (may incur cost)"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   key_check:
@@ -59,7 +65,7 @@ jobs:
 
   redteam-live:
     needs: key_check
-    if: needs.key_check.outputs.has_key == 'true'
+    if: needs.key_check.outputs.has_key == 'true' && (github.event_name == 'schedule' || inputs.run_live == true)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -99,7 +105,7 @@ jobs:
 
   calibrate-live:
     needs: key_check
-    if: needs.key_check.outputs.has_key == 'true'
+    if: needs.key_check.outputs.has_key == 'true' && (github.event_name == 'schedule' || inputs.run_live == true)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
