@@ -32,14 +32,14 @@ jobs:
         with:
           version: "latest"
 
-      # Hermetic checks install only the base dependency set; live extras run in separate jobs.
+      # pytest and its Allure option are explicit extras, not default dependency groups.
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --frozen --extra dev --extra report
 
       - name: Hermetic adversarial suite
         run: |
           mkdir -p reports/allure-results/adversarial
-          PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v \
+          PYTHONPATH=src uv run --no-sync pytest tests/adversarial/ -m adversarial -v \
             --alluredir reports/allure-results/adversarial
           if [ -f reports/security/summary-local.json ]; then
             cp reports/security/summary-local.json reports/security/summary.json
@@ -47,10 +47,14 @@ jobs:
           fi
 
       - name: Upload adversarial reports
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: adversarial-reports
-          path: reports/allure-results/adversarial/
+          path: |
+            reports/allure-results/adversarial/
+            reports/security/summary-local.json
+            reports/security/summary-local.md
           if-no-files-found: warn
 
   redteam-live:
@@ -87,6 +91,7 @@ jobs:
             --output reports/redteam/results.json
 
       - name: Upload red-team report
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: redteam-report
@@ -105,7 +110,7 @@ jobs:
           version: "latest"
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --frozen --extra dev --extra report --extra semantic
 
       - name: Live calibration run
         env:
@@ -116,9 +121,10 @@ jobs:
           VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
         run: |
           mkdir -p reports
-          PYTHONPATH=src uv run python scripts/run_calibration.py --record
+          PYTHONPATH=src uv run --no-sync python scripts/run_calibration.py --record
 
       - name: Upload calibration report
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: calibration-report
