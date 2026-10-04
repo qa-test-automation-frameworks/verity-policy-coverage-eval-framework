@@ -62,3 +62,40 @@ class TestCheckVulnExceptions:
         failures = check_vuln_exceptions(path, today=date(2026, 7, 2))
         assert len(failures) == 1
         assert "CVE-B" in failures[0]
+
+    def test_expiry_cannot_be_reused_by_another_entry(self, tmp_path: Path) -> None:
+        path = _write(tmp_path, "# Expires: 2099-01-01\nCVE-FIRST\nCVE-SECOND\n")
+        failures = check_vuln_exceptions(path, today=date(2026, 10, 4))
+        assert len(failures) == 1
+        assert "CVE-SECOND: no `Expires" in failures[0]
+
+    def test_invalid_calendar_date_is_a_gate_failure(self, tmp_path: Path) -> None:
+        path = _write(tmp_path, "# Expires: 2026-02-30\nCVE-FIRST\n")
+        failures = check_vuln_exceptions(path, today=date(2026, 10, 4))
+        assert any("invalid Expires" in failure for failure in failures)
+        assert any("CVE-FIRST: no `Expires" in failure for failure in failures)
+
+    def test_malformed_date_cannot_reuse_earlier_valid_date(self, tmp_path: Path) -> None:
+        path = _write(tmp_path, "# Expires: 2099-01-01\n# Expires: next-quarter\nCVE-FIRST\n")
+        failures = check_vuln_exceptions(path, today=date(2026, 10, 4))
+        assert any("invalid Expires" in failure for failure in failures)
+        assert any("no `Expires" in failure for failure in failures)
+
+    def test_malformed_bare_line_is_not_silently_ignored(self, tmp_path: Path) -> None:
+        path = _write(tmp_path, "# Expires: 2099-01-01\nCVE-FIRST extra-argument\n")
+        assert "malformed vulnerability ID" in check_vuln_exceptions(path, date(2026, 10, 4))[0]
+
+    def test_duplicate_exclusion_is_rejected(self, tmp_path: Path) -> None:
+        path = _write(
+            tmp_path, "# Expires: 2099-01-01\nCVE-FIRST\n# Expires: 2099-01-01\nCVE-FIRST\n"
+        )
+        assert any(
+            "duplicate exception" in failure
+            for failure in check_vuln_exceptions(path, date(2026, 10, 4))
+        )
+
+    def test_no_active_exclusions_is_valid(self, tmp_path: Path) -> None:
+        assert (
+            check_vuln_exceptions(_write(tmp_path, "# No active exclusions.\n"), date(2026, 10, 4))
+            == []
+        )

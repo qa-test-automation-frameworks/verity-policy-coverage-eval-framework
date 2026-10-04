@@ -31,17 +31,22 @@ Please include:
 - Steps to reproduce
 - Affected file(s) and line numbers if known
 
-## Known Accepted Vulnerabilities in Dependencies
+## Dependency findings and exclusions
 
-Three vulnerabilities in transitive dependencies are currently acknowledged and accepted (see `.pip-audit-ignore`):
+There are currently **no active vulnerability exclusions**. The three October 1,
+2026 exclusions were removed after expiry; their historical rationale is retained
+in [the archive](docs/security/expired-exceptions-2026-10-01.md). This does not mean
+that the dependency scan is clean. Unresolved advisories fail the scanner gate.
 
-| ID | Package | Reason accepted | Expires |
-|----|---------|-----------------|---------|
-| PYSEC-2026-311 | chromadb | Requires `trust_remote_code=true`; not used in this project | 2026-10-01 |
-| CVE-2025-69872 | diskcache | Requires attacker write access to local cache directory | 2026-10-01 |
-| CVE-2026-6587 | ragas | Affects multi-modal module not imported in this project | 2026-10-01 |
+Advisory fixes are selected from the actual locked environment, including optional
+semantic/report/development dependencies. A scan of the smaller runtime alone
+cannot establish that the full test environment is clean. Distinguish scanner
+execution failure from a completed scan that found vulnerable packages.
 
-Each entry in `.pip-audit-ignore` carries an `Expires:` date. `scripts/check_vuln_exceptions.py`
-runs in the PR gate and fails once that date passes, so an accepted risk cannot silently
-outlive its review window — the entry must be re-evaluated and either re-dated (with updated
-reasoning) or removed once the affected package releases a fix.
+Any future exclusion must name the advisory/package/version, affected path,
+exposure reasoning, remediation action, accountable maintainer role, evidence of
+review, and its own review/expiry date. Do not represent automated analysis as
+independent human risk acceptance. `scripts/check_vuln_exceptions.py` rejects
+expired, missing or malformed dates, duplicate IDs and reused dates. The scanner
+continues to run independently; passing the exclusion-file check is not proof of
+no vulnerabilities.

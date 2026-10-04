@@ -26,25 +26,37 @@ def check_vuln_exceptions(path: Path, today: date) -> list[str]:
 
     failures: list[str] = []
     pending_expiry: date | None = None
-    for line in lines:
+    seen_ids: set[str] = set()
+    for line_number, line in enumerate(lines, start=1):
         stripped = line.strip()
         if not stripped:
             pending_expiry = None
             continue
-        expires_match = _EXPIRES_RE.match(stripped)
-        if expires_match:
-            pending_expiry = date.fromisoformat(expires_match.group(1))
-            continue
         if stripped.startswith("#"):
+            if re.match(r"^#\s*Expires:", stripped):
+                expires_match = _EXPIRES_RE.fullmatch(stripped)
+                pending_expiry = None
+                try:
+                    if not expires_match:
+                        raise ValueError("Expected YYYY-MM-DD")
+                    pending_expiry = date.fromisoformat(expires_match.group(1))
+                except ValueError:
+                    failures.append(f"line {line_number}: invalid Expires date")
             continue
-        # A bare line is a vuln ID being ignored.
-        if not _ID_RE.match(stripped):
+        if not _ID_RE.fullmatch(stripped):
+            failures.append(f"line {line_number}: malformed vulnerability ID")
+            pending_expiry = None
             continue
         vuln_id = stripped
+        if vuln_id in seen_ids:
+            failures.append(f"{vuln_id}: duplicate exception")
+        seen_ids.add(vuln_id)
         if pending_expiry is None:
             failures.append(f"{vuln_id}: no `Expires: YYYY-MM-DD` comment found before this entry")
         elif pending_expiry < today:
             failures.append(f"{vuln_id}: exception expired on {pending_expiry.isoformat()}")
+        # Each bare ID must have its own date; one comment cannot exempt later IDs.
+        pending_expiry = None
 
     return failures
 

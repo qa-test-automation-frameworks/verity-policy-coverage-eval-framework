@@ -29,3 +29,19 @@ calibration clears and gating is revisited.
 | KI-1, KI-2 | `ctrl-missing-acupuncture-policy` failed the real-embedding retrieval benchmark and recorded-snapshot regression check, because near-tied embedding distances made which chunks even got retrieved unstable across process runs. | `PolicyRetriever.retrieve()` now applies an absolute distance ceiling (`_MAX_RELEVANT_DISTANCE`, see `src/sut/retriever.py`) and returns no chunks when even the closest candidate exceeds it — resolving both the flakiness (an empty result is always equal to itself) and the underlying gap (the retriever now correctly signals "no relevant section" instead of returning its least-bad guesses). The benchmark case is marked `no_answer: true` in `datasets/retrieval/benchmarks.yaml`; `test_real_retrieval_quality.py` asserts the empty result directly. `datasets/retrieval/recorded_chunks.json` was regenerated for this case. The `FixtureRetriever`-backed benchmark in `test_retrieval_benchmark.py` is unaffected — its hand-authored distractor context tests a different thing (how the agent reasons over "not affirmatively covered" context) and still gates deterministically. |
 
 _Last reviewed: 2026-07-02._
+
+
+## Calendar review for KI-3
+
+The active entry in `reliability/quarantine.yml` is the source of review dates,
+expiry, exact tests and promotion criteria. Its accountable role is the repository
+maintainer; assigning that role does not record human acceptance. Review is due
+within 14 days and quarantine expires within 30 days of the recorded review.
+
+The PR gate and existing weekly no-provider adversarial workflow validate these
+bounds and source/test references. They reject overdue reviews, malformed entries
+and untracked function-level semantic quarantine markers. Passing metadata checks
+does not clear the metrics or establish live judge validity. Both controls retain
+their existing assertions and continue collecting signal. Promotion needs fresh,
+independently reviewed held-out live evidence for both metrics and unchanged
+clean-control thresholds; a replay calibration report cannot substitute for it.

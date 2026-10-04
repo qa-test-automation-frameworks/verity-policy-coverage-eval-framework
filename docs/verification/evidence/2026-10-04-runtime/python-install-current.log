@@ -1,0 +1,5 @@
+Downloading cpython-3.13.16-linux-x86_64-gnu (download) (33.5MiB)
+ Downloaded cpython-3.13.16-linux-x86_64-gnu (download)
+Installed Python 3.13.16 in 3.98s
+ + cpython-3.13.16-linux-x86_64-gnu (python3.13)
+warning: `/tmp/portfolio-tools/verity-runtime-bin` is not on your PATH. To use installed Python executables, run `export PATH="/tmp/portfolio-tools/verity-runtime-bin:$PATH"` or `uv python update-shell`.

@@ -1,10 +1,11 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check release-check
+.PHONY: install prepare-embeddings lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check release-check
 
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
 install:
-	uv sync --all-extras
+	bash scripts/install-python.sh
+	uv sync --frozen --all-extras
 
 # ---------------------------------------------------------------------------
 # Code quality
@@ -21,6 +22,9 @@ type:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+prepare-embeddings:
+	uv run --no-sync python scripts/prepare_embedding_model.py
+
 test:
 	PYTHONPATH=src uv run pytest -m "not live" -v
 

@@ -14,12 +14,14 @@ jobs:
   lint-type-test:
     name: Lint · Type · Unit Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
     timeout-minutes: 10
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12.15", "3.13.16"]
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
@@ -27,12 +29,12 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
         with:
-          version: "latest"
+          version: "0.12.23"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
+        run: bash scripts/install-python.sh ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: uv sync --frozen --all-extras --python ${{ matrix.python-version }}
@@ -51,6 +53,11 @@ jobs:
 
       - name: mypy strict
         run: uv run mypy src
+
+      # Multiple xdist workers must not download/extract the same cold archive.
+      # Preparation can download a public model asset; the tests still use real embeddings.
+      - name: Prepare verified ONNX embedding model before parallel tests
+        run: uv run --no-sync python scripts/prepare_embedding_model.py
 
       - name: Unit + Deterministic tests (no live calls)
         run: |
@@ -79,6 +86,9 @@ jobs:
         # generator would otherwise pass silently until someone runs the
         # regenerate command locally and finds it reverted.
         run: git diff --exit-code docs/defects-caught.md
+
+      - name: Quarantine ownership and calendar review gate
+        run: uv run --no-sync python scripts/check_quarantine_policy.py
 
       - name: Vulnerability exception expiry check
         run: uv run python scripts/check_vuln_exceptions.py
