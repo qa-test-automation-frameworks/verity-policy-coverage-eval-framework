@@ -101,3 +101,6 @@ CLAUDE.md
 # Misc
 *.log
 *.tmp
+
+# Local verbose verification logs and generated scratch evidence
+/work/
