@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       UV_PYTHON: ${{ matrix.python-version }}
-      UV_CACHE_DIR: ${{ runner.temp }}/uv-cache-${{ matrix.python-version }}
     timeout-minutes: 20
 
     strategy:
@@ -43,6 +42,7 @@ jobs:
         if: matrix.python-version == '3.12.15'
         run: |
           set -euo pipefail
+          export UV_CACHE_DIR="$RUNNER_TEMP/uv-cache-${{ matrix.python-version }}"
           if [[ -e "$UV_CACHE_DIR" ]] && find "$UV_CACHE_DIR" -mindepth 1 -print -quit | grep -q .; then
             echo "The cold-bootstrap uv cache is not empty: $UV_CACHE_DIR" >&2
             exit 1
@@ -53,6 +53,7 @@ jobs:
             exit 1
           fi
           echo "COLD_CACHES_VERIFIED=true" >> "$GITHUB_ENV"
+          echo "UV_CACHE_DIR=$UV_CACHE_DIR" >> "$GITHUB_ENV"
           echo "FIRST_SUCCESS_STARTED_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
           echo "Verified empty uv and Chroma caches before the first-success path."
 
