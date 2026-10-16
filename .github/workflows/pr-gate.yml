@@ -108,10 +108,12 @@ jobs:
         env:
           PYTHONPATH: src
 
+      - name: Mark clean-bootstrap path passed
+        if: matrix.python-version == '3.12.15' && success()
+        run: echo "FIRST_SUCCESS_PASSED=true" >> "$GITHUB_ENV"
+
       - name: Record clean-bootstrap runtime and native test counts
         if: always() && matrix.python-version == '3.12.15'
-        env:
-          FIRST_SUCCESS_PASSED: ${{ success() }}
         run: |
           python3 - <<'PY'
           import json
