@@ -9,6 +9,12 @@ ENV HOME=/app/home
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce245946826e608e11c93ad4f5bba55b21 /uv /usr/local/bin/uv
 
+# The official Python image also carries system-site packages. Upgrade these
+# scanner-identified packages to the same versions resolved in uv.lock so
+# Trivy does not report vulnerable copies outside the project virtualenv.
+RUN uv pip install --system --break-system-packages --no-deps \
+    "msgpack==1.2.1" "setuptools==83.0.0" "urllib3==2.8.0"
+
 # Copy dependency manifests first for layer caching
 COPY pyproject.toml uv.lock .python-version ./
 COPY README.md LICENSE ./
