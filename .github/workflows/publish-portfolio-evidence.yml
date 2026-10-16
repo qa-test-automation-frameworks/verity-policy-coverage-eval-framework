@@ -1,0 +1,24 @@
+name: Publish trusted portfolio evidence
+
+on:
+  workflow_run:
+    workflows:
+      - PR Gate (Tier 1 — lint · type · unit)
+      - Semantic Eval (Tier 2 — DeepEval · RAGAS)
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch == 'main' &&
+      contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event.workflow_run.event)
+    uses: qa-test-automation-frameworks/.github/.github/workflows/publish-evidence.yml@b3bc625de6345a3ef1080bce6d65af4377d02ca8
+    with:
+      source-run-id: ${{ github.event.workflow_run.id }}
+      workflow-file: ${{ github.event.workflow_run.name == 'PR Gate (Tier 1 — lint · type · unit)' && '.github/workflows/pr-gate.yml' || '.github/workflows/semantic-eval.yml' }}
