@@ -59,10 +59,18 @@ explaining why.
 The supported first-run path requires no provider credentials:
 
 ```bash
-uv sync --all-extras
+uv sync --frozen --all-extras
+make prepare-embeddings
 make test-deterministic
 make defects-report
 ```
+
+The Python 3.12.15 PR matrix leg repeats this path on a fresh hosted runner with
+an explicitly empty uv cache and no restored Chroma model cache. It records
+runtime versions, elapsed time, and native pytest counts in the uploaded
+`clean-bootstrap-summary.json`. The Python 3.13.16 leg retains dependency/model
+caching for faster routine feedback. The cold leg still needs public package
+and model downloads; neither leg uses paid-provider credentials.
 
 If the local environment blocks pytest plugin socket creation, the checks themselves can
 still be exercised with plugin autoload disabled:

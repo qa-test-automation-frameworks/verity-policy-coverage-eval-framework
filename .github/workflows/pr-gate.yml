@@ -16,7 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       UV_PYTHON: ${{ matrix.python-version }}
-    timeout-minutes: 10
+      UV_CACHE_DIR: ${{ runner.temp }}/uv-cache-${{ matrix.python-version }}
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false
@@ -30,11 +31,30 @@ jobs:
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
         with:
           version: "0.12.23"
-          enable-cache: true
+          # Keep Python 3.12.15 as the cold-bootstrap leg; the second supported
+          # runtime retains the normal package cache for faster feedback.
+          enable-cache: ${{ matrix.python-version == '3.13.16' }}
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
         run: bash scripts/install-python.sh ${{ matrix.python-version }}
+
+      - name: Verify empty dependency and model caches for first success
+        if: matrix.python-version == '3.12.15'
+        run: |
+          set -euo pipefail
+          if [[ -e "$UV_CACHE_DIR" ]] && find "$UV_CACHE_DIR" -mindepth 1 -print -quit | grep -q .; then
+            echo "The cold-bootstrap uv cache is not empty: $UV_CACHE_DIR" >&2
+            exit 1
+          fi
+          model_cache="$HOME/.cache/chroma/onnx_models"
+          if [[ -e "$model_cache" ]] && find "$model_cache" -mindepth 1 -print -quit | grep -q .; then
+            echo "The cold-bootstrap Chroma model cache is not empty: $model_cache" >&2
+            exit 1
+          fi
+          echo "COLD_CACHES_VERIFIED=true" >> "$GITHUB_ENV"
+          echo "FIRST_SUCCESS_STARTED_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
+          echo "Verified empty uv and Chroma caches before the first-success path."
 
       - name: Install dependencies
         run: uv sync --frozen --all-extras --python ${{ matrix.python-version }}
@@ -50,6 +70,7 @@ jobs:
           echo "UV_VERSION=$uv_version" >> "$GITHUB_ENV"
 
       - name: Cache Chroma ONNX embedding model
+        if: matrix.python-version == '3.13.16'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/chroma/onnx_models
@@ -79,6 +100,68 @@ jobs:
         env:
           # No API keys — live tests excluded via marker
           PYTHONPATH: src
+
+      - name: Repeat documented no-key first-success command
+        if: matrix.python-version == '3.12.15'
+        run: make test-deterministic
+        env:
+          PYTHONPATH: src
+
+      - name: Record clean-bootstrap runtime and native test counts
+        if: always() && matrix.python-version == '3.12.15'
+        env:
+          FIRST_SUCCESS_PASSED: ${{ success() }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import xml.etree.ElementTree as ET
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          reports = Path("reports/evidence")
+          native = reports / "native/deterministic.xml"
+          counts = {"selected": None, "failed": None, "errors": None, "skipped": None}
+          suite_seconds = None
+          if native.is_file():
+              root = ET.parse(native).getroot()
+              suites = [root] if root.tag == "testsuite" else root.findall("./testsuite")
+              counts = {
+                  "selected": sum(int(suite.attrib.get("tests", "0")) for suite in suites),
+                  "failed": sum(int(suite.attrib.get("failures", "0")) for suite in suites),
+                  "errors": sum(int(suite.attrib.get("errors", "0")) for suite in suites),
+                  "skipped": sum(int(suite.attrib.get("skipped", "0")) for suite in suites),
+              }
+              suite_seconds = sum(float(suite.attrib.get("time", "0")) for suite in suites)
+          now = int(time.time())
+          started = int(os.environ["FIRST_SUCCESS_STARTED_EPOCH"]) if os.getenv("FIRST_SUCCESS_STARTED_EPOCH") else None
+          summary = {
+              "schemaVersion": 1,
+              "sourceSha": os.environ["GITHUB_SHA"],
+              "python": os.environ.get("PYTHON_VERSION"),
+              "pytest": os.environ.get("PYTEST_VERSION"),
+              "uv": os.environ.get("UV_VERSION"),
+              "uvCache": os.environ["UV_CACHE_DIR"],
+              "uvCacheWasEmptyBeforeInstall": os.environ.get("COLD_CACHES_VERIFIED", "false").lower() == "true",
+              "chromaModelCacheWasEmptyBeforePreparation": os.environ.get("COLD_CACHES_VERIFIED", "false").lower() == "true",
+              "commands": [
+                  "uv sync --frozen --all-extras --python 3.12.15",
+                  "uv run pytest -m 'not live and not evidence_control' -n auto --cov=src --cov-report=term-missing --cov-report=json:reports/coverage.json --cov-fail-under=80 --junitxml=reports/evidence/native/deterministic.xml",
+                  "make test-deterministic (repeat)",
+              ],
+              "firstSuccessPassed": os.environ.get("FIRST_SUCCESS_PASSED", "false").lower() == "true",
+              "startedAt": datetime.fromtimestamp(started, timezone.utc).isoformat().replace("+00:00", "Z") if started else None,
+              "completedAt": datetime.fromtimestamp(now, timezone.utc).isoformat().replace("+00:00", "Z"),
+              "elapsedSeconds": now - started if started else None,
+              "nativeSuiteSeconds": suite_seconds,
+              "nativeTestCounts": counts,
+              "limitations": ["Package installation and the checksum-verified public ONNX model need network access.", "No paid-provider credentials or live model calls are used."],
+          }
+          reports.mkdir(parents=True, exist_ok=True)
+          (reports / "clean-bootstrap-summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps(summary, indent=2))
+          PY
 
       - name: Emit deterministic execution evidence
         if: always()

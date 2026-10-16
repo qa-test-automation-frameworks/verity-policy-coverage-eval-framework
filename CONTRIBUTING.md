@@ -11,7 +11,7 @@
 ```bash
 git clone <repo-url>
 cd verity-policy-coverage-eval-framework
-uv sync --all-extras
+uv sync --frozen --all-extras
 pre-commit install
 cp .env.example .env
 # Edit .env — add your VERITY_OPENROUTER_API_KEY (default provider; or VERITY_ZAI_API_KEY / VERITY_TOGETHER_API_KEY)
