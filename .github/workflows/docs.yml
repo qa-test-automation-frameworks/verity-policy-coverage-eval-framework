@@ -2,12 +2,10 @@ name: Documentation checks
 
 on:
   pull_request:
-    paths:
-      - '**/*.md'
   push:
     branches: [main]
     paths:
-      - '**/*.md'
+      - "**/*.md"
 
 permissions:
   contents: read

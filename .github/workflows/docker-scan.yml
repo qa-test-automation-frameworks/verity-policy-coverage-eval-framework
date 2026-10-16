@@ -10,11 +10,6 @@ on:
       - ".github/workflows/docker-scan.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "Dockerfile"
-      - "pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/docker-scan.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,13 +22,13 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build image
         run: docker build -t verity-eval:scan .
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8  # v0.24.0
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
         with:
           image-ref: verity-eval:scan
           format: table
