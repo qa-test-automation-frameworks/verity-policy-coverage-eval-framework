@@ -39,6 +39,16 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --all-extras --python ${{ matrix.python-version }}
 
+      - name: Capture evidence runtime versions
+        run: |
+          python_version=$(uv run --no-sync python --version | awk '{print $2}')
+          pytest_version=$(uv run --no-sync pytest --version | awk '{print $2}')
+          uv_version=$(uv --version | awk '{print $2}')
+          test -n "$python_version" && test -n "$pytest_version" && test -n "$uv_version"
+          echo "PYTHON_VERSION=$python_version" >> "$GITHUB_ENV"
+          echo "PYTEST_VERSION=$pytest_version" >> "$GITHUB_ENV"
+          echo "UV_VERSION=$uv_version" >> "$GITHUB_ENV"
+
       - name: Cache Chroma ONNX embedding model
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
@@ -61,11 +71,27 @@ jobs:
 
       - name: Unit + Deterministic tests (no live calls)
         run: |
-          uv run pytest -m "not live" -n auto --cov=src --cov-report=term-missing \
-            --cov-report=json:reports/coverage.json --cov-fail-under=80
+          mkdir -p reports/evidence/native
+          echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          uv run pytest -m "not live and not evidence_control" -n auto --cov=src --cov-report=term-missing \
+            --cov-report=json:reports/coverage.json --cov-fail-under=80 \
+            --junitxml=reports/evidence/native/deterministic.xml
         env:
           # No API keys — live tests excluded via marker
           PYTHONPATH: src
+
+      - name: Emit deterministic execution evidence
+        if: always()
+        run: |
+          uv run --no-sync python scripts/evidence.py \
+            --scope "verity.deterministic-py${{ matrix.python-version }}" \
+            --junit reports/evidence/native/deterministic.xml
+
+      - name: Validate deterministic execution evidence
+        if: always()
+        run: |
+          uv run --no-sync python scripts/validate_evidence.py \
+            "reports/evidence/verity.deterministic-py${{ matrix.python-version }}.json"
 
       - name: Module-sensitive coverage gate (agent, retrieval, metrics, tracing, reporting)
         run: uv run python scripts/check_module_coverage.py reports/coverage.json
@@ -110,3 +136,39 @@ jobs:
 
       - name: Static security scan (medium/high only)
         run: uv run bandit -r src/ -ll -c pyproject.toml
+
+      - name: Record and verify the expected pytest failure
+        if: always() && matrix.python-version == '3.12.15'
+        run: |
+          mkdir -p reports/evidence/native
+          echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          set +e
+          VERITY_EVIDENCE_FAILURE_CONTROL=1 uv run --no-sync pytest \
+            tests/evidence/test_failure_control.py -m evidence_control -q \
+            --junitxml=reports/evidence/native/failure-control.xml
+          native_exit=$?
+          set -e
+          uv run --no-sync python scripts/verify_failure_control.py \
+            --junit reports/evidence/native/failure-control.xml --native-exit "$native_exit"
+
+      - name: Emit expected-failure evidence
+        if: always() && matrix.python-version == '3.12.15'
+        run: |
+          uv run --no-sync python scripts/evidence.py \
+            --scope "verity.failure-control-py${{ matrix.python-version }}" \
+            --junit reports/evidence/native/failure-control.xml
+
+      - name: Validate expected-failure evidence
+        if: always() && matrix.python-version == '3.12.15'
+        run: |
+          uv run --no-sync python scripts/validate_evidence.py \
+            "reports/evidence/verity.failure-control-py${{ matrix.python-version }}.json"
+
+      - name: Upload pytest evidence bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: verity-evidence-py${{ matrix.python-version }}
+          path: reports/evidence/
+          if-no-files-found: warn
+          retention-days: 30

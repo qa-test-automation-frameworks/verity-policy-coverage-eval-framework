@@ -137,6 +137,7 @@ golden cases are built around that profile's intentional gaps.
 | Defects Caught | Proof matrix — 4/8 defects caught deterministically (no API key); defects 1–4 have a committed live Tier-2 run (see provider note below) | [docs/defects-caught.md](docs/defects-caught.md) |
 | Calibration | Synthetic judge-calibration replay — 56 cases, 7 metrics, 96.4% raw agreement, Cohen's kappa 0.926, self-preference delta +0.036 | [docs/calibration-report.md](docs/calibration-report.md) |
 | Thresholds | Per-metric threshold table with defect coverage map | [docs/thresholds.md](docs/thresholds.md) |
+| Native execution evidence | Schema-v3 records from native pytest results, explicit semantic skips, and verified failure control | [docs/native-execution-evidence.md](docs/native-execution-evidence.md) |
 | Observability | OTel span table, env vars, cost summary | [docs/observability.md](docs/observability.md) |
 | Architecture | Component walk-through, data flow, CI table | [docs/architecture.md](docs/architecture.md) |
 | ADRs | 5 design decisions with context and alternatives | [docs/adr/](docs/adr/) |
