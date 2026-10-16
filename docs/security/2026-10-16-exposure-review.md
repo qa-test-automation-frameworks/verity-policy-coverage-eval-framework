@@ -9,7 +9,7 @@ validated.
 ## Exact locked packages
 
 The lockfile at this review is `uv.lock` SHA-256
-`5f87751571b6c839174e725f00dfd4a008a47a312f21e73dad75467116ce1e30`:
+`1a427f5edd08954a05377ee9c937fdf27c3eb31a2cd05be417828d862f45cc99`:
 
 | Package | Version | Advisory | Current code-path assessment |
 |---|---:|---|---|
@@ -24,19 +24,29 @@ treated as a production fix. [RAGAS releases](https://github.com/vibrantlabsai/r
 list 0.4.3 as latest. Recheck each advisory and released package before
 changing this assessment.
 
+The refreshed unsuppressed local `pip-audit --desc` run after applying
+available fixes reports 9 records (6 unique advisory IDs) across these same
+3 packages. Some advisory records appear more than once in the tool output.
+The updates removed the actionable `fsspec` (fixed in 2026.6.0),
+`langgraph-sdk` (fixed in 0.4.4; locked at 0.4.7), and `multidict` (fixed in
+6.9.1) findings. These minimum versions are now constraints in `pyproject.toml`
+and the exact versions are resolved in `uv.lock`. The deterministic suite
+passes locally under Python 3.12.15: 1,724 passed, 2 skipped, total coverage
+94.96%. The remaining findings have no fixed releases in the current scan and
+are still not suppressed. The native machine-readable result is preserved in
+[`scans/2026-10-16-after-transitive-fixes.json`](scans/2026-10-16-after-transitive-fixes.json).
+
 ## Gate disposition
 
-The exact Verity run `38889563468` completed every deterministic/evidence
-step, then failed at `Dependency vulnerability scan`. The exact image scan
-`38889563515` failed at its Trivy step. Public check metadata does not expose
-the scanner output, so this review does not claim the exact Trivy finding set
-for those runs. The prior unsuppressed scan retained in
-`2026-10-04-after-major-fixes.json` reported 9 advisory records, 6 unique
-package/advisory pairs and these same three affected package versions. Do not
-infer that the newer scan has identical counts without its native output.
+The prior exact Verity run `38929092911` completed deterministic/evidence
+steps, then failed at `Dependency vulnerability scan`; it tested the preceding
+lockfile and found six packages. The refreshed local scan after the selective
+updates is preserved in
+[`scans/2026-10-16-after-transitive-fixes.json`](scans/2026-10-16-after-transitive-fixes.json).
+A new remote CI and image scan are required for the updated lock before this
+review can claim the repository gates are current.
 
-No ignore entry was added and no expired exception was renewed. CI is expected
-to remain red while the vulnerable packages are present. Reassess on an
-upstream patched release; update the lock, run the complete semantic and
-retrieval suites, repeat the unsuppressed all-extras scan, and inspect the
-container scan output before calling the gate healthy.
+No ignore entry was added and no expired exception was renewed. The current
+container scan must also be rerun against the refreshed lock, and the three
+remaining dependencies must be rechecked against upstream releases before the
+security gate can be called healthy. Keep CI visibly red until then.
