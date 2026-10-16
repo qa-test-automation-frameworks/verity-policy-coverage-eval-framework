@@ -36,17 +36,23 @@ passes locally under Python 3.12.15: 1,724 passed, 2 skipped, total coverage
 are still not suppressed. The native machine-readable result is preserved in
 [`scans/2026-10-16-after-transitive-fixes.json`](scans/2026-10-16-after-transitive-fixes.json).
 
-## Gate disposition
+## Gate disposition — rechecked 2026-10-16
 
-The prior exact Verity run `38929092911` completed deterministic/evidence
-steps, then failed at `Dependency vulnerability scan`; it tested the preceding
-lockfile and found six packages. The refreshed local scan after the selective
-updates is preserved in
-[`scans/2026-10-16-after-transitive-fixes.json`](scans/2026-10-16-after-transitive-fixes.json).
-A new remote CI and image scan are required for the updated lock before this
-review can claim the repository gates are current.
+The refreshed local scan is now corroborated by exact remote checks on the
+roadmap branch. PR Gate `38933601017` ran Python 3.12.15 and 3.13.16: lint,
+type, deterministic tests, coverage, hermetic evidence and evidence validation
+passed; both matrix legs then failed at the unsuppressed dependency scan with
+9 rows across ChromaDB 1.5.9, DiskCache 5.6.3 and RAGAS 0.4.3. This is the
+same three-package exposure described above, with no fixed versions reported.
+
+Container scan `38933600908` built the pinned Python 3.13.16 image and passed
+the non-root offline ONNX smoke. Updating the base interpreter copies of
+`msgpack`, `setuptools` and `urllib3` to the exact versions already in `uv.lock`
+reduced Trivy's Python findings from 12 to 8 (4 HIGH, 4 CRITICAL). The refreshed
+base digest reduced Debian findings from 45 to 44, but Trivy still reports 44
+HIGH Debian findings plus the 8 Python findings. The image gate remains red.
 
 No ignore entry was added and no expired exception was renewed. The current
-container scan must also be rerun against the refreshed lock, and the three
-remaining dependencies must be rechecked against upstream releases before the
-security gate can be called healthy. Keep CI visibly red until then.
+code paths and container boundary narrow exposure, but they do not patch these
+packages or clear either scan. Keep CI visibly red until upstream fixes or a
+validated dependency/platform replacement resolves the findings.
