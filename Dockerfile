@@ -47,9 +47,12 @@ RUN uv cache clean && rm -rf /usr/local/lib/python3.13/site-packages
 
 # The minimal runtime base omits libffi, which Python's ctypes extension needs.
 RUN set -eux; \
-    multiarch="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"; \
-    mkdir -p "/opt/runtime-libs/${multiarch}"; \
-    cp -a "/usr/lib/${multiarch}/libffi.so.8"* "/opt/runtime-libs/${multiarch}/"
+    mkdir -p /opt/runtime-libs; \
+    for lib in /usr/lib/*-linux-gnu/libffi.so.8*; do \
+        destination="/opt/runtime-libs/${lib#/usr/lib/}"; \
+        mkdir -p "$(dirname "${destination}")"; \
+        cp -a "${lib}" "${destination}"; \
+    done
 
 FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2 AS runtime
 
