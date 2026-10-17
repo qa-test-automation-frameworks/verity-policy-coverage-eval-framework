@@ -45,13 +45,16 @@ RUN uv sync --frozen --all-extras
 # archives. Keep the separately pre-downloaded Chroma embedding model cache.
 RUN uv cache clean && rm -rf /usr/local/lib/python3.13/site-packages
 
-# The minimal runtime base omits libffi, which Python's ctypes extension needs.
+# The minimal runtime base omits libffi and SQLite, which Python's stdlib
+# extensions need. Copy the same-architecture runtime libraries from the build.
 RUN set -eux; \
     mkdir -p /opt/runtime-libs; \
-    for lib in /usr/lib/*-linux-gnu/libffi.so.8*; do \
-        destination="/opt/runtime-libs/${lib#/usr/lib/}"; \
-        mkdir -p "$(dirname "${destination}")"; \
-        cp -a "${lib}" "${destination}"; \
+    for pattern in libffi.so.8 libsqlite3.so.0; do \
+        for lib in /usr/lib/*-linux-gnu/${pattern}*; do \
+            destination="/opt/runtime-libs/${lib#/usr/lib/}"; \
+            mkdir -p "$(dirname "${destination}")"; \
+            cp -a "${lib}" "${destination}"; \
+        done; \
     done
 
 FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2 AS runtime
@@ -59,13 +62,13 @@ FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe
 WORKDIR /app
 ENV HOME=/app/home
 ENV PYTHONPATH=/app/src
-ENV LD_LIBRARY_PATH=/usr/local/lib
+ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/runtime-libs/x86_64-linux-gnu:/opt/runtime-libs/aarch64-linux-gnu
 
 COPY --from=build /usr/bin/python /usr/bin/python
 COPY --from=build /usr/local/bin/python* /usr/local/bin/
 COPY --from=build /usr/local/lib/libpython3.13.so* /usr/local/lib/
 COPY --from=build /usr/local/lib/python3.13/ /usr/local/lib/python3.13/
-COPY --from=build /opt/runtime-libs/ /usr/lib/
+COPY --from=build /opt/runtime-libs/ /opt/runtime-libs/
 COPY --from=build /app/.venv/ /app/.venv/
 COPY --from=build --chown=65532:65532 /app/home/.cache/chroma/onnx_models/ /app/home/.cache/chroma/onnx_models/
 COPY --from=build /app/pyproject.toml ./pyproject.toml
