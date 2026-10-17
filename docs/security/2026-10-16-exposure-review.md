@@ -18,11 +18,16 @@ The lockfile at this review is `uv.lock` SHA-256
 | `ragas` | 0.4.3 | [CVE-2026-6587](https://github.com/advisories/GHSA-95ww-475f-pr4f) | The repository calls text metric adapters in `src/verity/metrics/ragas_metrics.py`; no use of the vulnerable `MultiModalFaithfulness` collection metric or its URL-processing helper was found. Arbitrary retrieval-context URLs must not be passed into that vulnerable module. This is not a patched or globally safe version. |
 
 The advisories currently list no patched versions for these locked releases.
+The Chroma maintainers merged [PR #7237](https://github.com/chroma-core/chroma/pull/7237)
+on July 7, 2026, to reject `trust_remote_code` in embedding-function kwargs and
+configuration schemas; that is relevant upstream remediation for the
+ChromaDB code-execution finding, but it is not yet a published package fix.
 The [upstream Chroma release page](https://github.com/chroma-core/chroma/releases)
-shows stable 1.5.9 and a 1.5.10 development build; a development build is not
-treated as a production fix. [RAGAS releases](https://github.com/vibrantlabsai/ragas/releases)
-list 0.4.3 as latest. Recheck each advisory and released package before
-changing this assessment.
+still shows stable 1.5.9 and a 1.5.10 development build, and [PyPI](https://pypi.org/project/chromadb/)
+still lists 1.5.9 as the released package. Do not substitute an unpublished
+development build for the required production-compatible release. [RAGAS
+releases](https://github.com/vibrantlabsai/ragas/releases) list 0.4.3 as latest.
+Recheck each advisory and released package before changing this assessment.
 
 The refreshed unsuppressed local `pip-audit --desc` run after applying
 available fixes reports 9 records (6 unique advisory IDs) across these same
@@ -70,6 +75,13 @@ change to apply:
 | RAGAS | 0.4.3 | 0.4.3 | CVE-2026-6587 still lists no patched version. |
 
 Sources: [ChromaDB on PyPI](https://pypi.org/project/chromadb/), [DiskCache on PyPI](https://pypi.org/project/diskcache/), [RAGAS on PyPI](https://pypi.org/project/ragas/), and the [ChromaDB advisories](https://github.com/advisories/GHSA-f4j7-r4q5-qw2c), [second ChromaDB advisory](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr), [third ChromaDB advisory](https://github.com/advisories/GHSA-xph7-9rjv-w5fr), [fourth ChromaDB advisory](https://github.com/advisories/GHSA-36p7-vc44-83pf), [DiskCache advisory](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v), and [RAGAS advisory](https://github.com/advisories/GHSA-95ww-475f-pr4f).
+
+The ChromaDB security fix is merged upstream but not released as a stable
+PyPI package: [PR #7237](https://github.com/chroma-core/chroma/pull/7237)
+blocks the unsafe option at both the Python and config-schema layers. This
+narrows the path to a future supported upgrade; it does not make locked 1.5.9
+patched, nor does it address the other three ChromaDB advisories, DiskCache,
+RAGAS, or the Trivy findings.
 
 This is a release/advisory metadata recheck, not a new `pip-audit`, Trivy, or
 compatibility run. The existing locks remain unchanged; do not downgrade,
