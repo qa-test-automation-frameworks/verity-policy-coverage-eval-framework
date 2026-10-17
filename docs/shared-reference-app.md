@@ -18,13 +18,13 @@ The fast tests use an HTTP mock transport and a stub provider; they need no netw
 uv run pytest tests/unit/test_shared_app.py -q
 ```
 
-The integration workflow checks out the reference-app source at immutable A07 commit `3bc1c12abbbd4b891dc0cf09616253b86e90bae4`, builds it, starts it beside a disposable PostgreSQL container, seeds synthetic fixtures, and runs a no-key provider stub. The test verifies both members receive the advertised 500,000-cent v2 limit, member A sees the seeded claim, member B does not, a direct member-B request for member A's claim receives 404, and the assistant answers the v2 limit question with a retrieved citation while refusing to expose another member's records. Cleanup removes the app, network, and database volume.
+The integration workflow checks out the reference-app source at immutable A07 commit `21af1f41561a6d83ae44933dd36d9daa5e6a6e4c`, builds it, starts it beside a disposable PostgreSQL container, seeds synthetic fixtures, and runs a no-key provider stub. The test verifies both members receive the advertised 500,000-cent v2 limit, member A sees the seeded claim, member B does not, a direct member-B request for member A's claim receives 404, and the assistant answers the v2 limit question with a retrieved citation while refusing to expose another member's records. Cleanup removes the app, network, and database volume.
 
 Run that integration locally when Docker Compose and the repository's pinned Node/npm toolchain are installed:
 
 ```bash
 export APP_NAMESPACE="verity-a06-local-$(openssl rand -hex 6)"
-export APP_SOURCE_SHA="3bc1c12abbbd4b891dc0cf09616253b86e90bae4"
+export APP_SOURCE_SHA="21af1f41561a6d83ae44933dd36d9daa5e6a6e4c"
 export APP_PORT=4300
 export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
 export TEST_CONTROL_TOKEN="$(openssl rand -hex 32)"
