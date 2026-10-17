@@ -36,6 +36,7 @@ COPY datasets/ ./datasets/
 COPY promptfoo/ ./promptfoo/
 COPY scripts/ ./scripts/
 COPY docs/ ./docs/
+COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY Makefile ./
 
 # Install the project itself
