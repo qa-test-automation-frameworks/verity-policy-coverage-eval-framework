@@ -1,17 +1,9 @@
 # Narrow, proposed, time-bounded dependency findings pending PR review.
-# The previous 2026-10-01 exceptions were removed, not automatically renewed.
+# ChromaDB was removed; its four PYSEC findings are no longer ignored.
+# Remaining exceptions are exact IDs and expire 2026-11-17; scanner execution
+# remains active and the independent Trivy image scan still runs.
 # Historical records: docs/security/expired-exceptions-2026-10-01.md
 # Proposed time-bounded exceptions: docs/security/2026-10-17-dependency-exceptions.md
-# They are narrow advisory IDs and expire 2026-11-17; they do not remove
-# scanner execution or replace the separate Trivy image scan.
-# Expires: 2026-11-17
-PYSEC-2026-311
-# Expires: 2026-11-17
-PYSEC-2026-3813
-# Expires: 2026-11-17
-PYSEC-2026-3814
-# Expires: 2026-11-17
-PYSEC-2026-3815
 # Expires: 2026-11-17
 PYSEC-2026-2447
 # Expires: 2026-11-17

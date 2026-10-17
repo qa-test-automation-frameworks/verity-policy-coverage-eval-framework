@@ -1,35 +1,62 @@
-"""RAG retriever: chunk policy corpus → embed → Chroma → retrieve.
+"""RAG retrievers: chunk policy corpus → local ONNX embeddings → cosine search.
 
-Uses Chroma's built-in ONNX embedding function (all-MiniLM-L6-v2) so retrieval
-is fully local and reproducible — no external embedding API calls.
-
-The ONNX model is downloaded and cached by Chroma on first use; subsequent runs
-are offline. Document this in CONTRIBUTING and cache in CI if needed (M2).
-
-InMemoryCosineRetriever uses the same ONNX embedding function but stores
-vectors in a plain numpy array and ranks by brute-force cosine similarity
-instead of a Chroma index — a second concrete backend for the Retriever
-protocol.
-
-FixtureRetriever is a drop-in replacement for deterministic tests: it serves
-pre-authored Chunk lists from JSON files in datasets/cassettes/retrieval/
-so Tier-1 tests need no Chroma instance and no ONNX download.
+The default embedder uses FastEmbed with the Apache-2.0
+``sentence-transformers/all-MiniLM-L6-v2`` model. Embeddings run locally with
+ONNX Runtime and never call a hosted embedding API. PolicyRetriever stores
+normalized vectors and chunk metadata in a transactional SQLite index; the
+small in-memory implementation shares the same embedding and ranking path.
+FixtureRetriever serves pre-authored JSON chunks for deterministic tests.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import sqlite3
 from dataclasses import dataclass
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Protocol
 
-import chromadb
 import numpy as np
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from verity.config import RetrievalConfig
+
+
+class LocalOnnxEmbeddingFunction:
+    """Lazy FastEmbed wrapper for the existing MiniLM model and local inference."""
+
+    model_name = "sentence-transformers/all-MiniLM-L6-v2"
+
+    def __init__(self, cache_dir: str | None = None) -> None:
+        self._cache_dir = cache_dir or os.environ.get("FASTEMBED_CACHE_PATH")
+        self._model: Any = None
+
+    @property
+    def model_id(self) -> str:
+        return f"fastembed-{version('fastembed')}:{self.model_name}"
+
+    def __call__(self, texts: list[str]) -> list[np.ndarray[Any, Any]]:
+        if not texts:
+            return []
+        if self._model is None:
+            from fastembed import TextEmbedding
+
+            self._model = TextEmbedding(model_name=self.model_name, cache_dir=self._cache_dir)
+        return list(self._model.embed(texts, batch_size=32))
+
+
+def _embedding_identity(embedding_fn: Any) -> str:
+    """Return an index-cache key that changes with the configured embedder."""
+    return str(
+        getattr(
+            embedding_fn,
+            "model_id",
+            f"{type(embedding_fn).__module__}.{type(embedding_fn).__qualname__}",
+        )
+    )
 
 
 @dataclass(frozen=True)
@@ -326,16 +353,15 @@ class Retriever(Protocol):
 
 
 class PolicyRetriever:
-    """Embeds the corpus into Chroma and retrieves relevant chunks for a query.
+    """Persist local MiniLM embeddings and retrieve by cosine similarity.
 
-    embedding_fn defaults to Chroma's local ONNX all-MiniLM-L6-v2 model but can
-    be overridden with any Chroma-compatible embedding function (callable on a
-    list[str], returning a list of vectors) — the ranking constants in this
-    module were tuned against the default and would need re-validation
-    (see docs/retrieval-ablation.md) against a different embedder.
+    SQLite is only a local cache for this fixed, small evaluation corpus; it
+    does not expose a network service. Its single transaction replaces stale
+    corpus/index records atomically. Embedding and ranking behavior is shared
+    with :class:`InMemoryCosineRetriever`.
     """
 
-    _COLLECTION_NAME = "policy_corpus"
+    _SCHEMA_VERSION = "1"
 
     def __init__(
         self,
@@ -343,65 +369,143 @@ class PolicyRetriever:
         embedding_fn: Any = None,
     ) -> None:
         self._config = config or RetrievalConfig()
-        self._embedding_fn: Any = embedding_fn or DefaultEmbeddingFunction()
-        self._client: Any = None
-        self._collection: Any = None
-
-    def _get_collection(self) -> Any:
-        if self._collection is not None:
-            return self._collection
-        persist_path = str(self._config.persist_dir)
-        self._client = chromadb.PersistentClient(path=persist_path)
-        self._collection = self._client.get_or_create_collection(
-            name=self._COLLECTION_NAME,
-            embedding_function=self._embedding_fn,
-            metadata={"hnsw:space": "cosine"},
-        )
-        return self._collection
-
-    def _fingerprint_path(self) -> Path:
-        return Path(self._config.persist_dir) / ".corpus_fingerprint"
+        self._embedding_fn: Any = embedding_fn or LocalOnnxEmbeddingFunction()
+        self._index_path = Path(self._config.persist_dir) / "policy-index.sqlite3"
+        self._ids: list[str] = []
+        self._documents: list[str] = []
+        self._metadatas: list[dict[str, str]] = []
+        self._embeddings: np.ndarray[Any, Any] | None = None
+        self._fingerprint = ""
+        self._embedder_id = _embedding_identity(self._embedding_fn)
 
     def corpus_fingerprint(self) -> str:
-        """Fingerprint of the corpus as currently indexed (empty if never indexed)."""
-        path = self._fingerprint_path()
-        return path.read_text().strip() if path.exists() else ""
+        """Fingerprint of the loaded index (empty until an index is loaded or built)."""
+        return self._fingerprint
+
+    def _load_cached_index(self, fingerprint: str) -> bool:
+        if not self._index_path.is_file():
+            return False
+        try:
+            with sqlite3.connect(f"file:{self._index_path}?mode=ro", uri=True) as db:
+                metadata = dict(db.execute("SELECT key, value FROM metadata"))
+                if (
+                    metadata.get("schema_version") != self._SCHEMA_VERSION
+                    or metadata.get("corpus_fingerprint") != fingerprint
+                    or metadata.get("embedding_model") != self._embedder_id
+                ):
+                    return False
+                rows = db.execute(
+                    "SELECT chunk_id, document, chunk_metadata, embedding, dimension "
+                    "FROM chunks ORDER BY ordinal"
+                ).fetchall()
+            ids: list[str] = []
+            documents: list[str] = []
+            metadatas: list[dict[str, str]] = []
+            embeddings: list[np.ndarray[Any, Any]] = []
+            for chunk_id, document, raw_metadata, raw_embedding, dimension in rows:
+                vector = np.frombuffer(raw_embedding, dtype=np.float64)
+                if vector.size != dimension or not isinstance(json.loads(raw_metadata), dict):
+                    return False
+                ids.append(str(chunk_id))
+                documents.append(str(document))
+                metadatas.append(json.loads(raw_metadata))
+                embeddings.append(vector.copy())
+            self._ids = ids
+            self._documents = documents
+            self._metadatas = metadatas
+            self._embeddings = (
+                np.stack(embeddings) if embeddings else np.zeros((0, 0), dtype=np.float64)
+            )
+            self._fingerprint = fingerprint
+            return True
+        except (sqlite3.DatabaseError, OSError, TypeError, ValueError, json.JSONDecodeError):
+            # A corrupt disposable cache must be rebuilt from source documents.
+            for suffix in ("", "-journal", "-wal", "-shm"):
+                try:
+                    Path(f"{self._index_path}{suffix}").unlink(missing_ok=True)
+                except OSError:
+                    return False
+            return False
+
+    def _save_index(self) -> None:
+        if self._embeddings is None:
+            raise RuntimeError("Cannot persist an unbuilt retrieval index.")
+        self._index_path.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(self._index_path) as db:
+            db.execute("PRAGMA synchronous = FULL")
+            db.execute("BEGIN IMMEDIATE")
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+            )
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS chunks ("
+                "ordinal INTEGER NOT NULL UNIQUE, chunk_id TEXT PRIMARY KEY, "
+                "document TEXT NOT NULL, chunk_metadata TEXT NOT NULL, "
+                "embedding BLOB NOT NULL, dimension INTEGER NOT NULL)"
+            )
+            db.execute("DELETE FROM chunks")
+            db.execute("DELETE FROM metadata")
+            db.executemany(
+                "INSERT INTO chunks VALUES (?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        ordinal,
+                        chunk_id,
+                        document,
+                        json.dumps(metadata, sort_keys=True, separators=(",", ":")),
+                        vector.tobytes(),
+                        vector.size,
+                    )
+                    for ordinal, (chunk_id, document, metadata, vector) in enumerate(
+                        zip(
+                            self._ids,
+                            self._documents,
+                            self._metadatas,
+                            self._embeddings,
+                            strict=True,
+                        )
+                    )
+                ],
+            )
+            db.executemany(
+                "INSERT INTO metadata VALUES (?, ?)",
+                [
+                    ("schema_version", self._SCHEMA_VERSION),
+                    ("corpus_fingerprint", self._fingerprint),
+                    ("embedding_model", self._embedder_id),
+                ],
+            )
+            db.commit()
 
     def index_corpus(self, force: bool = False) -> int:
-        """Chunk and embed all markdown files in corpus_dir. Returns chunks added."""
+        """Load a current persisted index or embed and atomically replace it."""
         corpus_dir = self._config.corpus_dir
-
         if not corpus_dir.is_dir():
             raise FileNotFoundError(f"Corpus directory not found: {corpus_dir}")
-
         md_files = sorted(corpus_dir.glob("*.md"))
         if not md_files:
             raise FileNotFoundError(f"No markdown files found in {corpus_dir}")
-
         current_fingerprint = _corpus_fingerprint(corpus_dir)
-        stale = current_fingerprint != self.corpus_fingerprint()
-
-        collection = self._get_collection()
-        if not force and not stale and collection.count() > 0:
-            return 0  # already indexed and up to date
-
-        if stale and collection.count() > 0:
-            # Policy documents changed since this index was built — rebuild
-            # from scratch rather than merging with now-outdated embeddings.
-            self._client.delete_collection(self._COLLECTION_NAME)
-            self._collection = None
-            collection = self._get_collection()
-
+        if not force and self._fingerprint == current_fingerprint and self._embeddings is not None:
+            return 0
+        if not force and self._load_cached_index(current_fingerprint):
+            return 0
         ids, documents, metadatas = _chunk_corpus_files(
             md_files, self._config.chunk_size, self._config.chunk_overlap
         )
-
-        if ids:
-            collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
-
-        self._fingerprint_path().parent.mkdir(parents=True, exist_ok=True)
-        self._fingerprint_path().write_text(current_fingerprint)
-
+        if documents:
+            embeddings = np.asarray(self._embedding_fn(documents), dtype=np.float64)
+            norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            normalized_embeddings = embeddings / norms
+        else:
+            normalized_embeddings = np.zeros((0, 0), dtype=np.float64)
+        self._ids = ids
+        self._documents = documents
+        self._metadatas = metadatas
+        self._embeddings = normalized_embeddings
+        self._fingerprint = current_fingerprint
+        self._save_index()
         return len(ids)
 
     def retrieve(self, query: str, top_k: int | None = None) -> list[Chunk]:
@@ -421,26 +525,18 @@ class PolicyRetriever:
           relevance.
         """
         k = top_k if top_k is not None else self._config.top_k
-        collection = self._get_collection()
-
-        if collection.count() == 0:
+        if self._embeddings is None:
             self.index_corpus()
-
-        # Fetch a bounded candidate pool before local re-ranking. The lower bound
-        # preserves margin-cutoff stability for this small corpus while avoiding
-        # O(corpus) work as the demo data grows.
-        fetch_n = min(collection.count(), max(50, 4 * k))
-        results = collection.query(
-            query_texts=[query],
-            n_results=fetch_n,
-            include=["documents", "metadatas", "distances"],
+        if self._embeddings is None or not self._ids:
+            return []
+        query_vec = np.asarray(self._embedding_fn([query]), dtype=np.float64)[0]
+        query_norm = np.linalg.norm(query_vec)
+        if query_norm > 0:
+            query_vec = query_vec / query_norm
+        distances = [float(value) for value in 1.0 - self._embeddings @ query_vec]
+        return _rerank_and_package(
+            query, self._documents, self._metadatas, distances, self.corpus_fingerprint(), k
         )
-
-        docs = results["documents"][0]
-        metas = results["metadatas"][0]
-        distances = results["distances"][0]
-
-        return _rerank_and_package(query, docs, metas, distances, self.corpus_fingerprint(), k)
 
 
 # ---------------------------------------------------------------------------
@@ -451,10 +547,10 @@ class PolicyRetriever:
 class InMemoryCosineRetriever:
     """Embeds the corpus with the same ONNX embedding function as PolicyRetriever
     by default, but stores vectors in a plain numpy array and ranks by
-    brute-force cosine similarity instead of a Chroma index.
+    brute-force cosine similarity instead of a persistent SQLite index.
 
     Demonstrates that the Retriever protocol is satisfied by more than one
-    storage/search mechanism, not just Chroma — same embedding source by
+    storage/search mechanism — same embedding source by
     default, same chunking and re-ranking logic (both reused from
     module-level helpers), a different retrieval backend underneath.
     Brute-force search is fine at this corpus's scale; it would not be the
@@ -468,7 +564,7 @@ class InMemoryCosineRetriever:
         embedding_fn: Any = None,
     ) -> None:
         self._config = config or RetrievalConfig()
-        self._embedding_fn: Any = embedding_fn or DefaultEmbeddingFunction()
+        self._embedding_fn: Any = embedding_fn or LocalOnnxEmbeddingFunction()
         self._ids: list[str] = []
         self._documents: list[str] = []
         self._metadatas: list[dict[str, str]] = []

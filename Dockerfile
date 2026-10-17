@@ -5,6 +5,7 @@ FROM python:3.13.16-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087
 
 WORKDIR /app
 ENV HOME=/app/home
+ENV FASTEMBED_CACHE_PATH=/app/home/.cache/fastembed
 
 # Distroless Python uses /usr/bin/python. Keep the virtualenv links portable to
 # the runtime stage by giving the matching build interpreter that same path.
@@ -21,12 +22,12 @@ COPY README.md LICENSE ./
 # Install all extras (no API key required for Tier-1 checks)
 RUN uv sync --frozen --all-extras --no-install-project
 
-# Pre-download the Chroma ONNX embedding model (all-MiniLM-L6-v2) into this
+# Pre-download the FastEmbed ONNX embedding model (all-MiniLM-L6-v2) into this
 # layer so `docker run` doesn't need network access. Same cache path CI's
-# actions/cache step keys on (~/.cache/chroma/onnx_models). Placed before
+# actions/cache step keys on (~/.cache/fastembed). Placed before
 # COPY src/ so it stays cached across source-only changes.
-RUN mkdir -p "$HOME" && uv run --no-sync python -c \
-    "from chromadb.utils.embedding_functions import DefaultEmbeddingFunction; DefaultEmbeddingFunction()(['warmup'])"
+RUN mkdir -p "$FASTEMBED_CACHE_PATH" && uv run --no-sync python -c \
+    "from fastembed import TextEmbedding; list(TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2').embed(['warmup']))"
 
 # Copy source
 COPY src/ ./src/
@@ -43,7 +44,7 @@ COPY Makefile ./
 RUN uv sync --frozen --all-extras
 
 # The final image needs the installed virtualenv, not uv's duplicate package
-# archives. Keep the separately pre-downloaded Chroma embedding model cache.
+# archives. Keep the separately pre-downloaded FastEmbed model cache.
 RUN uv cache clean && rm -rf /usr/local/lib/python3.13/site-packages
 
 # The minimal runtime base omits libffi, SQLite, and bzip2, which Python's stdlib
@@ -62,6 +63,7 @@ FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe
 
 WORKDIR /app
 ENV HOME=/app/home
+ENV FASTEMBED_CACHE_PATH=/app/home/.cache/fastembed
 ENV PYTHONPATH=/app/src
 ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/runtime-libs/x86_64-linux-gnu:/opt/runtime-libs/aarch64-linux-gnu
 
@@ -71,7 +73,7 @@ COPY --from=build /usr/local/lib/libpython3.13.so* /usr/local/lib/
 COPY --from=build /usr/local/lib/python3.13/ /usr/local/lib/python3.13/
 COPY --from=build /opt/runtime-libs/ /opt/runtime-libs/
 COPY --from=build /app/.venv/ /app/.venv/
-COPY --from=build --chown=65532:65532 /app/home/.cache/chroma/onnx_models/ /app/home/.cache/chroma/onnx_models/
+COPY --from=build --chown=65532:65532 /app/home/.cache/fastembed/ /app/home/.cache/fastembed/
 COPY --from=build /app/pyproject.toml ./pyproject.toml
 COPY --from=build /app/README.md ./README.md
 COPY --from=build /app/LICENSE ./LICENSE

@@ -23,11 +23,16 @@ what CI and the docs above use.
 
 ### Corpus indexing note
 
-The RAG retriever uses Chroma with the built-in ONNX embedding function
-(`all-MiniLM-L6-v2`). On first use, Chroma downloads this model (~90 MB) and
-caches it locally. Subsequent runs are fully offline. The `.chroma/` directory
-(persisted vector store) is gitignored; it is rebuilt on first `make demo` run
-or `retriever.index_corpus()` call.
+The RAG retriever uses FastEmbed with the local ONNX model
+`sentence-transformers/all-MiniLM-L6-v2`. On first use, FastEmbed downloads
+the model (about 90 MB) and caches it under `~/.cache/fastembed`; set
+`FASTEMBED_CACHE_PATH` to choose another cache location. Subsequent runs are
+offline while that cache remains available. Policy chunk vectors and metadata
+are stored transactionally in `.verity-index/policy-index.sqlite3`; the
+directory is gitignored and automatically rebuilt when corpus contents or the
+embedding implementation version changes. The corpus is small enough that a
+SQLite-backed brute-force cosine search keeps retrieval local and avoids an
+extra vector-server dependency.
 
 ### Common tasks
 
@@ -98,7 +103,7 @@ Before applying either marker, get evidence rather than guessing: `make flake-ch
 
 ### Troubleshooting
 
-- First `PolicyRetriever` use may download the local ONNX embedding model through Chroma; retry after the cache is populated if the network is interrupted.
+- First `PolicyRetriever` use may download the local ONNX embedding model through FastEmbed; retry after the cache is populated if the network is interrupted.
 - Run commands through `make` or set `PYTHONPATH=src` manually when invoking modules directly.
 - Missing provider-key warnings are expected for Tier 1; live calls require `VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, or `VERITY_TOGETHER_API_KEY`.
 - Treat `.env.example` provider endpoints as templates and verify the model slug/base URL with your provider before live runs.

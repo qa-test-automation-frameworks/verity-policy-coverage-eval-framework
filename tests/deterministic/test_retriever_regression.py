@@ -2,7 +2,7 @@
 
 Every other Tier-1 retrieval check (test_retrieval_benchmark.py) scores
 FixtureRetriever output — pre-authored chunk lists that never exercise
-PolicyRetriever's actual chunking + Chroma/ONNX embedding path. That leaves
+PolicyRetriever's actual chunking + ONNX embedding path. That leaves
 the real retriever with no committed regression coverage: a chunking or
 embedding-dependency change could silently alter what gets retrieved and
 nothing in the test suite would notice.
@@ -15,7 +15,7 @@ that is a separate, larger retrieval-tuning concern. A failure here means
 "retrieval changed," not necessarily "retrieval got worse"; regenerate the
 snapshot deliberately when a chunking/embedding change is expected.
 
-Embeddings are computed locally via Chroma's bundled ONNX model — no
+Embeddings are computed locally with FastEmbed and ONNX Runtime — no
 network calls once that model is cached (see CONTRIBUTING.md). If the
 model has never been downloaded on this machine and no network is
 available, the test skips rather than failing the Tier-1 gate.
@@ -38,10 +38,10 @@ _RECORDED: dict[str, list[dict[str, str]]] = json.loads(_SNAPSHOT_PATH.read_text
 
 @pytest.fixture(scope="module")
 def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> object:
-    """A PolicyRetriever backed by a throwaway Chroma index for this test module."""
+    """A PolicyRetriever backed by a throwaway SQLite index for this test module."""
     from sut.retriever import PolicyRetriever
 
-    persist_dir = tmp_path_factory.mktemp("chroma-regression")
+    persist_dir = tmp_path_factory.mktemp("sqlite-regression")
     config = RetrievalConfig(persist_dir=persist_dir)
     retriever = PolicyRetriever(config)
     try:

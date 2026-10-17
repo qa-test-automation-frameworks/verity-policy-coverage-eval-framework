@@ -2,7 +2,7 @@
 
 Verity can run an optional, read-only assistant against the synthetic policy and claim API in [`quality-reference-application`](https://github.com/qa-test-automation-frameworks/quality-reference-application). The existing `CoverageAgent`, its seeded/clean profiles, and its offline test path are unchanged. No app session, HTTP request, model call, or extra process is created unless a caller explicitly constructs `ReferenceAppClient` and `SharedAppAssistant`.
 
-The interface lives in `src/sut/shared_app.py`. It reuses the existing `Retriever` and `LLMProvider` contracts, and returns citations resolved only against chunks retrieved for that question. The assistant corpus and tool schema are `v0.2.0`/`v2`. The versioned policy text includes the API-v1 $10,000 and API-v2 $5,000 claim limits; the authenticated workspace tool reads v2 policies and claims, including the server-advertised limit. Fixtures in `datasets/cassettes/retrieval/shared-app*.json` keep citation and authorization tests deterministic without Chroma, ONNX downloads, or a provider key.
+The interface lives in `src/sut/shared_app.py`. It reuses the existing `Retriever` and `LLMProvider` contracts, and returns citations resolved only against chunks retrieved for that question. The assistant corpus and tool schema are `v0.2.0`/`v2`. The versioned policy text includes the API-v1 $10,000 and API-v2 $5,000 claim limits; the authenticated workspace tool reads v2 policies and claims, including the server-advertised limit. Fixtures in `datasets/cassettes/retrieval/shared-app*.json` keep citation and authorization tests deterministic without downloading the embedding model or using a provider key.
 
 ## Identity and authorization
 

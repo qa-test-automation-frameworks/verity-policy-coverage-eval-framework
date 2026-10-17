@@ -25,7 +25,7 @@ dependencies = [
     "litellm>=1.45.0",
     "pydantic>=2.7.0",
     "pydantic-settings>=2.3.0",
-    "chromadb>=0.5.0",
+    "fastembed>=0.9.0,<1",
     "pyyaml>=6.0.1",
     "httpx>=0.28.1,<1",
 ]
@@ -80,7 +80,7 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "N", "RUF"]
 ignore = [
-    "ANN401",  # Any allowed for litellm/chromadb boundaries
+    "ANN401",  # Any allowed for dynamic provider and ONNX model boundaries
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -102,7 +102,7 @@ show_error_codes = true
 files = ["src"]
 
 [[tool.mypy.overrides]]
-module = ["chromadb.*", "litellm.*"]
+module = ["litellm.*", "fastembed.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -133,7 +133,7 @@ markers = [
     "adversarial: marks Tier-3 adversarial/red-team tests",
     "flaky: marks live tests with known provider instability and documented retry policy (reserved: apply once a specific test has an observed instability history to document)",
     "quarantine: marks live tests that collect signal but should not block merges",
-    "needs_onnx_download: marks tests requiring real Chroma+ONNX embedding download (network on first run, not truly hermetic; deselect with -m 'not needs_onnx_download')",
+    "needs_onnx_download: marks tests requiring a local FastEmbed ONNX model download (network on first run, not truly hermetic; deselect with -m 'not needs_onnx_download')",
 ]
 addopts = "-v --tb=short"
 

@@ -3,7 +3,7 @@
 test_retrieval_benchmark.py scores FixtureRetriever — pre-authored chunk
 lists that never exercise PolicyRetriever's actual chunking + embedding path.
 This module runs the same benchmark expectations against the real retriever,
-backed by an isolated temp Chroma index, so a chunking/ranking regression
+backed by an isolated temp SQLite index, so a chunking/ranking regression
 that only manifests in the real embedding path is caught by Tier-1.
 """
 
@@ -25,10 +25,10 @@ _BENCHMARKS = load_retrieval_benchmarks(Path("datasets/retrieval/benchmarks.yaml
 
 @pytest.fixture(scope="module")
 def real_retriever(tmp_path_factory: pytest.TempPathFactory) -> Retriever:
-    """A PolicyRetriever backed by a throwaway Chroma index for this test module."""
+    """A PolicyRetriever backed by a throwaway SQLite index for this test module."""
     from sut.retriever import PolicyRetriever
 
-    persist_dir = tmp_path_factory.mktemp("chroma-quality")
+    persist_dir = tmp_path_factory.mktemp("sqlite-quality")
     config = RetrievalConfig(persist_dir=persist_dir)
     retriever = PolicyRetriever(config)
     try:
