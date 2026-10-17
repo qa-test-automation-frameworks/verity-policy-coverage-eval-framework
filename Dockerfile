@@ -50,6 +50,7 @@ FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe
 WORKDIR /app
 ENV HOME=/app/home
 ENV PYTHONPATH=/app/src
+ENV LD_LIBRARY_PATH=/usr/local/lib
 
 COPY --from=build /usr/bin/python /usr/bin/python
 COPY --from=build /usr/local/bin/python* /usr/local/bin/
