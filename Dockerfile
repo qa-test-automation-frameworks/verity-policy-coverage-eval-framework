@@ -45,11 +45,11 @@ RUN uv sync --frozen --all-extras
 # archives. Keep the separately pre-downloaded Chroma embedding model cache.
 RUN uv cache clean && rm -rf /usr/local/lib/python3.13/site-packages
 
-# The minimal runtime base omits libffi and SQLite, which Python's stdlib
+# The minimal runtime base omits libffi, SQLite, and bzip2, which Python's stdlib
 # extensions need. Copy the same-architecture runtime libraries from the build.
 RUN set -eux; \
     mkdir -p /opt/runtime-libs; \
-    for pattern in libffi.so.8 libsqlite3.so.0; do \
+    for pattern in libffi.so.8 libsqlite3.so.0 libbz2.so.1.0 liblzma.so.5; do \
         for lib in /usr/lib/*-linux-gnu/${pattern}*; do \
             destination="/opt/runtime-libs/${lib#/usr/lib/}"; \
             mkdir -p "$(dirname "${destination}")"; \
