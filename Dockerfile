@@ -43,14 +43,18 @@ RUN uv sync --frozen --all-extras
 
 # The final image needs the installed virtualenv, not uv's duplicate package
 # archives. Keep the separately pre-downloaded Chroma embedding model cache.
-RUN uv cache clean
+RUN uv cache clean && rm -rf /usr/local/lib/python3.13/site-packages
 
-FROM gcr.io/distroless/python3-debian13:nonroot@sha256:83aa8d4f74a4d7f7cf2d472054139bef71a927b76c680c0f2e1021d6b1d6d732 AS runtime
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2 AS runtime
 
 WORKDIR /app
 ENV HOME=/app/home
 ENV PYTHONPATH=/app/src
 
+COPY --from=build /usr/bin/python /usr/bin/python
+COPY --from=build /usr/local/bin/python* /usr/local/bin/
+COPY --from=build /usr/local/lib/libpython3.13.so* /usr/local/lib/
+COPY --from=build /usr/local/lib/python3.13/ /usr/local/lib/python3.13/
 COPY --from=build /app/.venv/ /app/.venv/
 COPY --from=build --chown=65532:65532 /app/home/.cache/chroma/onnx_models/ /app/home/.cache/chroma/onnx_models/
 COPY --from=build /app/pyproject.toml ./pyproject.toml
