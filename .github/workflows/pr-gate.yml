@@ -97,7 +97,10 @@ jobs:
           while IFS= read -r id; do
             ignore_args+=(--ignore-vuln "$id")
           done < <(grep -vE '^\s*(#|$)' .pip-audit-ignore)
-          uv run pip-audit --desc "${ignore_args[@]}"
+          # The repository itself is installed as an editable local project and
+          # is not published to PyPI. Skip that project metadata entry while
+          # auditing every installed third-party dependency in the environment.
+          uv run pip-audit --desc --skip-editable "${ignore_args[@]}"
 
       - name: Secret scan
         run: |
