@@ -54,6 +54,8 @@ ENV PYTHONPATH=/app/src
 COPY --from=build /app/.venv/ /app/.venv/
 COPY --from=build --chown=65532:65532 /app/home/.cache/chroma/onnx_models/ /app/home/.cache/chroma/onnx_models/
 COPY --from=build /app/pyproject.toml ./pyproject.toml
+COPY --from=build /app/README.md ./README.md
+COPY --from=build /app/LICENSE ./LICENSE
 COPY --from=build /app/src/ ./src/
 COPY --from=build /app/tests/ ./tests/
 COPY --from=build /app/datasets/ ./datasets/
