@@ -33,6 +33,7 @@ RUN mkdir -p "$HOME" && uv run --no-sync python -c \
 COPY src/ ./src/
 COPY tests/ ./tests/
 COPY datasets/ ./datasets/
+COPY promptfoo/ ./promptfoo/
 COPY scripts/ ./scripts/
 COPY docs/ ./docs/
 COPY Makefile ./
