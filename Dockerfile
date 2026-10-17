@@ -60,7 +60,7 @@ COPY --from=build /app/datasets/ ./datasets/
 COPY --from=build /app/promptfoo/ ./promptfoo/
 COPY --from=build /app/scripts/ ./scripts/
 COPY --from=build /app/docs/ ./docs/
-COPY --from=build /app/reports/semantic/results.json ./reports/semantic/results.json
+COPY --from=build --chown=65532:65532 /app/reports/semantic/results.json ./reports/semantic/results.json
 COPY --from=build /app/Makefile ./Makefile
 
 # Default: run Tier-1 checks (no live calls, no API key)
