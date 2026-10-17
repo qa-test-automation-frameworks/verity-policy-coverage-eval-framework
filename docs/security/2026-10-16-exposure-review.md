@@ -76,3 +76,19 @@ compatibility run. The existing locks remain unchanged; do not downgrade,
 exclude, or suppress packages solely to make a scanner green. Re-evaluate when
 an upstream patch is released or when a replacement is supported by a bounded
 compatibility experiment.
+
+### DiskCache community-fork candidate
+
+The recheck also surfaced `diskcache-community` 5.7.0, a newly published
+community fork that retains the Python import name `diskcache` and states that
+it adds `SafeDisk` as an opt-in backend. Its PyPI page includes a verified
+publishing attestation for the fork repository and release commit, but its
+package name differs from the vulnerable upstream distribution. A scanner
+showing no advisory against that new distribution would not by itself prove
+that the cache now uses the safe backend. RAGAS's transitive cache integration
+has not been configured or tested with `SafeDisk`, and this change would not
+resolve the separate ChromaDB or RAGAS advisories. Therefore the fork is a
+candidate for a bounded compatibility/security experiment, not an adopted fix
+or a basis for closing R02.
+
+Sources: [diskcache-community 5.7.0 on PyPI](https://pypi.org/project/diskcache-community/5.7.0/), including its publishing attestation, and the [fork's README](https://github.com/secondwindoss/diskcache-community), which describes the opt-in `SafeDisk` behavior and migration constraints.
