@@ -40,6 +40,10 @@ COPY Makefile ./
 # Install the project itself
 RUN uv sync --frozen --all-extras
 
+# The final image needs the installed virtualenv, not uv's duplicate package
+# archives. Keep the separately pre-downloaded Chroma embedding model cache.
+RUN uv cache clean
+
 RUN adduser --disabled-password --gecos "" --home "$HOME" appuser && chown -R appuser:appuser /app
 USER appuser
 
