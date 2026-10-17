@@ -75,7 +75,10 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/chroma/onnx_models
-          key: chroma-onnx-${{ runner.os }}-py${{ matrix.python-version }}
+          # Bump the generation to discard the corrupted model archive restored
+          # by the previous cache key. No restore-keys: stale ONNX data must not
+          # silently re-enter the cache.
+          key: chroma-onnx-v2-${{ runner.os }}-py${{ matrix.python-version }}
 
       - name: Ruff lint
         run: uv run ruff check src tests scripts promptfoo
