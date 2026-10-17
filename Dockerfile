@@ -34,6 +34,7 @@ COPY tests/ ./tests/
 COPY datasets/ ./datasets/
 COPY promptfoo/ ./promptfoo/
 COPY scripts/ ./scripts/
+COPY .pip-audit-ignore .trivyignore ./
 COPY docs/ ./docs/
 COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY Makefile ./
@@ -79,6 +80,8 @@ COPY --from=build /app/tests/ ./tests/
 COPY --from=build /app/datasets/ ./datasets/
 COPY --from=build /app/promptfoo/ ./promptfoo/
 COPY --from=build /app/scripts/ ./scripts/
+COPY --from=build /app/.pip-audit-ignore ./.pip-audit-ignore
+COPY --from=build /app/.trivyignore ./.trivyignore
 COPY --from=build /app/docs/ ./docs/
 COPY --from=build --chown=65532:65532 /app/reports/semantic/results.json ./reports/semantic/results.json
 COPY --from=build /app/Makefile ./Makefile

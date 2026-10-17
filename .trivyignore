@@ -1,0 +1,11 @@
+# Proposed, time-bounded library findings pending PR review. See
+# docs/security/2026-10-17-dependency-exceptions.md.
+# No OS findings are ignored. Each exception expires on 2026-11-17.
+# Expires: 2026-11-17
+CVE-2026-45829
+# Expires: 2026-11-17
+CVE-2026-45830
+# Expires: 2026-11-17
+CVE-2026-45831
+# Expires: 2026-11-17
+CVE-2026-45833

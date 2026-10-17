@@ -32,6 +32,9 @@ jobs:
       - name: Build image
         run: docker build -t verity-eval:scan .
 
+      - name: Check security exception expiries
+        run: docker run --rm --entrypoint /app/.venv/bin/python verity-eval:scan scripts/check_vuln_exceptions.py
+
       - name: Run packaged Tier-1 checks
         run: docker run --rm verity-eval:scan
 
@@ -43,6 +46,7 @@ jobs:
           output: trivy-results.json
           severity: CRITICAL,HIGH
           exit-code: "1"
+          trivyignores: .trivyignore
 
       # Keep the full package paths available when the blocking scan fails;
       # the table formatter omits paths needed to distinguish duplicate installs.

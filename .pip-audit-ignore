@@ -1,5 +1,18 @@
-# No active vulnerability exclusions.
-# The three 2026-10-01 expiries were removed rather than automatically renewed.
+# Narrow, proposed, time-bounded dependency findings pending PR review.
+# The previous 2026-10-01 exceptions were removed, not automatically renewed.
 # Historical records: docs/security/expired-exceptions-2026-10-01.md
-# Unresolved advisories remain visible to pip-audit and fail its gate.
-# Any future entry needs its own immediately preceding Expires: YYYY-MM-DD.
+# Proposed time-bounded exceptions: docs/security/2026-10-17-dependency-exceptions.md
+# They are narrow advisory IDs and expire 2026-11-17; they do not remove
+# scanner execution or replace the separate Trivy image scan.
+# Expires: 2026-11-17
+PYSEC-2026-311
+# Expires: 2026-11-17
+PYSEC-2026-3813
+# Expires: 2026-11-17
+PYSEC-2026-3814
+# Expires: 2026-11-17
+PYSEC-2026-3815
+# Expires: 2026-11-17
+PYSEC-2026-2447
+# Expires: 2026-11-17
+PYSEC-2026-3046
