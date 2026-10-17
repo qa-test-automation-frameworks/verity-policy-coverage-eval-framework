@@ -45,6 +45,12 @@ RUN uv sync --frozen --all-extras
 # archives. Keep the separately pre-downloaded Chroma embedding model cache.
 RUN uv cache clean && rm -rf /usr/local/lib/python3.13/site-packages
 
+# The minimal runtime base omits libffi, which Python's ctypes extension needs.
+RUN set -eux; \
+    multiarch="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"; \
+    mkdir -p "/opt/runtime-libs/${multiarch}"; \
+    cp -a "/usr/lib/${multiarch}/libffi.so.8"* "/opt/runtime-libs/${multiarch}/"
+
 FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2 AS runtime
 
 WORKDIR /app
@@ -56,6 +62,7 @@ COPY --from=build /usr/bin/python /usr/bin/python
 COPY --from=build /usr/local/bin/python* /usr/local/bin/
 COPY --from=build /usr/local/lib/libpython3.13.so* /usr/local/lib/
 COPY --from=build /usr/local/lib/python3.13/ /usr/local/lib/python3.13/
+COPY --from=build /opt/runtime-libs/ /usr/lib/
 COPY --from=build /app/.venv/ /app/.venv/
 COPY --from=build --chown=65532:65532 /app/home/.cache/chroma/onnx_models/ /app/home/.cache/chroma/onnx_models/
 COPY --from=build /app/pyproject.toml ./pyproject.toml
