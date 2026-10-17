@@ -56,3 +56,23 @@ No ignore entry was added and no expired exception was renewed. The current
 code paths and container boundary narrow exposure, but they do not patch these
 packages or clear either scan. Keep CI visibly red until upstream fixes or a
 validated dependency/platform replacement resolves the findings.
+
+## Upstream recheck — 2026-10-17
+
+A fresh check of the official PyPI release pages and GitHub Advisory Database
+found no released patch for the locked findings and no version-only dependency
+change to apply:
+
+| Package | Locked version | Current PyPI release | Advisory state on 2026-10-17 |
+|---|---:|---:|---|
+| ChromaDB | 1.5.9 | 1.5.9 | CVE-2026-45829, CVE-2026-45830, CVE-2026-45831 and CVE-2026-45833 all still list no patched version. |
+| DiskCache | 5.6.3 | 5.6.3 | CVE-2025-69872 still lists no patched version. |
+| RAGAS | 0.4.3 | 0.4.3 | CVE-2026-6587 still lists no patched version. |
+
+Sources: [ChromaDB on PyPI](https://pypi.org/project/chromadb/), [DiskCache on PyPI](https://pypi.org/project/diskcache/), [RAGAS on PyPI](https://pypi.org/project/ragas/), and the [ChromaDB advisories](https://github.com/advisories/GHSA-f4j7-r4q5-qw2c), [second ChromaDB advisory](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr), [third ChromaDB advisory](https://github.com/advisories/GHSA-xph7-9rjv-w5fr), [fourth ChromaDB advisory](https://github.com/advisories/GHSA-36p7-vc44-83pf), [DiskCache advisory](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v), and [RAGAS advisory](https://github.com/advisories/GHSA-95ww-475f-pr4f).
+
+This is a release/advisory metadata recheck, not a new `pip-audit`, Trivy, or
+compatibility run. The existing locks remain unchanged; do not downgrade,
+exclude, or suppress packages solely to make a scanner green. Re-evaluate when
+an upstream patch is released or when a replacement is supported by a bounded
+compatibility experiment.
