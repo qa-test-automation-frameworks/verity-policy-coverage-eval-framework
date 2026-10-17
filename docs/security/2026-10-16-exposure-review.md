@@ -104,3 +104,20 @@ candidate for a bounded compatibility/security experiment, not an adopted fix
 or a basis for closing R02.
 
 Sources: [diskcache-community 5.7.0 on PyPI](https://pypi.org/project/diskcache-community/5.7.0/), including its publishing attestation, and the [fork's README](https://github.com/secondwindoss/diskcache-community), which describes the opt-in `SafeDisk` behavior and migration constraints.
+
+## DiskCache community-fork probe — 2026-10-17
+
+A bounded isolated smoke test evaluated `diskcache-community==5.7.0`, the
+candidate fork described above. Under Python 3.12.15, its opt-in `SafeDisk`
+backend round-tripped supported JSON-like values, created its new cache
+directory with mode `0700`, rejected writes of an unsupported custom object,
+and rejected a pickle payload resolving `os.system` with `UnpicklingError`; the
+marker command did not execute. The script and output are preserved under
+`work/roadmap-evidence/diskcache-community-2026-10-17/`.
+
+This is a positive unit-level result for the fork's opt-in backend, not a
+replacement qualification. In the pinned RAGAS v0.4.3 source,
+`DiskCacheBackend` imports `Cache` and calls `Cache(cache_dir)` without selecting
+`SafeDisk` ([source](https://github.com/vibrantlabsai/ragas/blob/v0.4.3/src/ragas/cache.py#L789-L816)). The repository's RAGAS metric factories do not pass a cache, and a source search found no direct `diskcache` use, but the lock still includes it through RAGAS. The fork's documented `SafeDisk` is opt-in; replacing the distribution name through `uv exclude-dependencies` would not make RAGAS's default backend safe. We did not change the lock or scanner inputs, and did not claim the advisory resolved.
+
+Decision: do not adopt the fork for this application yet. The standalone SafeDisk control passed, but no RAGAS `DiskCacheBackend` integration, cache-serialization compatibility, full dependency resolution, or end-to-end scan was exercised. A future adoption requires an explicit safe-backend adapter or an upstream default fix, plus those compatibility checks. The current dependency/image scan remains unsuppressed and blocking.
