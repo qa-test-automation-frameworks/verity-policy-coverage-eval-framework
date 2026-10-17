@@ -1,25 +1,32 @@
 # Pinned by digest for reproducible/auditable builds; refresh both the tag
 # and digest together (e.g. via Dependabot/Renovate) rather than editing the
 # digest alone.
-FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf
+FROM python:3.13.16-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f
 
 WORKDIR /app
+ENV HOME=/app/home
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest@sha256:3d868e555f8f1dbc324afa005066cd11e1053fc4743b9808ca8025283e65efa5 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce245946826e608e11c93ad4f5bba55b21 /uv /usr/local/bin/uv
+
+# The official Python image also carries system-site packages. Upgrade these
+# scanner-identified packages to the same versions resolved in uv.lock so
+# Trivy does not report vulnerable copies outside the project virtualenv.
+RUN uv pip install --system --break-system-packages --no-deps \
+    "msgpack==1.2.1" "setuptools==83.0.0" "urllib3==2.8.0"
 
 # Copy dependency manifests first for layer caching
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock .python-version ./
 COPY README.md LICENSE ./
 
 # Install all extras (no API key required for Tier-1 checks)
-RUN uv sync --all-extras --no-install-project
+RUN uv sync --frozen --all-extras --no-install-project
 
 # Pre-download the Chroma ONNX embedding model (all-MiniLM-L6-v2) into this
 # layer so `docker run` doesn't need network access. Same cache path CI's
 # actions/cache step keys on (~/.cache/chroma/onnx_models). Placed before
 # COPY src/ so it stays cached across source-only changes.
-RUN uv run python -c \
+RUN mkdir -p "$HOME" && uv run --no-sync python -c \
     "from chromadb.utils.embedding_functions import DefaultEmbeddingFunction; DefaultEmbeddingFunction()(['warmup'])"
 
 # Copy source
@@ -31,9 +38,9 @@ COPY docs/ ./docs/
 COPY Makefile ./
 
 # Install the project itself
-RUN uv sync --all-extras
+RUN uv sync --frozen --all-extras
 
-RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
+RUN adduser --disabled-password --gecos "" --home "$HOME" appuser && chown -R appuser:appuser /app
 USER appuser
 
 ENV PYTHONPATH=/app/src
