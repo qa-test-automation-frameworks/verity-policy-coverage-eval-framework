@@ -8,6 +8,8 @@ __pycache__/
 .ruff_cache/
 htmlcov/
 reports/
+!reports/semantic/
+!reports/semantic/results.json
 site/
 .env
 .env.*
