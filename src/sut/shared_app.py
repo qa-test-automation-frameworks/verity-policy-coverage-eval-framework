@@ -20,8 +20,8 @@ from sut.guardrails import REFUSAL_MESSAGE, check_input
 from sut.retriever import Chunk, Retriever
 from verity.providers import LLMProvider
 
-SHARED_APP_CORPUS_VERSION = "v0.1.0"
-SHARED_APP_TOOL_SCHEMA_VERSION = "v1"
+SHARED_APP_CORPUS_VERSION = "v0.2.0"
+SHARED_APP_TOOL_SCHEMA_VERSION = "v2"
 
 
 class WorkspaceArgs(BaseModel):
@@ -82,9 +82,9 @@ class ReferenceAppClient:
         return self._identity_key
 
     def get_my_workspace(self) -> ReferenceWorkspace:
-        policies = self._http.get("/api/v1/policies")
+        policies = self._http.get("/api/v2/policies")
         policies.raise_for_status()
-        claims = self._http.get("/api/v1/claims")
+        claims = self._http.get("/api/v2/claims")
         claims.raise_for_status()
         return ReferenceWorkspace(
             policies=_items(policies.json(), "policies"),
@@ -101,7 +101,7 @@ class ReferenceAppClient:
             canonical_claim_id = str(UUID(claim_id))
         except ValueError as exc:
             raise ValueError("claim_id must be a UUID") from exc
-        response = self._http.get(f"/api/v1/claims/{canonical_claim_id}")
+        response = self._http.get(f"/api/v2/claims/{canonical_claim_id}")
         response.raise_for_status()
         payload: Any = response.json()
         if not isinstance(payload, dict):

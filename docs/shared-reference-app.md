@@ -2,11 +2,11 @@
 
 Verity can run an optional, read-only assistant against the synthetic policy and claim API in [`quality-reference-application`](https://github.com/qa-test-automation-frameworks/quality-reference-application). The existing `CoverageAgent`, its seeded/clean profiles, and its offline test path are unchanged. No app session, HTTP request, model call, or extra process is created unless a caller explicitly constructs `ReferenceAppClient` and `SharedAppAssistant`.
 
-The interface lives in `src/sut/shared_app.py`. It reuses the existing `Retriever` and `LLMProvider` contracts, and returns citations resolved only against chunks retrieved for that question. The versioned fictional policy text is in `src/sut/shared_app_corpus/v0.1.0/`; the function schema has version `v1`. The fixture in `datasets/cassettes/retrieval/shared-app.json` makes the citation path deterministic without Chroma, ONNX downloads, or a provider key.
+The interface lives in `src/sut/shared_app.py`. It reuses the existing `Retriever` and `LLMProvider` contracts, and returns citations resolved only against chunks retrieved for that question. The assistant corpus and tool schema are `v0.2.0`/`v2`. The versioned policy text includes the API-v1 $10,000 and API-v2 $5,000 claim limits; the authenticated workspace tool reads v2 policies and claims, including the server-advertised limit. Fixtures in `datasets/cassettes/retrieval/shared-app*.json` keep citation and authorization tests deterministic without Chroma, ONNX downloads, or a provider key.
 
 ## Identity and authorization
 
-Construct `ReferenceAppClient` with a configured synthetic identity (`member-a`, `member-b`, or `reviewer`). It creates a session once and retains that bearer token. The model tool `get_my_reference_workspace` accepts no arguments; Pydantic rejects extra keys, so the model cannot choose a member, policy, or claim. The tool only calls the app's authenticated `GET /api/v1/policies` and `GET /api/v1/claims` endpoints. The application independently scopes those results. `get_claim` exists for direct API authorization tests and is not exposed to the model.
+Construct `ReferenceAppClient` with a configured synthetic identity (`member-a`, `member-b`, or `reviewer`). It creates a session once through the test-only v1 session route and retains that bearer token. The model tool `get_my_reference_workspace` accepts no arguments; Pydantic rejects extra keys, so the model cannot choose a member, policy, or claim. It calls only authenticated v2 policy and claim read endpoints. The application independently scopes those results. `get_claim` exists for direct API authorization tests and is not exposed to the model.
 
 The reference app is a test fixture, not a real insurer or coverage adjudicator. Its synthetic policy records do not describe real-world insurance benefits. Do not attach real member data. Use a unique test namespace and disposable database, and keep `TEST_MODE` enabled only for isolated test deployments because session creation and fixture controls are test-only routes.
 
@@ -18,13 +18,13 @@ The fast tests use an HTTP mock transport and a stub provider; they need no netw
 uv run pytest tests/unit/test_shared_app.py -q
 ```
 
-The integration workflow checks out the reference-app source at `e9f438e06a2b092dccfc6e9ab1820ff2562ddad7`, builds it, starts it beside a disposable PostgreSQL container, seeds synthetic fixtures, and runs a no-key provider stub. The test verifies member A sees the seeded claim, member B does not see it in the workspace, a direct member-B request for member A's claim receives 404, and an assistant query cannot add another member's records to the fixed-identity tool result. It also verifies the retrieved privacy citation. Cleanup removes the app, network, and database volume.
+The integration workflow checks out the reference-app source at immutable A07 commit `3bc1c12abbbd4b891dc0cf09616253b86e90bae4`, builds it, starts it beside a disposable PostgreSQL container, seeds synthetic fixtures, and runs a no-key provider stub. The test verifies both members receive the advertised 500,000-cent v2 limit, member A sees the seeded claim, member B does not, a direct member-B request for member A's claim receives 404, and the assistant answers the v2 limit question with a retrieved citation while refusing to expose another member's records. Cleanup removes the app, network, and database volume.
 
 Run that integration locally when Docker Compose and the repository's pinned Node/npm toolchain are installed:
 
 ```bash
 export APP_NAMESPACE="verity-a06-local-$(openssl rand -hex 6)"
-export APP_SOURCE_SHA="e9f438e06a2b092dccfc6e9ab1820ff2562ddad7"
+export APP_SOURCE_SHA="3bc1c12abbbd4b891dc0cf09616253b86e90bae4"
 export APP_PORT=4300
 export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
 export TEST_CONTROL_TOKEN="$(openssl rand -hex 32)"

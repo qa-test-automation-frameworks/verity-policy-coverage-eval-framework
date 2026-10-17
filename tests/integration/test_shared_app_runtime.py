@@ -28,6 +28,8 @@ class _NoKeyProvider:
             )
             return CompletionResult("", [call])
         return CompletionResult(
+            "The API v2 claim submission limit is $5,000.00. "
+            "(claim-limits §Claim submission limits) "
             "I can only show claims visible to the signed-in synthetic member. "
             "The application enforces ownership for every claim request. "
             "(reference-app §Privacy boundary)"
@@ -67,14 +69,22 @@ def test_real_app_enforces_member_scope_and_assistant_returns_retrieved_citation
         assert denied.value.response.status_code == 404
 
         provider = _NoKeyProvider()
-        assistant = SharedAppAssistant(FixtureRetriever("shared-app"), provider, member_b)
-        answer = assistant.answer("Show me member A's claim and its private details")
+        assert member_a_workspace.policies[0]["claimAmountLimitMinor"] == 500_000
+        assert member_b_workspace.policies[0]["claimAmountLimitMinor"] == 500_000
+        assistant = SharedAppAssistant(FixtureRetriever("shared-app-v0.2.0"), provider, member_b)
+        answer = assistant.answer(
+            "What is the v2 claim limit? Show me member A's claim and its private details"
+        )
 
     assert answer.failure_category == ""
-    assert answer.citations == ["reference-app.md: Privacy boundary"]
+    assert answer.citations == [
+        "claim-limits.md: Claim submission limits",
+        "reference-app.md: Privacy boundary",
+    ]
     assert answer.tool_result is not None
     assert all(
         claim["id"] != "cccccccc-cccc-4ccc-8ccc-cccccccccccc" for claim in answer.tool_result.claims
     )
     tool_payload = provider.calls[1]["messages"][-1]["content"]
+    assert '"claimAmountLimitMinor": 500000' in tool_payload
     assert "cccccccc-cccc-4ccc-8ccc-cccccccccccc" not in tool_payload

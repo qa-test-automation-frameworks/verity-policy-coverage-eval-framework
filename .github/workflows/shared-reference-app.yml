@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      APP_SOURCE_SHA: e9f438e06a2b092dccfc6e9ab1820ff2562ddad7
+      APP_SOURCE_SHA: 3bc1c12abbbd4b891dc0cf09616253b86e90bae4
       APP_NAMESPACE: verity-a06-${{ github.run_id }}-${{ github.run_attempt }}
       APP_PORT: "4300"
       TEST_MODE: "true"
@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: qa-test-automation-frameworks/quality-reference-application
-          ref: e9f438e06a2b092dccfc6e9ab1820ff2562ddad7
+          ref: 3bc1c12abbbd4b891dc0cf09616253b86e90bae4
           path: reference-app
           persist-credentials: false
 

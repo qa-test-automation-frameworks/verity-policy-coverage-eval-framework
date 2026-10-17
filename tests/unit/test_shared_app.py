@@ -44,9 +44,11 @@ def _app_transport(requests: list[httpx.Request]) -> httpx.MockTransport:
             assert request.read() == b'{"identityKey":"member-a"}'
             return httpx.Response(201, json={"token": "opaque-test-token"})
         assert request.headers.get("Authorization") == "Bearer opaque-test-token"
-        if request.url.path == "/api/v1/policies":
-            return httpx.Response(200, json={"items": [{"id": "policy-a"}]})
-        if request.url.path == "/api/v1/claims":
+        if request.url.path == "/api/v2/policies":
+            return httpx.Response(
+                200, json={"items": [{"id": "policy-a", "claimAmountLimitMinor": 500_000}]}
+            )
+        if request.url.path == "/api/v2/claims":
             return httpx.Response(200, json={"items": [{"id": "claim-a"}]})
         return httpx.Response(404)
 
@@ -61,12 +63,12 @@ def test_reference_app_client_keeps_identity_out_of_tool_arguments() -> None:
         workspace = client.get_my_workspace()
 
     assert client.identity_key == "member-a"
-    assert workspace.policies == [{"id": "policy-a"}]
+    assert workspace.policies == [{"id": "policy-a", "claimAmountLimitMinor": 500_000}]
     assert workspace.claims == [{"id": "claim-a"}]
     assert [request.url.path for request in requests] == [
         "/api/v1/sessions",
-        "/api/v1/policies",
-        "/api/v1/claims",
+        "/api/v2/policies",
+        "/api/v2/claims",
     ]
     assert GET_MY_WORKSPACE_SCHEMA["function"]["parameters"] == {
         "type": "object",
@@ -169,6 +171,6 @@ def test_shared_assistant_rejects_a_second_tool_round() -> None:
     assert result.failure_category == "unsupported_tool_round"
     assert [request.url.path for request in requests] == [
         "/api/v1/sessions",
-        "/api/v1/policies",
-        "/api/v1/claims",
+        "/api/v2/policies",
+        "/api/v2/claims",
     ]

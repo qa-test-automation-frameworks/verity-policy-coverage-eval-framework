@@ -57,6 +57,22 @@ class TestModelCitedChunks:
         answer = "This is covered per your plan (Silver §3.3)."
         assert model_cited_chunks(chunks, answer) == []
 
+    def test_citation_resolves_multiword_heading_and_requires_matching_section(self) -> None:
+        limit = _chunk(
+            "claim-limits.md",
+            "API v2 caps requests at $5,000.",
+            section="Claim submission limits",
+        )
+        privacy = _chunk(
+            "claim-limits.md",
+            "Requests above the versioned limit are rejected.",
+            section="Validation",
+        )
+        assert model_cited_chunks(
+            [limit, privacy],
+            "The API v2 limit is $5,000 (claim-limits §Claim submission limits).",
+        ) == [limit]
+
     def test_no_citation_marker_returns_empty(self) -> None:
         chunks = [_chunk("bronze.md", "Bronze surgical benefits.")]
         assert model_cited_chunks(chunks, "No citation here.") == []
