@@ -15,6 +15,11 @@ jobs:
     name: Lint · Type · Unit Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Keep every `uv run` in this matrix on the interpreter installed for this
+    # matrix leg; otherwise `.python-version` can silently select 3.13 in the
+    # Python 3.12 leg after uv recreates the environment.
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
 
     strategy:
       fail-fast: false
