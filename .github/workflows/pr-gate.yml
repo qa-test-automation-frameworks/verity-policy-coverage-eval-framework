@@ -41,7 +41,8 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: ~/.cache/chroma/onnx_models
-          key: chroma-onnx-${{ runner.os }}-py${{ matrix.python-version }}
+          # v2 invalidates cache entries written by parallel test workers.
+          key: chroma-onnx-v2-${{ runner.os }}-py${{ matrix.python-version }}
 
       - name: Ruff lint
         run: uv run ruff check src tests scripts promptfoo
@@ -51,6 +52,18 @@ jobs:
 
       - name: mypy strict
         run: uv run mypy src
+
+      - name: Warm Chroma ONNX embedding model before parallel tests
+        # Multiple xdist workers can race while Chroma downloads the same model
+        # into the shared cache. Load it once here, after restoring the cache,
+        # so the test workers only read a complete model file.
+        run: |
+          uv run python - <<'PY'
+          from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+
+          vectors = DefaultEmbeddingFunction()(["CI cache warm-up"])
+          assert len(vectors) == 1 and vectors[0]
+          PY
 
       - name: Unit + Deterministic tests (no live calls)
         run: |
