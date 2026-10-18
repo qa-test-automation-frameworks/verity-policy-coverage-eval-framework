@@ -1,0 +1,28 @@
+{
+  "purpose": "Live provider smoke on synthetic tuning cases; not independent calibration",
+  "billing": "Owner attested Free tier with billing disabled; not checked by metadata API",
+  "receipts": [
+    {
+      "file": "smoke-1792294379747045403.json",
+      "sha256": "f596e72f4a97c0ad8bfadb4daac94e0d296a9ae311689b50c9088c1ff24d669e",
+      "status": "success",
+      "attempts": 1,
+      "successful_scores": 1,
+      "tokens_reported": 437,
+      "source_sha": "cf2ef1530e32f08b049e712cbe7ec9b41f717af6",
+      "dirty": true,
+      "http_status": null
+    },
+    {
+      "file": "smoke-1792294458168970197.json",
+      "sha256": "b64bb784a636f2b9403e64db590278838ec04f6a7e74942999621c8559098e9f",
+      "status": "failed",
+      "attempts": 2,
+      "successful_scores": 1,
+      "tokens_reported": 432,
+      "source_sha": "4c5aa328c49d2b1329914e2ed1c63c07b0a4fd05",
+      "dirty": false,
+      "http_status": 503
+    }
+  ]
+}

@@ -109,3 +109,16 @@ independent reviewers' labels, record provider/model/bounds, then execute and
 analyze the frozen study without tuning on held-out results. Hosted free-tier
 integration removes a tooling dependency; human labeling and actual independent
 study evidence remain prerequisites for verification.
+
+## Observed smoke results
+
+[Receipts and checksums](evidence/free-hosted-2026-10-18/index.json) preserve both
+Gemini runs. The initial one-call check succeeded while the implementation was
+uncommitted (the receipt records the dirty state and file hashes). The subsequent
+batch ran on clean source `4c5aa328c49d2b1329914e2ed1c63c07b0a4fd05`:
+its first score succeeded, then its second call returned HTTP 503. The batch
+stopped without retry or fallback and is **failed/incomplete**, not seven passes.
+There are two successful scored responses across the two runs; no live accuracy,
+independent agreement or measured invoice amount is inferred from them. This
+observed outage is also a practical limitation of depending on free hosted
+capacity. Future runs must retain these outcomes rather than replacing them.
