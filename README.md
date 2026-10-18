@@ -110,6 +110,12 @@ make defects-report      # regenerate docs/defects-caught.md from local evidence
 
 Expected first success: `make test-deterministic` should run without provider credentials, network calls, or paid services. If pytest plugin socket creation is blocked by a local sandbox, run the targeted command with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` and keep `UV_CACHE_DIR` pointed at a writable directory.
 
+For a bounded Gemini free-tier experiment, see the
+[hosted smoke guide](docs/free-hosted-calibration.md).
+`make calibrate-free-check` checks model availability without inference.
+Live smoke requires an explicit confirmation that the key's project has billing
+disabled; its results remain separate from independent held-out calibration.
+
 **With an API key (Tier 2 demo):**
 
 ```bash

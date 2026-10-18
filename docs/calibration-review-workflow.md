@@ -7,6 +7,10 @@ labels are synthetic and its replay cassettes are authored. Do not select those
 cases as the held-out evaluation set or describe their results as independent
 human calibration.
 
+For the owner's hosted-only, zero-spend constraint, use the
+[free hosted route guide](free-hosted-calibration.md) to check availability and
+exercise a bounded tuning-set smoke. That smoke does not replace this protocol.
+
 ## 1. Freeze the evaluation plan
 
 Before generating any held-out judge scores, commit a plan that records:

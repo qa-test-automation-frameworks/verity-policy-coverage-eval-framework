@@ -45,6 +45,13 @@ hosted-models:
 	@echo "Ranking zero-price hosted open-weight models"
 	PYTHONPATH=src:. uv run python scripts/select_openrouter_free_models.py --limit 5
 
+.PHONY: calibrate-free-check calibrate-free-smoke
+calibrate-free-check:
+	PYTHONPATH=src:. uv run python scripts/run_free_hosted_calibration.py
+
+calibrate-free-smoke:
+	PYTHONPATH=src:. uv run python scripts/run_free_hosted_calibration.py --live $(FREE_ARGS)
+
 live-canary:
 	@echo "Live canary with OpenRouter free route"
 	@echo "(free-model slugs rotate — run 'make hosted-models' and pass VERITY_MODEL=<slug> to override the default below)"
