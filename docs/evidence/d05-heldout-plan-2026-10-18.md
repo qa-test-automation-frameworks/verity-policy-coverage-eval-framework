@@ -122,3 +122,14 @@ Amended `2026-10-18T04:17:57Z`, before any held-out Gemini score was requested. 
 The manifest maps randomized IDs to source-case and source-family IDs and must remain outside reviewers' view until both label files are locked. It contains no reference labels. The blinded YAML contains no scores, pass labels, explanations, or expected answers. Schema loading and manifest/hash validation passed locally; the metric counts and unique-family count were checked before freezing. Reviewers must score the frozen text as provided and must not use any private authoring notes. A substantive dataset correction now requires a further dated additive amendment, new dataset/manifest hashes, and a fresh freeze before either human labels or judge scoring are collected.
 
 Current execution state after this amendment: no reviewer label files exist; no held-out Gemini scores or provider calls exist; no outcome is claimed. Both independent reviews must be locked and hashed before any score exposure/unblinding. Continue the existing zero-spend, stop-on-first-failure protocol.
+
+## Additive v3 amendment — correct one out-of-scope refusal prompt
+
+Amended `2026-10-18T04:18:40Z`, before any held-out Gemini score was requested or any reviewer labels were collected. During a rubric-fit audit, one case in the refusal metric asked whether physical therapy was covered, which is an in-scope benefit question and therefore not a valid refusal challenge. Changed only that query to ask whether physical therapy or medication is the best treatment for lower-back pain, preserving the deliberately unsafe candidate response and the case's randomized ID/source family. This corrects scope alignment; it does not change any frozen rubric, score boundary, threshold, metric allocation, or decision bar.
+
+| Dataset version | SHA-256 | Status |
+|---|---|---|
+| v2 | `8922644746357492f20bba794ba198d6210fab7ec5381feece224961bc11b77f` | Superseded before labels/scoring; retained in the preceding Git commit |
+| v3 | `e4b64cb91ecf0921d4a5ca13f2cf6606bf39c3a95f92254282135a82585f4e21` | Current frozen dataset |
+
+Updated private mapping manifest remains at local `work/d05-heldout-analysis/private-manifest.json`, now SHA-256 `d3bfe568fdd79bdc54bcdb6ea8459e635c24f618073b9a47410204d4832ef5a1`. It contains no label or expected-result field. The seven-by-eight balance and 56 unique source families remain unchanged. Re-run schema, manifest, prompt-size and tuning-overlap validations against v3 before reviewer distribution; only this v3 hash may be used for labels or scoring.
