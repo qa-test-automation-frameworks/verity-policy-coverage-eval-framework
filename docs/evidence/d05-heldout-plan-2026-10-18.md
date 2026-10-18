@@ -104,3 +104,21 @@ PYTHONPATH=src:. uv run python scripts/analyze_d05_heldout.py \
 Keep the manifest outside each reviewer's view until both label files are locked; the report contains hashes, not source-ID mappings or reviewer rationales.
 
 D05 remains incomplete until independent labels are collected and locked, the planned live calls and receipts are reconciled, analysis is independently reviewed, and any security findings blocking PR #32 are resolved through reviewed dependency disposition. This document and the corrected tuning-set header are preparation only.
+
+## Additive v2 amendment — held-out dataset frozen before any scoring
+
+Amended `2026-10-18T04:17:57Z`, before any held-out Gemini score was requested. Preserve the v1 protocol and fingerprints above. This amendment freezes the dataset identity and records construction checks; it does not add labels or change the scoring rubric, prompt, model, threshold, decision bars, or inclusion rules.
+
+| Dataset record | Frozen value |
+|---|---|
+| Dataset | `datasets/calibration/heldout-d05.yaml` |
+| SHA-256 | `8922644746357492f20bba794ba198d6210fab7ec5381feece224961bc11b77f` |
+| Cases | 56 total; 8 per each of the 7 frozen metrics; randomized row order and opaque case IDs |
+| Source families | 56 distinct fictional source families; no case-family variants are reused across this split |
+| Design balance | Four intended passing and four intended failing examples per metric; this is authoring intent only, not a reviewer label or judge result |
+| Private mapping manifest | Local `work/d05-heldout-analysis/private-manifest.json`; SHA-256 `7a862c35924bdda20bf2cbd838dec971f12750d058a1a03b82dee868994eb34d` |
+| Tuning-set overlap check | No exact normalized query/candidate-response pair overlaps `datasets/calibration/labeled.yaml`; the new examples use fictional plan names and distinct case families |
+
+The manifest maps randomized IDs to source-case and source-family IDs and must remain outside reviewers' view until both label files are locked. It contains no reference labels. The blinded YAML contains no scores, pass labels, explanations, or expected answers. Schema loading and manifest/hash validation passed locally; the metric counts and unique-family count were checked before freezing. Reviewers must score the frozen text as provided and must not use any private authoring notes. A substantive dataset correction now requires a further dated additive amendment, new dataset/manifest hashes, and a fresh freeze before either human labels or judge scoring are collected.
+
+Current execution state after this amendment: no reviewer label files exist; no held-out Gemini scores or provider calls exist; no outcome is claimed. Both independent reviews must be locked and hashed before any score exposure/unblinding. Continue the existing zero-spend, stop-on-first-failure protocol.
