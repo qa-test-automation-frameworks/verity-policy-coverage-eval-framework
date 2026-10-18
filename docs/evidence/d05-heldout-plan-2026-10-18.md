@@ -142,3 +142,14 @@ Amended `2026-10-18T04:18:40Z`, before any held-out Gemini score was requested o
 | v3 | `e4b64cb91ecf0921d4a5ca13f2cf6606bf39c3a95f92254282135a82585f4e21` | Current frozen dataset |
 
 Updated private mapping manifest remains at local `work/d05-heldout-analysis/private-manifest.json`, now SHA-256 `d3bfe568fdd79bdc54bcdb6ea8459e635c24f618073b9a47410204d4832ef5a1`. It contains no label or expected-result field. The seven-by-eight balance and 56 unique source families remain unchanged. Re-run schema, manifest, prompt-size and tuning-overlap validations against v3 before reviewer distribution; only this v3 hash may be used for labels or scoring.
+
+## Additive v4 amendment — bounded free-tier availability attempts
+
+Amended `2026-10-18T04:30:32Z`; dataset v3, rubric, prompt, model, threshold and decision bars are unchanged. Google's authenticated model catalogue preflight for `gemini-3.8-flash` succeeded with `generateContent` support and no inference request. The owner had confirmed the key's project is Free tier with billing disabled; the runner made two separately receipted, bounded live study invocations against the v3 dataset and stopped on each first failed request, with no retries or fallback:
+
+| Receipt (local private evidence) | Invocation | First request outcome | SHA-256 |
+|---|---|---|---|
+| `work/d05-heldout-analysis/heldout-v3/heldout-1792297645094763993.json` | initial batch, start index 0, limit 7 calls | HTTP 408 / `Timeout`; no score | `91c55cbaab56ebecfe253ed31773ed51b8baf8e1f6110832005697dc305eea13` |
+| `work/d05-heldout-analysis/heldout-v3/heldout-1792297807071986153.json` | separately logged continuation, start index 0, limit 7 calls | HTTP 503 / `ServiceUnavailableError`; no score | `fbecdbf60fcc09c619ee593c5d928db3618d11db977d4a7d638a3c4ead5301eb` |
+
+The frozen receipt exporter reconciled both receipts as incomplete: 0 of 56 successful scores, all 56 cases missing, and no judge-score CSV emitted. The private index is `work/d05-heldout-analysis/d05-heldout-run-index.json`, SHA-256 `d7c07a247c3b6f7bd27c78db8e1208b50fd09b7f8a146044cf466128401c924e`. No provider-reported cost field was returned for either failed request; exact usage/cost is therefore unreported. No paid fallback or billing activation occurred. Stop further calls for this session; only a later, separately logged continuation under this same plan may proceed after provider availability is rechecked. Do not expose any judge score before both independent label files are locked. No reviewer labels have been collected, so there is no calibration result or threshold disposition.
