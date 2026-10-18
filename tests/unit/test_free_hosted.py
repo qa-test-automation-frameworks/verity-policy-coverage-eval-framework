@@ -10,14 +10,17 @@ from unittest.mock import MagicMock, patch
 import httpx
 import litellm.exceptions
 import pytest
+import yaml
 from scripts.run_free_hosted_calibration import (
     DEFAULT_MODEL,
     build_settings,
+    heldout_prompts,
     main,
     require_supported_model,
     run_smoke,
 )
 
+from verity.calibration import CALIBRATION_METRICS, load_heldout_calibration
 from verity.cost import RunAccumulator, Usage
 from verity.providers import CompletionResult, LLMProvider
 
@@ -224,6 +227,103 @@ def test_unconfirmed_billing_stops_before_any_network_request(tmp_path, monkeypa
     receipt = json.loads(next(tmp_path.glob("smoke-*.json")).read_text())
     assert "confirmation" in receipt["stop_reason"]
     assert receipt["attempts"] == []
+
+
+def test_heldout_study_requires_free_project_attestation_before_network(tmp_path, monkeypatch):
+    dataset = tmp_path / "heldout.yaml"
+    write_heldout_dataset(dataset)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "free-hosted",
+            "--live",
+            "--heldout-study",
+            "--heldout-dataset",
+            str(dataset),
+            "--out",
+            str(tmp_path / "receipts"),
+        ],
+    )
+    with patch("scripts.run_free_hosted_calibration.httpx.get") as get:
+        assert main() == 1
+    get.assert_not_called()
+    receipt = json.loads(next((tmp_path / "receipts").glob("heldout-*.json")).read_text())
+    assert receipt["attempts"] == []
+    assert "confirmation" in receipt["stop_reason"]
+
+
+def write_heldout_dataset(path):
+    cases = []
+    for metric in CALIBRATION_METRICS:
+        for index in range(8):
+            cases.append(
+                {
+                    "randomized_case_id": f"blind-{metric}-{index:02d}",
+                    "metric": metric,
+                    "query": f"Question {index} for {metric}?",
+                    "context": [f"Public fictional context for {metric} case {index}."],
+                    "candidate_output": f"Fictional response for {metric} case {index}.",
+                }
+            )
+    path.write_text(yaml.safe_dump({"cases": cases}), encoding="utf-8")
+
+
+def test_heldout_loader_accepts_unlabeled_balanced_set_and_selects_frozen_slice(tmp_path):
+    dataset = tmp_path / "heldout.yaml"
+    write_heldout_dataset(dataset)
+
+    cases = load_heldout_calibration(dataset)
+    prompts = heldout_prompts(dataset, start_index=9, max_calls=3)
+
+    assert len(cases) == 56
+    assert [case_id for case_id, _ in prompts] == [
+        cases[index].randomized_case_id for index in range(9, 12)
+    ]
+    assert "Question 1 for completeness?" in prompts[0][1]
+
+
+def test_heldout_mode_receipt_tracks_hash_and_never_calls_unmocked_provider(tmp_path, monkeypatch):
+    dataset = tmp_path / "heldout.yaml"
+    write_heldout_dataset(dataset)
+    payload = {"name": f"models/{DEFAULT_MODEL}", "supportedGenerationMethods": ["generateContent"]}
+    response = httpx.Response(
+        200,
+        request=httpx.Request("GET", "https://google.invalid"),
+        json=payload,
+    )
+    monkeypatch.setattr("scripts.run_free_hosted_calibration.httpx.get", lambda *a, **k: response)
+    monkeypatch.setenv("VERITY_GOOGLE_API_KEY", "test-key")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "free-hosted",
+            "--live",
+            "--heldout-study",
+            "--confirm-free-project",
+            "--heldout-dataset",
+            str(dataset),
+            "--start-index",
+            "8",
+            "--max-calls",
+            "1",
+            "--out",
+            str(tmp_path / "receipts"),
+        ],
+    )
+    provider = MagicMock()
+    provider.complete.return_value = result()
+    with patch("scripts.run_free_hosted_calibration.LLMProvider", return_value=provider):
+        assert main() == 0
+
+    receipt = json.loads(next((tmp_path / "receipts").glob("heldout-*.json")).read_text())
+    assert receipt["purpose"].startswith("bounded live D05 held-out")
+    assert receipt["study_plan_id"] == "D05-GEMINI-HELDOUT-2026-10-18-v1"
+    assert receipt["selected_case_ids"] == ["blind-completeness-00"]
+    assert receipt["dataset_sha256"]
+    assert receipt["attempts"][0]["status"] == "success"
+    assert provider.complete.call_args.kwargs["label"] == "d05-heldout-calibration"
 
 
 def test_exhausted_output_budget_stops_before_second_request(tmp_path):

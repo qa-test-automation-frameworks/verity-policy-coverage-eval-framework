@@ -24,7 +24,11 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 sys.path.insert(0, str(_ROOT / "src"))
 
-from verity.calibration import build_scoring_prompt, load_calibration  # noqa: E402
+from verity.calibration import (  # noqa: E402
+    build_scoring_prompt,
+    load_calibration,
+    load_heldout_calibration,
+)
 from verity.config import JudgeConfig, Provider, Settings  # noqa: E402
 from verity.providers import LLMProvider  # noqa: E402
 
@@ -87,6 +91,16 @@ def smoke_prompts() -> tuple[Path, list[tuple[str, str]]]:
     return dataset, [selected[metric] for metric in sorted(selected)]
 
 
+def heldout_prompts(dataset: Path, *, start_index: int, max_calls: int) -> list[tuple[str, str]]:
+    """Select one frozen contiguous batch without importing or creating human labels."""
+    cases = load_heldout_calibration(dataset)
+    prompts = [(case.randomized_case_id, build_scoring_prompt(case)) for case in cases]
+    selected = prompts[start_index : start_index + max_calls]
+    if not selected:
+        raise FreeHostedError("Held-out batch starts outside the frozen dataset")
+    return selected
+
+
 def run_smoke(
     provider: LLMProvider,
     prompts: list[tuple[str, str]],
@@ -97,6 +111,7 @@ def run_smoke(
     max_tokens: int,
     total_output_tokens: int,
     interval: float,
+    label: str = "free-hosted-tuning-smoke",
 ) -> None:
     """Save every attempt; never retry, replace invalid scores or promote thresholds."""
     if not prompts:
@@ -124,7 +139,7 @@ def run_smoke(
             result = provider.complete(
                 [{"role": "user", "content": prompt}],
                 max_tokens=attempt["output_token_limit"],
-                label="free-hosted-tuning-smoke",
+                label=label,
             )
             if result.call_record is None:
                 raise FreeHostedError("Live response has no usage record")
@@ -175,7 +190,14 @@ def run_smoke(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--live", action="store_true", help="Send at most seven tuning prompts")
+    parser.add_argument("--live", action="store_true", help="Send at most seven bounded prompts")
+    parser.add_argument(
+        "--heldout-study",
+        action="store_true",
+        help="Score a frozen unlabeled held-out set instead of the synthetic tuning smoke",
+    )
+    parser.add_argument("--heldout-dataset", type=Path, help="frozen 56-case held-out YAML file")
+    parser.add_argument("--start-index", type=int, default=0, help="first case index for one batch")
     parser.add_argument(
         "--confirm-free-project",
         action="store_true",
@@ -197,13 +219,25 @@ def main() -> int:
         or not 3 <= args.interval <= 60
     ):
         parser.error("Per-call tokens: 1..4096; total output: 1..28672; interval: 3..60 seconds")
+    if args.heldout_study:
+        if not args.live or args.heldout_dataset is None:
+            parser.error("--heldout-study requires --live and --heldout-dataset")
+        if not 0 <= args.start_index < 56:
+            parser.error("Held-out --start-index must be between 0 and 55")
+    elif args.heldout_dataset is not None or args.start_index != 0:
+        parser.error("--heldout-dataset and --start-index require --heldout-study")
     args.out.mkdir(parents=True, exist_ok=True)
-    receipt_path = args.out / f"smoke-{time.time_ns()}.json"
+    receipt_prefix = "heldout" if args.heldout_study else "smoke"
+    receipt_path = args.out / f"{receipt_prefix}-{time.time_ns()}.json"
     receipt: dict[str, Any] = {
         "schema_version": 1,
-        "purpose": "live tuning-set smoke, NOT independent calibration"
-        if args.live
-        else "catalogue preflight only, no inference",
+        "purpose": (
+            "bounded live D05 held-out scoring; does not label or analyze cases"
+            if args.heldout_study
+            else "live tuning-set smoke, NOT independent calibration"
+            if args.live
+            else "catalogue preflight only, no inference"
+        ),
         "started_at": datetime.now(UTC).isoformat(),
         "source_sha": subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -276,9 +310,20 @@ def main() -> int:
         receipt["catalogue_checked_at"] = datetime.now(UTC).isoformat()
         if args.live:
             settings = build_settings(key, args.model)
-            dataset, prompts = smoke_prompts()
+            if args.heldout_study:
+                dataset = args.heldout_dataset
+                assert dataset is not None
+                prompts = heldout_prompts(
+                    dataset,
+                    start_index=args.start_index,
+                    max_calls=args.max_calls,
+                )
+                receipt["study_plan_id"] = "D05-GEMINI-HELDOUT-2026-10-18-v1"
+                receipt["start_index"] = args.start_index
+            else:
+                dataset, prompts = smoke_prompts()
             receipt["dataset_sha256"] = hashlib.sha256(dataset.read_bytes()).hexdigest()
-            receipt["selected_case_ids"] = [case_id for case_id, _ in prompts[: args.max_calls]]
+            receipt["selected_case_ids"] = [case_id for case_id, _ in prompts]
             run_smoke(
                 LLMProvider(settings),
                 prompts,
@@ -288,6 +333,9 @@ def main() -> int:
                 max_tokens=args.max_tokens,
                 total_output_tokens=args.total_output_tokens,
                 interval=args.interval,
+                label=(
+                    "d05-heldout-calibration" if args.heldout_study else "free-hosted-tuning-smoke"
+                ),
             )
         receipt["status"] = "success"
     except Exception as exc:
