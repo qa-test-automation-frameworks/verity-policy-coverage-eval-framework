@@ -11,7 +11,7 @@ For each of Verity's seven supported calibration metrics, how closely does the c
 
 Target metrics: `answer_relevancy`, `completeness`, `context_precision`, `disambiguation`, `faithfulness`, `hallucination`, and `refusal`. The scope matches the current calibration schema and rubric path; this study will not establish end-to-end validity for the DeepEval/RAGAS adapters, production error rates, or model-family self-preference.
 
-The unit of analysis is one case/metric pair. Prepare **56 cases: 8 per metric**, with 4 intended passes and 4 intended failures per metric. Use new, fictional policy/source material and new candidate answers, distinct from `datasets/calibration/labeled.yaml`, its cassettes, existing SUT prompts, and any tuning examples. Use distinct scenario families across splits; keep paraphrases or variants from one scenario in one split. Record provenance and a stable family ID in a private key/manifest, and publish only non-sensitive fictional content. Reviewers and the judge see the same frozen case content and metric rubric.
+The unit of analysis is one case/metric pair. Prepare **56 cases: 8 per metric**, with 4 intended passes and 4 intended failures per metric. Include every case in the frozen set; do not sample after seeing outputs or exclude cases after scoring begins. Before scoring, only malformed cases or proven tuning-set leakage may be corrected or excluded; document the reason and freeze a new dataset hash first. Use new, fictional policy/source material and new candidate answers, distinct from `datasets/calibration/labeled.yaml`, its cassettes, existing SUT prompts, and any tuning examples. Use distinct scenario families across splits; keep paraphrases or variants from one scenario in one split. Record provenance and a stable family ID in a private key/manifest, and publish only non-sensitive fictional content. Reviewers and the judge see the same frozen case content and metric rubric.
 
 This is an **exploratory calibration**, not a statistically precise production estimate. Eight cases per metric produce coarse rates and wide uncertainty intervals. A metric cannot be promoted based on this study alone if its confidence interval crosses a predeclared bar, the reviewers materially disagree, or sample/data quality is questionable; retain its quarantine and require a larger separately sourced confirmatory set.
 
@@ -67,6 +67,20 @@ Expected artifacts, created only after the plan and held-out dataset are frozen:
 1. A held-out dataset plus provenance/family manifest and SHA-256, with no reviewer labels or judge scores embedded in the blinded reviewer copy.
 2. Two independently completed CSV label files, locked and hashed before unblinding, plus pseudonymous independence attestations.
 3. Bounded live Gemini receipts and an immutable evidence index with all eight-or-more invocation outcomes, including failures.
-4. Reproducible analysis output containing per-metric/per-reviewer measures, uncertainty intervals, disagreements, missing data, deviations, and an explicit retain-quarantine/promote recommendation.
+4. Reproducible analysis output containing per-metric/per-reviewer measures, uncertainty intervals, disagreements, missing data, deviations, an explicit retain-quarantine/promote recommendation, exact input hashes, analysis-tool hashes, and the analysis commit.
+
+Run the offline analyzer only after both reviewer files are locked and the judge run is complete; it checks the dataset hash against the private mapping manifest, exact randomized-ID/metric alignment, case balance, separate labels, and the fixed score/pass boundary before emitting aggregate JSON:
+
+```bash
+PYTHONPATH=src:. uv run python scripts/analyze_d05_heldout.py \
+  --reviewer-one /private/path/reviewer-one.csv \
+  --reviewer-two /private/path/reviewer-two.csv \
+  --judge-scores /private/path/judge-scores.csv \
+  --heldout-dataset datasets/calibration/heldout-d05.yaml \
+  --case-manifest /private/path/heldout-manifest.json \
+  --output reports/calibration/d05-heldout-analysis.json
+```
+
+Keep the manifest outside each reviewer's view until both label files are locked; the report contains hashes, not source-ID mappings or reviewer rationales.
 
 D05 remains incomplete until independent labels are collected and locked, the planned live calls and receipts are reconciled, analysis is independently reviewed, and any security findings blocking PR #32 are resolved through reviewed dependency disposition. This document and the corrected tuning-set header are preparation only.
