@@ -171,7 +171,6 @@ class HeldoutReceiptTests(unittest.TestCase):
                     start_index=offset,
                 )
             ids = [case["randomized_case_id"] for case in cases[:7]]
-            first_id = ids[0]
             make_receipt(
                 receipt_dir / "heldout-duplicate.json",
                 ids,
