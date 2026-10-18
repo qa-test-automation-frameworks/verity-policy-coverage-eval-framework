@@ -293,6 +293,9 @@ def analyze(
     """Analyze two locked reviewers against one held-out judge export."""
     if reviewer_one_pseudonym == reviewer_two_pseudonym:
         raise ValueError("the two reviewer files must have distinct pseudonyms")
+    reserved_pseudonyms = {"judge_scores", "heldout_dataset", "case_manifest"}
+    if {reviewer_one_pseudonym, reviewer_two_pseudonym} & reserved_pseudonyms:
+        raise ValueError("reviewer pseudonyms must not collide with evidence-hash keys")
     case_ids = _validate_alignment(reviewer_one, reviewer_two, "reviewer-to-reviewer")
     _validate_alignment(reviewer_one, judge, "reviewer-one-to-judge")
     _validate_alignment(reviewer_two, judge, "reviewer-two-to-judge")
@@ -490,5 +493,7 @@ def analyze_files(
 
 def write_report(report: dict[str, Any], output_path: Path) -> None:
     """Write the aggregate JSON report without modifying source artifacts."""
+    if output_path.exists():
+        raise FileExistsError(f"refusing to overwrite existing report: {output_path}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

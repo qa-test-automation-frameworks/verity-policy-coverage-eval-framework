@@ -23,6 +23,7 @@ from verity.heldout_analysis import (
     _wilson,
     analyze,
     load_reviewer,
+    write_report,
 )
 
 
@@ -130,6 +131,16 @@ class HeldoutAnalysisTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "frozen 0.5 score boundary"):
                 load_reviewer(path)
+
+    def test_report_writer_refuses_to_overwrite_prior_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "analysis.json"
+            path.write_text("prior report\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(FileExistsError, "refusing to overwrite"):
+                write_report({"schema_version": 1}, path)
+
+            self.assertEqual(path.read_text(encoding="utf-8"), "prior report\n")
 
     def test_private_manifest_must_hash_and_match_unlabeled_dataset(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
