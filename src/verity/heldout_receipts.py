@@ -72,6 +72,15 @@ def reconcile_receipts(
         attempts = receipt.get("attempts")
         if not isinstance(attempts, list):
             raise ValueError(f"{path}: attempts must be a list")
+        generation_config = receipt.get("generation_config")
+        has_success = any(
+            isinstance(attempt, dict) and attempt.get("status") == "success" for attempt in attempts
+        )
+        if has_success and generation_config != {
+            "temperature": 1.0,
+            "reasoning_effort": "low",
+        }:
+            raise ValueError(f"{path}: successful score used an unfrozen generation configuration")
         if len(attempts) > 7 or receipt.get("status") not in {"success", "failed"}:
             raise ValueError(f"{path}: invalid run status or more than seven attempts")
         selected_ids = receipt.get("selected_case_ids")
@@ -128,6 +137,7 @@ def reconcile_receipts(
                 "file": path.name,
                 "sha256": sha256_file(path),
                 "run_status": receipt.get("status"),
+                "generation_config": generation_config,
                 "started_at": receipt.get("started_at"),
                 "finished_at": receipt.get("ended_at"),
                 "source_sha": receipt.get("source_sha"),

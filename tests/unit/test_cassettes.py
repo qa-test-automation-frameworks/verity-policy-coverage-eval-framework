@@ -64,6 +64,12 @@ class TestRequestKey:
         k2 = request_key("m", msgs, [], 0.0, 512)
         assert k1 == k2
 
+    def test_reasoning_effort_changes_key(self) -> None:
+        msgs: list[dict[str, Any]] = [{"role": "user", "content": "q"}]
+        k1 = request_key("gemini/model", msgs, None, 1.0, 512)
+        k2 = request_key("gemini/model", msgs, None, 1.0, 512, "low")
+        assert k1 != k2
+
     def test_key_is_32_hex_chars(self) -> None:
         key = request_key("m", [], None, 0.0, 512)
         assert len(key) == 32

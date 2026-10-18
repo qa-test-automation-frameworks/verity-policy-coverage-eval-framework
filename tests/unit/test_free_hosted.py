@@ -45,6 +45,8 @@ def test_settings_isolate_paid_ambient_configuration(monkeypatch):
     assert settings.retries == 0
     assert settings.timeout == 45
     assert settings.cassette_mode == "off"
+    assert settings.temperature == 1.0
+    assert settings.judge.temperature == 1.0
     assert settings.resolved_provider() == (f"gemini/{DEFAULT_MODEL}", "", "test-key")
 
 
@@ -80,12 +82,14 @@ def test_actual_gemini_http_body_has_generation_bounds_and_no_paid_tools(monkeyp
     result = LLMProvider(build_settings("test-key", DEFAULT_MODEL)).complete(
         [{"role": "user", "content": "public synthetic test"}],
         max_tokens=100,
+        reasoning_effort="low",
     )
     assert result.content == "Score: 8"
     assert len(sent) == 1
     config = sent[0]["generationConfig"]
     assert config.get("maxOutputTokens", config.get("max_output_tokens")) == 100, config
-    assert sent[0]["generationConfig"]["temperature"] == 0
+    assert sent[0]["generationConfig"]["temperature"] == 1.0
+    assert sent[0]["generationConfig"]["thinkingConfig"]["thinkingLevel"] == "low"
     assert "tools" not in sent[0]
     assert "cachedContent" not in sent[0]
 

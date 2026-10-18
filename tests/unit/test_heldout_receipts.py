@@ -70,6 +70,7 @@ def make_receipt(
         "study_plan_id": PLAN_ID,
         "dataset_sha256": dataset_hash,
         "requested_model": "gemini-3.8-flash",
+        "generation_config": {"temperature": 1.0, "reasoning_effort": "low"},
         "free_project_confirmed_by_operator": True,
         "billing_plan_verified_by_api": False,
         "limits": {
@@ -202,6 +203,30 @@ class HeldoutReceiptTests(unittest.TestCase):
             receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
 
             with self.assertRaisesRegex(ValueError, "frozen zero-spend request bounds"):
+                reconcile_receipts(dataset, receipt_dir)
+
+    def test_successful_scores_require_frozen_gemini_generation_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            dataset = root / "heldout.yaml"
+            cases = create_dataset(dataset)
+            receipt_dir = root / "receipts"
+            receipt_dir.mkdir()
+            dataset_hash = hashlib.sha256(dataset.read_bytes()).hexdigest()
+            for offset in range(0, 56, 7):
+                ids = [case["randomized_case_id"] for case in cases[offset : offset + 7]]
+                make_receipt(
+                    receipt_dir / f"heldout-{offset}.json",
+                    ids,
+                    dataset_hash,
+                    start_index=offset,
+                )
+            first_path = receipt_dir / "heldout-0.json"
+            receipt = json.loads(first_path.read_text(encoding="utf-8"))
+            receipt["generation_config"]["temperature"] = 0.0
+            first_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "unfrozen generation configuration"):
                 reconcile_receipts(dataset, receipt_dir)
 
 

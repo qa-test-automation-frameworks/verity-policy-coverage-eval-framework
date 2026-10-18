@@ -117,6 +117,7 @@ def request_key(
     tools: list[dict[str, Any]] | None,
     temperature: float,
     max_tokens: int,
+    reasoning_effort: str | None = None,
 ) -> str:
     """Compute a stable 32-hex-char SHA-256 key for a completion request.
 
@@ -130,5 +131,7 @@ def request_key(
         "temperature": temperature,
         "tools": tools or [],
     }
+    if reasoning_effort is not None:
+        payload["reasoning_effort"] = reasoning_effort
     canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(canonical.encode()).hexdigest()[:32]

@@ -65,6 +65,7 @@ class LLMProvider:
         temperature: float | None = None,
         max_tokens: int | None = None,
         label: str = "",
+        reasoning_effort: str | None = None,
     ) -> CompletionResult:
         """Send a completion request and return a typed result with cost accounting."""
         s = self._settings
@@ -74,7 +75,7 @@ class LLMProvider:
         mode = s.cassette_mode
 
         if mode == "replay":
-            key = request_key(litellm_model, messages, tools, temp, max_tok)
+            key = request_key(litellm_model, messages, tools, temp, max_tok, reasoning_effort)
             lib = self._get_cassette_library()
             payload = lib.lookup(key)
             if payload is None:
@@ -88,7 +89,9 @@ class LLMProvider:
         record_key: str | None = None
         record_lib: CassetteLibrary | None = None
         if mode == "record":
-            record_key = request_key(litellm_model, messages, tools, temp, max_tok)
+            record_key = request_key(
+                litellm_model, messages, tools, temp, max_tok, reasoning_effort
+            )
             record_lib = self._get_cassette_library()
 
         # Live call (mode == "off" or mode == "record")
@@ -106,6 +109,9 @@ class LLMProvider:
             kwargs["api_key"] = api_key
         if tools:
             kwargs["tools"] = tools
+        if reasoning_effort is not None:
+            kwargs["reasoning_effort"] = reasoning_effort
+            kwargs["allowed_openai_params"] = ["reasoning_effort"]
 
         start = time.monotonic()
         response = self._complete_with_key_fallback(kwargs)

@@ -73,11 +73,11 @@ def build_settings(key: str, model: str) -> Settings:
         openrouter_api_key_2=None,
         together_api_key=None,
         nvidia_api_key=None,
-        temperature=0,
+        temperature=1.0,
         timeout=45,
         retries=0,
         cassette_mode="off",
-        judge=JudgeConfig(**isolation, provider=Provider.google, model=model),
+        judge=JudgeConfig(**isolation, provider=Provider.google, model=model, temperature=1.0),
     )
 
 
@@ -140,6 +140,7 @@ def run_smoke(
                 [{"role": "user", "content": prompt}],
                 max_tokens=attempt["output_token_limit"],
                 label=label,
+                reasoning_effort="low",
             )
             if result.call_record is None:
                 raise FreeHostedError("Live response has no usage record")
@@ -279,6 +280,7 @@ def main() -> int:
             "retries": 0,
             "spend_usd": 0,
         },
+        "generation_config": {"temperature": 1.0, "reasoning_effort": "low"},
         "attempts": [],
         "status": "started",
     }
