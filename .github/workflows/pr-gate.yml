@@ -62,7 +62,7 @@ jobs:
           from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
           vectors = DefaultEmbeddingFunction()(["CI cache warm-up"])
-          assert len(vectors) == 1 and vectors[0]
+          assert len(vectors) == 1 and len(vectors[0]) > 0
           PY
 
       - name: Unit + Deterministic tests (no live calls)
