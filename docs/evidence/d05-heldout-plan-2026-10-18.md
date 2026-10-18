@@ -23,10 +23,10 @@ The tuning/methodology set is not part of the held-out sample:
 |---|---|
 | Tuning dataset | `datasets/calibration/labeled.yaml`, 56 cases, 8 each across 7 metrics; SHA-256 `c72cf4dc02065f0e80b7832c645fa25fe7dbf78544d247cb86a156e067f18474` |
 | Threshold methodology | `docs/thresholds.md`; SHA-256 `96609f9c70bc9ca28bbff9d8e713100ad4619c7b7801b50c069d45b0394ea708` |
-| Scoring implementation | `src/verity/calibration.py`; SHA-256 `b8df779a640ad026bd9f7dba582b504d4f44e72b23177b3b3daa623c59f270d0` |
+| Scoring implementation | `src/verity/calibration.py`; SHA-256 `b369a312da70657dcf935c331dbf407d7ba34ae48d4218dde804a1251a297d8d` |
 | Metric rubrics | `src/verity/metrics/rubrics.py`; SHA-256 `d897ed855b08d48eddbad8e1f609793a58add8df744be35cf7ce4c164a5d7d2f` |
-| Free-tier runner | `scripts/run_free_hosted_calibration.py`; SHA-256 `8c390d1c3431e56d310e84572bec923ea4985808e8477d24b5d3ef2cf58cb529` |
-| Baseline commit | `57068efce2a5d3767ddf81669871abefff6132c5` |
+| Free-tier runner | `scripts/run_free_hosted_calibration.py`; SHA-256 `1dd3637bfa60e632fe4a138713750558a27d09811315eb081bbba6fa842148f9` |
+| Frozen scoring/runner commit | `20b177d57f1b0ab4c31bdbe5f29cc1bc0554deb1`; no held-out scores have been requested. |
 | Judge | Google Gemini API, exact model ID `gemini-3.8-flash`; verify availability and Free-tier eligibility again immediately before any request. No alias or fallback is permitted. |
 
 The held-out dataset is not yet created; its version, SHA-256, source-family counts, construction timestamp, leakage review, and deterministic case-selection rule must be added to a v2 plan amendment **before any held-out judge score is requested**. If any rubric, scoring prompt, threshold, model, or inclusion rule changes after scores are requested, retire this split from confirmatory use and prepare a new holdout. Preserve the original v1 plan and results.
@@ -56,7 +56,27 @@ Do not retune, omit cases, reclassify failures, or change thresholds after unbli
 
 The user requires hosted AI only and zero authorized spend. The user previously attested that the key's Google AI Studio project is Free tier with billing disabled; recheck that exact project/key before execution. Do not enable billing, use a paid project/key, or accept a paid fallback. Google documents that Gemini free-tier availability varies by model and that free-tier data may be used to improve products; use only fictional, public repository-created examples. The selected model's pricing and availability must be rechecked on the execution date ([pricing](https://ai.google.dev/gemini-api/docs/pricing), [billing and Free tier](https://ai.google.dev/gemini-api/docs/billing)).
 
-Use `scripts/run_free_hosted_calibration.py` with its explicit free-project confirmation. The runner's current bounds are seven requests per invocation, 2,048 output tokens per request, 14,336 output tokens per invocation, 16,000 input UTF-8 bytes per request, 45-second timeout, at least 3.1 seconds between requests, and zero SDK retries/fallback. A complete 56-case judge evaluation therefore requires at least eight bounded invocations; split only at predeclared case boundaries and preserve every receipt. Stop at the first quota/auth/outage/invalid-output/cost anomaly. Do not infer that a free account guarantees availability or a particular quota.
+Use `scripts/run_free_hosted_calibration.py` in explicit held-out mode with its free-project confirmation; do not use the tuning smoke for study scores. Example for the first batch (repeat with `--start-index 7`, `14`, `21`, `28`, `35`, `42`, and `49`):
+
+```bash
+PYTHONPATH=src:. uv run python scripts/run_free_hosted_calibration.py \
+  --live --confirm-free-project --heldout-study \
+  --heldout-dataset datasets/calibration/heldout-d05.yaml \
+  --start-index 0 --max-calls 7 \
+  --out reports/free-hosted/heldout-d05
+```
+
+The runner's bounds are seven requests per invocation, 2,048 output tokens per request, 14,336 output tokens per invocation, 16,000 input UTF-8 bytes per request, 45-second timeout, at least 3.1 seconds between requests, and zero SDK retries/fallback. A complete 56-case judge evaluation therefore requires at least eight bounded invocations; split only at the predeclared contiguous case boundaries and preserve every receipt. Stop at the first quota/auth/outage/invalid-output/cost anomaly. Do not infer that a free account guarantees availability or a particular quota.
+
+After all eight-or-more batches, reconcile raw receipts before analysis. This emits the immutable run index even when the study is incomplete; it writes the score CSV only if each frozen case has exactly one successful score and all receipt/model/dataset/free-tier checks pass. Failed attempts remain in the index and are never imputed:
+
+```bash
+PYTHONPATH=src:. uv run python scripts/export_d05_heldout_scores.py \
+  --heldout-dataset datasets/calibration/heldout-d05.yaml \
+  --receipt-dir reports/free-hosted/heldout-d05 \
+  --scores-out reports/calibration/d05-heldout-judge-scores.csv \
+  --index-out reports/calibration/d05-heldout-run-index.json
+```
 
 Before each invocation, verify account Free status and disabled billing. Record operator attestation, UTC time, source commit, dataset and prompt hashes, model ID, per-invocation limits, call/token/latency counts, provider response IDs, failures, and artifact checksums. `provider_reported_cost_usd: null` means unreported, not measured zero. No credentials may appear in commands, logs, repository artifacts, or reviewer files.
 
