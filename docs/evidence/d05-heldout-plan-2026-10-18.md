@@ -37,6 +37,15 @@ Obtain two reviewers who did not author the held-out cases, candidate outputs, s
 
 Each reviewer independently scores every case on the existing normalized 0–1 scale, selects pass/fail using the frozen 0.5 score boundary used by the current calibration implementation, records confidence and a concise rationale, and submits a completed copy of `docs/independent-calibration-labels.template.csv`. Give reviewers randomized case IDs, metric rubric, required source context, and candidate output. Do not show judge score/explanation, synthetic/reference labels, output-family/provider/model, prompt version, split membership, or the other reviewer's responses. Keep the randomized-ID mapping separate until both label files are locked and SHA-256 hashed.
 
+Generate two non-overwritable blank forms directly from the frozen dataset; the command reads no private manifest and includes no expected labels:
+
+```bash
+PYTHONPATH=src:. uv run python scripts/prepare_d05_reviewer_packets.py \
+  --out-dir /private/path/d05-review-forms-v3
+```
+
+Provide each CSV to a different qualified reviewer along with the frozen dataset and metric rubrics. Give both the same materials independently; do not expose either completed form, the private manifest, or any judge receipt/score before both forms have been returned and locked.
+
 Compute judge agreement separately against each reviewer's locked labels; do not silently replace either reviewer's labels with a consensus. Report reviewer-to-reviewer agreement as well. If a third-person adjudication is needed, preserve original labels and report adjudication only as secondary analysis. No labels are present in this plan.
 
 ## Analysis and decision rules
