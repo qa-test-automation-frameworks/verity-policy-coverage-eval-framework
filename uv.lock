@@ -3215,9 +3215,6 @@ dev = [
     { name = "setuptools" },
     { name = "types-pyyaml" },
 ]
-security = [
-    { name = "pip-audit" },
-]
 mutation = [
     { name = "mutmut" },
 ]
@@ -3229,6 +3226,9 @@ otel = [
 report = [
     { name = "allure-pytest" },
     { name = "markdown" },
+]
+security = [
+    { name = "pip-audit" },
 ]
 semantic = [
     { name = "deepeval" },
@@ -3259,7 +3259,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },
-    { name = "ragas", marker = "extra == 'semantic'", specifier = ">=0.2.0" },
+    { name = "ragas", marker = "extra == 'semantic'", specifier = "==0.4.3" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.17.1" },
     { name = "setuptools", marker = "extra == 'dev'", specifier = ">=83.0.0" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12" },

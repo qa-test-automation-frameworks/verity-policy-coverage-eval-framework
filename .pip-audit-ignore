@@ -5,7 +5,7 @@
 
 # Reviewed: 2026-10-19
 # Review-by: 2026-11-02
-# Reviewer: Claude Opus 5.5 in Claude Code + Prayag Vyas (owner)
+# Reviewer: AI-assisted review by Claude Opus 5.5 in Claude Code; owner disposition by Prayag Vyas
 # Record: docs/security/2026-10-17-dependency-exceptions.md
 # Decision: retain through 2026-11-17; no renewal authorized
 # Expires: 2026-11-17
@@ -13,7 +13,7 @@ PYSEC-2026-2447
 
 # Reviewed: 2026-10-19
 # Review-by: 2026-11-02
-# Reviewer: Claude Opus 5.5 in Claude Code + Prayag Vyas (owner)
+# Reviewer: AI-assisted review by Claude Opus 5.5 in Claude Code; owner disposition by Prayag Vyas
 # Record: docs/security/2026-10-17-dependency-exceptions.md
 # Decision: retain through 2026-11-17; no renewal authorized
 # Expires: 2026-11-17
