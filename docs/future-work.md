@@ -56,8 +56,8 @@ calibration status). Each item below names the exact command or file that would 
 ## Framework
 
 - **Retrieval backend diversity.** `Retriever` is a `Protocol` with two concrete embedding-based
-  implementations — `PolicyRetriever` (Chroma-backed) and `InMemoryCosineRetriever`
-  (numpy array + brute-force cosine similarity) — plus the fixture-backed test double, all
+  implementations — `PolicyRetriever` (transactional SQLite persistence) and `InMemoryCosineRetriever`
+  (numpy array + brute-force cosine similarity), both using FastEmbed/ONNX — plus the fixture-backed test double, all
   proven against the same benchmark contract in `tests/deterministic/`.
 - **Wire `pass_rate_wilson_interval` more broadly.** Currently surfaced in semantic test failure
   messages and evidence payloads when `n > 1`; consider also rendering it in a future nightly

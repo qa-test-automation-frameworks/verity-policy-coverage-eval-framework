@@ -15,11 +15,19 @@ jobs:
     name: Lint · Type · Unit Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Keep every `uv run` in this matrix on the interpreter installed for this
+    # matrix leg; otherwise `.python-version` can silently select 3.13 in the
+    # Python 3.12 leg after uv recreates the environment.
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        # Keep patch-level versions explicit: these are the required status
+        # contexts configured for the default branch, and they make CI's
+        # tested interpreter versions reproducible.
+        python-version: ["3.12.15", "3.13.16"]
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
@@ -37,11 +45,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --all-extras --python ${{ matrix.python-version }}
 
-      - name: Cache Chroma ONNX embedding model
+      - name: Cache FastEmbed ONNX model
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
-          path: ~/.cache/chroma/onnx_models
-          key: chroma-onnx-${{ runner.os }}-py${{ matrix.python-version }}
+          path: ~/.cache/fastembed
+          # Bump the generation to discard the corrupted model archive restored
+          # by the previous cache key. No restore-keys: stale ONNX data must not
+          # silently re-enter the cache.
+          key: fastembed-onnx-v1-${{ runner.os }}-py${{ matrix.python-version }}
 
       - name: Ruff lint
         run: uv run ruff check src tests scripts promptfoo
@@ -51,6 +62,11 @@ jobs:
 
       - name: mypy strict
         run: uv run mypy src
+
+      # Multiple xdist workers must not download/extract the same cold archive.
+      # Preparation can download a public model asset; the tests still use real embeddings.
+      - name: Prepare verified ONNX embedding model before parallel tests
+        run: uv run --no-sync python scripts/prepare_embedding_model.py
 
       - name: Unit + Deterministic tests (no live calls)
         run: |
@@ -89,7 +105,10 @@ jobs:
           while IFS= read -r id; do
             ignore_args+=(--ignore-vuln "$id")
           done < <(grep -vE '^\s*(#|$)' .pip-audit-ignore)
-          uv run pip-audit --desc "${ignore_args[@]}"
+          # The repository itself is installed as an editable local project and
+          # is not published to PyPI. Skip that project metadata entry while
+          # auditing every installed third-party dependency in the environment.
+          uv run pip-audit --desc --skip-editable "${ignore_args[@]}"
 
       - name: Secret scan
         run: |

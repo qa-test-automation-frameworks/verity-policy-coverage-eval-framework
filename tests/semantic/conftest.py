@@ -82,7 +82,7 @@ _SESSION_ACCUMULATOR = RunAccumulator()
 
 
 def live_agent(settings: Settings) -> CoverageAgent:
-    """Create a live CoverageAgent using the real retriever (needs Chroma indexed)."""
+    """Create a live CoverageAgent using the real local ONNX retriever."""
     provider = LLMProvider(settings, _SESSION_ACCUMULATOR)
     retriever = PolicyRetriever(settings.retrieval)
     return CoverageAgent(settings=settings, retriever=retriever, provider=provider)

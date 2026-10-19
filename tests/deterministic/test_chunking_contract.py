@@ -9,6 +9,8 @@ chunking that doesn't happen to break a benchmark query would still fail here.
 
 from __future__ import annotations
 
+import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -22,17 +24,24 @@ _CORPUS_DIR = Path("src/sut/corpus")
 
 @pytest.fixture(scope="module")
 def indexed_collection(tmp_path_factory: pytest.TempPathFactory) -> dict[str, list[object]]:
-    """Index the real corpus into a throwaway Chroma instance and return raw chunk records."""
+    """Index the corpus into a throwaway SQLite store and return raw chunk records."""
     from sut.retriever import PolicyRetriever
 
-    persist_dir = tmp_path_factory.mktemp("chroma-chunking-contract")
+    persist_dir = tmp_path_factory.mktemp("sqlite-chunking-contract")
     config = RetrievalConfig(persist_dir=persist_dir)
     retriever = PolicyRetriever(config)
     added = retriever.index_corpus()
     assert added > 0
 
-    collection = retriever._get_collection()
-    return collection.get(include=["metadatas", "documents"])
+    with sqlite3.connect(f"file:{persist_dir / 'policy-index.sqlite3'}?mode=ro", uri=True) as db:
+        rows = db.execute(
+            "SELECT chunk_id, document, chunk_metadata FROM chunks ORDER BY ordinal"
+        ).fetchall()
+    return {
+        "ids": [row[0] for row in rows],
+        "documents": [row[1] for row in rows],
+        "metadatas": [json.loads(row[2]) for row in rows],
+    }
 
 
 class TestChunkMetadataContract:
@@ -91,15 +100,17 @@ class TestChunkMetadataContract:
         referencing a chunk_id keep resolving after a routine re-index."""
         from sut.retriever import PolicyRetriever
 
-        persist_dir = tmp_path_factory.mktemp("chroma-chunking-stability")
+        persist_dir = tmp_path_factory.mktemp("sqlite-chunking-stability")
         config = RetrievalConfig(persist_dir=persist_dir)
 
         retriever_a = PolicyRetriever(config)
         retriever_a.index_corpus()
-        ids_a = set(retriever_a._get_collection().get(include=[])["ids"])
+        with sqlite3.connect(persist_dir / "policy-index.sqlite3") as db:
+            ids_a = {row[0] for row in db.execute("SELECT chunk_id FROM chunks")}
 
         retriever_b = PolicyRetriever(config)
-        retriever_b.index_corpus()
-        ids_b = set(retriever_b._get_collection().get(include=[])["ids"])
+        assert retriever_b.index_corpus() == 0
+        with sqlite3.connect(persist_dir / "policy-index.sqlite3") as db:
+            ids_b = {row[0] for row in db.execute("SELECT chunk_id FROM chunks")}
 
         assert ids_a == ids_b
