@@ -76,9 +76,7 @@ def prepare_packets(dataset_path: Path, output_dir: Path) -> tuple[Path, Path]:
         shutil.copyfile(dataset_path, packet_dir / "heldout-dataset.yaml")
         (packet_dir / "rubrics.md").write_text(
             "# Frozen metric rubrics\n\n"
-            + "\n\n---\n\n".join(
-                f"## `{metric}`\n\n{rubric}" for metric, rubric in RUBRICS.items()
-            )
+            + "\n\n---\n\n".join(f"## `{metric}`\n\n{rubric}" for metric, rubric in RUBRICS.items())
             + "\n",
             encoding="utf-8",
         )
