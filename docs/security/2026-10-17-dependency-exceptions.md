@@ -43,7 +43,11 @@ boundaries, not a claim that every scanner blocks on every severity.
   remove the vulnerable package code. The DiskCache advisory requires
   attacker-controlled pickle data to be read from a cache; the repository does
   not configure `DiskCacheBackend` or accept a cache path from application
-  input. This does not cover future integrations.
+  input. Semantic tests build `retrieved_contexts` from `CoverageAgent` results;
+  the agent's `PolicyRetriever` embeds and searches the checked-in local policy
+  corpus (`src/sut/corpus`), while `tests/semantic/test_detector_canaries.py`
+  uses a literal synthetic context. No user-supplied document or remote URL is
+  passed to these RAGAS samples. This does not cover future integrations.
 
 ## Merged remediation status
 
@@ -69,8 +73,8 @@ advisories.
 
 | Scanner ID | Package | Finding and local disposition |
 |---|---|---|
-| `PYSEC-2026-2447` / `CVE-2025-69872` | DiskCache | Unsafe pickle deserialization. The current application does not instantiate DiskCache or let request data select a cache path. RAGAS is the only direct dependency requiring DiskCache in the reviewed lock. |
-| `PYSEC-2026-3046` / `CVE-2026-6587` | RAGAS | The advisory covers SSRF and local-file processing through multimodal URL/file helpers. The affected helper is also imported by `MultiModalRelevance`; this project currently uses text metrics only. |
+| `PYSEC-2026-2447` / `GHSA-w8v5-vhqr-4h9v` / `CVE-2025-69872` | DiskCache | Unsafe pickle deserialization in affected versions through 5.6.3; no fixed release was listed at review time. The current application does not instantiate DiskCache or let request data select a cache path. RAGAS is the only direct dependency requiring DiskCache in the reviewed lock. |
+| `PYSEC-2026-3046` / `GHSA-95ww-475f-pr4f` / `CVE-2026-6587` | RAGAS | Affected versions 0.2.3–0.4.3; the advisory covers SSRF and local-file reads through multimodal URL/file helpers. The shared helper is also imported by `MultiModalRelevance`; this project currently uses text metrics only. |
 
 Advisory sources: [Chroma pre-auth code execution](https://github.com/advisories/GHSA-f4j7-r4q5-qw2c), [Chroma cross-tenant authorization](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr), [Chroma collection-update code execution](https://github.com/advisories/GHSA-36p7-vc44-83pf), [DiskCache pickle deserialization](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v), and [RAGAS multimodal SSRF](https://github.com/advisories/GHSA-95ww-475f-pr4f). The second Chroma cross-tenant record is `CVE-2026-45831`; its package ID is `PYSEC-2026-3815`.
 
@@ -154,6 +158,11 @@ review record.
 - Ruff's TID251 banned-API rules guard `diskcache`, `ragas.cache`, RAGAS
   collections, and the multimodal prompt module from project imports without
   an explicit policy change and review.
+- `scripts/check_vuln_exception_scope.py` binds each active ignored ID to its
+  reviewed package and affected version range in `uv.lock`. It fails if a
+  package is removed or upgraded outside the affected range, forcing maintainers
+  to remove or re-review a stale exception. The semantic dependency declaration
+  remains broad for compatibility, so the lockfile check is the enforced scope.
 - The final Tier-1 image installs the `dev` extra but not `semantic`; semantic
   evaluation installs its dependencies in its own workflow.
 - Trivy's configured threshold remains `CRITICAL,HIGH`; `pip-audit` is the

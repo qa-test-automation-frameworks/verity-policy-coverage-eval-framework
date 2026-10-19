@@ -43,7 +43,11 @@ COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY Makefile ./
 
 # Install the project itself
-RUN uv sync --frozen --extra dev
+RUN uv sync --frozen --extra dev \
+    --reinstall-package msgpack \
+    --reinstall-package setuptools \
+    --reinstall-package urllib3 && \
+    uv run python -c "from importlib.metadata import version; minimum = {'msgpack': (1, 2, 1), 'setuptools': (78, 1, 1), 'urllib3': (2, 8, 0)}; actual = {name: tuple(int(part) for part in version(name).split('.')) for name in minimum}; assert all(actual[name] >= floor for name, floor in minimum.items()), f'Vulnerable runtime package versions: {actual}'"
 
 # The final image needs the installed virtualenv, not uv's duplicate package
 # archives. Keep the separately pre-downloaded FastEmbed model cache.

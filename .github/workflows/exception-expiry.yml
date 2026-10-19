@@ -8,6 +8,8 @@ on:
     paths:
       - ".pip-audit-ignore"
       - ".trivyignore"
+      - "uv.lock"
+      - "scripts/check_vuln_exception_scope.py"
       - "scripts/check_vuln_exceptions.py"
       - ".github/workflows/exception-expiry.yml"
   pull_request:
@@ -15,6 +17,8 @@ on:
     paths:
       - ".pip-audit-ignore"
       - ".trivyignore"
+      - "uv.lock"
+      - "scripts/check_vuln_exception_scope.py"
       - "scripts/check_vuln_exceptions.py"
       - ".github/workflows/exception-expiry.yml"
 
@@ -34,3 +38,5 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Check exception records
         run: python3 scripts/check_vuln_exceptions.py
+      - name: Check exceptions still match vulnerable locked packages
+        run: python3 scripts/check_vuln_exception_scope.py
