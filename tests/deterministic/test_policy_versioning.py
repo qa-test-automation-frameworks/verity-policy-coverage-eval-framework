@@ -10,6 +10,7 @@ retrieval reflects only the current version.
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -52,7 +53,7 @@ def retriever(tmp_path: Path) -> PolicyRetriever:
     corpus_dir = tmp_path / "corpus"
     corpus_dir.mkdir()
     (corpus_dir / "gold.md").write_text(_V1_GOLD)
-    config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir, top_k=10)
+    config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir, top_k=10)
     r = PolicyRetriever(config)
     r.index_corpus()
     return r
@@ -107,10 +108,14 @@ class TestPolicyVersionLifecycle:
         """Indexing the same unchanged corpus twice must not double the stored
         chunk count — a version check that only compares fingerprints, not
         content, could otherwise silently accumulate duplicates."""
-        collection = retriever._get_collection()
-        count_after_first_index = collection.count()
+        database = retriever._index_path
+        with sqlite3.connect(database) as db:
+            count_after_first_index = db.execute("SELECT count(*) FROM chunks").fetchone()[0]
 
         added = retriever.index_corpus()
 
         assert added == 0
-        assert collection.count() == count_after_first_index
+        with sqlite3.connect(database) as db:
+            assert (
+                db.execute("SELECT count(*) FROM chunks").fetchone()[0] == count_after_first_index
+            )

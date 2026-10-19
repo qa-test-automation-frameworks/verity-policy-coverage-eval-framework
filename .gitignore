@@ -43,6 +43,7 @@ mutants/
 
 # Chroma vector store
 .chroma/
+.verity-index/
 *.sqlite3
 *.sqlite
 

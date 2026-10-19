@@ -22,6 +22,19 @@ class TestCheckVulnExceptions:
         )
         assert check_vuln_exceptions(path, today=date(2026, 7, 2)) == []
 
+    def test_trivy_ignore_entry_uses_same_expiry_policy(self, tmp_path: Path) -> None:
+        path = tmp_path / ".trivyignore"
+        path.write_text("# Expires: 2026-11-17\nCVE-2026-45829\n")
+        assert check_vuln_exceptions(path, today=date(2026, 10, 17)) == []
+
+    def test_expired_trivy_ignore_entry_fails(self, tmp_path: Path) -> None:
+        path = tmp_path / ".trivyignore"
+        path.write_text("# Expires: 2026-10-16\nCVE-2026-45829\n")
+        failures = check_vuln_exceptions(path, today=date(2026, 10, 17))
+        assert len(failures) == 1
+        assert "CVE-2026-45829" in failures[0]
+        assert "expired" in failures[0]
+
     def test_expired_entry_fails(self, tmp_path: Path) -> None:
         path = _write(
             tmp_path,

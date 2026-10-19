@@ -72,7 +72,7 @@ def supporting_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
 # The system prompt instructs the model to "cite the source document and
 # section for any coverage claim you make." In practice it does so inline as
 # "(<Document> §<section>)", e.g. "(Bronze §3.3)" or "(Amendment §A2)".
-_MODEL_CITATION_RE = re.compile(r"\(([A-Za-z][A-Za-z ]*?)\s*§\s*([\w.]+)\)")
+_MODEL_CITATION_RE = re.compile(r"\(([^()§]+?)\s*§\s*([^()]+?)\)")
 
 
 def model_cited_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
@@ -81,11 +81,15 @@ def model_cited_chunks(chunks: list[Chunk], answer: str) -> list[Chunk]:
     a lexical-overlap guess. Only matches against retrieved chunks — a
     citation naming a document that wasn't retrieved resolves to nothing."""
     matched: list[Chunk] = []
-    for name, _section in _MODEL_CITATION_RE.findall(answer):
+    for name, section in _MODEL_CITATION_RE.findall(answer):
         stem = name.strip().lower()
         for chunk in chunks:
             source_stem = chunk.source.removesuffix(".md").lower()
-            if source_stem.startswith(stem) or stem.startswith(source_stem):
+            source_matches = source_stem.startswith(stem) or stem.startswith(source_stem)
+            section_matches = (
+                not chunk.section or chunk.section.strip().casefold() == section.strip().casefold()
+            )
+            if source_matches and section_matches:
                 if chunk not in matched:
                     matched.append(chunk)
                 break

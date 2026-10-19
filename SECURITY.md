@@ -31,17 +31,18 @@ Please include:
 - Steps to reproduce
 - Affected file(s) and line numbers if known
 
-## Known Accepted Vulnerabilities in Dependencies
+## Proposed Time-Bounded Dependency Exceptions
 
-Three vulnerabilities in transitive dependencies are currently acknowledged and accepted (see `.pip-audit-ignore`):
+The current branch removes ChromaDB and no longer suppresses its four advisories.
+Two optional dependency findings remain proposed for human review, not accepted
+as production risk (see [`docs/security/2026-10-17-dependency-exceptions.md`](docs/security/2026-10-17-dependency-exceptions.md)):
 
-| ID | Package | Reason accepted | Expires |
-|----|---------|-----------------|---------|
-| PYSEC-2026-311 | chromadb | Requires `trust_remote_code=true`; not used in this project | 2026-10-01 |
-| CVE-2025-69872 | diskcache | Requires attacker write access to local cache directory | 2026-10-01 |
-| CVE-2026-6587 | ragas | Affects multi-modal module not imported in this project | 2026-10-01 |
+| ID | Package | Proposed code-path rationale | Review expiry |
+|----|---------|------------------------------|---------------|
+| PYSEC-2026-2447 | DiskCache | Unsafe pickle requires attacker write access to the cache directory; this project does not configure the optional RAGAS DiskCache backend. | 2026-11-17 |
+| PYSEC-2026-3046 | RAGAS | SSRF is in the multimodal faithfulness utility; current metric factories do not construct or invoke it. | 2026-11-17 |
 
-Each entry in `.pip-audit-ignore` carries an `Expires:` date. `scripts/check_vuln_exceptions.py`
-runs in the PR gate and fails once that date passes, so an accepted risk cannot silently
-outlive its review window — the entry must be re-evaluated and either re-dated (with updated
-reasoning) or removed once the affected package releases a fix.
+The exact IDs in `.pip-audit-ignore` are still scanned and are guarded by
+`scripts/check_vuln_exceptions.py`; the PR gate fails once the proposed expiry
+passes. Review the remaining findings or remove the exceptions before expiry.
+`.trivyignore` has no active suppressions; image and OS scanning remain enabled.
