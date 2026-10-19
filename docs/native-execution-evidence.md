@@ -42,3 +42,10 @@ The workflows upload native JUnit XML and records as ephemeral 30-day GitHub
 Actions artifacts. Durable publication and portfolio dashboard ingestion are
 separate roadmap work (E03/E04); these artifacts are not durable portfolio
 history and do not establish production behavior.
+
+The execution record is immutable and is written before the trusted publisher
+runs, so its `publication.disposition` may say `pending` with an explanation
+that the workflow run has not yet been published. After the publisher validates
+and uploads that run, the public `latest.json` index records its final
+publication status. Review the index for current publication state; the earlier
+record describes the state at execution time and is not rewritten.
