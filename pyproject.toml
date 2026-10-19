@@ -78,13 +78,19 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "N", "RUF"]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "N", "RUF", "TID"]
 ignore = [
     "ANN401",  # Any allowed for dynamic provider and ONNX model boundaries
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"]  # no return-type annotations required in tests
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"diskcache" = { msg = "Do not enable the vulnerable optional DiskCache backend without a reviewed dependency disposition." }
+"ragas.cache" = { msg = "Do not enable the vulnerable optional RAGAS DiskCache backend without a reviewed dependency disposition." }
+"ragas.metrics.collections" = { msg = "RAGAS collections include vulnerable multimodal URL/local-file processing; review before adoption." }
+"ragas.prompt.multi_modal_prompt" = { msg = "Review this multimodal prompt path for URL and local-file handling before adoption." }
 
 [tool.ruff.format]
 quote-style = "double"

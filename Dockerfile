@@ -19,8 +19,9 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce
 COPY pyproject.toml uv.lock .python-version ./
 COPY README.md LICENSE ./
 
-# Install all extras (no API key required for Tier-1 checks)
-RUN uv sync --frozen --all-extras --no-install-project
+# Install the development/test extra only. The Tier-1 image does not need the
+# optional semantic extra (RAGAS/DeepEval), which runs separately in semantic CI.
+RUN uv sync --frozen --extra dev --no-install-project
 
 # Pre-download the FastEmbed ONNX embedding model (all-MiniLM-L6-v2) into this
 # layer so `docker run` doesn't need network access. Same cache path CI's
@@ -42,7 +43,7 @@ COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY Makefile ./
 
 # Install the project itself
-RUN uv sync --frozen --all-extras
+RUN uv sync --frozen --extra dev
 
 # The final image needs the installed virtualenv, not uv's duplicate package
 # archives. Keep the separately pre-downloaded FastEmbed model cache.

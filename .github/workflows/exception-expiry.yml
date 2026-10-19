@@ -1,0 +1,36 @@
+name: Dependency Exception Expiry
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  push:
+    branches: [main]
+    paths:
+      - ".pip-audit-ignore"
+      - ".trivyignore"
+      - "scripts/check_vuln_exceptions.py"
+      - ".github/workflows/exception-expiry.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".pip-audit-ignore"
+      - ".trivyignore"
+      - "scripts/check_vuln_exceptions.py"
+      - ".github/workflows/exception-expiry.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-exception-expiry-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate review windows and expiry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Check exception records
+        run: python3 scripts/check_vuln_exceptions.py

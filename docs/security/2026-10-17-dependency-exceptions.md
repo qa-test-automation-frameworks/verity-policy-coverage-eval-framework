@@ -5,9 +5,12 @@ with Verity PR #31. It does not claim that the affected packages are fixed or
 that the advisories are false positives. The four ChromaDB findings were
 remediated by removing ChromaDB and replacing its local vector index with
 SQLite plus FastEmbed. The remaining DiskCache and RAGAS exceptions expire
-**2026-11-17** and must be independently reviewed, reassessed or removed before
-then. Required scanners continue to run against the complete Python
-environment and final image; no severity classes or package paths are excluded.
+**2026-11-17** and must be reassessed or removed before then. `pip-audit` scans
+the installed Python environment while suppressing only these two exact IDs.
+Trivy scans the final image at `CRITICAL,HIGH`; it does not block on medium/low
+findings. The Tier-1 image now omits the optional semantic extra, while
+semantic CI still installs it. These are distinct scanner and packaging
+boundaries, not a claim that every scanner blocks on every severity.
 
 ## Evidence reviewed
 
@@ -31,14 +34,16 @@ environment and final image; no severity classes or package paths are excluded.
   external caller. Those controls reduced the documented remote attack paths
   but did not establish that the vulnerable library code was safe in every
   deployment. The current candidate removes ChromaDB entirely.
-- The RAGAS SSRF advisory names the multimodal faithfulness collection utility.
-  `src/verity/metrics/ragas_metrics.py` constructs only Faithfulness,
-  ContextPrecision, ContextRecall, and AnswerRelevancy metrics; it does not
-  construct the multimodal metric or pass untrusted retrieved-context URLs to
-  it. The DiskCache advisory requires an attacker to write malicious pickle
-  data to a cache directory before it is read. The repository does not
-  configure RAGAS `DiskCacheBackend`; no application input is used as a cache
-  path. This does not cover future integrations that enable persistent cache.
+- The RAGAS advisory names both `_try_process_url` and
+  `_try_process_local_file` in multimodal collection processing. The review of
+  the pinned RAGAS 0.4.3 wheel also found `MultiModalRelevance` imports the
+  shared image-processing helper. `src/verity/metrics/ragas_metrics.py`
+  constructs only text metrics; no multimodal metric or `ImageTextPrompt` is
+  used by this project. This reduces current call-path exposure but does not
+  remove the vulnerable package code. The DiskCache advisory requires
+  attacker-controlled pickle data to be read from a cache; the repository does
+  not configure `DiskCacheBackend` or accept a cache path from application
+  input. This does not cover future integrations.
 
 ## Merged remediation status
 
@@ -64,8 +69,8 @@ advisories.
 
 | Scanner ID | Package | Finding and local disposition |
 |---|---|---|
-| `PYSEC-2026-2447` | DiskCache | Pickle deserialization requires a cache directory writable by an attacker. The current application does not configure DiskCache or let request data select a cache path. |
-| `PYSEC-2026-3046` / `CVE-2026-6587` | RAGAS | SSRF is in the multimodal faithfulness collection utility; current factories use text metrics and do not invoke that code path. |
+| `PYSEC-2026-2447` / `CVE-2025-69872` | DiskCache | Unsafe pickle deserialization. The current application does not instantiate DiskCache or let request data select a cache path. RAGAS is the only direct dependency requiring DiskCache in the reviewed lock. |
+| `PYSEC-2026-3046` / `CVE-2026-6587` | RAGAS | The advisory covers SSRF and local-file processing through multimodal URL/file helpers. The affected helper is also imported by `MultiModalRelevance`; this project currently uses text metrics only. |
 
 Advisory sources: [Chroma pre-auth code execution](https://github.com/advisories/GHSA-f4j7-r4q5-qw2c), [Chroma cross-tenant authorization](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr), [Chroma collection-update code execution](https://github.com/advisories/GHSA-36p7-vc44-83pf), [DiskCache pickle deserialization](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v), and [RAGAS multimodal SSRF](https://github.com/advisories/GHSA-95ww-475f-pr4f). The second Chroma cross-tenant record is `CVE-2026-45831`; its package ID is `PYSEC-2026-3815`.
 
@@ -110,23 +115,51 @@ either remaining advisory:
   vulnerable package.
 
 This recheck supports retaining the existing narrow exceptions only until
-their recorded expiry of 2026-11-17, pending independent review. It does not
-clear either finding, certify the dependency tree, or authorize renewal. Recheck
-the advisories and upstream release state before expiry. Sources checked:
+their recorded expiry of 2026-11-17. It does not clear either finding, certify
+the dependency tree, or authorize renewal. Recheck the advisories and upstream
+release state before expiry. Sources checked:
 [DiskCache GHSA](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v),
 [DiskCache upstream PR #364](https://github.com/grantjenks/python-diskcache/pull/364),
 [RAGAS GHSA](https://github.com/advisories/GHSA-95ww-475f-pr4f), and
 [RAGAS on PyPI](https://pypi.org/project/ragas/).
 
-## Independent review record
+## Owner and AI-assisted review record
 
 The repository owner approved the two exact, expiring exceptions by authorizing
-PR #31 and its merge. As of this update, no independent reviewer decision is
-recorded in the repository. R02 remains open until a reviewer who did not
-author the dependency change records the reviewed IDs, residual risk, decision
-and date, and the repository has a safe upstream fix/replacement or a justified
-time-bounded resolution. A review is not permission to extend the expiry.
+PR #31 and its merge. That authorization was the owner decision; the absence of
+a separate GitHub PR approval is not evidence that the merge was unauthorized.
+The owner later accepted the 2026-10-19 review by Claude Opus 5.5 in Claude Code,
+who did not contribute to the repository, together with the owner's review as
+sufficient for this portfolio's R02 gate. This is an explicit owner waiver of
+the former human-review requirement. It is not human review, human adoption,
+endorsement, or security certification. Review provenance and findings are at
+[the portfolio review record](https://github.com/qa-test-automation-frameworks/.github/blob/main/docs/verification/2026-10-19-independent-review.md).
+
+Reviewed: 2026-10-19. Reviewer: Claude Opus 5.5 in Claude Code + Prayag Vyas
+(owner). Owner disposition: retain through 2026-11-17; no renewal authorized.
+This applies to `PYSEC-2026-2447` and `PYSEC-2026-3046` only, subject to the
+controls below. Any future renewal requires a new dated owner decision and
+review record.
+
+## Review-driven controls — 2026-10-19
+
+- `.pip-audit-ignore` records reviewer, review date, review-record path,
+  disposition, and expiry for each ignored ID. The validator confirms the
+  linked record exists and contains the exact ID, date, reviewer, and decision;
+  metadata authorizes one ID only. It rejects malformed/dangling entries, fails
+  on the expiry date, and caps a review window at 30 days.
+- A daily workflow checks the exception files, so an expired exception fails
+  visibly even without a code push. Pull requests that change the exception
+  metadata run the same validation.
+- Ruff's TID251 banned-API rules guard `diskcache`, `ragas.cache`, RAGAS
+  collections, and the multimodal prompt module from project imports without
+  an explicit policy change and review.
+- The final Tier-1 image installs the `dev` extra but not `semantic`; semantic
+  evaluation installs its dependencies in its own workflow.
+- Trivy's configured threshold remains `CRITICAL,HIGH`; `pip-audit` is the
+  active gate that detects these medium/low Python advisories. This record now
+  states that distinction accurately.
 
 These approved exceptions preserve visible, time-limited risk while allowing
 unrelated quality work to proceed. They are not a security waiver for
-production use of Chroma's server API or RAGAS's multimodal URL processing.
+production use of Chroma's server API or RAGAS's multimodal URL/file processing.
