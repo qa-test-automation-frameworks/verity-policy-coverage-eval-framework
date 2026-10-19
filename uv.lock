@@ -3213,7 +3213,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
     { name = "ruff" },
-    { name = "setuptools", specifier = ">=83.0.0" },
+    { name = "setuptools" },
     { name = "types-pyyaml" },
 ]
 mutation = [
@@ -3259,6 +3259,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "ragas", marker = "extra == 'semantic'", specifier = ">=0.2.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.17.1" },
+    { name = "setuptools", marker = "extra == 'dev'", specifier = ">=83.0.0" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12" },
 ]
 provides-extras = ["dev", "semantic", "otel", "report", "mutation"]
