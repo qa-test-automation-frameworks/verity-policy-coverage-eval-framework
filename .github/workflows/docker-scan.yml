@@ -29,6 +29,14 @@ jobs:
       - name: Build image
         run: docker build -t verity-eval:scan .
 
+      # Validate the copied runtime filesystem, not only the builder-stage
+      # environment. Trivy scans this final image and this check must inspect
+      # the same bytes before the vulnerability gate runs.
+      - name: Verify final image runtime package metadata
+        run: >-
+          docker run --rm --entrypoint /app/.venv/bin/python verity-eval:scan
+          scripts/check_runtime_package_versions.py
+
       - name: Check security exception expiries
         run: docker run --rm --entrypoint /app/.venv/bin/python verity-eval:scan scripts/check_vuln_exceptions.py
 
