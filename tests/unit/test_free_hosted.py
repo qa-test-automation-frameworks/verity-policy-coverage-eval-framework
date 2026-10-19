@@ -316,6 +316,9 @@ def test_heldout_loader_accepts_unlabeled_balanced_set_and_selects_frozen_slice(
 
 
 def test_heldout_mode_receipt_tracks_hash_and_never_calls_unmocked_provider(tmp_path, monkeypatch):
+    # The distroless scan image has no .git directory. Supply the same kind of
+    # immutable build provenance that the Docker build embeds for live runs.
+    monkeypatch.setenv("VERITY_SOURCE_SHA", "a" * 40)
     dataset = tmp_path / "heldout.yaml"
     write_heldout_dataset(dataset)
     payload = {"name": f"models/{DEFAULT_MODEL}", "supportedGenerationMethods": ["generateContent"]}
