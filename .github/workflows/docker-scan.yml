@@ -47,7 +47,10 @@ jobs:
         run: docker run --rm verity-eval:scan
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8  # v0.24.0
+        # v0.36.0 includes the fix for duplicate package entries in embedded wheel SBOMs.
+        # Pin the verified post-2025-04-09 commit because older Trivy Action tags were
+        # force-pushed during the March 2026 supply-chain incident.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
         with:
           image-ref: verity-eval:scan
           format: json
