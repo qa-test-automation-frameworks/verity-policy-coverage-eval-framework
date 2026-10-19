@@ -52,6 +52,18 @@ class ReviewerPacketTests(unittest.TestCase):
             self.assertTrue(all(row["plan_id"] == PLAN_ID for row in rows_one))
             self.assertTrue(all(not row["score"] and not row["pass_label"] for row in rows_one))
             self.assertFalse(any("source_family_id" in row for row in rows_one))
+            for output in outputs:
+                packet_dir = output.parent
+                self.assertEqual(
+                    (packet_dir / "heldout-dataset.yaml").read_text(), dataset.read_text()
+                )
+                instructions = (packet_dir / "instructions.md").read_text()
+                self.assertIn("dividing by 10", instructions)
+                self.assertIn("scores >= 0.5", instructions)
+                rubrics = (packet_dir / "rubrics.md").read_text()
+                self.assertIn("## `answer_relevancy`", rubrics)
+                self.assertIn("## `refusal`", rubrics)
+                self.assertNotIn("private-manifest", rubrics)
 
     def test_refuses_to_overwrite_existing_packet_directory(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
