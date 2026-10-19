@@ -58,9 +58,7 @@ def test_source_metadata_uses_build_revision_when_git_is_unavailable(monkeypatch
         assert source_metadata() == (revision, None, "build_environment")
 
 
-def test_live_mode_without_git_or_build_revision_stops_before_network(
-    tmp_path, monkeypatch
-):
+def test_live_mode_without_git_or_build_revision_stops_before_network(tmp_path, monkeypatch):
     monkeypatch.delenv("VERITY_SOURCE_SHA", raising=False)
     monkeypatch.setattr(
         sys,
