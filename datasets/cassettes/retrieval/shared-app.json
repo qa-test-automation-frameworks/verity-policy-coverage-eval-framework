@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Privacy boundary\n\nThe caller's session establishes identity. Tool arguments must not contain a member identifier, policy identifier, or claim identifier. Requests for another member's records must be denied by the application's authorization layer even if a model is asked to disclose them.",
+    "source": "reference-app.md",
+    "section": "Privacy boundary",
+    "chunk_id": "shared-app-v0.1.0-privacy"
+  }
+]

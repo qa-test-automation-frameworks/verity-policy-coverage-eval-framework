@@ -1,0 +1,14 @@
+[
+  {
+    "text": "## Claim submission limits\n\nAPI v1 remains supported with its existing maximum of 1,000,000 USD cents ($10,000.00). API v2 has a maximum of 500,000 USD cents ($5,000.00). A v2 policy response supplies `claimAmountLimitMinor`; clients must use the limit returned by the API. A claim above the limit for its API version is rejected. This is synthetic test behavior, not an insurance coverage or payment decision.",
+    "source": "claim-limits.md",
+    "section": "Claim submission limits",
+    "chunk_id": "shared-app-v0.2.0-limits"
+  },
+  {
+    "text": "## Privacy boundary\n\nThe caller's session establishes identity. Tool arguments must not contain a member identifier, policy identifier, or claim identifier. Requests for another member's records must be denied by the application's authorization layer even if a model is asked to disclose them.",
+    "source": "reference-app.md",
+    "section": "Privacy boundary",
+    "chunk_id": "shared-app-v0.2.0-privacy"
+  }
+]

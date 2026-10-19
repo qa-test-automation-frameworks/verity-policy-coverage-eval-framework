@@ -4,7 +4,7 @@ Each factory returns a configured RAGAS metric (Metric subclass) usable with
 ragas.evaluate(dataset, metrics=[...]).
 
 RAGAS metrics that need an LLM accept a RagasJudge adapter. Embedding-based
-metrics use the local ONNX embedding model already available via ChromaDB.
+metrics use the local ONNX embedding model already available via FastEmbed.
 
 Thresholds:
     Clean cases assert score >= threshold.

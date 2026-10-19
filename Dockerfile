@@ -1,42 +1,95 @@
 # Pinned by digest for reproducible/auditable builds; refresh both the tag
 # and digest together (e.g. via Dependabot/Renovate) rather than editing the
 # digest alone.
-FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf
+FROM python:3.13.16-slim@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f AS build
 
 WORKDIR /app
+ENV HOME=/app/home
+ENV FASTEMBED_CACHE_PATH=/app/home/.cache/fastembed
+
+# Distroless Python uses /usr/bin/python. Keep the virtualenv links portable to
+# the runtime stage by giving the matching build interpreter that same path.
+RUN ln -sf /usr/local/bin/python /usr/bin/python
+ENV UV_PYTHON=/usr/bin/python
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest@sha256:3d868e555f8f1dbc324afa005066cd11e1053fc4743b9808ca8025283e65efa5 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce245946826e608e11c93ad4f5bba55b21 /uv /usr/local/bin/uv
 
 # Copy dependency manifests first for layer caching
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock .python-version ./
 COPY README.md LICENSE ./
 
 # Install all extras (no API key required for Tier-1 checks)
-RUN uv sync --all-extras --no-install-project
+RUN uv sync --frozen --all-extras --no-install-project
 
-# Pre-download the Chroma ONNX embedding model (all-MiniLM-L6-v2) into this
+# Pre-download the FastEmbed ONNX embedding model (all-MiniLM-L6-v2) into this
 # layer so `docker run` doesn't need network access. Same cache path CI's
-# actions/cache step keys on (~/.cache/chroma/onnx_models). Placed before
+# actions/cache step keys on (~/.cache/fastembed). Placed before
 # COPY src/ so it stays cached across source-only changes.
-RUN uv run python -c \
-    "from chromadb.utils.embedding_functions import DefaultEmbeddingFunction; DefaultEmbeddingFunction()(['warmup'])"
+RUN mkdir -p "$FASTEMBED_CACHE_PATH" && uv run --no-sync python -c \
+    "from fastembed import TextEmbedding; list(TextEmbedding(model_name='sentence-transformers/all-MiniLM-L6-v2').embed(['warmup']))"
 
 # Copy source
 COPY src/ ./src/
 COPY tests/ ./tests/
 COPY datasets/ ./datasets/
+COPY promptfoo/ ./promptfoo/
 COPY scripts/ ./scripts/
+COPY portfolio/evidence/ ./portfolio/evidence/
+COPY .pip-audit-ignore .trivyignore ./
 COPY docs/ ./docs/
+COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY Makefile ./
 
 # Install the project itself
-RUN uv sync --all-extras
+RUN uv sync --frozen --all-extras
 
-RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
-USER appuser
+# The final image needs the installed virtualenv, not uv's duplicate package
+# archives. Keep the separately pre-downloaded FastEmbed model cache.
+RUN uv cache clean && rm -rf /usr/local/lib/python3.13/site-packages
 
+# The minimal runtime base omits libffi, SQLite, and bzip2, which Python's stdlib
+# extensions need. Copy the same-architecture runtime libraries from the build.
+RUN set -eux; \
+    mkdir -p /opt/runtime-libs; \
+    for pattern in libffi.so.8 libsqlite3.so.0 libbz2.so.1.0 liblzma.so.5; do \
+        for lib in /usr/lib/*-linux-gnu/${pattern}*; do \
+            destination="/opt/runtime-libs/${lib#/usr/lib/}"; \
+            mkdir -p "$(dirname "${destination}")"; \
+            cp -a "${lib}" "${destination}"; \
+        done; \
+    done
+
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2 AS runtime
+
+WORKDIR /app
+ENV HOME=/app/home
+ENV FASTEMBED_CACHE_PATH=/app/home/.cache/fastembed
 ENV PYTHONPATH=/app/src
+ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/runtime-libs/x86_64-linux-gnu:/opt/runtime-libs/aarch64-linux-gnu
+
+COPY --from=build /usr/bin/python /usr/bin/python
+COPY --from=build /usr/local/bin/python* /usr/local/bin/
+COPY --from=build /usr/local/lib/libpython3.13.so* /usr/local/lib/
+COPY --from=build /usr/local/lib/python3.13/ /usr/local/lib/python3.13/
+COPY --from=build /opt/runtime-libs/ /opt/runtime-libs/
+COPY --from=build /app/.venv/ /app/.venv/
+COPY --from=build --chown=65532:65532 /app/home/.cache/fastembed/ /app/home/.cache/fastembed/
+COPY --from=build /app/pyproject.toml ./pyproject.toml
+COPY --from=build /app/README.md ./README.md
+COPY --from=build /app/LICENSE ./LICENSE
+COPY --from=build /app/src/ ./src/
+COPY --from=build /app/tests/ ./tests/
+COPY --from=build /app/datasets/ ./datasets/
+COPY --from=build /app/promptfoo/ ./promptfoo/
+COPY --from=build /app/scripts/ ./scripts/
+COPY --from=build /app/portfolio/evidence/ ./portfolio/evidence/
+COPY --from=build /app/.pip-audit-ignore ./.pip-audit-ignore
+COPY --from=build /app/.trivyignore ./.trivyignore
+COPY --from=build /app/docs/ ./docs/
+COPY --from=build --chown=65532:65532 /app/reports/semantic/results.json ./reports/semantic/results.json
+COPY --from=build /app/Makefile ./Makefile
 
 # Default: run Tier-1 checks (no live calls, no API key)
-CMD ["uv", "run", "pytest", "-m", "not live", "--tb=short", "-q"]
+ENTRYPOINT ["/app/.venv/bin/python"]
+CMD ["-m", "pytest", "-p", "no:cacheprovider", "-m", "not live", "--tb=short", "-q"]

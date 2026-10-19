@@ -1,11 +1,9 @@
-"""Unit tests for the corpus chunker and FixtureRetriever (no Chroma, no embedding calls)."""
+"""Unit tests for corpus chunking, retrieval persistence and fixture behavior."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-
-from chromadb.api.types import EmbeddingFunction
 
 from sut.retriever import (
     Chunk,
@@ -208,7 +206,7 @@ class TestCorpusFingerprint:
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir)
         retriever = PolicyRetriever(config)
         assert retriever.corpus_fingerprint() == ""
 
@@ -217,7 +215,7 @@ class TestCorpusFingerprint:
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir)
         retriever = PolicyRetriever(config)
         retriever.index_corpus()
         assert retriever.corpus_fingerprint() != ""
@@ -227,7 +225,7 @@ class TestCorpusFingerprint:
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir)
         retriever = PolicyRetriever(config)
         first = retriever.index_corpus()
         second = retriever.index_corpus()
@@ -239,7 +237,7 @@ class TestCorpusFingerprint:
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nOriginal content.")
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir)
         retriever = PolicyRetriever(config)
         retriever.index_corpus()
         fingerprint_before = retriever.corpus_fingerprint()
@@ -255,7 +253,7 @@ class TestCorpusFingerprint:
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nSome policy content here.")
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir)
         retriever = PolicyRetriever(config)
         retriever.index_corpus()
 
@@ -268,7 +266,7 @@ class TestCorpusFingerprint:
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path, "# Title\n\n## §1\nSome policy content here.")
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir)
         retriever = PolicyRetriever(config)
         retriever.index_corpus()
 
@@ -280,30 +278,17 @@ class TestCorpusFingerprint:
 
 
 class TestInjectableEmbeddingFunction:
-    """Both real retriever backends accept a custom embedding_fn instead of
-    always constructing Chroma's default ONNX model — proven here with a fake
-    embedder so the test stays hermetic (no ONNX download, no real vectors)."""
+    """Both real retriever backends accept a hermetic fake embedder."""
 
-    class _FakeEmbeddingFn(EmbeddingFunction):  # type: ignore[type-arg]
+    class _FakeEmbeddingFn:
         """Deterministic stand-in: embeds any text containing "match" as
         [1.0, 0.0] and everything else as [0.0, 1.0], so a query for "match"
         provably ranks the "match" documents first via this fake, not via any
-        real semantic similarity. Subclasses Chroma's EmbeddingFunction
-        protocol class so PolicyRetriever's Chroma collection accepts it as a
-        custom embedding function (name(), embed_query(), etc. come from the
-        base class; only __call__ needs overriding)."""
-
-        def __init__(self) -> None:
-            pass
+        real semantic similarity. It implements only the callable contract
+        needed by the local retrievers."""
 
         def __call__(self, input: list[str]) -> list[list[float]]:
             return [[1.0, 0.0] if "match" in t else [0.0, 1.0] for t in input]
-
-        def name(self) -> str:
-            return "fake-test-embedding-fn"
-
-        def get_config(self) -> dict[str, object]:
-            return {}
 
     def _make_corpus(self, tmp_path: Path) -> Path:
         corpus_dir = tmp_path / "corpus"
@@ -319,7 +304,7 @@ class TestInjectableEmbeddingFunction:
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path)
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir, top_k=1)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir, top_k=1)
         retriever = PolicyRetriever(config, embedding_fn=self._FakeEmbeddingFn())
         retriever.index_corpus()
 
@@ -327,12 +312,52 @@ class TestInjectableEmbeddingFunction:
         assert chunks
         assert "should match" in chunks[0].text
 
+    def test_persistent_index_reloads_without_reembedding(self, tmp_path: Path) -> None:
+        from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
+
+        class CountingEmbedder(self._FakeEmbeddingFn):
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def __call__(self, input: list[str]) -> list[list[float]]:
+                self.calls += 1
+                return super().__call__(input)
+
+        corpus_dir = self._make_corpus(tmp_path)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir, top_k=1)
+        first_embedder = CountingEmbedder()
+        first = PolicyRetriever(config, embedding_fn=first_embedder)
+        assert first.index_corpus() > 0
+        assert first_embedder.calls == 1
+
+        second_embedder = CountingEmbedder()
+        second = PolicyRetriever(config, embedding_fn=second_embedder)
+        assert second.index_corpus() == 0
+        assert second_embedder.calls == 0
+        assert "should match" in second.retrieve("match")[0].text
+        assert second_embedder.calls == 1
+
+    def test_corrupt_index_is_rebuilt_from_the_corpus(self, tmp_path: Path) -> None:
+        from sut.retriever import PolicyRetriever
+        from verity.config import RetrievalConfig
+
+        corpus_dir = self._make_corpus(tmp_path)
+        persist_dir = tmp_path / "index"
+        config = RetrievalConfig(persist_dir=persist_dir, corpus_dir=corpus_dir, top_k=1)
+        PolicyRetriever(config, embedding_fn=self._FakeEmbeddingFn()).index_corpus()
+        (persist_dir / "policy-index.sqlite3").write_bytes(b"not a sqlite database")
+
+        retriever = PolicyRetriever(config, embedding_fn=self._FakeEmbeddingFn())
+        assert retriever.index_corpus() > 0
+        assert "should match" in retriever.retrieve("match")[0].text
+
     def test_in_memory_retriever_uses_injected_embedding_fn(self, tmp_path: Path) -> None:
         from sut.retriever import InMemoryCosineRetriever
         from verity.config import RetrievalConfig
 
         corpus_dir = self._make_corpus(tmp_path)
-        config = RetrievalConfig(persist_dir=tmp_path / "chroma", corpus_dir=corpus_dir, top_k=1)
+        config = RetrievalConfig(persist_dir=tmp_path / "index", corpus_dir=corpus_dir, top_k=1)
         retriever = InMemoryCosineRetriever(config, embedding_fn=self._FakeEmbeddingFn())
         retriever.index_corpus()
 

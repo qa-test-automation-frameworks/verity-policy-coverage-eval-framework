@@ -6,7 +6,9 @@ attached to each ID and fails once that date has passed, so an accepted risk
 can't silently outlive its review window.
 
 Usage:
-    uv run python scripts/check_vuln_exceptions.py [.pip-audit-ignore]
+    uv run python scripts/check_vuln_exceptions.py [ignore-file ...]
+
+With no paths, both `.pip-audit-ignore` and `.trivyignore` are checked.
 """
 
 from __future__ import annotations
@@ -50,14 +52,25 @@ def check_vuln_exceptions(path: Path, today: date) -> list[str]:
 
 
 def main() -> None:
-    ignore_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".pip-audit-ignore")
-    failures = check_vuln_exceptions(ignore_path, date.today())
+    ignore_paths = (
+        [Path(arg) for arg in sys.argv[1:]]
+        if len(sys.argv) > 1
+        else [Path(".pip-audit-ignore"), Path(".trivyignore")]
+    )
+    failures: list[str] = []
+    for path in ignore_paths:
+        if not path.is_file():
+            failures.append(f"{path}: required exception file is missing")
+            continue
+        failures.extend(
+            f"{path}: {failure}" for failure in check_vuln_exceptions(path, date.today())
+        )
 
     if failures:
         print("Vulnerability exception check FAILED:")
         for f in failures:
             print(f"  - {f}")
-        print("Re-evaluate the affected dependency and update .pip-audit-ignore.")
+        print("Re-evaluate the affected dependency and update the relevant scanner ignore file.")
         raise SystemExit(1)
 
     print("All accepted vulnerability exceptions are dated and unexpired.")

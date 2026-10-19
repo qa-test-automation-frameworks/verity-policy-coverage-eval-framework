@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "policies": {
+    "daily_gate_v1": {
+      "maxAgeHours": 36,
+      "rationale": "Daily deterministic workflow; one missed daily slot plus twelve hours of delay remains visible."
+    },
+    "quarterly_experiment_v1": {
+      "maxAgeHours": 2400,
+      "rationale": "Optional quarterly bounded experiment; historical after a quarter plus scheduling margin, never substitutes for a daily required gate."
+    },
+    "manual_case_study_v1": {
+      "maxAgeHours": null,
+      "rationale": "Historical case study has no current freshness claim; it cannot establish review-ready execution."
+    }
+  }
+}
