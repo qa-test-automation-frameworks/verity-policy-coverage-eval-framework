@@ -347,9 +347,10 @@ def test_heldout_mode_receipt_tracks_hash_and_never_calls_unmocked_provider(tmp_
     provider = MagicMock()
     provider.complete.return_value = result()
     with patch("scripts.run_free_hosted_calibration.LLMProvider", return_value=provider):
-        assert main() == 0
+        result_code = main()
 
     receipt = json.loads(next((tmp_path / "receipts").glob("heldout-*.json")).read_text())
+    assert result_code == 0, receipt
     assert receipt["purpose"].startswith("bounded live D05 held-out")
     assert receipt["study_plan_id"] == "D05-GEMINI-HELDOUT-2026-10-18-v1"
     assert receipt["selected_case_ids"] == ["blind-completeness-00"]

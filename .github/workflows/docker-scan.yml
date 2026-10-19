@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Build image
-        run: docker build --build-arg VERITY_SOURCE_SHA="$GITHUB_SHA" -t verity-eval:scan .
+        run: docker build --build-arg VERITY_SOURCE_SHA="${{ github.sha }}" -t verity-eval:scan .
 
       - name: Check security exception expiries
         run: docker run --rm --entrypoint /app/.venv/bin/python verity-eval:scan scripts/check_vuln_exceptions.py

@@ -376,7 +376,9 @@ def main() -> int:
         )
         if isinstance(exc, FreeHostedError):
             receipt["stop_reason"] = str(exc)
-        print(f"Stopped ({type(exc).__name__}); no retry or paid fallback.", file=sys.stderr)
+            print(f"Stopped ({exc}); no retry or paid fallback.", file=sys.stderr)
+        else:
+            print(f"Stopped ({type(exc).__name__}); no retry or paid fallback.", file=sys.stderr)
     finally:
         receipt["ended_at"] = datetime.now(UTC).isoformat()
         receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
