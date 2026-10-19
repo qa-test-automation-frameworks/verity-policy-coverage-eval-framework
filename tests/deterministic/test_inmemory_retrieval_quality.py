@@ -3,7 +3,7 @@
 Runs the same benchmark contract as test_real_retrieval_quality.py and
 test_retrieval_benchmark.py, against a third Retriever implementation that
 stores embeddings in a numpy array and ranks by brute-force cosine similarity
-instead of Chroma's index — proving the protocol seam holds across storage
+instead of the persistent SQLite index — proving the protocol seam holds across storage
 mechanisms, not just across PolicyRetriever and the fixture stub.
 """
 

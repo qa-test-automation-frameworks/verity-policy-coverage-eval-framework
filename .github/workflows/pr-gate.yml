@@ -15,11 +15,19 @@ jobs:
     name: Lint · Type · Unit Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Keep every `uv run` in this matrix on the interpreter installed for this
+    # matrix leg; otherwise `.python-version` can silently select 3.13 in the
+    # Python 3.12 leg after uv recreates the environment.
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        # Keep patch-level versions explicit: these are the required status
+        # contexts configured for the default branch, and they make CI's
+        # tested interpreter versions reproducible.
+        python-version: ["3.12.15", "3.13.16"]
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
@@ -37,11 +45,24 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --all-extras --python ${{ matrix.python-version }}
 
-      - name: Cache Chroma ONNX embedding model
+      - name: Capture evidence runtime versions
+        run: |
+          python_version=$(uv run --no-sync python --version | awk '{print $2}')
+          pytest_version=$(uv run --no-sync pytest --version | awk '{print $2}')
+          uv_version=$(uv --version | awk '{print $2}')
+          test -n "$python_version" && test -n "$pytest_version" && test -n "$uv_version"
+          echo "PYTHON_VERSION=$python_version" >> "$GITHUB_ENV"
+          echo "PYTEST_VERSION=$pytest_version" >> "$GITHUB_ENV"
+          echo "UV_VERSION=$uv_version" >> "$GITHUB_ENV"
+
+      - name: Cache FastEmbed ONNX model
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
-          path: ~/.cache/chroma/onnx_models
-          key: chroma-onnx-${{ runner.os }}-py${{ matrix.python-version }}
+          path: ~/.cache/fastembed
+          # Bump the generation to discard the corrupted model archive restored
+          # by the previous cache key. No restore-keys: stale ONNX data must not
+          # silently re-enter the cache.
+          key: fastembed-onnx-v1-${{ runner.os }}-py${{ matrix.python-version }}
 
       - name: Ruff lint
         run: uv run ruff check src tests scripts promptfoo
@@ -52,13 +73,34 @@ jobs:
       - name: mypy strict
         run: uv run mypy src
 
+      # Multiple xdist workers must not download/extract the same cold archive.
+      # Preparation can download a public model asset; the tests still use real embeddings.
+      - name: Prepare verified ONNX embedding model before parallel tests
+        run: uv run --no-sync python scripts/prepare_embedding_model.py
+
       - name: Unit + Deterministic tests (no live calls)
         run: |
-          uv run pytest -m "not live" -n auto --cov=src --cov-report=term-missing \
-            --cov-report=json:reports/coverage.json --cov-fail-under=80
+          mkdir -p reports/evidence/native
+          echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          uv run pytest -m "not live and not evidence_control" -n auto --cov=src --cov-report=term-missing \
+            --cov-report=json:reports/coverage.json --cov-fail-under=80 \
+            --junitxml=reports/evidence/native/deterministic.xml
         env:
           # No API keys — live tests excluded via marker
           PYTHONPATH: src
+
+      - name: Emit deterministic execution evidence
+        if: always()
+        run: |
+          uv run --no-sync python scripts/evidence.py \
+            --scope "verity.deterministic-py${{ matrix.python-version }}" \
+            --junit reports/evidence/native/deterministic.xml
+
+      - name: Validate deterministic execution evidence
+        if: always()
+        run: |
+          uv run --no-sync python scripts/validate_evidence.py \
+            "reports/evidence/verity.deterministic-py${{ matrix.python-version }}.json"
 
       - name: Module-sensitive coverage gate (agent, retrieval, metrics, tracing, reporting)
         run: uv run python scripts/check_module_coverage.py reports/coverage.json
@@ -83,13 +125,19 @@ jobs:
       - name: Vulnerability exception expiry check
         run: uv run python scripts/check_vuln_exceptions.py
 
+      - name: Quarantine metadata and marker reconciliation
+        run: uv run python scripts/check_quarantine_policy.py
+
       - name: Dependency vulnerability scan
         run: |
           ignore_args=()
           while IFS= read -r id; do
             ignore_args+=(--ignore-vuln "$id")
           done < <(grep -vE '^\s*(#|$)' .pip-audit-ignore)
-          uv run pip-audit --desc "${ignore_args[@]}"
+          # The repository itself is installed as an editable local project and
+          # is not published to PyPI. Skip that project metadata entry while
+          # auditing every installed third-party dependency in the environment.
+          uv run pip-audit --desc --skip-editable "${ignore_args[@]}"
 
       - name: Secret scan
         run: |
@@ -100,3 +148,39 @@ jobs:
 
       - name: Static security scan (medium/high only)
         run: uv run bandit -r src/ -ll -c pyproject.toml
+
+      - name: Record and verify the expected pytest failure
+        if: always() && matrix.python-version == '3.12.15'
+        run: |
+          mkdir -p reports/evidence/native
+          echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          set +e
+          VERITY_EVIDENCE_FAILURE_CONTROL=1 uv run --no-sync pytest \
+            tests/evidence/test_failure_control.py -m evidence_control -q \
+            --junitxml=reports/evidence/native/failure-control.xml
+          native_exit=$?
+          set -e
+          uv run --no-sync python scripts/verify_failure_control.py \
+            --junit reports/evidence/native/failure-control.xml --native-exit "$native_exit"
+
+      - name: Emit expected-failure evidence
+        if: always() && matrix.python-version == '3.12.15'
+        run: |
+          uv run --no-sync python scripts/evidence.py \
+            --scope "verity.failure-control-py${{ matrix.python-version }}" \
+            --junit reports/evidence/native/failure-control.xml
+
+      - name: Validate expected-failure evidence
+        if: always() && matrix.python-version == '3.12.15'
+        run: |
+          uv run --no-sync python scripts/validate_evidence.py \
+            "reports/evidence/verity.failure-control-py${{ matrix.python-version }}.json"
+
+      - name: Upload pytest evidence bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: verity-evidence-py${{ matrix.python-version }}
+          path: reports/evidence/
+          if-no-files-found: warn
+          retention-days: 30

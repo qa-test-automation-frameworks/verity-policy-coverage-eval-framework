@@ -1,0 +1,95 @@
+name: Shared reference application (no-key authorization integration)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shared-reference-app:
+    name: Pinned app API · member isolation · retrieved citation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_SOURCE_SHA: 21af1f41561a6d83ae44933dd36d9daa5e6a6e4c
+      APP_NAMESPACE: verity-a06-${{ github.run_id }}-${{ github.run_attempt }}
+      APP_PORT: "4300"
+      TEST_MODE: "true"
+      APP_URL: http://127.0.0.1:4300
+      VERITY_REFERENCE_APP_URL: http://127.0.0.1:4300
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Checkout pinned reference app source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: qa-test-automation-frameworks/quality-reference-application
+          ref: 21af1f41561a6d83ae44933dd36d9daa5e6a6e4c
+          path: reference-app
+          persist-credentials: false
+
+      - name: Create disposable local credentials
+        shell: bash
+        run: |
+          postgres_password="$(openssl rand -hex 24)"
+          control_token="$(openssl rand -hex 32)"
+          echo "::add-mask::$postgres_password"
+          echo "::add-mask::$control_token"
+          {
+            echo "POSTGRES_PASSWORD=$postgres_password"
+            echo "TEST_CONTROL_TOKEN=$control_token"
+            echo "VERITY_REFERENCE_APP_CONTROL_TOKEN=$control_token"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and start the reference app and isolated PostgreSQL
+        run: docker compose -p verity-a06 -f reference-app/compose.yaml up --build -d
+
+      - name: Wait for the pinned app
+        shell: bash
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent "$APP_URL/health/ready" >/dev/null; then
+              curl --fail --silent "$APP_URL/health/ready" | python -c '
+          import json, os, sys
+          status = json.load(sys.stdin)
+          assert status["sourceRevision"] == os.environ["APP_SOURCE_SHA"], status
+          assert status["seedVersion"] == "v0.1.0", status
+          assert status["datastore"] is True, status
+          print(json.dumps(status, sort_keys=True))
+          '
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -p verity-a06 -f reference-app/compose.yaml logs --no-color
+          exit 1
+
+      - name: Install Python test dependencies
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: latest
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Run no-key integration against real app authorization
+        run: uv run --frozen --extra dev pytest tests/integration/test_shared_app_runtime.py -q
+        env:
+          PYTHONPATH: src
+
+      - name: Collect app logs on failure
+        if: failure()
+        run: docker compose -p verity-a06 -f reference-app/compose.yaml logs --no-color
+
+      - name: Stop and remove app and disposable database
+        if: always()
+        run: docker compose -p verity-a06 -f reference-app/compose.yaml down --volumes --remove-orphans

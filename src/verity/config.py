@@ -125,7 +125,7 @@ class RetrievalConfig(BaseSettings):
     chunk_size: int = 160
     chunk_overlap: int = 30
     top_k: int = 3
-    persist_dir: Path = Path(".chroma")
+    persist_dir: Path = Path(".verity-index")
 
 
 class Settings(BaseSettings):

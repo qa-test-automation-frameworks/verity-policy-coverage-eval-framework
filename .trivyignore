@@ -1,0 +1,3 @@
+# No active Trivy suppressions. ChromaDB was removed and its four exact CVEs
+# no longer appear in the dependency graph. This file remains for the expiry
+# validator and records that no OS findings are ignored.

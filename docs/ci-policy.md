@@ -4,39 +4,49 @@ This document is the single source of truth for what must pass before a change m
 `main`, and what "green" actually means at each tier. See [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 for the day-to-day cassette/eval workflow this policy gates.
 
-## Required status check
+## Required status checks
 
-The `lint-type-test` job in `PR Gate (Tier 1 — lint · type · unit)`
-(`.github/workflows/pr-gate.yml`) is required for merge. It runs as a matrix
-across Python 3.12 and 3.13, which GitHub surfaces as two separate checks —
-`Lint · Type · Unit Tests (Python 3.12)` and `Lint · Type · Unit Tests
-(Python 3.13)`. Configure **both** as required status checks under the
-repository's branch protection rules for `main`. No other workflow blocks
-merges — Tier 2 (semantic) and Tier 3 (adversarial) are informational.
+The active `main-protection` repository ruleset requires all of the following
+checks before a pull request can merge to `main`:
 
-## What the required gate checks
+- `Lint · Type · Unit Tests (Python 3.12.15)` and
+  `Lint · Type · Unit Tests (Python 3.13.16)` from
+  `PR Gate (Tier 1 — lint · type · unit)`.
+- `Build image and scan with Trivy` from `Container Image Scan`.
+- `links-and-claims` from `Documentation checks`.
 
-Every step below must pass for `lint-type-test` to succeed:
+The documentation check runs when Markdown changes and rejects workstation-local file URLs and unsupported superlatives. A code-only pull request must
+not assume this required context will be created; include an accurate, relevant
+documentation change when the behavior itself warrants one. Do not add unrelated
+text solely to manufacture a green check.
 
-1. **Lint** — `ruff check` and `ruff format --check` on `src` and `tests`.
-2. **Type check** — `mypy --strict` on `src`.
-3. **Unit + deterministic tests** — `pytest -m "not live"`, i.e. `tests/unit/`,
-   `tests/deterministic/`, and `tests/adversarial/` (all hermetic, cassette-replayed, no
-   API key required).
-4. **Global coverage floor** — `--cov-fail-under=80` across `src/`.
-5. **Module-sensitive coverage gates** — `scripts/check_module_coverage.py` enforces a
-   per-module minimum for the areas most likely to hide a regression behind a healthy
-   average: `sut/agent.py`, `sut/retriever.py`, `verity/metrics/*`, `verity/tracing.py`,
-   `verity/reporting.py`. See that script for current thresholds.
-6. **Dependency vulnerability scan** — `pip-audit` (with an explicit, reviewed ignore list
-   for accepted findings).
-7. **Static security scan** — `bandit -ll` (medium/high severity only).
+## What the required checks verify
 
-If any step fails, the PR cannot merge. A package registry outage during `pip-audit` is
-a retry or rerun situation, not an accepted-risk exception. There is no override path other
-than fixing the underlying issue or, for a genuinely accepted risk (e.g. a new CVE with no
-fix yet), adding it to the `pip-audit` ignore list in a reviewed PR with a comment
-explaining why.
+The PR Gate matrix verifies the following on Python 3.12.15 and 3.13.16:
+
+1. Ruff lint and formatting, then strict mypy checks on `src`.
+2. Hermetic unit and deterministic tests, with an 80% global coverage floor
+   and module-sensitive thresholds for agent, retrieval, metrics, tracing and
+   reporting code.
+3. Cassette-backed calibration and defect-report smoke checks, plus regenerated
+   documentation consistency.
+4. Vulnerability-exception expiry and `pip-audit`, Gitleaks secret scanning,
+   and Bandit medium/high findings.
+5. Native evidence emission and validation for deterministic execution; the
+   Python 3.12.15 job also verifies and records the deliberate failure control.
+6. `scripts/check_quarantine_policy.py`, which requires active quarantines to
+   have an owner role, named reviewer, explicit `retain` disposition, reason,
+   promotion criteria, and bounded review/expiry dates. The repository policy
+   supplies the maximum review and expiry windows. The checker reconciles exact
+   test IDs with quarantine markers throughout `tests/semantic`. It validates
+   governance records, not live calibration or metric quality. A quarantine
+   must only be promoted after its predeclared independent quality criteria
+   are met.
+
+`Container Image Scan` builds the packaged image and runs Trivy.
+`Documentation checks` validates repository-wide Markdown links and claims.
+All four ruleset checks must pass for merge. Tier 2 (semantic) and Tier 3
+(adversarial) remain informational.
 
 ## Non-blocking tiers (informational)
 
