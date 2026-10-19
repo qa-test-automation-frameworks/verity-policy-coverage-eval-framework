@@ -61,10 +61,12 @@ RUN set -eux; \
 
 FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2 AS runtime
 
+ARG VERITY_SOURCE_SHA=unknown
 WORKDIR /app
 ENV HOME=/app/home
 ENV FASTEMBED_CACHE_PATH=/app/home/.cache/fastembed
 ENV PYTHONPATH=/app/src
+ENV VERITY_SOURCE_SHA=${VERITY_SOURCE_SHA}
 ENV LD_LIBRARY_PATH=/usr/local/lib:/opt/runtime-libs/x86_64-linux-gnu:/opt/runtime-libs/aarch64-linux-gnu
 
 COPY --from=build /usr/bin/python /usr/bin/python

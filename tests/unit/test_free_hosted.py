@@ -18,6 +18,7 @@ from scripts.run_free_hosted_calibration import (
     main,
     require_supported_model,
     run_smoke,
+    source_metadata,
 )
 
 from verity.calibration import CALIBRATION_METRICS, load_heldout_calibration
@@ -48,6 +49,35 @@ def test_settings_isolate_paid_ambient_configuration(monkeypatch):
     assert settings.temperature == 1.0
     assert settings.judge.temperature == 1.0
     assert settings.resolved_provider() == (f"gemini/{DEFAULT_MODEL}", "", "test-key")
+
+
+def test_source_metadata_uses_build_revision_when_git_is_unavailable(monkeypatch):
+    revision = "a" * 40
+    monkeypatch.setenv("VERITY_SOURCE_SHA", revision)
+    with patch("scripts.run_free_hosted_calibration.subprocess.run", side_effect=FileNotFoundError):
+        assert source_metadata() == (revision, None, "build_environment")
+
+
+def test_live_mode_without_git_or_build_revision_stops_before_network(
+    tmp_path, monkeypatch
+):
+    monkeypatch.delenv("VERITY_SOURCE_SHA", raising=False)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["free-hosted", "--live", "--confirm-free-project", "--out", str(tmp_path)],
+    )
+    with (
+        patch("scripts.run_free_hosted_calibration.subprocess.run", side_effect=FileNotFoundError),
+        patch("scripts.run_free_hosted_calibration.httpx.get") as get,
+    ):
+        assert main() == 1
+    get.assert_not_called()
+    receipt = json.loads(next(tmp_path.glob("smoke-*.json")).read_text())
+    assert receipt["source_sha"] is None
+    assert receipt["source_tree_dirty"] is None
+    assert receipt["source_revision_source"] == "unavailable"
+    assert "source commit" in receipt["stop_reason"]
 
 
 def test_actual_gemini_http_body_has_generation_bounds_and_no_paid_tools(monkeypatch):

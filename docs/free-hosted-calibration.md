@@ -91,6 +91,12 @@ leaking credentials from error messages. Failed output is never converted to a
 zero score or a passing control. Receipts do not overwrite historical reports
 or authored cassettes.
 
+Source checkouts resolve the revision and tracked-file dirty state from Git. The
+distroless image has no Git executable; CI supplies the checked-out SHA through
+the `VERITY_SOURCE_SHA` build argument. If neither source is available, live
+mode stops before network access instead of producing an untraceable evaluation;
+the receipt records unavailable source and unknown dirty state explicitly.
+
 The generic static cost estimator remains unpriced for this model. A null
 `provider_reported_cost_usd` means unreported, not measured zero; the zero-spend
 claim relies on the confirmed free account and current published terms. A

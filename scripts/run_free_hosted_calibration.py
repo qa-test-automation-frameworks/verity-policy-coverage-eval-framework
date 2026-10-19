@@ -44,6 +44,41 @@ class FreeHostedError(ValueError):
     """Safe, application-authored stop reason with no provider exception text."""
 
 
+def source_metadata() -> tuple[str | None, bool | None, str]:
+    """Resolve an auditable revision without requiring Git in the runtime image."""
+    revision = os.environ.get("VERITY_SOURCE_SHA", "").strip()
+    if re.fullmatch(r"[0-9a-f]{40}", revision):
+        revision_source = "build_environment"
+    else:
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            candidate = result.stdout.strip()
+            revision = candidate if re.fullmatch(r"[0-9a-f]{40}", candidate) else ""
+            revision_source = "git" if revision else "unavailable"
+        except (OSError, subprocess.CalledProcessError):
+            revision = ""
+            revision_source = "unavailable"
+
+    try:
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        dirty: bool | None = bool(status.stdout)
+    except (OSError, subprocess.CalledProcessError):
+        dirty = None
+    return revision or None, dirty, revision_source
+
+
 def require_supported_model(model: dict[str, Any], model_id: str) -> dict[str, Any]:
     """Allow only an explicitly reviewed free-tier text model, with no substitution."""
     if model_id not in FREE_TIER_MODELS:
@@ -230,6 +265,7 @@ def main() -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     receipt_prefix = "heldout" if args.heldout_study else "smoke"
     receipt_path = args.out / f"{receipt_prefix}-{time.time_ns()}.json"
+    source_sha, source_tree_dirty, source_revision_source = source_metadata()
     receipt: dict[str, Any] = {
         "schema_version": 1,
         "purpose": (
@@ -240,22 +276,9 @@ def main() -> int:
             else "catalogue preflight only, no inference"
         ),
         "started_at": datetime.now(UTC).isoformat(),
-        "source_sha": subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=_ROOT,
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip(),
-        "source_tree_dirty": bool(
-            subprocess.run(
-                ["git", "status", "--porcelain", "--untracked-files=no"],
-                cwd=_ROOT,
-                capture_output=True,
-                text=True,
-                check=True,
-            ).stdout
-        ),
+        "source_sha": source_sha,
+        "source_tree_dirty": source_tree_dirty,
+        "source_revision_source": source_revision_source,
         "implementation_file_sha256": {
             name: hashlib.sha256((_ROOT / name).read_bytes()).hexdigest()
             for name in (
@@ -291,6 +314,11 @@ def main() -> int:
             raise FreeHostedError(
                 "Live inference needs confirmation that this key's project is Free tier "
                 "with billing disabled; catalogue access does not prove free billing"
+            )
+        if args.live and not source_sha:
+            raise FreeHostedError(
+                "Live inference requires a source commit; run in a Git checkout or set "
+                "VERITY_SOURCE_SHA to the 40-character commit baked into the image"
             )
         file_values = dotenv_values(args.env_file)
         key = (
