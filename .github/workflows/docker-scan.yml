@@ -33,7 +33,7 @@ jobs:
         run: docker run --rm --entrypoint /app/.venv/bin/python verity-eval:scan scripts/check_vuln_exceptions.py
 
       - name: Check exception scope against lockfile
-        run: docker run --rm --entrypoint /app/.venv/bin/python verity-eval:scan scripts/check_vuln_exception_scope.py
+        run: python3 scripts/check_vuln_exception_scope.py
 
       - name: Run packaged Tier-1 checks
         run: docker run --rm verity-eval:scan
