@@ -191,9 +191,7 @@ class TestSemanticProvenance:
 
         semantic_dir = tmp_path / "reports" / "semantic"
         semantic_dir.mkdir(parents=True)
-        (semantic_dir / "results.json").write_text(
-            json.dumps({"run": {"git_sha": "result-sha"}})
-        )
+        (semantic_dir / "results.json").write_text(json.dumps({"run": {"git_sha": "result-sha"}}))
         (semantic_dir / "provenance.json").write_text(
             json.dumps(
                 {
