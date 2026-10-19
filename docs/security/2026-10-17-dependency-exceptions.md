@@ -81,6 +81,36 @@ future expiry date.
    still needs renewal, provide new evidence and an explicit reviewer decision;
    never auto-extend it.
 
+## Upstream disposition recheck — 2026-10-19
+
+The latest public upstream status does not provide a safe released fix for
+either remaining advisory:
+
+- The [DiskCache advisory](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v)
+  still lists no patched version. Upstream PR
+  [#364](https://github.com/grantjenks/python-diskcache/pull/364) proposes
+  allowlist-only pickle reads and a breaking 6.0.0 release, but the maintainer
+  states they do not intend to merge it as written: writes of unsupported
+  objects would still succeed and later fail on read, and existing Django
+  backend use cases would regress. The fork published from that proposal is
+  therefore not treated as an approved drop-in fix. Keep the current exact,
+  expiring finding visible and do not pin an unreviewed fork.
+- The [RAGAS advisory](https://github.com/advisories/GHSA-95ww-475f-pr4f)
+  still lists no patched version through 0.4.3; PyPI's release history lists
+  0.4.3 (2026-01-13) as the latest stable release checked. The affected
+  multimodal collection utility is not invoked by this repository's current
+  text metric factories, but that limits the known path rather than fixing the
+  vulnerable package.
+
+This recheck supports retaining the existing narrow exceptions only until
+their recorded expiry of 2026-11-17, pending independent review. It does not
+clear either finding, certify the dependency tree, or authorize renewal. Recheck
+the advisories and upstream release state before expiry. Sources checked:
+[DiskCache GHSA](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v),
+[DiskCache upstream PR #364](https://github.com/grantjenks/python-diskcache/pull/364),
+[RAGAS GHSA](https://github.com/advisories/GHSA-95ww-475f-pr4f), and
+[RAGAS on PyPI](https://pypi.org/project/ragas/).
+
 These proposed exceptions preserve visible, time-limited risk while allowing
 unrelated quality work to proceed. They are not a security waiver for
 production use of Chroma's server API or RAGAS's multimodal URL processing.
