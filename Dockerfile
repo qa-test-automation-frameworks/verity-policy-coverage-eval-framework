@@ -42,9 +42,9 @@ COPY docs/ ./docs/
 COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY Makefile ./
 
-# Install the project itself into a fresh environment. The scan found stale
-# vulnerable dist-info from the warm-up sync layer even though version() saw
-# the fixed packages; rebuilding prevents old metadata from reaching the image.
+# Install the project itself into a fresh environment after all source and
+# dependency inputs are present. The metadata gate scans recursively so it also
+# catches stale or duplicate package records nested below site-packages.
 RUN rm -rf .venv && uv sync --frozen --extra dev && \
     uv run python scripts/check_runtime_package_versions.py
 
