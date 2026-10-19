@@ -82,6 +82,8 @@ class TestProviderJudge:
 
 
 class TestDeepEvalJudge:
+    pytestmark = pytest.mark.semantic
+
     def test_adapter_is_not_none(self) -> None:
         judge = _make_provider_judge()
         dj = DeepEvalJudge(judge)
@@ -135,6 +137,8 @@ class TestDeepEvalJudge:
 
 
 class TestRagasJudge:
+    pytestmark = pytest.mark.semantic
+
     def test_adapter_is_not_none(self) -> None:
         judge = _make_provider_judge()
         rj = RagasJudge(judge)

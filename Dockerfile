@@ -93,4 +93,4 @@ COPY --from=build /app/Makefile ./Makefile
 
 # Default: run Tier-1 checks (no live calls, no API key)
 ENTRYPOINT ["/app/.venv/bin/python"]
-CMD ["-m", "pytest", "-p", "no:cacheprovider", "-m", "not live", "--tb=short", "-q"]
+CMD ["-m", "pytest", "-p", "no:cacheprovider", "-m", "not live and not semantic", "--tb=short", "-q"]
