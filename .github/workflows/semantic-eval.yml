@@ -62,6 +62,16 @@ jobs:
       - name: Install dependencies (with semantic extras)
         run: uv sync --frozen --all-extras
 
+      - name: Capture evidence runtime versions
+        run: |
+          python_version=$(uv run --no-sync python --version | awk '{print $2}')
+          pytest_version=$(uv run --no-sync pytest --version | awk '{print $2}')
+          uv_version=$(uv --version | awk '{print $2}')
+          test -n "$python_version" && test -n "$pytest_version" && test -n "$uv_version"
+          echo "PYTHON_VERSION=$python_version" >> "$GITHUB_ENV"
+          echo "PYTEST_VERSION=$pytest_version" >> "$GITHUB_ENV"
+          echo "UV_VERSION=$uv_version" >> "$GITHUB_ENV"
+
       - name: Check provider key
         id: key_check
         run: |
@@ -84,6 +94,19 @@ jobs:
             echo "has_key=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Emit explicit no-key skip evidence
+        if: steps.key_check.outputs.has_key == 'false'
+        run: |
+          EVIDENCE_CLASS=credentialed \
+          EVIDENCE_REQUIRED=false \
+          EVIDENCE_FRESHNESS_POLICY=quarterly_experiment_v1 \
+          EVIDENCE_PROFILE=semantic-evaluation \
+          uv run --no-sync python scripts/evidence.py \
+            --scope verity.semantic-evaluation \
+            --skip-reason "No provider key configured; live semantic evaluation did not run"
+          uv run --no-sync python scripts/validate_evidence.py \
+            reports/evidence/verity.semantic-evaluation.json
+
       - name: Index corpus
         if: steps.key_check.outputs.has_key == 'true'
         run: |
@@ -99,9 +122,11 @@ jobs:
       - name: Run semantic eval
         if: steps.key_check.outputs.has_key == 'true'
         run: |
-          mkdir -p reports/allure-results/semantic reports/semantic
+          mkdir -p reports/allure-results/semantic reports/semantic reports/evidence/native
+          echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
           uv run pytest tests/semantic/ -m semantic -v --tb=short \
-            --alluredir reports/allure-results/semantic
+            --alluredir reports/allure-results/semantic \
+            --junitxml=reports/evidence/native/semantic.xml
           if [ ! -s reports/semantic/results-local.json ]; then
             echo "::error::Semantic eval completed without reports/semantic/results-local.json; no eval cases ran."
             exit 1
@@ -124,6 +149,33 @@ jobs:
           )
           PY
 
+      - name: Emit semantic execution evidence
+        if: always() && steps.key_check.outputs.has_key == 'true'
+        run: |
+          if [ -s reports/semantic/results-local.json ] && [ -s reports/evidence/native/semantic.xml ]; then
+            EVIDENCE_CLASS=credentialed \
+            EVIDENCE_REQUIRED=false \
+            EVIDENCE_FRESHNESS_POLICY=quarterly_experiment_v1 \
+            EVIDENCE_PROFILE=semantic-evaluation \
+            uv run --no-sync python scripts/evidence.py \
+              --scope verity.semantic-evaluation \
+              --junit reports/evidence/native/semantic.xml
+          else
+            EVIDENCE_CLASS=credentialed \
+            EVIDENCE_REQUIRED=false \
+            EVIDENCE_FRESHNESS_POLICY=quarterly_experiment_v1 \
+            EVIDENCE_PROFILE=semantic-evaluation \
+            uv run --no-sync python scripts/evidence.py \
+              --scope verity.semantic-evaluation \
+              --unavailable-reason "Semantic JUnit or result manifest was not produced"
+          fi
+
+      - name: Validate semantic execution evidence
+        if: always() && steps.key_check.outputs.has_key == 'true'
+        run: |
+          uv run --no-sync python scripts/validate_evidence.py \
+            reports/evidence/verity.semantic-evaluation.json
+
       - name: Upload semantic eval reports
         if: steps.key_check.outputs.has_key == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
@@ -134,3 +186,12 @@ jobs:
             reports/semantic/results.json
             reports/semantic/provenance.json
           if-no-files-found: warn
+
+      - name: Upload semantic evidence bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: verity-semantic-evidence
+          path: reports/evidence/
+          if-no-files-found: warn
+          retention-days: 30

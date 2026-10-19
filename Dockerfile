@@ -35,6 +35,7 @@ COPY tests/ ./tests/
 COPY datasets/ ./datasets/
 COPY promptfoo/ ./promptfoo/
 COPY scripts/ ./scripts/
+COPY portfolio/evidence/ ./portfolio/evidence/
 COPY .pip-audit-ignore .trivyignore ./
 COPY docs/ ./docs/
 COPY reports/semantic/results.json ./reports/semantic/results.json
@@ -84,6 +85,7 @@ COPY --from=build /app/tests/ ./tests/
 COPY --from=build /app/datasets/ ./datasets/
 COPY --from=build /app/promptfoo/ ./promptfoo/
 COPY --from=build /app/scripts/ ./scripts/
+COPY --from=build /app/portfolio/evidence/ ./portfolio/evidence/
 COPY --from=build /app/.pip-audit-ignore ./.pip-audit-ignore
 COPY --from=build /app/.trivyignore ./.trivyignore
 COPY --from=build /app/docs/ ./docs/
