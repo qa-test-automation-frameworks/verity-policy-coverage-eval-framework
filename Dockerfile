@@ -19,8 +19,9 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce
 COPY pyproject.toml uv.lock .python-version ./
 COPY README.md LICENSE ./
 
-# Install the development/test extra only. The Tier-1 image does not need the
-# optional semantic extra (RAGAS/DeepEval), which runs separately in semantic CI.
+# Install the development/test extra only. CI-only security auditing lives in
+# its own extra and is not needed in this image. The Tier-1 image also excludes
+# the optional semantic extra (RAGAS/DeepEval), which runs separately in CI.
 RUN uv sync --frozen --extra dev --no-install-project
 
 # Pre-download the FastEmbed ONNX embedding model (all-MiniLM-L6-v2) into this

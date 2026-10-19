@@ -42,9 +42,13 @@ dev = [
     "pytest-xdist>=3.6.0",
     "pre-commit>=3.7.0",
     "types-PyYAML>=6.0.12",
-    "pip-audit>=2.7.0",
     "bandit>=1.7.0",
     "hypothesis>=6.156.6",
+]
+security = [
+    # CI uses this audit tool; keep pip and its vendored scanner SBOM out of the
+    # runtime test image, where dependency auditing is not performed.
+    "pip-audit>=2.7.0",
 ]
 semantic = [
     "deepeval>=1.5.0",
