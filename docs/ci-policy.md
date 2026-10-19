@@ -48,6 +48,20 @@ The PR Gate matrix verifies the following on Python 3.12.15 and 3.13.16:
 All four ruleset checks must pass for merge. Tier 2 (semantic) and Tier 3
 (adversarial) remain informational.
 
+## Action runtime and immutable pins
+
+Third-party actions are pinned to full commit SHAs, with the upstream release
+tag recorded beside each pin. The workflows use the Node 24 releases of
+`actions/checkout`, `actions/cache`, and `actions/upload-artifact`; these Node 24
+releases require Actions Runner `2.327.1` or later. This repository uses
+GitHub-hosted runners; any future self-hosted runner must meet that minimum
+before these pins are used. When refreshing a pin,
+verify the release's declared runtime and compatibility notes from the
+upstream repository, preserve full-SHA pinning, and run the affected workflow
+checks. A successful run alone is not a reason to skip an available runtime
+upgrade when GitHub reports that an action is executing on a deprecated Node
+runtime.
+
 ## Non-blocking tiers (informational)
 
 - **Tier 2 — Semantic eval** (`semantic-eval.yml`): runs on merge to `main`; requires a

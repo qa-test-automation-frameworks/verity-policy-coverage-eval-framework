@@ -28,10 +28,10 @@ jobs:
       VERITY_REFERENCE_APP_URL: http://127.0.0.1:4300
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24
 
       - name: Checkout pinned reference app source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24
         with:
           repository: qa-test-automation-frameworks/quality-reference-application
           ref: 21af1f41561a6d83ae44933dd36d9daa5e6a6e4c
