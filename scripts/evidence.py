@@ -305,7 +305,10 @@ def make_record(
             "execution": execution,
             "publication": {
                 "disposition": "pending",
-                "reason": "E03 durable publication is not implemented for this repository.",
+                "reason": (
+                    "This immutable execution record was emitted before the trusted publisher "
+                    "completed; consult the durable latest index for final publication status."
+                ),
                 "publishedAt": None,
                 "reportUrl": None,
                 "artifacts": [],

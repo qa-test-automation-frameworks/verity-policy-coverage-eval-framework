@@ -197,6 +197,14 @@ class EvidenceTests(unittest.TestCase):
         for record in records:
             self.assertEqual(validate_record(record), [])
 
+    def test_pending_publication_reason_points_to_final_durable_index(self) -> None:
+        record = make_record("verity.skip", ENV, skip_reason="No provider key configured")
+
+        self.assertEqual(record["publication"]["disposition"], "pending")
+        self.assertIn("immutable execution record", record["publication"]["reason"])
+        self.assertIn("durable latest index", record["publication"]["reason"])
+        self.assertNotIn("not implemented", record["publication"]["reason"])
+
     def test_schema_semantics_reject_pass_with_failed_case(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             report = self.write_xml(
