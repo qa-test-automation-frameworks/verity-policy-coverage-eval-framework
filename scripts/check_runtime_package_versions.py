@@ -1,4 +1,4 @@
-"""Fail if fixed runtime dependencies are missing, vulnerable, or duplicated."""
+"""Fail if present runtime packages are vulnerable or duplicated."""
 
 from __future__ import annotations
 
@@ -37,7 +37,8 @@ def main() -> None:
     invalid = {
         name: versions
         for name, minimum in MINIMUM_VERSIONS.items()
-        if len(versions := installed.get(name, [])) != 1 or versions[0][0] < minimum
+        if (versions := installed.get(name, []))
+        and (len(versions) != 1 or versions[0][0] < minimum)
     }
     if invalid:
         raise SystemExit(f"Vulnerable or duplicate runtime package metadata: {invalid}")

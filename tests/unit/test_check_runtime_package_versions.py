@@ -24,6 +24,18 @@ def test_fixed_unique_runtime_versions_pass(tmp_path, monkeypatch: pytest.Monkey
     check_runtime_package_versions.main()
 
 
+def test_absent_optional_package_does_not_fail(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _metadata(tmp_path, "setuptools", "83.0.0")
+    _metadata(tmp_path, "urllib3", "2.8.0")
+    monkeypatch.setattr(
+        check_runtime_package_versions.sysconfig,
+        "get_path",
+        lambda _: str(tmp_path),
+    )
+
+    check_runtime_package_versions.main()
+
+
 def test_vulnerable_nested_metadata_fails_closed(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     _metadata(tmp_path, "msgpack", "1.2.1")
     _metadata(tmp_path, "setuptools", "83.0.0")
