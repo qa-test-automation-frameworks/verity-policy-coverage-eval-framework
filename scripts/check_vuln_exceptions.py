@@ -1,9 +1,10 @@
 """Fail CI when an exception lacks review metadata, is expired, or is too long.
 
 Each ignored vulnerability ID must immediately follow its own Reviewed,
-Reviewer, and Expires metadata. The maximum review window is 30 days, and the
-expiry date itself is no longer an accepted day. Metadata is consumed by one
-ID only; it cannot silently authorize later entries.
+Reviewer, Review-by, and Expires metadata. Exceptions must be reassessed within
+14 days and expire within 30 days. The expiry date itself is no longer an
+accepted day. Metadata is consumed by one ID only; it cannot silently
+authorize later entries.
 
 Usage:
     uv run python scripts/check_vuln_exceptions.py [ignore-file ...]
@@ -20,11 +21,13 @@ from pathlib import Path
 
 _EXPIRES_RE = re.compile(r"^#\s*Expires:\s*(\d{4}-\d{2}-\d{2})\s*$")
 _REVIEWED_RE = re.compile(r"^#\s*Reviewed:\s*(\d{4}-\d{2}-\d{2})\s*$")
+_REVIEW_BY_RE = re.compile(r"^#\s*Review-by:\s*(\d{4}-\d{2}-\d{2})\s*$")
 _REVIEWER_RE = re.compile(r"^#\s*Reviewer:\s*(\S.*)$")
 _RECORD_RE = re.compile(r"^#\s*Record:\s*(\S.*)$")
 _DECISION_RE = re.compile(r"^#\s*Decision:\s*(\S.*)$")
 _ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 MAX_REVIEW_WINDOW_DAYS = 30
+MAX_REASSESSMENT_WINDOW_DAYS = 14
 
 
 def check_vuln_exceptions(path: Path, today: date) -> list[str]:
@@ -50,6 +53,7 @@ def check_vuln_exceptions(path: Path, today: date) -> list[str]:
         if stripped.startswith("#"):
             for key, pattern in (
                 ("reviewed", _REVIEWED_RE),
+                ("review_by", _REVIEW_BY_RE),
                 ("reviewer", _REVIEWER_RE),
                 ("record", _RECORD_RE),
                 ("decision", _DECISION_RE),
@@ -67,7 +71,14 @@ def check_vuln_exceptions(path: Path, today: date) -> list[str]:
             failures.append(f"line {line_number}: malformed exception entry {stripped!r}")
             continue
         vuln_id = stripped
-        missing = {"reviewed", "reviewer", "record", "decision", "expires"} - pending.keys()
+        missing = {
+            "reviewed",
+            "review_by",
+            "reviewer",
+            "record",
+            "decision",
+            "expires",
+        } - pending.keys()
         if missing:
             failures.append(f"{vuln_id}: missing required metadata: {', '.join(sorted(missing))}")
         if "record" in pending:
@@ -81,15 +92,18 @@ def check_vuln_exceptions(path: Path, today: date) -> list[str]:
                 for required_text in (
                     vuln_id,
                     pending.get("reviewed", ""),
+                    pending.get("review_by", ""),
+                    pending.get("expires", ""),
                     pending.get("reviewer", ""),
                     pending.get("decision", ""),
                 ):
                     normalized = " ".join(required_text.split())
                     if normalized and normalized not in record_text:
                         failures.append(f"{vuln_id}: review record does not contain {normalized!r}")
-        if {"reviewed", "expires"} <= pending.keys():
+        if {"reviewed", "review_by", "expires"} <= pending.keys():
             try:
                 reviewed = date.fromisoformat(pending["reviewed"])
+                review_by = date.fromisoformat(pending["review_by"])
                 expires = date.fromisoformat(pending["expires"])
             except ValueError:
                 failures.append(f"{vuln_id}: review or expiry date is invalid")
@@ -98,6 +112,17 @@ def check_vuln_exceptions(path: Path, today: date) -> list[str]:
                     failures.append(
                         f"{vuln_id}: review date {reviewed.isoformat()} is in the future"
                     )
+                if review_by < today:
+                    failures.append(f"{vuln_id}: review deadline passed on {review_by.isoformat()}")
+                if review_by <= reviewed:
+                    failures.append(f"{vuln_id}: review deadline must follow the review date")
+                elif review_by - reviewed > timedelta(days=MAX_REASSESSMENT_WINDOW_DAYS):
+                    failures.append(
+                        f"{vuln_id}: reassessment window exceeds "
+                        f"{MAX_REASSESSMENT_WINDOW_DAYS} days"
+                    )
+                if review_by >= expires:
+                    failures.append(f"{vuln_id}: review deadline must be before expiry")
                 if expires <= today:
                     failures.append(f"{vuln_id}: exception expired on {expires.isoformat()}")
                 if expires <= reviewed:

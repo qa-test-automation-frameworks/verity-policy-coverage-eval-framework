@@ -1,11 +1,12 @@
 # Time-bounded dependency vulnerability review — status updated 2026-10-19
 
-This record tracks the two narrow, temporary dependency exceptions approved
+This record tracks the two narrow, temporary dependency exceptions retained
 with Verity PR #31. It does not claim that the affected packages are fixed or
 that the advisories are false positives. The four ChromaDB findings were
 remediated by removing ChromaDB and replacing its local vector index with
 SQLite plus FastEmbed. The remaining DiskCache and RAGAS exceptions expire
-**2026-11-17** and must be reassessed or removed before then. `pip-audit` scans
+**2026-11-17** and must be reassessed by **2026-11-02** or removed before then.
+`pip-audit` scans
 the installed Python environment while suppressing only these two exact IDs.
 Trivy scans the final image at `CRITICAL,HIGH`; it does not block on medium/low
 findings. The Tier-1 image now omits the optional semantic extra, while
@@ -48,6 +49,12 @@ boundaries, not a claim that every scanner blocks on every severity.
   corpus (`src/sut/corpus`), while `tests/semantic/test_detector_canaries.py`
   uses a literal synthetic context. No user-supplied document or remote URL is
   passed to these RAGAS samples. This does not cover future integrations.
+- The review also noted that RAGAS's older `ImageTextPrompt` path checks
+  resolved IP addresses but follows redirects. A redirect-based bypass was not
+  verified, so this is an unconfirmed adjacent risk, not an established
+  exploit. The reviewer did not independently verify the reported 16-query
+  retrieval-parity result or trace every optional import in the dependency
+  graph.
 
 ## Merged remediation status
 
@@ -118,6 +125,13 @@ either remaining advisory:
   text metric factories, but that limits the known path rather than fixing the
   vulnerable package.
 
+Replacing the four RAGAS-backed metrics with DeepEval equivalents could remove
+RAGAS and its transitive DiskCache dependency, clearing both remaining
+exceptions. That is a metric-contract change, not a dependency-only update:
+thresholds and calibration evidence would need to be rebuilt and reviewed.
+This review therefore keeps the current text metrics behind the documented
+import guards and does not claim that a migration has been completed.
+
 This recheck supports retaining the existing narrow exceptions only until
 their recorded expiry of 2026-11-17. It does not clear either finding, certify
 the dependency tree, or authorize renewal. Recheck the advisories and upstream
@@ -139,19 +153,22 @@ the former human-review requirement. It is not human review, human adoption,
 endorsement, or security certification. Review provenance and findings are at
 [the portfolio review record](https://github.com/qa-test-automation-frameworks/.github/blob/main/docs/verification/2026-10-19-independent-review.md).
 
-Reviewed: 2026-10-19. Reviewer: Claude Opus 5.5 in Claude Code + Prayag Vyas
-(owner). Owner disposition: retain through 2026-11-17; no renewal authorized.
+Reviewed: 2026-10-19. Reassess by: 2026-11-02. Expiry: 2026-11-17.
+Reviewer: Claude Opus 5.5 in Claude Code + Prayag Vyas (owner). Owner
+disposition: retain through 2026-11-17; no renewal authorized.
 This applies to `PYSEC-2026-2447` and `PYSEC-2026-3046` only, subject to the
 controls below. Any future renewal requires a new dated owner decision and
 review record.
 
 ## Review-driven controls — 2026-10-19
 
-- `.pip-audit-ignore` records reviewer, review date, review-record path,
-  disposition, and expiry for each ignored ID. The validator confirms the
+- `.pip-audit-ignore` records reviewer, review date, reassessment deadline,
+  review-record path, disposition, and expiry for each ignored ID. The
+  validator confirms the
   linked record exists and contains the exact ID, date, reviewer, and decision;
-  metadata authorizes one ID only. It rejects malformed/dangling entries, fails
-  on the expiry date, and caps a review window at 30 days.
+  metadata authorizes one ID only. It rejects malformed/dangling entries,
+  requires reassessment within 14 days, fails after the reassessment deadline
+  and on the expiry date, and caps the total exception window at 30 days.
 - A daily workflow checks the exception files, so an expired exception fails
   visibly even without a code push. Pull requests that change the exception
   metadata run the same validation.
@@ -165,6 +182,10 @@ review record.
   remains broad for compatibility, so the lockfile check is the enforced scope.
 - The final Tier-1 image installs the `dev` extra but not `semantic`; semantic
   evaluation installs its dependencies in its own workflow.
+- The only `actions/cache` directory in the reviewed workflows is
+  `~/.cache/fastembed`; do not add the relative `.cache` directory used by
+  DiskCache to any Actions cache, because that could preserve attacker-written
+  pickle data between runs.
 - Trivy's configured threshold remains `CRITICAL,HIGH`; `pip-audit` is the
   active gate that detects these medium/low Python advisories. This record now
   states that distinction accurately.

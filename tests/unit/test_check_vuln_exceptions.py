@@ -17,9 +17,16 @@ def _write(tmp_path: Path, content: str, name: str = ".pip-audit-ignore") -> Pat
     return out
 
 
-def _entry(vuln_id: str, *, reviewed: str = "2026-10-19", expires: str = "2026-11-17") -> str:
+def _entry(
+    vuln_id: str,
+    *,
+    reviewed: str = "2026-10-19",
+    review_by: str = "2026-11-02",
+    expires: str = "2026-11-17",
+) -> str:
     return (
         f"# Reviewed: {reviewed}\n"
+        f"# Review-by: {review_by}\n"
         "# Reviewer: independent reviewer and owner\n"
         "# Record: docs/security/review.md\n"
         "# Decision: retain until recorded expiry; do not renew automatically\n"
@@ -37,6 +44,28 @@ class TestCheckVulnExceptions:
         path = _write(tmp_path, _entry("CVE-2026-0001", expires="2026-10-19"))
         failures = check_vuln_exceptions(path, today=date(2026, 10, 19))
         assert any("expired" in failure for failure in failures)
+
+    def test_review_deadline_day_is_allowed_but_next_day_fails(self, tmp_path: Path) -> None:
+        path = _write(tmp_path, _entry("CVE-2026-0008"))
+        assert check_vuln_exceptions(path, today=date(2026, 11, 2)) == []
+        failures = check_vuln_exceptions(path, today=date(2026, 11, 3))
+        assert any("review deadline passed" in failure for failure in failures)
+
+    def test_reassessment_window_longer_than_14_days_fails(self, tmp_path: Path) -> None:
+        path = _write(
+            tmp_path,
+            _entry("CVE-2026-0009", review_by="2026-11-03"),
+        )
+        failures = check_vuln_exceptions(path, today=date(2026, 10, 19))
+        assert any("reassessment window exceeds 14 days" in failure for failure in failures)
+
+    def test_review_deadline_must_precede_expiry(self, tmp_path: Path) -> None:
+        path = _write(
+            tmp_path,
+            _entry("CVE-2026-0011", review_by="2026-11-18"),
+        )
+        failures = check_vuln_exceptions(path, today=date(2026, 10, 19))
+        assert any("review deadline must be before expiry" in failure for failure in failures)
 
     def test_expired_entry_fails(self, tmp_path: Path) -> None:
         path = _write(
@@ -98,6 +127,14 @@ class TestCheckVulnExceptions:
         assert any(
             "reviewed" in failure for failure in check_vuln_exceptions(path, date(2026, 10, 19))
         )
+
+    def test_missing_review_deadline_fails(self, tmp_path: Path) -> None:
+        path = _write(
+            tmp_path,
+            _entry("CVE-2026-0010").replace("# Review-by: 2026-11-02\n", ""),
+        )
+        failures = check_vuln_exceptions(path, date(2026, 10, 19))
+        assert any("review_by" in failure for failure in failures)
 
     def test_expiry_metadata_cannot_be_shared_by_multiple_ids(self, tmp_path: Path) -> None:
         path = _write(
