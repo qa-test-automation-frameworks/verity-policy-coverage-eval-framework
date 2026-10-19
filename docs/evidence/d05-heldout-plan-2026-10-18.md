@@ -1,8 +1,11 @@
 # D05 held-out Gemini judge evaluation plan
 
-**Plan ID:** `D05-GEMINI-HELDOUT-2026-10-18-v1`  
-**Status:** Frozen design; dataset and reviewer labels not yet assembled  
-**Prepared:** 2026-10-18  
+**Plan ID:** `D05-GEMINI-HELDOUT-2026-10-18-v1`
+
+**Status:** Frozen design; dataset and reviewer labels not yet assembled
+
+**Prepared:** 2026-10-18
+
 **Purpose:** Evaluate agreement between the bounded Gemini judge and two independent human reviewers on a new, held-out set. This plan does not claim that the study ran or that a metric passed.
 
 ## Evaluation question and scope
