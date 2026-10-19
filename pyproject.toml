@@ -33,6 +33,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ruff==0.17.1",
+    # The Tier-1 image verifies this package against a known security floor.
+    "setuptools>=83.0.0",
     "mypy>=1.10.0",
     "jsonschema>=4.26.0",
     "pytest>=8.2.0",
