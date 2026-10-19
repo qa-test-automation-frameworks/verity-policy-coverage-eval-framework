@@ -34,8 +34,8 @@ from verity.providers import LLMProvider  # noqa: E402
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 CATALOGUE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-# Explicit Standard-tier text pricing verified on 2026-10-18. Availability
-# checks do NOT reveal the project billing plan. Recheck pricing before studies.
+# Standard-tier text pricing was rechecked on 2026-10-19. Availability checks
+# do NOT reveal the project billing plan; the operator separately attests it.
 FREE_TIER_MODELS = {"gemini-3.8-flash"}
 PRICING_URL = "https://ai.google.dev/gemini-api/docs/pricing"
 
@@ -292,7 +292,7 @@ def main() -> int:
         "free_project_confirmed_by_operator": args.confirm_free_project,
         "billing_plan_verified_by_api": False,
         "pricing_source": PRICING_URL,
-        "pricing_reviewed_on": "2026-10-18",
+        "pricing_reviewed_on": "2026-10-19",
         "catalogue_url": CATALOGUE_URL,
         "limits": {
             "calls": args.max_calls,

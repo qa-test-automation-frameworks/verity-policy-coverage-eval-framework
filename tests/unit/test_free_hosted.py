@@ -248,6 +248,7 @@ def test_catalogue_preflight_makes_no_inference_call(tmp_path, monkeypatch):
     receipt = json.loads(next(tmp_path.glob("smoke-*.json")).read_text())
     assert receipt["attempts"] == []
     assert receipt["billing_plan_verified_by_api"] is False
+    assert receipt["pricing_reviewed_on"] == "2026-10-19"
     assert receipt["status"] == "success"
 
 
