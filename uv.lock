@@ -3213,6 +3213,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
     { name = "ruff" },
+    { name = "setuptools", specifier = ">=83.0.0" },
     { name = "types-pyyaml" },
 ]
 mutation = [
