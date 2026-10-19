@@ -52,7 +52,9 @@ security = [
 ]
 semantic = [
     "deepeval>=1.5.0",
-    "ragas>=0.2.0",
+    # Stay on the reviewed version while its local-file/SSRF advisory is
+    # unpatched; reassess this bound before any version change.
+    "ragas==0.4.3",
 ]
 otel = [
     "opentelemetry-api>=1.25.0",
