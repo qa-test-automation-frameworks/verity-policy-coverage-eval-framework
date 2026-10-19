@@ -10,11 +10,8 @@ on:
       - ".github/workflows/docker-scan.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "Dockerfile"
-      - "pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/docker-scan.yml"
+    # This is a required branch-protection context. Path-filtered PR workflows
+    # leave the required check in Expected state when unrelated files change.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
