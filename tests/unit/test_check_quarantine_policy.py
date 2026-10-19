@@ -30,6 +30,8 @@ def _fixture(tmp_path: Path) -> tuple[Path, dict]:
                 "id": "KI-3",
                 "status": "active",
                 "ownerRole": "repository-maintainer",
+                "reviewedBy": "independent-reviewer",
+                "reviewDisposition": "retain",
                 "reviewedOn": "2026-10-04",
                 "reviewDue": "2026-10-18",
                 "expires": "2026-11-03",
@@ -53,8 +55,42 @@ def test_current_dated_entry_with_real_marked_test_passes(tmp_path: Path) -> Non
     assert check_quarantine_policy(path, tmp_path, TODAY) == []
 
 
+def test_active_quarantine_requires_retain_disposition(tmp_path: Path) -> None:
+    path, data = _fixture(tmp_path)
+    data["items"][0]["reviewDisposition"] = "promote"
+    _write(path, data)
+    assert any(
+        "reviewDisposition must be 'retain'" in failure
+        for failure in check_quarantine_policy(path, tmp_path, TODAY)
+    )
+
+
+def test_nested_untracked_quarantine_marker_fails(tmp_path: Path) -> None:
+    path, data = _fixture(tmp_path)
+    nested = tmp_path / "tests/semantic/nested"
+    nested.mkdir()
+    (nested / "test_untracked.py").write_text(
+        "import pytest\n@pytest.mark.quarantine\ndef test_untracked():\n    assert True\n"
+    )
+    _write(path, data)
+    failures = check_quarantine_policy(path, tmp_path, TODAY)
+    assert (
+        "Untracked quarantine marker: tests/semantic/nested/test_untracked.py::test_untracked"
+        in failures
+    )
+
+
 @pytest.mark.parametrize(
-    "field", ["ownerRole", "reason", "promotionCriteria", "reviewDue", "expires"]
+    "field",
+    [
+        "ownerRole",
+        "reviewedBy",
+        "reviewDisposition",
+        "reason",
+        "promotionCriteria",
+        "reviewDue",
+        "expires",
+    ],
 )
 def test_missing_governance_field_fails(tmp_path: Path, field: str) -> None:
     path, data = _fixture(tmp_path)

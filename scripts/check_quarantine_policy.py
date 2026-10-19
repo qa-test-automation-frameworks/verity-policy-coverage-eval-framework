@@ -72,9 +72,17 @@ def check_quarantine_policy(path: Path, root: Path, today: date) -> list[str]:
         else:
             seen.add(identifier)
         prefix = str(identifier)
-        for field in ("ownerRole", "reason", "promotionCriteria"):
+        for field in (
+            "ownerRole",
+            "reviewedBy",
+            "reviewDisposition",
+            "reason",
+            "promotionCriteria",
+        ):
             if not isinstance(item.get(field), str) or not item[field].strip():
                 failures.append(f"{prefix}: missing {field}")
+        if item.get("reviewDisposition") != "retain":
+            failures.append(f"{prefix}: active quarantine reviewDisposition must be 'retain'")
         if item.get("status") != "active":
             failures.append(f"{prefix}: unsupported status; archive inactive entries")
         dates: dict[str, date] = {}
@@ -139,7 +147,7 @@ def check_quarantine_policy(path: Path, root: Path, today: date) -> list[str]:
             except (OSError, SyntaxError):
                 failures.append(f"{prefix}: named test cannot be inspected: {node_id}")
     # Removing a manifest entry must not leave an undated live metric quarantine.
-    for source_path in (root / "tests/semantic").glob("test_*.py"):
+    for source_path in (root / "tests/semantic").rglob("test_*.py"):
         try:
             tree = ast.parse(source_path.read_text())
         except (OSError, SyntaxError):
