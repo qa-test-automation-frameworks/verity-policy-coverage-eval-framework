@@ -2,15 +2,17 @@
 
 _Hermetically proven from cassette replay — no API key required._
 
-**4 of 8 defects caught hermetically** (defects 5-8 via deterministic + adversarial replay). Defects 1-4 have a live Tier-2 semantic run committed, but only defect #4 reproduced for the provider/model pairing in that run; defects #1-#3 are `NOT_REPRODUCED` and should be read as retained regression tripwires, not as live failures from that run. Re-run `make eval-semantic` to refresh.
+**4 of 8 defects caught hermetically** (defects 5-8 via deterministic + adversarial replay). Defects 1-4 have semantic results available, but only defect #4 reproduced for the provider/model pairing in that run; defects #1-#3 are `NOT_REPRODUCED` and should be read as retained regression tripwires, not as live failures from that run. Re-run `make eval-semantic` to refresh.
+
+**Semantic evidence freshness:** legacy semantic snapshot has no embedded run timestamp or source commit; treat it as historical, not a current evaluation.
 
 **Scope of proof.** ✅ CAUGHT rows replay hand-authored cassettes: the candidate output that trips the check was written by the case author, not produced by a live model run. This proves the *detector* (regex/schema/check function) fires on a known-bad output; it does not by itself prove the SUT ever produces that output live. ✅ VERIFIED rows mean a live semantic run reproduced the seeded behavior. 🟡 NOT REPRODUCED rows mean the live run passed the relevant threshold for that provider/model pairing. ⬜ COVERED rows have no run at all yet — ground truth and thresholds are committed, but nothing has executed against them. See `docs/architecture.md` and the Limitations section of `README.md` for the full evidence caveat.
 
 ---
 
-## Control-Case Results (Committed Live Run)
+## Semantic Control-Case Results
 
-The committed semantic run also exercises clean control cases — 40 control-tier test nodes ran, 30 passed, 10 failed.
+The included semantic report exercises clean control cases — 40 control-tier test nodes ran, 30 passed, 10 failed.
 
 Failing control nodes from this run (see `docs/thresholds.md` for the metric this provider/judge pairing is weakest on):
 

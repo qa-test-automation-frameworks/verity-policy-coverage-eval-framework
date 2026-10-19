@@ -14,6 +14,7 @@ from scripts.defects_report import (
     DEFECT_CATALOG,
     DefectEntry,
     _load_defect_risk_weights,
+    _semantic_provenance_note,
     build_json,
     render_markdown,
     run,
@@ -121,6 +122,97 @@ class TestRenderMarkdown:
         catalog = copy.deepcopy(DEFECT_CATALOG)
         md = render_markdown(catalog)
         assert "make defects-report" in md
+
+
+class TestSemanticProvenance:
+    def test_missing_results_are_reported_as_not_available(self, tmp_path: Path) -> None:
+        import os
+
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            note = _semantic_provenance_note()
+        finally:
+            os.chdir(original)
+
+        assert "no semantic result artifact was available" in note
+        assert "remain COVERED" in note
+
+    def test_legacy_results_are_not_described_as_current(self, tmp_path: Path) -> None:
+        import json
+        import os
+
+        semantic_dir = tmp_path / "reports" / "semantic"
+        semantic_dir.mkdir(parents=True)
+        (semantic_dir / "results.json").write_text(json.dumps({"outcomes": {}}))
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            note = _semantic_provenance_note()
+        finally:
+            os.chdir(original)
+
+        assert "legacy semantic snapshot" in note
+        assert "historical, not a current evaluation" in note
+
+    def test_provenance_identifies_run_time_and_source_commit(self, tmp_path: Path) -> None:
+        import json
+        import os
+
+        semantic_dir = tmp_path / "reports" / "semantic"
+        semantic_dir.mkdir(parents=True)
+        (semantic_dir / "results.json").write_text(
+            json.dumps({"run": {"git_sha": "abc123"}, "measurements": {}})
+        )
+        (semantic_dir / "provenance.json").write_text(
+            json.dumps(
+                {
+                    "run_id": "12345",
+                    "run_url": "https://github.com/example/repo/actions/runs/12345",
+                    "completed_at": "2026-10-19T04:00:00+00:00",
+                    "commit_sha": "abc123",
+                }
+            )
+        )
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            note = _semantic_provenance_note()
+        finally:
+            os.chdir(original)
+
+        assert "run 12345" in note
+        assert "2026-10-19T04:00:00+00:00" in note
+        assert "`abc123`" in note
+
+    def test_mismatched_provenance_is_rejected(self, tmp_path: Path) -> None:
+        import json
+        import os
+
+        semantic_dir = tmp_path / "reports" / "semantic"
+        semantic_dir.mkdir(parents=True)
+        (semantic_dir / "results.json").write_text(
+            json.dumps({"run": {"git_sha": "result-sha"}})
+        )
+        (semantic_dir / "provenance.json").write_text(
+            json.dumps(
+                {
+                    "run_id": "12345",
+                    "run_url": "https://github.com/example/repo/actions/runs/12345",
+                    "completed_at": "2026-10-19T04:00:00+00:00",
+                    "commit_sha": "other-sha",
+                }
+            )
+        )
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            note = _semantic_provenance_note()
+        finally:
+            os.chdir(original)
+
+        assert "does not match" in note
+        assert "historical" in note
 
 
 # ---------------------------------------------------------------------------

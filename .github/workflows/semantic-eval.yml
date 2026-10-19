@@ -107,6 +107,22 @@ jobs:
             exit 1
           fi
           cp reports/semantic/results-local.json reports/semantic/results.json
+          uv run python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          provenance = {
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_url": f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+              "completed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+              "commit_sha": os.environ["GITHUB_SHA"],
+          }
+          Path("reports/semantic/provenance.json").write_text(
+              json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
 
       - name: Upload semantic eval reports
         if: steps.key_check.outputs.has_key == 'true'
@@ -116,4 +132,5 @@ jobs:
           path: |
             reports/allure-results/semantic/
             reports/semantic/results.json
+            reports/semantic/provenance.json
           if-no-files-found: warn
