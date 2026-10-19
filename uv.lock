@@ -3207,13 +3207,16 @@ dev = [
     { name = "hypothesis" },
     { name = "jsonschema" },
     { name = "mypy" },
-    { name = "pip-audit" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
     { name = "ruff" },
+    { name = "setuptools" },
     { name = "types-pyyaml" },
+]
+security = [
+    { name = "pip-audit" },
 ]
 mutation = [
     { name = "mutmut" },
@@ -3248,7 +3251,7 @@ requires-dist = [
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.25.0" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "extra == 'otel'", specifier = ">=1.25.0" },
     { name = "opentelemetry-sdk", marker = "extra == 'otel'", specifier = ">=1.25.0" },
-    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.0" },
+    { name = "pip-audit", marker = "extra == 'security'", specifier = ">=2.7.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7.0" },
     { name = "pydantic", specifier = ">=2.7.0" },
     { name = "pydantic-settings", specifier = ">=2.3.0" },
@@ -3258,9 +3261,10 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "ragas", marker = "extra == 'semantic'", specifier = ">=0.2.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.17.1" },
+    { name = "setuptools", marker = "extra == 'dev'", specifier = ">=83.0.0" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12" },
 ]
-provides-extras = ["dev", "semantic", "otel", "report", "mutation"]
+provides-extras = ["dev", "security", "semantic", "otel", "report", "mutation"]
 
 [[package]]
 name = "virtualenv"

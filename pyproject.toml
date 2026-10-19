@@ -33,6 +33,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ruff==0.17.1",
+    # The Tier-1 image verifies this package against a known security floor.
+    "setuptools>=83.0.0",
     "mypy>=1.10.0",
     "jsonschema>=4.26.0",
     "pytest>=8.2.0",
@@ -40,9 +42,13 @@ dev = [
     "pytest-xdist>=3.6.0",
     "pre-commit>=3.7.0",
     "types-PyYAML>=6.0.12",
-    "pip-audit>=2.7.0",
     "bandit>=1.7.0",
     "hypothesis>=6.156.6",
+]
+security = [
+    # CI uses this audit tool; keep pip and its vendored scanner SBOM out of the
+    # runtime test image, where dependency auditing is not performed.
+    "pip-audit>=2.7.0",
 ]
 semantic = [
     "deepeval>=1.5.0",
@@ -78,13 +84,19 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "N", "RUF"]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "N", "RUF", "TID"]
 ignore = [
     "ANN401",  # Any allowed for dynamic provider and ONNX model boundaries
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"]  # no return-type annotations required in tests
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"diskcache" = { msg = "Do not enable the vulnerable optional DiskCache backend without a reviewed dependency disposition." }
+"ragas.cache" = { msg = "Do not enable the vulnerable optional RAGAS DiskCache backend without a reviewed dependency disposition." }
+"ragas.metrics.collections" = { msg = "RAGAS collections include vulnerable multimodal URL/local-file processing; review before adoption." }
+"ragas.prompt.multi_modal_prompt" = { msg = "Review this multimodal prompt path for URL and local-file handling before adoption." }
 
 [tool.ruff.format]
 quote-style = "double"

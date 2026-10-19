@@ -105,6 +105,8 @@ class TestThresholds:
 
 
 class TestDeepEvalMetricConstruction:
+    pytestmark = pytest.mark.semantic
+
     def test_make_hallucination_returns_object(self) -> None:
         m = make_hallucination(_mock_judge())
         assert m is not None
@@ -172,6 +174,8 @@ class TestDeepEvalMetricConstruction:
 
 
 class TestRagasMetricConstruction:
+    pytestmark = pytest.mark.semantic
+
     def test_ragas_metric_import_smoke(self) -> None:
         from verity.metrics.ragas_metrics import _import_ragas_metric_class
 
