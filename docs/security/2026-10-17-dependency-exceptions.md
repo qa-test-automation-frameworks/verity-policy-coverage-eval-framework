@@ -1,13 +1,13 @@
-# Time-bounded dependency vulnerability review — 2026-10-17
+# Time-bounded dependency vulnerability review — status updated 2026-10-19
 
-This review proposes narrow, temporary exceptions for two optional dependency
-findings in PR #31. It does not claim that the affected packages are fixed or
+This record tracks the two narrow, temporary dependency exceptions approved
+with Verity PR #31. It does not claim that the affected packages are fixed or
 that the advisories are false positives. The four ChromaDB findings were
-remediated in this branch by removing ChromaDB and replacing its local vector
-index with SQLite plus FastEmbed. The remaining DiskCache and RAGAS exceptions
-expire **2026-11-17** and must be reassessed or removed before then. Required
-scanners continue to run against the complete Python environment and final
-image; no severity classes or package paths are excluded.
+remediated by removing ChromaDB and replacing its local vector index with
+SQLite plus FastEmbed. The remaining DiskCache and RAGAS exceptions expire
+**2026-11-17** and must be independently reviewed, reassessed or removed before
+then. Required scanners continue to run against the complete Python
+environment and final image; no severity classes or package paths are excluded.
 
 ## Evidence reviewed
 
@@ -40,20 +40,27 @@ image; no severity classes or package paths are excluded.
   configure RAGAS `DiskCacheBackend`; no application input is used as a cache
   path. This does not cover future integrations that enable persistent cache.
 
-## Current remediation candidate
+## Merged remediation status
 
-The updated lock resolves FastEmbed `0.9.0` and no longer includes ChromaDB.
+PR #31 merged to default branch as `5035ebfa7ab44cf9a0567fcaba02caadfedf65bd`
+on 2026-10-19. The updated lock resolves FastEmbed `0.9.0` and no longer
+includes ChromaDB.
 FastEmbed's supported-model catalog includes the same
 `sentence-transformers/all-MiniLM-L6-v2` model used previously. Local evaluation
 against all 16 real retrieval benchmark queries produced exact ordered chunk-ID
 parity with the former Chroma implementation; all 16 benchmark quality checks
 passed. The SQLite persistence implementation, cache reload, corrupt-cache
 rebuild, corpus fingerprint and retrieval tests passed locally (110 passed, 1
-intentional skip in the focused suite). These are candidate implementation
-results; hosted Python matrix and final-image scans must pass before declaring
-the remediation complete.
+intentional skip in the focused suite). Post-merge PR Gate `39198035150`,
+Documentation `39198035156`, shared-app `39198035148`, report publication
+`39198059171`, and the exact-main container scan `39198035125` succeeded. A
+second main run after PR #33 (`39201389357`, `39201389392`, `39201389349`,
+`39201389505`, and `39201389386`) also passed the Python matrix, docs,
+shared-app, report-publishing and final-image scan. These checks verify the
+merged remediation and active exception gates; they do not clear the remaining
+advisories.
 
-## Remaining proposed exceptions
+## Remaining owner-approved exceptions
 
 | Scanner ID | Package | Finding and local disposition |
 |---|---|---|
@@ -111,6 +118,15 @@ the advisories and upstream release state before expiry. Sources checked:
 [RAGAS GHSA](https://github.com/advisories/GHSA-95ww-475f-pr4f), and
 [RAGAS on PyPI](https://pypi.org/project/ragas/).
 
-These proposed exceptions preserve visible, time-limited risk while allowing
+## Independent review record
+
+The repository owner approved the two exact, expiring exceptions by authorizing
+PR #31 and its merge. As of this update, no independent reviewer decision is
+recorded in the repository. R02 remains open until a reviewer who did not
+author the dependency change records the reviewed IDs, residual risk, decision
+and date, and the repository has a safe upstream fix/replacement or a justified
+time-bounded resolution. A review is not permission to extend the expiry.
+
+These approved exceptions preserve visible, time-limited risk while allowing
 unrelated quality work to proceed. They are not a security waiver for
 production use of Chroma's server API or RAGAS's multimodal URL processing.
