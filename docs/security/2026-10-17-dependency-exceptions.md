@@ -6,12 +6,13 @@ that the advisories are false positives. The four ChromaDB findings were
 remediated by removing ChromaDB and replacing its local vector index with
 SQLite plus FastEmbed. The remaining DiskCache and RAGAS exceptions expire
 **2026-11-17** and must be reassessed by **2026-11-02** or removed before then.
-`pip-audit` scans
-the installed Python environment while suppressing only these two exact IDs.
-Trivy scans the final image at `CRITICAL,HIGH`; it does not block on medium/low
-findings. The Tier-1 image now omits the optional semantic extra, while
-semantic CI still installs it. These are distinct scanner and packaging
-boundaries, not a claim that every scanner blocks on every severity.
+`pip-audit` scans the installed Python environment while suppressing only
+these two exact IDs. Trivy scans the final image at `CRITICAL,HIGH`; it does
+not block on medium/low findings, including these GitHub-rated medium/low
+Python advisories. `pip-audit` is the gate that detects them. The Tier-1 image
+omits the optional semantic extra, while semantic CI still installs it. These
+are distinct scanner and packaging boundaries, not a claim that every scanner
+blocks on every severity.
 
 ## Evidence reviewed
 
@@ -80,15 +81,19 @@ advisories.
 
 | Scanner ID | Package | Finding and local disposition |
 |---|---|---|
-| `PYSEC-2026-2447` / `GHSA-w8v5-vhqr-4h9v` / `CVE-2025-69872` | DiskCache | Unsafe pickle deserialization in affected versions through 5.6.3; no fixed release was listed at review time. The current application does not instantiate DiskCache or let request data select a cache path. RAGAS is the only direct dependency requiring DiskCache in the reviewed lock. |
-| `PYSEC-2026-3046` / `GHSA-95ww-475f-pr4f` / `CVE-2026-6587` | RAGAS | Affected versions 0.2.3–0.4.3; the advisory covers SSRF and local-file reads through multimodal URL/file helpers. The shared helper is also imported by `MultiModalRelevance`; this project currently uses text metrics only. |
+| `PYSEC-2026-2447` / `GHSA-w8v5-vhqr-4h9v` / `CVE-2025-69872` | DiskCache | Unsafe pickle deserialization in affected versions through 5.6.3; no fixed release was listed at review time. The current application does not instantiate DiskCache or let request data select a cache path. RAGAS is the only package requiring DiskCache in the reviewed lock. The exception validator binds this ID to the exact affected package/range in the lock, and the project bans imports of `diskcache` and `ragas.cache`. |
+| `PYSEC-2026-3046` / `GHSA-95ww-475f-pr4f` / `CVE-2026-6587` | RAGAS | Affected versions 0.2.3–0.4.3; the advisory covers SSRF and local-file reads through multimodal URL/file helpers. The shared helper is also imported by `MultiModalRelevance`; this project currently uses text metrics only. The current lock resolves reviewed version `0.4.3`, and Ruff bans the collections and multimodal prompt import paths. `pyproject.toml` still permits a broad range, so lock updates must retain the exact scope check and a narrower declared constraint remains follow-up work. |
 
 Advisory sources: [Chroma pre-auth code execution](https://github.com/advisories/GHSA-f4j7-r4q5-qw2c), [Chroma cross-tenant authorization](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr), [Chroma collection-update code execution](https://github.com/advisories/GHSA-36p7-vc44-83pf), [DiskCache pickle deserialization](https://github.com/advisories/GHSA-w8v5-vhqr-4h9v), and [RAGAS multimodal SSRF](https://github.com/advisories/GHSA-95ww-475f-pr4f). The second Chroma cross-tenant record is `CVE-2026-45831`; its package ID is `PYSEC-2026-3815`.
 
 `.pip-audit-ignore` contains only the two remaining exact Python advisory IDs.
 `.trivyignore` contains no active IDs, and no OS findings are ignored.
-`scripts/check_vuln_exceptions.py` checks that every active exception has a
-future expiry date.
+`scripts/check_vuln_exceptions.py` checks that each active exception has its
+own linked decision record, reassessment no more than 14 days after review,
+and expiry no more than 30 days after review. A daily workflow runs the same
+checks. `scripts/check_vuln_exception_scope.py` requires each ignored ID to
+match a package and affected range in `uv.lock`; it fails when the package
+disappears or its locked version leaves that range.
 
 ## Required follow-up before expiry
 
@@ -149,12 +154,14 @@ a separate GitHub PR approval is not evidence that the merge was unauthorized.
 The owner later accepted the 2026-10-19 review by Claude Opus 5.5 in Claude Code,
 who did not contribute to the repository, together with the owner's review as
 sufficient for this portfolio's R02 gate. This is an explicit owner waiver of
-the former human-review requirement. It is not human review, human adoption,
-endorsement, or security certification. Review provenance and findings are at
+the former human-review requirement. The AI review is not represented as a
+human review, human adoption, endorsement, or security certification. Review
+provenance and findings are at
 [the portfolio review record](https://github.com/qa-test-automation-frameworks/.github/blob/main/docs/verification/2026-10-19-independent-review.md).
 
 Reviewed: 2026-10-19. Reassess by: 2026-11-02. Expiry: 2026-11-17.
-Reviewer: Claude Opus 5.5 in Claude Code + Prayag Vyas (owner). Owner
+Reviewer: AI-assisted review by Claude Opus 5.5 in Claude Code; owner
+disposition by Prayag Vyas. Owner
 disposition: retain through 2026-11-17; no renewal authorized.
 This applies to `PYSEC-2026-2447` and `PYSEC-2026-3046` only, subject to the
 controls below. Any future renewal requires a new dated owner decision and
@@ -185,7 +192,24 @@ review record.
 - The only `actions/cache` directory in the reviewed workflows is
   `~/.cache/fastembed`; do not add the relative `.cache` directory used by
   DiskCache to any Actions cache, because that could preserve attacker-written
-  pickle data between runs.
+  pickle data between runs. DiskCache is imported only when its explicit
+  backend is instantiated, and no such instantiation exists in reviewed source
+  or tests.
+- The semantic extra currently declares `ragas>=0.2.0`, while `uv.lock`
+  resolves `0.4.3`. This broad declaration was flagged in review. The current
+  lockfile scope check verifies the resolved package and affected range, but
+  does not narrow future resolution to the reviewed version. Narrowing the
+  declared constraint and regenerating the lock is a remaining R02 correction;
+  this could not be completed here because the environment cannot reach PyPI
+  and the project-pinned Python 3.13.16 is unavailable. Do not interpret this
+  as a completed control.
+- The four RAGAS adapters are faithfulness, context precision, context recall,
+  and answer relevancy. Replacing them with DeepEval is a separate metric
+  migration; no parity or calibration is claimed. Before migration, record
+  metric mapping, run parity/calibration, and review thresholds. Current
+  semantic contexts come from the checked-in policy corpus via
+  `PolicyRetriever` or literal synthetic fixtures; this does not establish
+  safety for future user-supplied documents or URLs.
 - Trivy's configured threshold remains `CRITICAL,HIGH`; `pip-audit` is the
   active gate that detects these medium/low Python advisories. This record now
   states that distinction accurately.
