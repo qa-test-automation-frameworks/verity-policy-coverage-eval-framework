@@ -1,9 +1,8 @@
 name: Documentation checks
 
 on:
+  # This check is required by the main ruleset, so it must report on every PR.
   pull_request:
-    paths:
-      - '**/*.md'
   push:
     branches: [main]
     paths:
