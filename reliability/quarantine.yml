@@ -7,12 +7,23 @@ items:
     tests:
       - tests/semantic/test_faithfulness.py::test_clean_faithfulness
       - tests/semantic/test_relevancy.py::test_answer_relevancy
+    ownerRole: repository maintainer
+    reviewedBy: prayagv
+    reviewedOn: '2026-10-19'
+    reviewDisposition: retain
+    reviewDue: '2026-11-02'
+    expires: '2026-11-18'
     reason: >
       Clean-control faithfulness and answer-relevancy gates collect signal but
       do not block until a fresh live calibration/control run clears them.
+    promotionCriteria: >
+      Remove the quarantine markers after a fresh live calibration/control run
+      clears the agreement bar for both faithfulness and answer relevancy.
 policy:
   summary: >
     Quarantine entries must point to docs/known-issues.md and name the exact
     test or metric held out of blocking status.
   reviewCadence: per-calibration-refresh
+  maxReviewDays: 14
+  maxExpiryDays: 30
 
