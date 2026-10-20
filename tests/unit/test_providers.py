@@ -90,6 +90,23 @@ class TestLLMProvider:
         assert "tools" in call_kwargs
         assert call_kwargs["tools"] == tools
 
+    def test_structured_output_options_are_passed_to_litellm(
+        self, settings_no_key: Settings
+    ) -> None:
+        provider = LLMProvider(settings_no_key)
+        response_format = {"type": "json_object"}
+        extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
+
+        with patch(_PATCH, return_value=_mock_response()) as mock_call:
+            provider.complete(
+                [{"role": "user", "content": "score this"}],
+                response_format=response_format,
+                extra_body=extra_body,
+            )
+
+        assert mock_call.call_args.kwargs["response_format"] == response_format
+        assert mock_call.call_args.kwargs["extra_body"] == extra_body
+
     def test_temperature_override(self, settings_no_key: Settings) -> None:
         acc = RunAccumulator()
         provider = LLMProvider(settings_no_key, acc)

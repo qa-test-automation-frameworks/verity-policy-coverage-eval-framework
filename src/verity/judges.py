@@ -17,7 +17,7 @@ import logging
 import warnings
 from typing import Any
 
-from verity.config import Settings
+from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
 from verity.providers import LLMProvider
 
@@ -88,7 +88,35 @@ class ProviderJudge:
     def generate(self, prompt: str) -> str:
         """Synchronous generation — used by DeepEval and RAGAS metrics."""
         messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
-        result = self._provider.complete(messages=messages, label="judge")
+        request_options: dict[str, Any] = {
+            "messages": messages,
+            "label": "judge",
+            # The evaluation adapters consume structured scoring output. Ask
+            # compatible providers for JSON at the protocol level instead of
+            # relying on prompt instructions alone.
+            "response_format": {"type": "json_object"},
+        }
+        if self._judge_settings.provider == Provider.nvidia:
+            # Nemotron can spend its token budget on reasoning before emitting
+            # JSON; NVIDIA recommends disabling thinking for structured output.
+            request_options["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
+        result = self._provider.complete(**request_options)
+        if not result.content.strip():
+            finish_reason = "unknown"
+            reasoning_content_present = False
+            raw_response = result.raw_response
+            try:
+                choice = raw_response.choices[0]
+                finish_reason = getattr(choice, "finish_reason", None) or "unknown"
+                reasoning_content_present = bool(getattr(choice.message, "reasoning_content", None))
+            except (AttributeError, IndexError, TypeError):
+                pass
+            raise ValueError(
+                f"Judge {self.model_name} returned empty text "
+                f"(finish_reason={finish_reason}, "
+                f"reasoning_content_present={reasoning_content_present}). "
+                "Check provider output limits and structured-output support."
+            )
         return result.content
 
     async def a_generate(self, prompt: str) -> str:

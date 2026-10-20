@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import warnings
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -26,6 +27,11 @@ def _make_mock_provider(response_text: str = "judge response") -> MagicMock:
 def _make_provider_judge(response_text: str = "judge says: correct") -> ProviderJudge:
     judge = ProviderJudge.__new__(ProviderJudge)
     judge._acc = RunAccumulator()
+    from verity.config import Settings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        judge._judge_settings = Settings(_env_file=None)
     judge._provider = _make_mock_provider(response_text)
     return judge
 
@@ -44,7 +50,50 @@ class TestProviderJudge:
     def test_generate_calls_provider_complete(self) -> None:
         judge = _make_provider_judge()
         judge.generate("some prompt")
-        judge._provider.complete.assert_called_once()
+        judge._provider.complete.assert_called_once_with(
+            messages=[{"role": "user", "content": "some prompt"}],
+            label="judge",
+            response_format={"type": "json_object"},
+        )
+
+    def test_nvidia_judge_disables_reasoning_for_json_output(self) -> None:
+        from verity.config import Provider, Settings
+
+        judge = _make_provider_judge()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            judge._judge_settings = Settings(_env_file=None, provider=Provider.nvidia)
+
+        judge.generate("some prompt")
+
+        assert judge._provider.complete.call_args.kwargs["response_format"] == {
+            "type": "json_object"
+        }
+        assert judge._provider.complete.call_args.kwargs["extra_body"] == {
+            "chat_template_kwargs": {"enable_thinking": False}
+        }
+
+    def test_empty_judge_text_has_actionable_diagnostic(self) -> None:
+        judge = _make_provider_judge("")
+        judge._provider.complete.return_value.raw_response = MagicMock(
+            choices=[
+                MagicMock(
+                    finish_reason="length",
+                    message=MagicMock(reasoning_content="private reasoning"),
+                )
+            ]
+        )
+        from verity.config import Settings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            judge._judge_settings = Settings(_env_file=None)
+
+        with pytest.raises(ValueError, match="finish_reason=length") as error:
+            judge.generate("some prompt")
+
+        assert "reasoning_content_present=True" in str(error.value)
+        assert "private reasoning" not in str(error.value)
 
     def test_a_generate_returns_same_as_generate(self) -> None:
         judge = _make_provider_judge("async response")

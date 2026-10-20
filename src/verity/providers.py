@@ -65,6 +65,8 @@ class LLMProvider:
         temperature: float | None = None,
         max_tokens: int | None = None,
         label: str = "",
+        response_format: dict[str, Any] | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> CompletionResult:
         """Send a completion request and return a typed result with cost accounting."""
         s = self._settings
@@ -72,9 +74,14 @@ class LLMProvider:
         temp = temperature if temperature is not None else s.temperature
         max_tok = max_tokens if max_tokens is not None else s.max_tokens
         mode = s.cassette_mode
+        request_options: dict[str, Any] = {}
+        if response_format is not None:
+            request_options["response_format"] = response_format
+        if extra_body:
+            request_options["extra_body"] = extra_body
 
         if mode == "replay":
-            key = request_key(litellm_model, messages, tools, temp, max_tok)
+            key = request_key(litellm_model, messages, tools, temp, max_tok, request_options)
             lib = self._get_cassette_library()
             payload = lib.lookup(key)
             if payload is None:
@@ -88,7 +95,7 @@ class LLMProvider:
         record_key: str | None = None
         record_lib: CassetteLibrary | None = None
         if mode == "record":
-            record_key = request_key(litellm_model, messages, tools, temp, max_tok)
+            record_key = request_key(litellm_model, messages, tools, temp, max_tok, request_options)
             record_lib = self._get_cassette_library()
 
         # Live call (mode == "off" or mode == "record")
@@ -106,6 +113,10 @@ class LLMProvider:
             kwargs["api_key"] = api_key
         if tools:
             kwargs["tools"] = tools
+        if response_format is not None:
+            kwargs["response_format"] = response_format
+        if extra_body:
+            kwargs["extra_body"] = extra_body
 
         start = time.monotonic()
         response = self._complete_with_key_fallback(kwargs)
