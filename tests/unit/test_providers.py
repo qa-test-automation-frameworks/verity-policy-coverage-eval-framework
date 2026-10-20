@@ -89,6 +89,17 @@ class TestLLMProvider:
         call_kwargs = mock_call.call_args.kwargs
         assert "tools" in call_kwargs
         assert call_kwargs["tools"] == tools
+        assert call_kwargs["_skip_mcp_handler"] is True
+
+    def test_mcp_handler_is_not_skipped_for_plain_completion(
+        self, settings_no_key: Settings
+    ) -> None:
+        provider = LLMProvider(settings_no_key)
+
+        with patch(_PATCH, return_value=_mock_response()) as mock_call:
+            provider.complete([{"role": "user", "content": "hi"}])
+
+        assert "_skip_mcp_handler" not in mock_call.call_args.kwargs
 
     def test_structured_output_options_are_passed_to_litellm(
         self, settings_no_key: Settings

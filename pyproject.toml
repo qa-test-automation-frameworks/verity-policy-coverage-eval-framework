@@ -22,7 +22,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "litellm>=1.45.0",
+    "litellm>=1.106.0",
     "pydantic>=2.7.0",
     "pydantic-settings>=2.3.0",
     "fastembed>=0.9.0,<1",
@@ -187,7 +187,7 @@ constraint-dependencies = [
     "datasets>=5.0.1",
     "fsspec>=2026.6.0",
     "langgraph-sdk>=0.4.4",
-    "litellm>=1.92.0",
+    "litellm>=1.106.0",
     "multidict>=6.9.1",
     "oauthlib>=4.0.0",
     "pillow>=12.3.0",
