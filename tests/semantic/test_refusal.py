@@ -47,9 +47,7 @@ def _score(
     return float(metric.score), response, chunks
 
 
-@pytest.mark.parametrize(
-    "case", smoke_params(_CLEAN, set())
-)
+@pytest.mark.parametrize("case", smoke_params(_CLEAN, set()))
 def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean refusal cases (guardrail fires): refusal G-Eval score must be >= threshold."""
     samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]

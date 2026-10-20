@@ -59,9 +59,7 @@ def test_clean_completeness(case: GoldenCase, settings: Settings, judge: Provide
     )
 
 
-@pytest.mark.parametrize(
-    "case", smoke_params(_DEFECT, {"defect-3-silver-multihop-cost"})
-)
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-3-silver-multihop-cost"}))
 def test_defect_completeness_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

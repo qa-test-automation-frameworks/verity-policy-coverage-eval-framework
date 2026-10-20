@@ -63,9 +63,7 @@ def _score_faithfulness(
 
 
 @pytest.mark.quarantine
-@pytest.mark.parametrize(
-    "case", smoke_params(_CLEAN_FAITH, {"ctrl-silver-physical-therapy-limit"})
-)
+@pytest.mark.parametrize("case", smoke_params(_CLEAN_FAITH, {"ctrl-silver-physical-therapy-limit"}))
 def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases: faithfulness must be >= threshold (no hallucination).
 

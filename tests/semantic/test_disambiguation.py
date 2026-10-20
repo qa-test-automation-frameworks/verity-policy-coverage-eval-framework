@@ -58,9 +58,7 @@ def test_clean_disambiguation(case: GoldenCase, settings: Settings, judge: Provi
     )
 
 
-@pytest.mark.parametrize(
-    "case", smoke_params(_DEFECT, {"defect-4-urgent-care-contradiction"})
-)
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-4-urgent-care-contradiction"}))
 def test_defect_disambiguation_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

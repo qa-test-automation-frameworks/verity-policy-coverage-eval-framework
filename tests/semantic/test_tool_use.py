@@ -48,9 +48,7 @@ def _score(
     return float(metric.score), response, chunks
 
 
-@pytest.mark.parametrize(
-    "case", smoke_params(_CLEAN, {"ctrl-silver-deductible-exact-boundary"})
-)
+@pytest.mark.parametrize("case", smoke_params(_CLEAN, {"ctrl-silver-deductible-exact-boundary"}))
 def test_clean_task_completion(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     scores = [sample[0] for sample in samples]
@@ -60,9 +58,7 @@ def test_clean_task_completion(case: GoldenCase, settings: Settings, judge: Prov
     )
 
 
-@pytest.mark.parametrize(
-    "case", smoke_params(_DEFECT, {"defect-5-tool-arg-transposition"})
-)
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-5-tool-arg-transposition"}))
 def test_defect_tool_use_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
