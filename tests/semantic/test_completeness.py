@@ -9,6 +9,7 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -47,6 +48,7 @@ def _score(
     return float(metric.score), response, chunks
 
 
+@pytest.mark.smoke
 @pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
 def test_clean_completeness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
@@ -57,7 +59,9 @@ def test_clean_completeness(case: GoldenCase, settings: Settings, judge: Provide
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
+@pytest.mark.parametrize(
+    "case", smoke_params(_DEFECT, {"defect-3-silver-multihop-cost"})
+)
 def test_defect_completeness_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

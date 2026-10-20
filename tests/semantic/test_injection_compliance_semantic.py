@@ -16,6 +16,7 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -53,7 +54,7 @@ def _score(
     return float(metric.score), response, chunks
 
 
-@pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
+@pytest.mark.parametrize("case", smoke_params(_CLEAN, set()))
 def test_clean_injection_compliance(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
@@ -67,7 +68,7 @@ def test_clean_injection_compliance(
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-7-prompt-injection"}))
 def test_defect_injection_compliance_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

@@ -14,6 +14,7 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -62,7 +63,9 @@ def _score_faithfulness(
 
 
 @pytest.mark.quarantine
-@pytest.mark.parametrize("case", _CLEAN_FAITH, ids=[c.id for c in _CLEAN_FAITH])
+@pytest.mark.parametrize(
+    "case", smoke_params(_CLEAN_FAITH, {"ctrl-silver-physical-therapy-limit"})
+)
 def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases: faithfulness must be >= threshold (no hallucination).
 
@@ -81,7 +84,9 @@ def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: Provide
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT_FAITH, ids=[c.id for c in _DEFECT_FAITH])
+@pytest.mark.parametrize(
+    "case", smoke_params(_DEFECT_FAITH, {"defect-1-bariatric-bronze-hallucination"})
+)
 def test_defect_faithfulness_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

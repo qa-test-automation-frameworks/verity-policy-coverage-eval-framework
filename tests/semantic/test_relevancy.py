@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent, wilson_interval_message
+from tests.semantic.conftest import live_agent, smoke_params, wilson_interval_message
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
@@ -42,7 +42,9 @@ def _score(
 
 
 @pytest.mark.quarantine
-@pytest.mark.parametrize("case", _RELEVANCY_CASES, ids=[c.id for c in _RELEVANCY_CASES])
+@pytest.mark.parametrize(
+    "case", smoke_params(_RELEVANCY_CASES, {"ctrl-silver-physical-therapy-limit"})
+)
 def test_answer_relevancy(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases must return a relevant, on-topic answer.
 

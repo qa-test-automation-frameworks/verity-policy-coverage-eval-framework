@@ -19,7 +19,10 @@ provide a reliable retry count, so `retried` is zero and the limitation is
 explicitly recorded.
 
 The semantic-evaluation workflow emits a separate `verity.semantic-evaluation`
-record. If no provider key is configured, it records an explicit optional skip
+record for full-suite runs. Manual smoke runs emit `verity.semantic-smoke` under
+the same optional credentialed evidence policy, keeping their quick compatibility
+signal separate from full-suite history. If no provider key is configured, the
+selected suite records an explicit optional skip
 with null counts. If execution is attempted but the native JUnit or semantic
 result manifest is absent, it records unavailable evidence. A provider key
 that exists for a different provider does not turn a missing selected-provider

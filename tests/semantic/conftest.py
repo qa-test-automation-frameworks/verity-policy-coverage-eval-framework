@@ -35,6 +35,18 @@ pytestmark = [pytest.mark.semantic, pytest.mark.live]
 _GOLDEN_DIR = Path("datasets/golden")
 
 
+def smoke_params(cases, selected_ids: set[str]):
+    """Mark selected parametrized cases for the low-volume live smoke suite."""
+    return [
+        pytest.param(
+            case,
+            id=case.id,
+            marks=pytest.mark.smoke if case.id in selected_ids else (),
+        )
+        for case in cases
+    ]
+
+
 def _require_api_key() -> None:
     """Skip the entire session if no API key is configured."""
     with warnings.catch_warnings():
