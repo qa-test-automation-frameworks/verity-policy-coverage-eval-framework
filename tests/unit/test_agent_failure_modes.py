@@ -23,9 +23,11 @@ def _no_op_accumulator() -> RunAccumulator:
     return RunAccumulator()
 
 
-def _tool_call_result(args_json: str = '{"claim_amount": 500.0}') -> CompletionResult:
+def _tool_call_result(
+    args_json: str = '{"claim_amount": 500.0}', *, call_id: str = "call_test_001"
+) -> CompletionResult:
     tc = ReplayToolCall(
-        id="call_test_001",
+        id=call_id,
         function=ReplayFunction(name="coverage_calculator", arguments=args_json),
     )
     return CompletionResult(content="", tool_calls=[tc])
@@ -174,17 +176,20 @@ class TestProviderFailure:
         _assert_safe_failure(response, "provider_unavailable")
 
 
-class TestSecondRoundToolCalls:
-    """A second round of tool_calls in the post-tool response is rejected,
-    not silently treated as the final answer."""
+class TestBoundedMultiRoundToolCalls:
+    """Tool requests can continue across rounds but remain strictly bounded."""
 
-    def test_second_round_tool_calls_rejected(self) -> None:
+    def test_second_round_of_tool_calls_executes_and_finalizes(self) -> None:
         settings = _make_settings()
         accumulator = _no_op_accumulator()
         retriever = FixtureRetriever("ctrl-gold-deductible")
 
-        args_json = (
+        first_args = (
             '{"claim_amount": 1000.0, "plan_deductible": 750.0, "accrued_deductible": 750.0,'
+            ' "plan_oop_max": 4000.0, "accrued_oop": 1200.0, "coinsurance_member": 0.10}'
+        )
+        second_args = (
+            '{"claim_amount": 500.0, "plan_deductible": 750.0, "accrued_deductible": 500.0,'
             ' "plan_oop_max": 4000.0, "accrued_oop": 1200.0, "coinsurance_member": 0.10}'
         )
         call_count: list[int] = [0]
@@ -193,15 +198,96 @@ class TestSecondRoundToolCalls:
 
         def _complete(**kwargs: Any) -> CompletionResult:
             call_count[0] += 1
-            return _tool_call_result(args_json)
+            if call_count[0] == 1:
+                return _tool_call_result(first_args)
+            if call_count[0] == 2:
+                return _tool_call_result(second_args, call_id="call_test_002")
+            return CompletionResult(content="The final answer uses both calculations.")
 
         mock_provider.complete.side_effect = _complete
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
 
         response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
-        assert call_count[0] == 2
-        _assert_safe_failure(response, "tool_unavailable")
+        assert call_count[0] == 3
+        assert response.answer == "The final answer uses both calculations."
+        assert len(response.tool_invocations) == 2
+        assert [call.tool_name for call in response.tool_invocations] == [
+            "coverage_calculator",
+            "coverage_calculator",
+        ]
+        # Every follow-up keeps the tool schema available and includes the
+        # complete assistant/tool conversation history.
+        for call_args in mock_provider.complete.call_args_list[1:]:
+            assert call_args.kwargs["tools"]
+            assert call_args.kwargs["messages"][-1]["role"] == "tool"
+
+    def test_round_limit_returns_safe_failure(self) -> None:
+        settings = _make_settings().model_copy(update={"max_tool_rounds": 1})
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+        args_json = (
+            '{"claim_amount": 1000.0, "plan_deductible": 750.0, "accrued_deductible": 750.0,'
+            ' "plan_oop_max": 4000.0, "accrued_oop": 1200.0, "coinsurance_member": 0.10}'
+        )
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.side_effect = [
+            _tool_call_result(args_json),
+            _tool_call_result(args_json, call_id="call_test_002"),
+        ]
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        assert mock_provider.complete.call_count == 2
+        _assert_safe_failure(response, "tool_round_limit")
+        assert len(response.tool_invocations) == 1
+
+    def test_total_tool_call_limit_rejects_oversized_batch(self) -> None:
+        settings = _make_settings().model_copy(update={"max_tool_calls": 1})
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+        args_json = (
+            '{"claim_amount": 500.0, "plan_deductible": 750.0, "accrued_deductible": 500.0,'
+            ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10}'
+        )
+        first = _tool_call_result(args_json).tool_calls[0]
+        second = _tool_call_result(args_json, call_id="call_test_002").tool_calls[0]
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.return_value = CompletionResult(
+            content="", tool_calls=[first, second]
+        )
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        mock_provider.complete.assert_called_once()
+        _assert_safe_failure(response, "tool_call_limit")
+        assert response.tool_invocations == []
+
+    def test_repeated_tool_call_returns_safe_failure(self) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+        args_json = (
+            '{"claim_amount": 500.0, "plan_deductible": 750.0, "accrued_deductible": 500.0,'
+            ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10}'
+        )
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.side_effect = [
+            _tool_call_result(args_json),
+            _tool_call_result(args_json, call_id="call_test_002"),
+        ]
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        assert mock_provider.complete.call_count == 2
+        _assert_safe_failure(response, "tool_loop_detected")
+        assert len(response.tool_invocations) == 1
 
 
 class TestToolArgumentContracts:

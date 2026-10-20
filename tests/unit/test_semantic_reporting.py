@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from verity.semantic_reporting import (
+    append_case_evidence_event,
     append_failure_event,
     failure_reason,
     faithfulness_sut_failure_message,
@@ -72,3 +73,28 @@ def test_append_failure_event_flushes_jsonl_with_reason_and_details(tmp_path: Pa
     assert saved["reason"] == "RuntimeError: provider returned 503 ServiceUnavailable"
     assert saved["outcome"] == "failed"
     assert saved["timestamp"].endswith("Z")
+
+
+def test_append_case_evidence_persists_answer_and_redacts_credentials(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setenv("VERITY_NVIDIA_API_KEY", "nvapi-test-secret")
+    path = tmp_path / "reports" / "semantic" / "case-evidence.jsonl"
+
+    saved = append_case_evidence_event(
+        path,
+        event={
+            "record_type": "sut_response",
+            "case_id": "control-case",
+            "answer": "The cost is $500. api_key=nvapi-test-secret",
+            "provider_metadata": {"api_key": "another-secret"},
+            "model_text": 'Generated note: {"access_token": "inline-secret"}',
+        },
+    )
+
+    persisted = json.loads(path.read_text(encoding="utf-8"))
+    assert persisted == saved
+    assert persisted["answer"].startswith("The cost is $500.")
+    assert "nvapi-test-secret" not in persisted["answer"]
+    assert persisted["provider_metadata"]["api_key"] == "[REDACTED]"
+    assert "inline-secret" not in persisted["model_text"]

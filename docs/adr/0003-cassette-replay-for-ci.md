@@ -42,8 +42,9 @@ API key. Committing cassettes makes the test suite self-contained and forkable.
   the new request hash. The `--author` flag in `record_cassettes.py` automates this.
 - Cassette files add size to the repository (each is ~2-5 KB, and the count
   grows with the dataset).
-- Two-turn interactions (first turn + tool-call + second turn) require two
-  cassette entries keyed to different hashes.
+- Tool interactions require one cassette entry for every provider turn in the
+  bounded tool loop; each call is keyed to its full message history and tool
+  result, so later turns cannot accidentally reuse an unrelated response.
 
 ## Alternatives Considered
 

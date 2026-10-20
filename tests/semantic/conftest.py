@@ -9,11 +9,14 @@ Run with: make eval-semantic  (requires API key in .env)
 from __future__ import annotations
 
 import json
+import logging
 import os
 import warnings
 from collections.abc import Generator
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -32,13 +35,18 @@ from verity.reporting import (
     render_usage_summary,
     write_step_summary,
 )
-from verity.semantic_reporting import append_failure_event, failure_reason
+from verity.semantic_reporting import (
+    append_case_evidence_event,
+    append_failure_event,
+    failure_reason,
+)
 from verity.statistics import StatResult, pass_rate_wilson_interval
 from verity.trends import append_trend, compute_trend_record
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
 
 _GOLDEN_DIR = Path("datasets/golden")
+logger = logging.getLogger(__name__)
 
 
 def smoke_params(cases, selected_ids: set[str]):
@@ -122,6 +130,141 @@ def pytest_runtest_protocol(
 _NODE_RESULTS: dict[str, str] = {}
 _SEMANTIC_MEASUREMENTS: dict[str, dict[str, object]] = {}
 _NODE_FAILURE_DETAILS: dict[str, str] = {}
+
+
+def _case_evidence_path() -> Path:
+    return Path(
+        os.environ.get(
+            "VERITY_SEMANTIC_CASE_EVIDENCE_PATH",
+            "reports/semantic/case-evidence.jsonl",
+        )
+    )
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Start each run with a fresh case-evidence artifact and disclose its mode."""
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        return
+    path = _case_evidence_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("", encoding="utf-8")
+    verbosity = os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard")
+    if verbosity != "verbose":
+        append_case_evidence_event(
+            path,
+            event={
+                "schema_version": 1,
+                "record_type": "case_evidence_mode",
+                "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                "verbosity": verbosity,
+                "model_answers_recorded": False,
+                "reason": "Set VERITY_SEMANTIC_VERBOSITY=verbose to retain case traces.",
+            },
+        )
+
+
+@pytest.fixture(autouse=True)
+def capture_semantic_case_answers(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> None:
+    """Record final SUT answers and supporting evidence only in verbose runs."""
+    if os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard") != "verbose":
+        return
+
+    original_answer = CoverageAgent.answer
+    sample_number = 0
+    case = getattr(request.node, "callspec", None)
+    case = case.params.get("case") if case is not None else None
+    case_id = getattr(case, "id", request.node.name)
+
+    def _answer_with_evidence(
+        agent: CoverageAgent, query: str, *args: Any, **kwargs: Any
+    ) -> AgentResponse:
+        nonlocal sample_number
+        response = original_answer(agent, query, *args, **kwargs)
+        sample_number += 1
+        event = {
+            "schema_version": 1,
+            "record_type": "sut_response",
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "nodeid": request.node.nodeid,
+            "case_id": case_id,
+            "sample": sample_number,
+            "query": query,
+            "expected_behavior": getattr(case, "behavior", None),
+            "expected_output": getattr(case, "ground_truth", None),
+            "answer": response.answer,
+            "citations": response.citations,
+            "tool_invocations": [
+                call.model_dump(mode="json") for call in response.tool_invocations
+            ],
+            "retrieved_chunks": [
+                {
+                    "source": chunk.source,
+                    "section": chunk.section,
+                    "chunk_id": chunk.chunk_id,
+                    "rank": chunk.rank,
+                    "score": chunk.score,
+                    "corpus_fingerprint": chunk.corpus_fingerprint,
+                    "text": chunk.text,
+                }
+                for chunk in response.retrieved_chunks
+            ],
+            "refused": response.refused,
+            "refusal_reason": response.refusal_reason,
+            "failure_category": response.failure_category,
+            "requires_human_review": response.requires_human_review,
+            "usage": {
+                "prompt_tokens": response.prompt_tokens,
+                "completion_tokens": response.completion_tokens,
+                "total_tokens": response.total_tokens,
+                "estimated_cost_usd": response.estimated_cost_usd,
+            },
+            "trace_id": response.trace_id,
+        }
+        try:
+            append_case_evidence_event(_case_evidence_path(), event=event)
+        except OSError:
+            logger.exception("Could not persist verbose semantic case evidence")
+        return response
+
+    monkeypatch.setattr(CoverageAgent, "answer", _answer_with_evidence)
+
+
+def record_semantic_metric(
+    case: GoldenCase,
+    *,
+    metric: str,
+    threshold: float,
+    judge_model: str | None = None,
+    score: float | None = None,
+    reason: str | None = None,
+    error: Exception | None = None,
+) -> None:
+    """Append judge score/rationale or parse failure to the verbose case trace."""
+    if os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard") != "verbose":
+        return
+    event: dict[str, object] = {
+        "schema_version": 1,
+        "record_type": "judge_result",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "case_id": case.id,
+        "metric": metric,
+        "judge_model": judge_model,
+        "threshold": threshold,
+        "status": "error" if error is not None else "scored",
+    }
+    if score is not None:
+        event["score"] = score
+    if reason:
+        event["reason"] = reason
+    if error is not None:
+        event["error_type"] = type(error).__name__
+        event["error"] = str(error)[:5000]
+    try:
+        append_case_evidence_event(_case_evidence_path(), event=event)
+    except OSError:
+        logger.exception("Could not persist verbose semantic judge evidence")
 
 
 def _chunk_evidence(chunks: list[Chunk]) -> list[dict[str, object]]:

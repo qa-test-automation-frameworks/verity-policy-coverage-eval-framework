@@ -18,6 +18,11 @@ def set_current_test_id(test_id: str) -> Token[str | None]:
     return _CURRENT_TEST_ID.set(test_id)
 
 
+def get_current_test_id() -> str | None:
+    """Return the pytest test id associated with provider calls in this context."""
+    return _CURRENT_TEST_ID.get()
+
+
 def reset_current_test_id(token: Token[str | None]) -> None:
     """Restore the test-id context after the pytest item completes."""
     _CURRENT_TEST_ID.reset(token)

@@ -42,8 +42,9 @@ Each `agent.answer()` call produces one trace with the following spans:
 | `retrieval` | `top_k` | Child of `agent.answer`; encloses retriever call |
 | `tool.coverage_calculator` | — | Child of `agent.answer`; only present on tool-use paths |
 
-If two provider calls occur (first turn + second turn after tool use), repeated
-`record_call_span()` calls sum token and cost fields on the `agent.answer` span.
+If a response requests tool use, the agent may make additional provider calls
+within its configured round and call budgets. Repeated `record_call_span()` calls
+sum token and cost fields on the `agent.answer` span.
 
 ---
 
@@ -107,9 +108,25 @@ repository's Actions artifact-retention policy.
 Each row contains a generated request ID, pytest node ID, model, label, source,
 status, latency, provider-reported prompt/completion/total tokens, and an estimated
 cost when a verified price is available. Failed attempts retain only the exception
-class and HTTP status. Prompts, responses, credentials, and headers are never stored.
-Missing provider usage is explicitly marked unavailable instead of inferred as a
-token count. Costs remain estimates from the reference price table, not billing data.
+class and HTTP status. Prompts, credentials, and headers are not stored in this
+ledger. Missing provider usage is explicitly marked unavailable instead of inferred
+as a token count. Costs remain estimates from the reference price table, not billing data.
+
+When a live semantic workflow is run with `verbosity=verbose`, it also uploads a
+separate `semantic-case-evidence` artifact for 30 days. Its `case-evidence.jsonl`
+records each final SUT answer, case query and expected behavior, retrieved chunk text
+and provenance, tool arguments/results, answer citations, token counts, and the judge
+response text, score/rationale, or parsing error when available. Credential-shaped
+values are redacted before writing. Truncated judge output gets one larger-token retry;
+syntactically invalid JSON gets one correction retry. A valid JSON object with missing
+metric-specific fields remains a failed evaluation rather than having verdicts inferred.
+This trace is intended for the synthetic golden dataset; treat it as
+potentially sensitive because model answers can repeat information from their input.
+Standard and quiet runs do not retain answer text. The separate short-retention artifact
+keeps raw answers out of durable trend and portfolio evidence records.
+To inspect it, open the semantic workflow run in GitHub Actions and download the
+`semantic-case-evidence` artifact; each JSONL row is a SUT response, judge response,
+judge result, or verbosity-mode marker, keyed by test ID/case ID where applicable.
 
 The ledger counts each framework-level LiteLLM submission, including the secondary
 credential attempt when fallback is used. LiteLLM's own internal retries are not

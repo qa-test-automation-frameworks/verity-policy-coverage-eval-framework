@@ -14,15 +14,23 @@ from __future__ import annotations
 
 import asyncio
 import contextvars
+import json
 import logging
+import os
 import warnings
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from verity.config import Provider, Settings
-from verity.cost import RunAccumulator
-from verity.providers import LLMProvider
+from verity.cost import RunAccumulator, get_current_test_id
+from verity.providers import CompletionResult, LLMProvider
+from verity.semantic_reporting import append_case_evidence_event
 
 logger = logging.getLogger(__name__)
+
+_JUDGE_MAX_TOKEN_RETRY_LIMIT = 8192
+_JUDGE_MAX_ATTEMPTS = 3
 
 
 # ---------------------------------------------------------------------------
@@ -90,8 +98,8 @@ class ProviderJudge:
         """Synchronous generation — used by DeepEval and RAGAS metrics."""
         messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
         request_options: dict[str, Any] = {
-            "messages": messages,
             "label": "judge",
+            "max_tokens": self._judge_settings.max_tokens,
             # The evaluation adapters consume structured scoring output. Ask
             # compatible providers for JSON at the protocol level instead of
             # relying on prompt instructions alone.
@@ -101,9 +109,81 @@ class ProviderJudge:
             # Nemotron can spend its token budget on reasoning before emitting
             # JSON; NVIDIA recommends disabling thinking for structured output.
             request_options["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
-        result = self._provider.complete(**request_options)
+        result: CompletionResult | None = None
+        finish_reason: str | None = None
+        parse_retry_used = False
+        token_retry_used = False
+        for attempt in range(1, _JUDGE_MAX_ATTEMPTS + 1):
+            request_options["messages"] = messages
+            result = self._provider.complete(**request_options)
+            finish_reason = _finish_reason(result.raw_response)
+            self._record_verbose_output(
+                result,
+                finish_reason,
+                attempt=attempt,
+                max_tokens=int(request_options["max_tokens"]),
+            )
+
+            if finish_reason in {"length", "max_tokens"}:
+                retry_budget = min(
+                    max(
+                        int(request_options["max_tokens"]) * 2,
+                        int(request_options["max_tokens"]) + 1,
+                    ),
+                    _JUDGE_MAX_TOKEN_RETRY_LIMIT,
+                )
+                if (
+                    not token_retry_used
+                    and retry_budget > int(request_options["max_tokens"])
+                    and attempt < _JUDGE_MAX_ATTEMPTS
+                ):
+                    logger.warning(
+                        "Judge output hit its token limit; retrying once with max_tokens=%d",
+                        retry_budget,
+                    )
+                    request_options["max_tokens"] = retry_budget
+                    token_retry_used = True
+                    continue
+                logger.warning(
+                    "Judge output remains truncated at max_tokens=%d; the metric parser "
+                    "may reject this result",
+                    request_options["max_tokens"],
+                )
+
+            # Providers return raw metadata; cassette fixtures and unit stubs
+            # without it keep their recorded response unchanged. This repair
+            # handles invalid JSON syntax, not missing schema fields: those
+            # remain explicit metric failures and are captured for diagnosis.
+            if (
+                result.raw_response is not None
+                and result.content.strip()
+                and not _is_json_object(result.content)
+                and not parse_retry_used
+                and attempt < _JUDGE_MAX_ATTEMPTS
+            ):
+                logger.warning(
+                    "Judge returned invalid JSON; retrying once with a correction instruction"
+                )
+                messages.extend(
+                    [
+                        {"role": "assistant", "content": result.content},
+                        {
+                            "role": "user",
+                            "content": (
+                                "Your previous response was not a valid JSON object. "
+                                "Return a valid JSON object only, following the original "
+                                "request's schema. Do not use Markdown fences or extra text."
+                            ),
+                        },
+                    ]
+                )
+                parse_retry_used = True
+                continue
+            break
+
+        assert result is not None  # The bounded loop always makes one provider call.
         if not result.content.strip():
-            finish_reason = "unknown"
+            finish_reason = finish_reason or "unknown"
             reasoning_content_present = False
             raw_response = result.raw_response
             try:
@@ -120,6 +200,47 @@ class ProviderJudge:
             )
         return result.content
 
+    def _record_verbose_output(
+        self,
+        result: CompletionResult,
+        finish_reason: str | None,
+        *,
+        attempt: int,
+        max_tokens: int,
+    ) -> None:
+        """Keep judge text only in the opt-in short-retention semantic artifact."""
+        if os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard") != "verbose":
+            return
+        call_record = result.call_record
+        usage = getattr(call_record, "usage", None)
+        try:
+            append_case_evidence_event(
+                Path(
+                    os.environ.get(
+                        "VERITY_SEMANTIC_CASE_EVIDENCE_PATH",
+                        "reports/semantic/case-evidence.jsonl",
+                    )
+                ),
+                event={
+                    "schema_version": 1,
+                    "record_type": "judge_response",
+                    "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                    "test_id": get_current_test_id(),
+                    "judge_model": self.model_name,
+                    "attempt": attempt,
+                    "finish_reason": finish_reason,
+                    "max_tokens": max_tokens,
+                    "answer": result.content,
+                    "usage": {
+                        "prompt_tokens": getattr(usage, "prompt_tokens", None),
+                        "completion_tokens": getattr(usage, "completion_tokens", None),
+                        "total_tokens": getattr(usage, "total_tokens", None),
+                    },
+                },
+            )
+        except Exception:
+            logger.exception("Could not persist verbose semantic judge output")
+
     async def a_generate(self, prompt: str) -> str:
         """Async generation — used by async evaluation paths."""
         # run_in_executor does not copy ContextVars automatically, so carry
@@ -127,6 +248,24 @@ class ProviderJudge:
         context = contextvars.copy_context()
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, context.run, self.generate, prompt)
+
+
+def _finish_reason(raw_response: Any) -> str | None:
+    """Read provider finish metadata without exposing reasoning or response text."""
+    try:
+        choice = raw_response.choices[0]
+        value = getattr(choice, "finish_reason", None)
+        return str(value).lower() if value else None
+    except (AttributeError, IndexError, TypeError):
+        return None
+
+
+def _is_json_object(content: str) -> bool:
+    """Check JSON syntax only; schema validation belongs to the metric parser."""
+    try:
+        return isinstance(json.loads(content), dict)
+    except (json.JSONDecodeError, TypeError):
+        return False
 
 
 # ---------------------------------------------------------------------------

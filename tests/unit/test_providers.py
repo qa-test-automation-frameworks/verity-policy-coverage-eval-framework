@@ -265,6 +265,28 @@ class TestCassetteReplay:
         assert result.content == "legacy JSON response"
         assert result.raw_response is None
 
+    def test_tool_request_replays_legacy_follow_up_without_advertised_tools(
+        self, replay_settings: Settings, tmp_path: Path
+    ) -> None:
+        from verity.cassettes import request_key
+
+        lib = CassetteLibrary(tmp_path)
+        provider = LLMProvider(replay_settings, cassette_library=lib)
+        messages: list[dict[str, Any]] = [
+            {"role": "system", "content": "system"},
+            {"role": "user", "content": "question"},
+            {"role": "assistant", "content": "", "tool_calls": []},
+            {"role": "tool", "tool_call_id": "call_1", "content": "result"},
+        ]
+        legacy_key = request_key("openai/glm-4.5", messages, None, 0.0, 2048)
+        lib.save(legacy_key, self._make_payload("legacy follow-up"))
+        tools = [{"type": "function", "function": {"name": "tool", "parameters": {}}}]
+
+        result = provider.complete(messages, tools=tools)
+
+        assert result.content == "legacy follow-up"
+        assert result.raw_response is None
+
     def test_replay_miss_raises_cassette_miss_error(
         self, replay_settings: Settings, tmp_path: Path
     ) -> None:

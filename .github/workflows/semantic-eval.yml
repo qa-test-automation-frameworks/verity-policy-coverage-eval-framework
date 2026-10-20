@@ -223,7 +223,7 @@ jobs:
         if: steps.key_check.outputs.has_key == 'true'
         run: |
           mkdir -p reports/allure-results/semantic reports/semantic reports/evidence/native
-          rm -f reports/semantic/results-local.json reports/semantic/results.json reports/semantic/failures.jsonl reports/semantic/usage.json
+          rm -f reports/semantic/results-local.json reports/semantic/results.json reports/semantic/failures.jsonl reports/semantic/usage.json reports/semantic/case-evidence.jsonl
           echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
           case "$VERITY_SEMANTIC_VERBOSITY" in
             quiet) pytest_args=(-q -q --tb=line --show-capture=no) ;;
@@ -302,6 +302,15 @@ jobs:
             reports/semantic/failures.jsonl
             reports/semantic/usage.json
           if-no-files-found: warn
+
+      - name: Upload verbose semantic case evidence
+        if: always() && steps.key_check.outputs.has_key == 'true' && env.VERITY_SEMANTIC_VERBOSITY == 'verbose'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2, Node 24
+        with:
+          name: semantic-case-evidence
+          path: reports/semantic/case-evidence.jsonl
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Upload semantic evidence bundle
         if: always()

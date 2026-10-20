@@ -16,6 +16,7 @@ from sut.retriever import Chunk
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    record_semantic_metric,
     smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
@@ -67,7 +68,24 @@ def _score_faithfulness(
         response=response.answer,
         retrieved_contexts=contexts,
     )
-    score: float = metric.single_turn_score(sample)
+    try:
+        score: float = metric.single_turn_score(sample)
+    except Exception as exc:
+        record_semantic_metric(
+            case,
+            metric="faithfulness",
+            threshold=THRESHOLD_FAITHFULNESS,
+            judge_model=judge.model_name,
+            error=exc,
+        )
+        raise
+    record_semantic_metric(
+        case,
+        metric="faithfulness",
+        threshold=THRESHOLD_FAITHFULNESS,
+        judge_model=judge.model_name,
+        score=score,
+    )
     return score, response, chunks
 
 
