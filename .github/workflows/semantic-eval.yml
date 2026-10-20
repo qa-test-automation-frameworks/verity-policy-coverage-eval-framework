@@ -223,6 +223,7 @@ jobs:
         if: steps.key_check.outputs.has_key == 'true'
         run: |
           mkdir -p reports/allure-results/semantic reports/semantic reports/evidence/native
+          rm -f reports/semantic/results-local.json reports/semantic/results.json reports/semantic/failures.jsonl
           echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
           case "$VERITY_SEMANTIC_VERBOSITY" in
             quiet) pytest_args=(-q -q --tb=line --show-capture=no) ;;
@@ -237,14 +238,19 @@ jobs:
             *) echo "::error::Unsupported semantic suite: $VERITY_SEMANTIC_SUITE"; exit 1 ;;
           esac
 
+          pytest_status=0
           uv run pytest tests/semantic/ "${pytest_args[@]}" \
             --alluredir reports/allure-results/semantic \
-            --junitxml=reports/evidence/native/semantic.xml
-          if [ ! -s reports/semantic/results-local.json ]; then
+            --junitxml=reports/evidence/native/semantic.xml || pytest_status=$?
+          if [ -s reports/semantic/results-local.json ]; then
+            cp reports/semantic/results-local.json reports/semantic/results.json
+          elif [ "$pytest_status" -eq 0 ]; then
             echo "::error::Semantic eval completed without reports/semantic/results-local.json; no eval cases ran."
-            exit 1
+            pytest_status=1
+          else
+            echo "::warning::Semantic eval failed before producing reports/semantic/results-local.json."
           fi
-          cp reports/semantic/results-local.json reports/semantic/results.json
+          exit "$pytest_status"
 
       - name: Emit semantic execution evidence
         if: always() && steps.key_check.outputs.has_key == 'true'

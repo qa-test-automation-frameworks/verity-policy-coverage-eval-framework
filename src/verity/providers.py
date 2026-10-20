@@ -119,6 +119,12 @@ class LLMProvider:
             kwargs["api_key"] = api_key
         if tools:
             kwargs["tools"] = tools
+            # LiteLLM currently imports its optional MCP proxy integration for
+            # every tool-bearing completion before checking whether any tool
+            # is an MCP tool. This application only sends OpenAI function
+            # tools, so bypass that unrelated import path while preserving
+            # ordinary function calling.
+            kwargs["_skip_mcp_handler"] = True
         if response_format is not None:
             kwargs["response_format"] = response_format
         if extra_body:

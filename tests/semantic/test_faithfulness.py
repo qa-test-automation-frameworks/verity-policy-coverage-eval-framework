@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from sut.agent import AgentResponse
+from sut.retriever import Chunk
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
@@ -40,7 +42,7 @@ def _score_faithfulness(
     case: GoldenCase,
     settings: Settings,
     judge: ProviderJudge,
-) -> tuple[float, object, object]:
+) -> tuple[float, AgentResponse, list[Chunk]]:
     ensure_ragas_compat()
     try:
         from ragas import SingleTurnSample
@@ -49,6 +51,13 @@ def _score_faithfulness(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    if response.failure_category is not None:
+        pytest.fail(
+            f"System-under-test request failed ({response.failure_category}); "
+            f"faithfulness score is unavailable for {case.id!r}.",
+            pytrace=False,
+        )
+
     chunks = response.retrieved_chunks
     contexts = [c.text for c in chunks]
 
@@ -64,7 +73,12 @@ def _score_faithfulness(
 
 @pytest.mark.quarantine
 @pytest.mark.parametrize("case", smoke_params(_CLEAN_FAITH, {"ctrl-silver-physical-therapy-limit"}))
-def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
+def test_clean_faithfulness(
+    case: GoldenCase,
+    settings: Settings,
+    judge: ProviderJudge,
+    request: pytest.FixtureRequest,
+) -> None:
     """Clean cases: faithfulness must be >= threshold (no hallucination).
 
     Quarantined: control-case gating on this metric is informational, not a
@@ -77,9 +91,13 @@ def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: Provide
     samples = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
-    assert threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
-        f"Faithfulness below threshold for {case.id!r}: {stat}" + wilson_interval_message(stat)
-    )
+    if threshold_pass(stat, THRESHOLD_FAITHFULNESS):
+        return
+
+    failure = f"Faithfulness below threshold for {case.id!r}: {stat}{wilson_interval_message(stat)}"
+    if request.node.get_closest_marker("quarantine") is not None:
+        pytest.xfail(f"Quarantined, non-blocking calibration signal: {failure}")
+    pytest.fail(failure)
 
 
 @pytest.mark.parametrize(
