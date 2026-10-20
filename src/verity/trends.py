@@ -65,9 +65,12 @@ def compute_trend_record(
     latency_budget_ms: float,
     retrieval_quality: float | None = None,
 ) -> TrendRecord:
-    """Build a TrendRecord from a completed test session's results and cost accumulator."""
-    total = len(node_results)
-    passed = sum(1 for outcome in node_results.values() if outcome == "passed")
+    """Build a trend record; skipped and expected-failure tests are not pass-rate failures."""
+    counted_outcomes = [
+        outcome for outcome in node_results.values() if outcome in {"passed", "failed"}
+    ]
+    total = len(counted_outcomes)
+    passed = sum(1 for outcome in counted_outcomes if outcome == "passed")
     failed = total - passed
     pass_rate = passed / total if total else 1.0
 
