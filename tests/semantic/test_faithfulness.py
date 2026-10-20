@@ -28,6 +28,7 @@ from verity.metrics.ragas_metrics import (
     ensure_ragas_compat,
     make_faithfulness,
 )
+from verity.semantic_reporting import faithfulness_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -51,12 +52,9 @@ def _score_faithfulness(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
-    if response.failure_category is not None:
-        pytest.fail(
-            f"System-under-test request failed ({response.failure_category}); "
-            f"faithfulness score is unavailable for {case.id!r}.",
-            pytrace=False,
-        )
+    failure_message = faithfulness_sut_failure_message(case.id, response.failure_category)
+    if failure_message is not None:
+        pytest.fail(failure_message, pytrace=False)
 
     chunks = response.retrieved_chunks
     contexts = [c.text for c in chunks]
