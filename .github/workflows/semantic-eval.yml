@@ -25,9 +25,20 @@ on:
         description: "Optional model ID override for both the evaluated model and judge (Google defaults to gemini-3.8-flash)"
         required: false
         default: ""
+      verbosity:
+        description: "Pytest console detail and captured output"
+        type: choice
+        required: true
+        default: standard
+        options:
+          - quiet
+          - standard
+          - verbose
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Manual experiments must not cancel scheduled/push evidence runs (or be
+  # cancelled by them). A newer run of the same event class may replace it.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && 'manual' || 'automatic' }}
   cancel-in-progress: true
 
 jobs:
@@ -44,6 +55,7 @@ jobs:
       VERITY_NVIDIA_API_KEY: ${{ secrets.VERITY_NVIDIA_API_KEY }}
       VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
       VERITY_PROVIDER: ${{ inputs.provider || 'openrouter' }}
+      VERITY_SEMANTIC_VERBOSITY: ${{ inputs.verbosity || 'standard' }}
       VERITY_SEMANTIC_SAMPLES: ${{ github.event_name == 'schedule' && '5' || '1' }}
       VERITY_TEMPERATURE: ${{ github.event_name == 'schedule' && '0.6' || '0.0' }}
       DEEPEVAL_TELEMETRY_OPT_OUT: "1"
@@ -148,7 +160,13 @@ jobs:
         run: |
           mkdir -p reports/allure-results/semantic reports/semantic reports/evidence/native
           echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
-          uv run pytest tests/semantic/ -m semantic -v --tb=short \
+          case "$VERITY_SEMANTIC_VERBOSITY" in
+            quiet) pytest_args=(-q -q --tb=line --show-capture=no) ;;
+            standard) pytest_args=(--tb=short --show-capture=log) ;;
+            verbose) pytest_args=(-v --tb=long --show-capture=all) ;;
+            *) echo "::error::Unsupported semantic verbosity: $VERITY_SEMANTIC_VERBOSITY"; exit 1 ;;
+          esac
+          uv run pytest tests/semantic/ -m semantic "${pytest_args[@]}" \
             --alluredir reports/allure-results/semantic \
             --junitxml=reports/evidence/native/semantic.xml
           if [ ! -s reports/semantic/results-local.json ]; then
@@ -185,13 +203,14 @@ jobs:
             reports/evidence/verity.semantic-evaluation.json
 
       - name: Upload semantic eval reports
-        if: steps.key_check.outputs.has_key == 'true'
+        if: always() && steps.key_check.outputs.has_key == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2, Node 24
         with:
           name: semantic-eval-reports
           path: |
             reports/allure-results/semantic/
             reports/semantic/results.json
+            reports/semantic/failures.jsonl
           if-no-files-found: warn
 
       - name: Upload semantic evidence bundle
