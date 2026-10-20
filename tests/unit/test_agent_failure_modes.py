@@ -123,6 +123,20 @@ class TestProviderFailure:
 
         _assert_safe_failure(response, "provider_unavailable")
 
+    def test_empty_final_completion_returns_safe_failure(self) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        provider = MagicMock()
+        provider.accumulator = accumulator
+        provider.complete.return_value = CompletionResult(content="  \n", tool_calls=[])
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=provider)
+
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
+
+        _assert_safe_failure(response, "empty_final_answer")
+
     def test_second_turn_connection_error_returns_safe_response(self) -> None:
         settings = _make_settings()
         accumulator = _no_op_accumulator()

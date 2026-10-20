@@ -590,6 +590,15 @@ class CoverageAgent:
 
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
+        if not final_answer.strip():
+            logger.warning("Provider returned an empty final answer")
+            return self._safe_failure_response(
+                category="empty_final_answer",
+                start_index=start_index,
+                tool_invocations=tool_invocations,
+                trace_id=trace_id,
+                retrieved_chunks=chunks,
+            )
 
         # 9. Prefer citations the model itself named; fall back to lexical
         # overlap only when the model didn't cite anything resolvable.

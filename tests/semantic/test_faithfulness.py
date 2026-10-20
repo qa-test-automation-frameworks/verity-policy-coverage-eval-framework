@@ -28,7 +28,7 @@ from verity.metrics.ragas_metrics import (
     ensure_ragas_compat,
     make_faithfulness,
 )
-from verity.semantic_reporting import faithfulness_sut_failure_message
+from verity.semantic_reporting import semantic_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -52,7 +52,9 @@ def _score_faithfulness(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
-    failure_message = faithfulness_sut_failure_message(case.id, response.failure_category)
+    failure_message = semantic_sut_failure_message(
+        case.id, response.failure_category, response.answer
+    )
     if failure_message is not None:
         pytest.fail(failure_message, pytrace=False)
 
