@@ -237,7 +237,28 @@ class TestToolArgumentContracts:
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
         response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
-        _assert_safe_failure(response, "tool_unavailable")
+        _assert_safe_failure(response, "invalid_tool_arguments")
+
+    def test_schema_invalid_tool_arguments_are_classified_without_logging_values(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        settings = _make_settings()
+        accumulator = _no_op_accumulator()
+        retriever = FixtureRetriever("ctrl-gold-deductible")
+
+        mock_provider = MagicMock()
+        mock_provider.accumulator = accumulator
+        mock_provider.complete.return_value = _tool_call_result(
+            '{"claim_amount": 0, "plan_deductible": 750.0, "accrued_deductible": 0.0,'
+            ' "plan_oop_max": 4000.0, "accrued_oop": 0.0, "coinsurance_member": 0.10}'
+        )
+
+        agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
+        response = agent.answer("Compare my urgent-care copays.", member_id="MBR-003")
+
+        _assert_safe_failure(response, "invalid_tool_arguments")
+        assert "greater_than" in caplog.text
+        assert "input_value=0" not in caplog.text
 
     def test_unexpected_tool_argument_returns_safe_response(self) -> None:
         settings = _make_settings()
@@ -255,7 +276,7 @@ class TestToolArgumentContracts:
         agent = CoverageAgent(settings=settings, retriever=retriever, provider=mock_provider)
         response = agent.answer("What does my Gold plan cover for a lab?", member_id="MBR-003")
 
-        _assert_safe_failure(response, "tool_unavailable")
+        _assert_safe_failure(response, "invalid_tool_arguments")
 
 
 class TestTraceIdCorrelation:
