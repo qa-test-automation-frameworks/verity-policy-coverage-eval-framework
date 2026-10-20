@@ -26,6 +26,7 @@ from verity.judges import ProviderJudge
 from verity.latency import LIVE_BUDGET_MS
 from verity.providers import LLMProvider
 from verity.reporting import render_cost_summary, write_step_summary
+from verity.semantic_reporting import append_failure_event, failure_reason
 from verity.statistics import StatResult, pass_rate_wilson_interval
 from verity.trends import append_trend, compute_trend_record
 
@@ -185,7 +186,26 @@ def pytest_runtest_makereport(
         report = outcome.get_result()
         _NODE_RESULTS[item.nodeid] = report.outcome
         if report.failed:
-            _NODE_FAILURE_DETAILS[item.nodeid] = str(report.longrepr)
+            longrepr = str(report.longrepr)
+            try:
+                event_path = Path(
+                    os.environ.get(
+                        "VERITY_SEMANTIC_FAILURES_PATH",
+                        "reports/semantic/failures.jsonl",
+                    )
+                )
+                event = append_failure_event(event_path, nodeid=item.nodeid, longrepr=longrepr)
+                _NODE_FAILURE_DETAILS[item.nodeid] = str(event["details"])
+                terminal = item.config.pluginmanager.get_plugin("terminalreporter")
+                if terminal is not None:
+                    terminal.write_line(f"SEMANTIC_FAILURE {item.nodeid}: {event['reason']}")
+            except OSError as exc:
+                # Preserve the original test failure, but make a broken journal
+                # visible instead of silently losing the diagnostic.
+                _NODE_FAILURE_DETAILS[item.nodeid] = failure_reason(longrepr)
+                terminal = item.config.pluginmanager.get_plugin("terminalreporter")
+                if terminal is not None:
+                    terminal.write_line(f"SEMANTIC_FAILURE_JOURNAL_ERROR {item.nodeid}: {exc}")
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
