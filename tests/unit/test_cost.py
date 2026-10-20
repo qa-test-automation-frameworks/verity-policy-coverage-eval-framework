@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from verity.cost import Cost, RunAccumulator, Usage, estimate_cost
+from verity.cost import (
+    Cost,
+    RunAccumulator,
+    Usage,
+    estimate_cost,
+    reset_current_test_id,
+    set_current_test_id,
+)
 
 
 class TestEstimateCost:
@@ -70,6 +77,28 @@ class TestRunAccumulator:
         assert record.usage.total_tokens == 1200
         assert record.latency_ms == 450.0
         assert record.label == "test"
+        assert record.request_id == acc.requests[0].request_id
+        assert record.test_id is None
+
+    def test_request_records_test_id_and_sanitized_failure(self) -> None:
+        acc = RunAccumulator()
+        token = set_current_test_id("tests/semantic/test_example.py::test_usage")
+        try:
+            event = acc.begin_request("provider/model", label="judge")
+            acc.finish_request(
+                event,
+                latency_ms=12.5,
+                error=RuntimeError("must not appear in the request ledger"),
+            )
+        finally:
+            reset_current_test_id(token)
+
+        assert event.test_id == "tests/semantic/test_example.py::test_usage"
+        assert event.status == "failed"
+        assert event.error_type == "RuntimeError"
+        assert event.http_status is None
+        assert not hasattr(event, "error_message")
+        assert acc.total_tokens.total_tokens == 0
 
     def test_accumulation_across_calls(self) -> None:
         acc = RunAccumulator()

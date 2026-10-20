@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
-from verity.cost import RunAccumulator, Usage
-from verity.reporting import render_cost_summary, write_step_summary
+from verity.cost import RunAccumulator, Usage, reset_current_test_id, set_current_test_id
+from verity.reporting import (
+    build_usage_report,
+    render_cost_summary,
+    render_usage_summary,
+    write_step_summary,
+)
 
 
 def _log(
@@ -84,6 +90,52 @@ class TestRenderCostSummary:
         result = render_cost_summary(acc)
         assert "unpriced" in result
         assert "$0.000000" not in result
+
+
+class TestUsageReport:
+    def test_reports_per_test_and_suite_with_sut_judge_and_failure(self) -> None:
+        acc = RunAccumulator()
+        token = set_current_test_id("tests/semantic/test_x.py::test_case")
+        try:
+            sut = acc.begin_request("sut/model", label="agent-first-turn")
+            acc.finish_request(sut, latency_ms=20, usage=Usage(100, 25, 125))
+            acc.log_call(
+                "sut/model",
+                Usage(100, 25, 125),
+                latency_ms=20,
+                label="agent-first-turn",
+                request_event=sut,
+            )
+            judge = acc.begin_request("judge/model", label="judge")
+            acc.finish_request(judge, latency_ms=30, usage=Usage(80, 20, 100))
+            acc.log_call(
+                "judge/model",
+                Usage(80, 20, 100),
+                latency_ms=30,
+                label="judge",
+                request_event=judge,
+            )
+            failed = acc.begin_request("judge/model", label="judge")
+            acc.finish_request(failed, latency_ms=5, error=TimeoutError())
+        finally:
+            reset_current_test_id(token)
+
+        report = build_usage_report(acc, {"tests/semantic/test_x.py::test_case": "passed"})
+        test_stats = report["by_test"]["tests/semantic/test_x.py::test_case"]
+        assert test_stats["requests"] == 3
+        assert test_stats["succeeded"] == 2
+        assert test_stats["failed"] == 1
+        assert test_stats["total_tokens"] == 225
+        assert report["suite"]["total_tokens"] == 225
+        assert report["suite"]["requests"] == 3
+
+        summary = render_usage_summary(report)
+        assert "1 / 2" in summary
+        assert "225" in summary
+        assert "test_case" in summary
+        assert "TimeoutError" not in summary
+        assert report["privacy"]["request_and_response_bodies_included"] is False
+        assert '"request_id"' in json.dumps(report)
 
 
 class TestWriteStepSummary:

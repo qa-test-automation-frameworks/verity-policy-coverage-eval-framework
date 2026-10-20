@@ -20,12 +20,18 @@ import pytest
 from sut.agent import AgentResponse, CoverageAgent
 from sut.retriever import Chunk, PolicyRetriever
 from verity.config import Settings
-from verity.cost import RunAccumulator
+from verity.cost import RunAccumulator, reset_current_test_id, set_current_test_id
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.latency import LIVE_BUDGET_MS
 from verity.providers import LLMProvider
-from verity.reporting import render_cost_summary, write_step_summary
+from verity.reporting import (
+    build_usage_report,
+    render_cost_summary,
+    render_request_ledger,
+    render_usage_summary,
+    write_step_summary,
+)
 from verity.semantic_reporting import append_failure_event, failure_reason
 from verity.statistics import StatResult, pass_rate_wilson_interval
 from verity.trends import append_trend, compute_trend_record
@@ -83,7 +89,7 @@ def settings() -> Settings:
 
 @pytest.fixture(scope="session")
 def judge(settings: Settings) -> ProviderJudge:
-    return ProviderJudge(settings=settings)
+    return ProviderJudge(settings=settings, accumulator=_SESSION_ACCUMULATOR)
 
 
 @pytest.fixture(scope="session")
@@ -99,6 +105,18 @@ def live_agent(settings: Settings) -> CoverageAgent:
     provider = LLMProvider(settings, _SESSION_ACCUMULATOR)
     retriever = PolicyRetriever(settings.retrieval)
     return CoverageAgent(settings=settings, retriever=retriever, provider=provider)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(
+    item: pytest.Item, nextitem: pytest.Item | None
+) -> Generator[None, None, None]:
+    """Attribute provider calls made during fixtures, test code, and teardown."""
+    token = set_current_test_id(item.nodeid)
+    try:
+        yield
+    finally:
+        reset_current_test_id(token)
 
 
 _NODE_RESULTS: dict[str, str] = {}
@@ -221,8 +239,20 @@ def pytest_runtest_makereport(
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    summary = render_cost_summary(_SESSION_ACCUMULATOR)
+    usage_report = build_usage_report(_SESSION_ACCUMULATOR, _NODE_RESULTS)
+    usage_summary = render_usage_summary(usage_report)
+    summary = render_cost_summary(_SESSION_ACCUMULATOR) + usage_summary
     write_step_summary(summary)
+    terminal = session.config.pluginmanager.get_plugin("terminalreporter")
+    if terminal is not None and not os.environ.get("PYTEST_XDIST_WORKER"):
+        verbosity = os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard")
+        terminal.write_sep("=", "LLM API request and token usage")
+        rendered_usage = render_usage_summary(usage_report, include_tests=verbosity != "quiet")
+        for line in rendered_usage.splitlines():
+            terminal.write_line(line)
+        if verbosity == "verbose":
+            for line in render_request_ledger(usage_report).splitlines():
+                terminal.write_line(line)
     if os.environ.get("PYTEST_XDIST_WORKER"):
         # `make eval-semantic` runs this tier serially specifically so this
         # hook sees every case; under `pytest -n auto` each worker/controller
@@ -230,6 +260,9 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         # row, silently overwriting one another (see the deterministic
         # conftest's matching guard on its own trend append).
         return
+    usage_path = Path("reports/semantic/usage.json")
+    usage_path.parent.mkdir(parents=True, exist_ok=True)
+    usage_path.write_text(json.dumps(usage_report, indent=2), encoding="utf-8")
     if _NODE_RESULTS:
         out = Path("reports/semantic/results-local.json")
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -252,7 +285,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                 "totals": {
                     "tokens": record.total_tokens,
                     "cost_usd": record.total_cost_usd,
+                    "requests": usage_report["suite"]["requests"],
+                    "successful_requests": usage_report["suite"]["succeeded"],
+                    "failed_requests": usage_report["suite"]["failed"],
+                    "incomplete_requests": usage_report["suite"]["incomplete"],
                 },
+                "usage_report": "usage.json",
             },
             "trend": asdict(record),
             "outcomes": _NODE_RESULTS,

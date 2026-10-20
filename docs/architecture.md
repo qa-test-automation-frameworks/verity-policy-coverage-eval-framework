@@ -51,7 +51,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 |--------|---------------|
 | `config.py` | Pydantic-settings root config (`Settings`), sub-configs for provider, judge, retrieval, and cassette mode |
 | `providers.py` | `LLMProvider` wrapping LiteLLM; cassette record/replay path; cost accounting via `RunAccumulator`; span recording via `record_call_span()` |
-| `cost.py` | `Usage`, `Cost`, `CallRecord`, `RunAccumulator`; per-label token and cost accounting; price table keyed by model slug |
+| `cost.py` | `Usage`, `Cost`, `CallRecord`, sanitized `RequestEvent`, `RunAccumulator`; per-test and per-label token, request, and cost accounting |
 | `cassettes.py` | SHA-256 keyed cassette library; `request_key(messages, model, tools)` deterministic hash; `CassetteMissError` on replay miss |
 | `golden.py` | `GoldenCase` Pydantic schema (query, member_id, behavior, ground_truth, must_contain, expected_tool, defect_id, ...); `load_golden()` YAML loader |
 | `checks.py` | Pure deterministic assertion functions: `validate_response_schema`, `check_refusal`, `check_human_review`, `check_tool_args`, `scan_pii`, `check_pii`, `scan_injection`, `check_injection`, `check_must_contain`, `check_must_not_contain` |
@@ -63,7 +63,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `calibration.py` | `CalibrationCase` schema; `compute_agreement()` (raw %, Cohen's kappa, MAE); `compute_self_bias()` (GLM vs other delta); `score_all()` via rubric scoring prompt |
 | `adversarial.py` | `AdversarialProbe` Pydantic schema (category, defense, expected_outcome, must_not_contain, retrieval_fixture_id); `load_probes()` |
 | `tracing.py` | `_ENABLED` flag gated on `VERITY_TRACING` env; `init_tracing()` SDK TracerProvider; `traced(name, **attrs)` context manager (no-op when disabled); `record_call_span(call_record)` attaches gen_ai.* attributes |
-| `reporting.py` | `render_cost_summary(accumulator)` -> per-label markdown table; `write_step_summary(text)` -> `$GITHUB_STEP_SUMMARY` or `reports/cost-summary-local.md` |
+| `reporting.py` | Per-label cost summary, per-test SUT/judge usage report, and sanitized request ledger; writes CI/local summaries |
 
 ### `src/sut/`
 

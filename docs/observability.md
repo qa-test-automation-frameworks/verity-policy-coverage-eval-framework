@@ -92,6 +92,30 @@ both wire a shared session accumulator and call `write_step_summary` on session 
 Even hermetic (cassette replay) runs produce the cost table, since recorded token
 counts are replayed through `RunAccumulator`.
 
+### Semantic request and token ledger
+
+Semantic runs share one accumulator between the SUT and judge. At session end the
+framework prints suite totals and a per-test breakdown, with SUT and judge request
+counts and token totals. `VERITY_SEMANTIC_VERBOSITY=verbose` also prints each
+sanitized request row; `quiet` prints only suite totals. The full machine-readable
+ledger is always written to `reports/semantic/usage.json` locally and included in
+the `semantic-eval-reports` or `semantic-smoke-reports` Actions artifact. The
+`reports/semantic/results.json` manifest points to it and includes request totals.
+Download the artifact from the workflow run to compare past runs, subject to the
+repository's Actions artifact-retention policy.
+
+Each row contains a generated request ID, pytest node ID, model, label, source,
+status, latency, provider-reported prompt/completion/total tokens, and an estimated
+cost when a verified price is available. Failed attempts retain only the exception
+class and HTTP status. Prompts, responses, credentials, and headers are never stored.
+Missing provider usage is explicitly marked unavailable instead of inferred as a
+token count. Costs remain estimates from the reference price table, not billing data.
+
+The ledger counts each framework-level LiteLLM submission, including the secondary
+credential attempt when fallback is used. LiteLLM's own internal retries are not
+individually exposed by this layer and therefore do not create separate ledger rows.
+Cassette replay rows are marked `source: cassette` and represent no live API call.
+
 ### Hermetic replay note
 
 Committed local report artifacts generated from cassette replay are useful for token and cost accounting, but replay latency is not representative of live provider latency.
