@@ -21,6 +21,10 @@ on:
         description: "Provider to use (zai, openrouter, together, nvidia, google)"
         required: false
         default: "openrouter"
+      model:
+        description: "Optional model ID override for both the evaluated model and judge (Google defaults to gemini-3.8-flash)"
+        required: false
+        default: ""
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -72,24 +76,44 @@ jobs:
           echo "PYTEST_VERSION=$pytest_version" >> "$GITHUB_ENV"
           echo "UV_VERSION=$uv_version" >> "$GITHUB_ENV"
 
+      - name: Configure manual provider model
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          INPUT_PROVIDER: ${{ inputs.provider || 'openrouter' }}
+          INPUT_MODEL: ${{ inputs.model }}
+        run: |
+          if [ -n "$INPUT_MODEL" ]; then
+            model="$INPUT_MODEL"
+          elif [ "$INPUT_PROVIDER" = "google" ]; then
+            model="gemini-3.8-flash"
+          else
+            exit 0
+          fi
+
+          if [[ ! "$model" =~ ^[A-Za-z0-9._:/-]+$ ]]; then
+            echo "::error::Model IDs may contain only letters, numbers, '.', '_', ':', '/', and '-'"
+            exit 1
+          fi
+
+          echo "VERITY_MODEL=$model" >> "$GITHUB_ENV"
+          echo "VERITY_JUDGE_PROVIDER=$INPUT_PROVIDER" >> "$GITHUB_ENV"
+          echo "VERITY_JUDGE_MODEL=$model" >> "$GITHUB_ENV"
+
       - name: Check provider key
         id: key_check
         run: |
           case "$VERITY_PROVIDER" in
-            zai) required_key="$VERITY_ZAI_API_KEY"; required_name="VERITY_ZAI_API_KEY" ;;
-            openrouter) required_key="$VERITY_OPENROUTER_API_KEY"; required_name="VERITY_OPENROUTER_API_KEY" ;;
-            together) required_key="$VERITY_TOGETHER_API_KEY"; required_name="VERITY_TOGETHER_API_KEY" ;;
-            nvidia) required_key="$VERITY_NVIDIA_API_KEY"; required_name="VERITY_NVIDIA_API_KEY" ;;
-            google) required_key="$VERITY_GOOGLE_API_KEY"; required_name="VERITY_GOOGLE_API_KEY" ;;
+            zai) required_key="$VERITY_ZAI_API_KEY" ;;
+            openrouter) required_key="$VERITY_OPENROUTER_API_KEY" ;;
+            together) required_key="$VERITY_TOGETHER_API_KEY" ;;
+            nvidia) required_key="$VERITY_NVIDIA_API_KEY" ;;
+            google) required_key="$VERITY_GOOGLE_API_KEY" ;;
             *) echo "::error::Unsupported VERITY_PROVIDER: $VERITY_PROVIDER"; exit 1 ;;
           esac
 
-          if [ -z "$VERITY_ZAI_API_KEY$VERITY_OPENROUTER_API_KEY$VERITY_TOGETHER_API_KEY$VERITY_NVIDIA_API_KEY$VERITY_GOOGLE_API_KEY" ]; then
+          if [ -z "$required_key" ]; then
             echo "has_key=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No provider key secret configured; skipping semantic eval"
-          elif [ -z "$required_key" ]; then
-            echo "::error::$required_name is required when VERITY_PROVIDER=$VERITY_PROVIDER"
-            exit 1
+            echo "::warning::No key configured for $VERITY_PROVIDER; skipping semantic eval"
           else
             echo "has_key=true" >> "$GITHUB_OUTPUT"
           fi
