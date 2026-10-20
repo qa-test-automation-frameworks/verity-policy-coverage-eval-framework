@@ -117,6 +117,7 @@ def request_key(
     tools: list[dict[str, Any]] | None,
     temperature: float,
     max_tokens: int,
+    request_options: dict[str, Any] | None = None,
 ) -> str:
     """Compute a stable 32-hex-char SHA-256 key for a completion request.
 
@@ -130,5 +131,9 @@ def request_key(
         "temperature": temperature,
         "tools": tools or [],
     }
+    # Keep legacy cassette keys stable for ordinary completions. Options that
+    # affect output shape or provider behavior must distinguish judge calls.
+    if request_options:
+        payload["request_options"] = request_options
     canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(canonical.encode()).hexdigest()[:32]

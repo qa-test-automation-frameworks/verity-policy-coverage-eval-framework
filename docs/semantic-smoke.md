@@ -27,3 +27,9 @@ independent human labels for those conclusions. Smoke reports use a separate Act
 artifact (`semantic-smoke-reports`) and evidence scope (`verity.semantic-smoke`), so they
 do not replace the full-suite report or `verity.semantic-evaluation` record used by the
 portfolio.
+
+Judge calls request JSON mode through the provider API. NVIDIA judge calls also disable
+Nemotron thinking for the JSON response so reasoning tokens do not consume the output
+budget first. An empty judge response fails with a diagnostic containing the model,
+finish reason, and whether reasoning text was returned separately; response content is
+not written to logs.

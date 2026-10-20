@@ -90,6 +90,23 @@ class TestLLMProvider:
         assert "tools" in call_kwargs
         assert call_kwargs["tools"] == tools
 
+    def test_structured_output_options_are_passed_to_litellm(
+        self, settings_no_key: Settings
+    ) -> None:
+        provider = LLMProvider(settings_no_key)
+        response_format = {"type": "json_object"}
+        extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
+
+        with patch(_PATCH, return_value=_mock_response()) as mock_call:
+            provider.complete(
+                [{"role": "user", "content": "score this"}],
+                response_format=response_format,
+                extra_body=extra_body,
+            )
+
+        assert mock_call.call_args.kwargs["response_format"] == response_format
+        assert mock_call.call_args.kwargs["extra_body"] == extra_body
+
     def test_temperature_override(self, settings_no_key: Settings) -> None:
         acc = RunAccumulator()
         provider = LLMProvider(settings_no_key, acc)
@@ -195,6 +212,26 @@ class TestCassetteReplay:
         assert result.raw_response is None  # no live call
         assert len(acc.records) == 1
         assert acc.records[0].usage.prompt_tokens == 8
+
+    def test_structured_judge_options_replay_legacy_cassette(
+        self, replay_settings: Settings, tmp_path: Path
+    ) -> None:
+        from verity.cassettes import request_key
+
+        lib = CassetteLibrary(tmp_path)
+        provider = LLMProvider(replay_settings, cassette_library=lib)
+        messages: list[dict[str, Any]] = [{"role": "user", "content": "score this"}]
+        legacy_key = request_key("openai/glm-4.5", messages, None, 0.0, 2048)
+        lib.save(legacy_key, self._make_payload("legacy JSON response"))
+
+        result = provider.complete(
+            messages,
+            response_format={"type": "json_object"},
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        )
+
+        assert result.content == "legacy JSON response"
+        assert result.raw_response is None
 
     def test_replay_miss_raises_cassette_miss_error(
         self, replay_settings: Settings, tmp_path: Path
