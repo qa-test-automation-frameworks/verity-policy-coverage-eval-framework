@@ -5,12 +5,28 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from verity.semantic_reporting import append_failure_event, failure_reason, redact_failure_text
+from verity.semantic_reporting import (
+    append_failure_event,
+    failure_reason,
+    faithfulness_sut_failure_message,
+    redact_failure_text,
+)
 
 
 def test_failure_reason_prefers_assertion_or_exception_line() -> None:
     trace = "traceback\n  File test.py\nE   AssertionError: score below threshold"
     assert failure_reason(trace) == ("AssertionError: score below threshold")
+
+
+def test_faithfulness_failure_message_ignores_empty_success_category() -> None:
+    assert faithfulness_sut_failure_message("control-case", "") is None
+
+
+def test_faithfulness_failure_message_preserves_real_failure_category() -> None:
+    assert faithfulness_sut_failure_message("control-case", "provider_unavailable") == (
+        "System-under-test request failed (provider_unavailable); "
+        "faithfulness score is unavailable for 'control-case'."
+    )
 
 
 def test_failure_text_redacts_common_secret_shapes(monkeypatch) -> None:

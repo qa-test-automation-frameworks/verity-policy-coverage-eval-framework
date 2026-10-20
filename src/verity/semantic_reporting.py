@@ -17,6 +17,16 @@ _TOKEN_SHAPE = re.compile(r"\b(?:sk|nvapi|AIza)[-_][A-Za-z0-9_-]{12,}\b")
 _MAX_DETAIL_CHARS = 12_000
 
 
+def faithfulness_sut_failure_message(case_id: str, failure_category: str | None) -> str | None:
+    """Describe an actual SUT failure; an empty category means the response succeeded."""
+    if not failure_category:
+        return None
+    return (
+        f"System-under-test request failed ({failure_category}); "
+        f"faithfulness score is unavailable for {case_id!r}."
+    )
+
+
 def redact_failure_text(value: str) -> str:
     """Redact common credential forms and configured API-key values."""
     redacted = value
