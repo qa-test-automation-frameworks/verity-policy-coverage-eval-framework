@@ -13,6 +13,7 @@ parameter, backed by the same ProviderJudge.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import warnings
 from typing import Any
@@ -121,7 +122,11 @@ class ProviderJudge:
 
     async def a_generate(self, prompt: str) -> str:
         """Async generation — used by async evaluation paths."""
-        return await asyncio.get_running_loop().run_in_executor(None, self.generate, prompt)
+        # run_in_executor does not copy ContextVars automatically, so carry
+        # the active pytest test id into the worker explicitly.
+        context = contextvars.copy_context()
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, context.run, self.generate, prompt)
 
 
 # ---------------------------------------------------------------------------

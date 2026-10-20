@@ -223,7 +223,7 @@ jobs:
         if: steps.key_check.outputs.has_key == 'true'
         run: |
           mkdir -p reports/allure-results/semantic reports/semantic reports/evidence/native
-          rm -f reports/semantic/results-local.json reports/semantic/results.json reports/semantic/failures.jsonl
+          rm -f reports/semantic/results-local.json reports/semantic/results.json reports/semantic/failures.jsonl reports/semantic/usage.json
           echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
           case "$VERITY_SEMANTIC_VERBOSITY" in
             quiet) pytest_args=(-q -q --tb=line --show-capture=no) ;;
@@ -288,6 +288,7 @@ jobs:
             reports/allure-results/semantic/
             reports/semantic/results.json
             reports/semantic/failures.jsonl
+            reports/semantic/usage.json
           if-no-files-found: warn
 
       - name: Upload semantic smoke reports
@@ -299,6 +300,7 @@ jobs:
             reports/allure-results/semantic/
             reports/semantic/results.json
             reports/semantic/failures.jsonl
+            reports/semantic/usage.json
           if-no-files-found: warn
 
       - name: Upload semantic evidence bundle

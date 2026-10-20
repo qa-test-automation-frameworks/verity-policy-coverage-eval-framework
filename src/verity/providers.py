@@ -130,16 +130,15 @@ class LLMProvider:
         if extra_body:
             kwargs["extra_body"] = extra_body
 
-        start = time.monotonic()
-        response = self._complete_with_key_fallback(kwargs)
-        latency_ms = (time.monotonic() - start) * 1000
-
-        usage = usage_from_litellm(response)
+        response, request_event = self._complete_with_key_fallback(kwargs, label=label)
+        latency_ms = request_event.latency_ms or 0.0
+        usage = request_event.usage or Usage(0, 0, 0)
         record = self._accumulator.log_call(
             model=litellm_model,
             usage=usage,
             latency_ms=latency_ms,
             label=label,
+            request_event=request_event,
         )
         record_call_span(record)
 
@@ -177,7 +176,30 @@ class LLMProvider:
             call_record=record,
         )
 
-    def _complete_with_key_fallback(self, kwargs: dict[str, Any]) -> Any:
+    def _call_once(self, kwargs: dict[str, Any], label: str) -> tuple[Any, Any]:
+        """Make one LiteLLM completion submission and record its safe metadata."""
+        event = self._accumulator.begin_request(
+            model=str(kwargs["model"]), label=label, source="provider"
+        )
+        start = time.monotonic()
+        try:
+            response = litellm.completion(**kwargs)
+        except Exception as exc:
+            latency_ms = (time.monotonic() - start) * 1000
+            self._accumulator.finish_request(event, latency_ms=latency_ms, error=exc)
+            raise
+
+        latency_ms = (time.monotonic() - start) * 1000
+        try:
+            usage = usage_from_litellm(response)
+        except (AttributeError, TypeError, ValueError):
+            # Some compatible gateways omit usage metadata. Preserve the
+            # successful request count while making absent usage explicit.
+            usage = None
+        self._accumulator.finish_request(event, latency_ms=latency_ms, usage=usage)
+        return response, event
+
+    def _complete_with_key_fallback(self, kwargs: dict[str, Any], label: str) -> tuple[Any, Any]:
         """Call litellm.completion, retrying once with a secondary key on a quota/billing error.
 
         Only triggers on HTTP 402 (insufficient credits) or 429 (rate limit),
@@ -185,7 +207,7 @@ class LLMProvider:
         request being malformed. Any other error propagates immediately.
         """
         try:
-            return litellm.completion(**kwargs)
+            return self._call_once(kwargs, label)
         except openai.APIError as exc:
             if getattr(exc, "status_code", None) not in (402, 429):
                 raise
@@ -193,7 +215,7 @@ class LLMProvider:
             if not fallback_key or fallback_key == kwargs.get("api_key"):
                 raise
             fallback_kwargs = {**kwargs, "api_key": fallback_key}
-            return litellm.completion(**fallback_kwargs)
+            return self._call_once(fallback_kwargs, label)
 
     def _result_from_payload(self, payload: CassettePayload, label: str) -> CompletionResult:
         """Reconstruct a CompletionResult from a cassette payload."""
@@ -202,11 +224,14 @@ class LLMProvider:
             completion_tokens=payload.completion_tokens,
             total_tokens=payload.total_tokens,
         )
+        event = self._accumulator.begin_request(model=payload.model, label=label, source="cassette")
+        self._accumulator.finish_request(event, latency_ms=0.0, usage=usage)
         record = self._accumulator.log_call(
             model=payload.model,
             usage=usage,
             latency_ms=0.0,
             label=label,
+            request_event=event,
         )
         record_call_span(record)
         return CompletionResult(

@@ -4,10 +4,24 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
+from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from typing import Any
 
 logger = logging.getLogger(__name__)
+_CURRENT_TEST_ID: ContextVar[str | None] = ContextVar("verity_test_id", default=None)
+
+
+def set_current_test_id(test_id: str) -> Token[str | None]:
+    """Set the pytest test id associated with provider calls in this context."""
+    return _CURRENT_TEST_ID.set(test_id)
+
+
+def reset_current_test_id(token: Token[str | None]) -> None:
+    """Restore the test-id context after the pytest item completes."""
+    _CURRENT_TEST_ID.reset(token)
+
 
 # ---------------------------------------------------------------------------
 # Price table ($/million tokens). Add provider-verified rates as needed.
@@ -97,6 +111,32 @@ class CallRecord:
     latency_ms: float
     timestamp: float = field(default_factory=time.time)
     label: str = ""
+    test_id: str | None = None
+    request_id: str | None = None
+
+
+@dataclass
+class RequestEvent:
+    """Sanitized metadata for one provider API attempt or cassette replay.
+
+    Prompt/response bodies, headers, credentials, and raw provider errors are
+    deliberately excluded so this ledger is safe to publish as a CI artifact.
+    """
+
+    request_id: str
+    model: str
+    label: str
+    test_id: str | None
+    source: str
+    timestamp: float = field(default_factory=time.time)
+    status: str = "started"
+    latency_ms: float | None = None
+    usage: Usage | None = None
+    usage_reported: bool | None = None
+    estimated_cost_usd: float | None = None
+    cost_priced: bool | None = None
+    error_type: str | None = None
+    http_status: int | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -105,6 +145,43 @@ class CallRecord:
 @dataclass
 class RunAccumulator:
     records: list[CallRecord] = field(default_factory=list)
+    requests: list[RequestEvent] = field(default_factory=list)
+
+    def begin_request(self, model: str, label: str = "", source: str = "provider") -> RequestEvent:
+        """Start recording an API attempt without retaining request contents."""
+        event = RequestEvent(
+            request_id=uuid.uuid4().hex,
+            model=model,
+            label=label,
+            test_id=_CURRENT_TEST_ID.get(),
+            source=source,
+        )
+        self.requests.append(event)
+        return event
+
+    @staticmethod
+    def finish_request(
+        event: RequestEvent,
+        *,
+        latency_ms: float,
+        usage: Usage | None = None,
+        error: BaseException | None = None,
+    ) -> None:
+        """Complete a request event with usage or sanitized failure metadata."""
+        event.latency_ms = latency_ms
+        if error is not None:
+            event.status = "failed"
+            event.error_type = type(error).__name__
+            status = getattr(error, "status_code", None)
+            event.http_status = status if isinstance(status, int) else None
+            return
+        event.status = "succeeded"
+        event.usage = usage or Usage(0, 0, 0)
+        event.usage_reported = usage is not None
+        if usage is not None:
+            cost = estimate_cost(usage, event.model)
+            event.estimated_cost_usd = cost.total_usd
+            event.cost_priced = cost.priced
 
     def log_call(
         self,
@@ -112,9 +189,21 @@ class RunAccumulator:
         usage: Usage,
         latency_ms: float,
         label: str = "",
+        request_event: RequestEvent | None = None,
     ) -> CallRecord:
         cost = estimate_cost(usage, model)
-        record = CallRecord(model=model, usage=usage, cost=cost, latency_ms=latency_ms, label=label)
+        if request_event is None:
+            request_event = self.begin_request(model=model, label=label, source="accounted-call")
+            self.finish_request(request_event, latency_ms=latency_ms, usage=usage)
+        record = CallRecord(
+            model=model,
+            usage=usage,
+            cost=cost,
+            latency_ms=latency_ms,
+            label=label,
+            test_id=request_event.test_id,
+            request_id=request_event.request_id,
+        )
         self.records.append(record)
         return record
 

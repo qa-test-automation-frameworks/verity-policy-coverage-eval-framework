@@ -75,6 +75,27 @@ class TestLLMProvider:
         assert acc.total_tokens.prompt_tokens == 100
         assert acc.total_tokens.completion_tokens == 50
         assert len(acc.records) == 1
+        assert len(acc.requests) == 1
+        assert acc.requests[0].status == "succeeded"
+        assert acc.records[0].request_id == acc.requests[0].request_id
+
+    def test_failed_request_is_recorded_without_error_text(self, settings_no_key: Settings) -> None:
+        acc = RunAccumulator()
+        provider = LLMProvider(settings_no_key, acc)
+
+        with (
+            patch(_PATCH, side_effect=RuntimeError("sensitive provider response")),
+            pytest.raises(RuntimeError, match="sensitive provider response"),
+        ):
+            provider.complete([{"role": "user", "content": "private prompt"}])
+
+        assert len(acc.requests) == 1
+        event = acc.requests[0]
+        assert event.status == "failed"
+        assert event.error_type == "RuntimeError"
+        assert event.usage is None
+        assert not hasattr(event, "error_message")
+        assert acc.records == []
 
     def test_tools_passed_when_provided(self, settings_no_key: Settings) -> None:
         acc = RunAccumulator()
@@ -319,7 +340,8 @@ class TestKeyFallback:
             )
 
     def test_retries_with_fallback_key_on_402(self, settings_with_fallback: Settings) -> None:
-        provider = LLMProvider(settings_with_fallback, RunAccumulator())
+        acc = RunAccumulator()
+        provider = LLMProvider(settings_with_fallback, acc)
 
         with patch(
             _PATCH,
@@ -331,6 +353,8 @@ class TestKeyFallback:
         assert mock_call.call_count == 2
         assert mock_call.call_args_list[0].kwargs["api_key"] == "primary-key"
         assert mock_call.call_args_list[1].kwargs["api_key"] == "fallback-key"
+        assert [event.status for event in acc.requests] == ["failed", "succeeded"]
+        assert [event.http_status for event in acc.requests] == [402, None]
 
     def test_retries_with_fallback_key_on_429(self, settings_with_fallback: Settings) -> None:
         provider = LLMProvider(settings_with_fallback, RunAccumulator())
