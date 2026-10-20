@@ -51,7 +51,9 @@ security = [
     "pip-audit>=2.7.0",
 ]
 semantic = [
-    "deepeval>=1.5.0",
+    # DeepEval 4.1 changes HallucinationMetric score polarity; keep <4.1 until its
+    # threshold and semantic-corpus calibrations are migrated and independently verified.
+    "deepeval>=1.5.0,<4.1.0",
     # Stay on the reviewed version while its local-file/SSRF advisory is
     # unpatched; reassess this bound before any version change.
     "ragas==0.4.3",
@@ -184,7 +186,7 @@ constraint-dependencies = [
     "datasets>=5.0.1",
     "fsspec>=2026.6.0",
     "langgraph-sdk>=0.4.4",
-    "litellm>=1.90.7",
+    "litellm>=1.92.0",
     "multidict>=6.9.1",
     "oauthlib>=4.0.0",
     "pillow>=12.3.0",
