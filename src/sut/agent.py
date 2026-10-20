@@ -382,6 +382,7 @@ class CoverageAgent:
 
             messages.append(self._assistant_tool_call_message(result))
 
+            round_signatures: set[tuple[str, str]] = set()
             for tc in result.tool_calls:
                 try:
                     normalized_arguments = json.dumps(
@@ -403,7 +404,11 @@ class CoverageAgent:
                         tool_invocations=tool_invocations,
                         trace_id=trace_id,
                     )
-                seen_calls.add(call_signature)
+                # Repeated calls in one assistant batch are not a loop: they
+                # must reach conversation validation, which checks duplicate
+                # tool-call IDs and enforces the clean-profile failure policy.
+                # Loop detection applies when a later round repeats a call.
+                round_signatures.add(call_signature)
 
                 tool_turn = self._execute_tool_call(
                     tc=tc,
@@ -416,6 +421,7 @@ class CoverageAgent:
                 tool_invocations.append(tool_turn["invocation"])
                 messages.append(tool_turn["message"])
 
+            seen_calls.update(round_signatures)
             conv_check = validate_conversation(messages)
             if not conv_check.passed:
                 logger.warning("Conversation structure check failed: %s", conv_check.message)
