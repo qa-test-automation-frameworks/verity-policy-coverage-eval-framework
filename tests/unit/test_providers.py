@@ -213,6 +213,26 @@ class TestCassetteReplay:
         assert len(acc.records) == 1
         assert acc.records[0].usage.prompt_tokens == 8
 
+    def test_structured_judge_options_replay_legacy_cassette(
+        self, replay_settings: Settings, tmp_path: Path
+    ) -> None:
+        from verity.cassettes import request_key
+
+        lib = CassetteLibrary(tmp_path)
+        provider = LLMProvider(replay_settings, cassette_library=lib)
+        messages: list[dict[str, Any]] = [{"role": "user", "content": "score this"}]
+        legacy_key = request_key("openai/glm-4.5", messages, None, 0.0, 2048)
+        lib.save(legacy_key, self._make_payload("legacy JSON response"))
+
+        result = provider.complete(
+            messages,
+            response_format={"type": "json_object"},
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        )
+
+        assert result.content == "legacy JSON response"
+        assert result.raw_response is None
+
     def test_replay_miss_raises_cassette_miss_error(
         self, replay_settings: Settings, tmp_path: Path
     ) -> None:

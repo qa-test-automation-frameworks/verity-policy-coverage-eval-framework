@@ -84,6 +84,12 @@ class LLMProvider:
             key = request_key(litellm_model, messages, tools, temp, max_tok, request_options)
             lib = self._get_cassette_library()
             payload = lib.lookup(key)
+            if payload is None and request_options:
+                # Older cassettes predate provider request options. They remain
+                # valid replays of the same prompt/model inputs; prefer the
+                # option-aware key but retain compatibility with those fixtures.
+                legacy_key = request_key(litellm_model, messages, tools, temp, max_tok)
+                payload = lib.lookup(legacy_key)
             if payload is None:
                 raise CassetteMissError(
                     f"No cassette found for key {key!r}. "
