@@ -339,49 +339,115 @@ class CoverageAgent:
         start_index: int,
         trace_id: str,
     ) -> AgentResponse | tuple[CompletionResult, list[ToolInvocation]]:
-        """Run the single supported round of tool calls, if the first-turn
-        result requested any, and the follow-up LLM call with their results.
+        """Run a bounded sequence of tool-call rounds and follow-up completions.
 
         Mutates `messages` in place (appends the assistant tool-call message
-        and tool-result messages) to build the exact conversation the second
-        LLM call sees. Returns an AgentResponse directly for any failure path
-        (unknown tool, malformed args, tool error, invalid conversation
-        structure, provider failure, or an unsupported second round of tool
-        calls) so the caller can return it immediately; otherwise returns the
-        final CompletionResult and the list of tool invocations made.
+        and tool-result messages) so each provider request sees the complete
+        conversation history. Returns an AgentResponse directly for any
+        failure path (unknown tool, malformed args, tool error, invalid
+        conversation structure, provider failure, a repeated call, or an
+        exhausted round/call budget); otherwise returns the final
+        CompletionResult and the list of tool invocations made.
 
         `result` is `first_result` unchanged when no tool calls were made.
         """
         result = first_result
         tool_invocations: list[ToolInvocation] = []
+        seen_calls: set[tuple[str, str]] = set()
+        tool_rounds = 0
 
-        if not result.tool_calls:
-            return result, tool_invocations
+        while result.tool_calls:
+            if tool_rounds >= self.settings.max_tool_rounds:
+                logger.warning("Tool round budget exhausted after %d rounds", tool_rounds)
+                return self._safe_failure_response(
+                    category="tool_round_limit",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
 
-        messages.append(self._assistant_tool_call_message(result))
+            if len(tool_invocations) + len(result.tool_calls) > self.settings.max_tool_calls:
+                logger.warning(
+                    "Tool call budget exceeded: completed=%d requested=%d maximum=%d",
+                    len(tool_invocations),
+                    len(result.tool_calls),
+                    self.settings.max_tool_calls,
+                )
+                return self._safe_failure_response(
+                    category="tool_call_limit",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
 
-        for tc in result.tool_calls:
-            tool_turn = self._execute_tool_call(
-                tc=tc,
-                start_index=start_index,
-                tool_invocations=tool_invocations,
-                trace_id=trace_id,
-            )
-            if isinstance(tool_turn, AgentResponse):
-                return tool_turn
-            tool_invocations.append(tool_turn["invocation"])
-            messages.append(tool_turn["message"])
+            messages.append(self._assistant_tool_call_message(result))
 
-        final_result = self._complete_after_tool_calls(
-            messages=messages,
-            is_clean=is_clean,
-            start_index=start_index,
-            tool_invocations=tool_invocations,
-            trace_id=trace_id,
-        )
-        if isinstance(final_result, AgentResponse):
-            return final_result
-        return final_result, tool_invocations
+            for tc in result.tool_calls:
+                try:
+                    normalized_arguments = json.dumps(
+                        json.loads(tc.function.arguments),
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                except (TypeError, json.JSONDecodeError):
+                    normalized_arguments = str(tc.function.arguments)
+                call_signature = (tc.function.name, normalized_arguments)
+                if call_signature in seen_calls:
+                    logger.warning(
+                        "Repeated tool call detected for %s; stopping the tool loop",
+                        tc.function.name,
+                    )
+                    return self._safe_failure_response(
+                        category="tool_loop_detected",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+                seen_calls.add(call_signature)
+
+                tool_turn = self._execute_tool_call(
+                    tc=tc,
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
+                if isinstance(tool_turn, AgentResponse):
+                    return tool_turn
+                tool_invocations.append(tool_turn["invocation"])
+                messages.append(tool_turn["message"])
+
+            conv_check = validate_conversation(messages)
+            if not conv_check.passed:
+                logger.warning("Conversation structure check failed: %s", conv_check.message)
+                if is_clean:
+                    return self._safe_failure_response(
+                        category="invalid_conversation_structure",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+
+            tool_rounds += 1
+            try:
+                result = self._llm_provider.complete(
+                    messages=messages,
+                    tools=[COVERAGE_CALCULATOR_SCHEMA],
+                    label=(
+                        "agent-second-turn"
+                        if tool_rounds == 1
+                        else f"agent-follow-up-turn-{tool_rounds + 1}"
+                    ),
+                )
+            except Exception:
+                logger.exception("Provider call failed after tool handling")
+                return self._safe_failure_response(
+                    category="provider_unavailable",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
+
+        return result, tool_invocations
 
     def _assistant_tool_call_message(self, result: CompletionResult) -> dict[str, Any]:
         return {
@@ -467,48 +533,6 @@ class CoverageAgent:
             },
         }
 
-    def _complete_after_tool_calls(
-        self,
-        *,
-        messages: list[dict[str, Any]],
-        is_clean: bool,
-        start_index: int,
-        tool_invocations: list[ToolInvocation],
-        trace_id: str,
-    ) -> AgentResponse | CompletionResult:
-        conv_check = validate_conversation(messages)
-        if not conv_check.passed:
-            logger.warning("Conversation structure check failed: %s", conv_check.message)
-            if is_clean:
-                return self._safe_failure_response(
-                    category="invalid_conversation_structure",
-                    start_index=start_index,
-                    tool_invocations=tool_invocations,
-                    trace_id=trace_id,
-                )
-
-        try:
-            result = self._llm_provider.complete(messages=messages, label="agent-second-turn")
-        except Exception:
-            logger.exception("Provider call failed after tool handling")
-            return self._safe_failure_response(
-                category="provider_unavailable",
-                start_index=start_index,
-                tool_invocations=tool_invocations,
-                trace_id=trace_id,
-            )
-
-        if result.tool_calls:
-            logger.warning("Second-turn tool_calls ignored; treating as tool_unavailable")
-            return self._safe_failure_response(
-                category="tool_unavailable",
-                start_index=start_index,
-                tool_invocations=tool_invocations,
-                trace_id=trace_id,
-            )
-
-        return result
-
     def _safe_failure_response(
         self,
         *,
@@ -592,7 +616,7 @@ class CoverageAgent:
                     retrieved_chunks=chunks,
                 )
 
-            # 6-7. Handle tool calls (single round) and the follow-up LLM call
+            # 6-7. Handle bounded multi-round tool calls and follow-up completions
             tool_round = self._handle_tool_call_round(
                 first_result=result,
                 messages=messages,

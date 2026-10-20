@@ -7,13 +7,16 @@ import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 _SECRET_ASSIGNMENT = re.compile(
-    r"(?i)(api[_-]?key|access[_-]?token|authorization|secret)\s*[:=]\s*([^\s,;]+)"
+    r"(?i)([\"']?(?:api[_-]?key|access[_-]?token|authorization|secret)[\"']?)"
+    r"\s*[:=]\s*[\"']?([^\s,;\"'}]+)[\"']?"
 )
 _BEARER = re.compile(r"(?i)\bBearer\s+[^\s,;]+")
-_TOKEN_SHAPE = re.compile(r"\b(?:sk|nvapi|AIza)[-_][A-Za-z0-9_-]{12,}\b")
+_TOKEN_SHAPE = re.compile(
+    r"\b(?:sk-(?:or-v1-)?|sk_|nvapi-|AIza|gsk_|xai-|gh[pousr]_)[A-Za-z0-9_-]{12,}\b"
+)
 _MAX_DETAIL_CHARS = 12_000
 
 
@@ -80,3 +83,39 @@ def append_failure_event(path: Path, *, nodeid: str, longrepr: str) -> dict[str,
         stream.flush()
         os.fsync(stream.fileno())
     return event
+
+
+def _redact_evidence_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return redact_failure_text(value)
+    if isinstance(value, list):
+        return [_redact_evidence_value(item) for item in value]
+    if isinstance(value, dict):
+        safe: dict[str, Any] = {}
+        for key, item in value.items():
+            normalized_key = str(key).upper()
+            if any(
+                part in normalized_key
+                for part in ("API_KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH", "CREDENTIAL")
+            ):
+                safe[str(key)] = "[REDACTED]"
+            else:
+                safe[str(key)] = _redact_evidence_value(item)
+        return safe
+    return value
+
+
+def append_case_evidence_event(path: Path, *, event: dict[str, Any]) -> dict[str, Any]:
+    """Append one semantic case trace, redacting credentials before persistence.
+
+    These verbose-only diagnostics may include model-generated answer text and
+    synthetic evaluation inputs. Keep them in the short-retention run artifact,
+    not the durable trend or portfolio evidence records.
+    """
+    safe_event = cast(dict[str, Any], _redact_evidence_value(event))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(safe_event, ensure_ascii=False) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    return safe_event

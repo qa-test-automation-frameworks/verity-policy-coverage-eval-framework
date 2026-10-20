@@ -74,7 +74,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `retriever.py` | `PolicyRetriever` (FastEmbed/ONNX embeddings with a local transactional SQLite cosine index, markdown-aware chunker, 160-word chunks / top-3 default); `InMemoryCosineRetriever`; `FixtureRetriever` (JSON-backed, no model download for hermetic tests) |
 | `tools/coverage_calculator.py` | Deterministic Pydantic-typed cost calculator + `COVERAGE_CALCULATOR_SCHEMA`; tool arguments intentionally ambiguously named (seeded defect #5) |
 | `guardrails.py` | `check_input()` (regex `_OUT_OF_SCOPE_PATTERNS`; gap = seeded defect #6); `scrub_output()` (masks member-id and date patterns); `log_member_context()` (naive DEBUG logging = seeded defect #8) |
-| `agent.py` | `CoverageAgent.answer()`: load member, check scope, retrieve chunks, first LLM turn, optional tool-use second turn, scrub output; wraps all spans via `traced()` |
+| `agent.py` | `CoverageAgent.answer()`: load member, check scope, retrieve chunks, bounded multi-round tool-use loop (defaults: 3 rounds / 6 calls), scrub output; wraps all spans via `traced()` |
 
 ---
 
@@ -94,12 +94,12 @@ agent.answer(query, member_id)
 |   |   \-- record_call_span(call_record)       # OTel attributes
 |   |
 |   +-- [if tool_call in response]
-|   |   +-- [span: tool.coverage_calculator]
-|   |   |   \-- run_coverage_calculator(args)  # deterministic
-|   |   \-- provider.complete(messages + tool_result, ...)  # second turn
-|   |       +-- cassette replay / live call
-|   |       +-- accumulator.log_call(...)
-|   |       \-- record_call_span(call_record)
+|   |   \-- bounded loop (max 3 rounds / 6 calls by default)
+|   |       +-- [span: tool.coverage_calculator] run_coverage_calculator(args)
+|   |       \-- provider.complete(messages + tool_result, ...)  # next turn
+|   |           +-- cassette replay / live call
+|   |           +-- accumulator.log_call(...)
+|   |           \-- record_call_span(call_record)
 |   |
 |   \-- guardrails.scrub_output(answer)         # defect #8 gap here
 |

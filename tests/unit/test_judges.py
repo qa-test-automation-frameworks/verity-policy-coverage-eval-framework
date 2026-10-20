@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import warnings
 from unittest.mock import MagicMock, patch
 
@@ -53,8 +54,89 @@ class TestProviderJudge:
         judge._provider.complete.assert_called_once_with(
             messages=[{"role": "user", "content": "some prompt"}],
             label="judge",
+            max_tokens=2048,
             response_format={"type": "json_object"},
         )
+
+    def test_generate_retries_once_after_output_token_limit(self) -> None:
+        from verity.config import Settings
+
+        judge = _make_provider_judge()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            judge._judge_settings = Settings(_env_file=None, max_tokens=4096)
+        truncated = CompletionResult(content='{"partial":')
+        truncated.raw_response = MagicMock(
+            choices=[MagicMock(finish_reason="length", message=MagicMock())]
+        )
+        complete = CompletionResult(content='{"score": 1}')
+        complete.raw_response = MagicMock(
+            choices=[MagicMock(finish_reason="stop", message=MagicMock())]
+        )
+        judge._provider.complete.side_effect = [truncated, complete]
+
+        assert judge.generate("return JSON") == '{"score": 1}'
+        assert [call.kwargs["max_tokens"] for call in judge._provider.complete.call_args_list] == [
+            4096,
+            8192,
+        ]
+
+    def test_generate_retries_once_after_invalid_provider_json(self) -> None:
+        judge = _make_provider_judge()
+        invalid = CompletionResult(content="```json {not-json}")
+        invalid.raw_response = MagicMock(
+            choices=[MagicMock(finish_reason="stop", message=MagicMock())]
+        )
+        corrected = CompletionResult(content='{"score": 0.8}')
+        corrected.raw_response = MagicMock(
+            choices=[MagicMock(finish_reason="stop", message=MagicMock())]
+        )
+        judge._provider.complete.side_effect = [invalid, corrected]
+
+        assert judge.generate("return a JSON score") == '{"score": 0.8}'
+        assert judge._provider.complete.call_count == 2
+        retry_messages = judge._provider.complete.call_args_list[1].kwargs["messages"]
+        assert retry_messages[-1]["role"] == "user"
+        assert "valid JSON object only" in retry_messages[-1]["content"]
+
+    def test_valid_json_with_missing_fields_is_not_rewritten(self) -> None:
+        """Schema errors remain visible to RAGAS instead of inventing verdicts."""
+        judge = _make_provider_judge('{"partial": true}')
+        judge._provider.complete.return_value.raw_response = MagicMock(
+            choices=[MagicMock(finish_reason="stop", message=MagicMock())]
+        )
+
+        assert judge.generate("return schema output") == '{"partial": true}'
+        judge._provider.complete.assert_called_once()
+
+    def test_verbose_judge_output_is_written_with_current_test_id(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from verity.cost import reset_current_test_id, set_current_test_id
+
+        path = tmp_path / "case-evidence.jsonl"
+        monkeypatch.setenv("VERITY_SEMANTIC_VERBOSITY", "verbose")
+        monkeypatch.setenv("VERITY_SEMANTIC_CASE_EVIDENCE_PATH", str(path))
+        judge = _make_provider_judge('{"score": 1}')
+        token = set_current_test_id("tests/semantic/test_eval.py::test_case")
+        try:
+            judge.generate("score this")
+        finally:
+            reset_current_test_id(token)
+
+        event = json.loads(path.read_text(encoding="utf-8"))
+        assert event["record_type"] == "judge_response"
+        assert event["test_id"] == "tests/semantic/test_eval.py::test_case"
+        assert event["answer"] == '{"score": 1}'
+
+    def test_judge_config_defaults_to_longer_structured_output_budget(self) -> None:
+        from verity.config import JudgeConfig
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            config = JudgeConfig(_env_file=None)
+
+        assert config.max_tokens == 4096
 
     def test_nvidia_judge_disables_reasoning_for_json_output(self) -> None:
         from verity.config import Provider, Settings

@@ -9,6 +9,7 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    record_semantic_metric,
     smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
@@ -51,8 +52,27 @@ def _score(
         actual_output=response.answer,
         expected_output=case.ground_truth,
     )
-    metric.measure(tc)
-    return float(metric.score), response, chunks
+    try:
+        metric.measure(tc)
+    except Exception as exc:
+        record_semantic_metric(
+            case,
+            metric="task_completion",
+            threshold=THRESHOLD_COMPLETENESS,
+            judge_model=judge.model_name,
+            error=exc,
+        )
+        raise
+    score = float(metric.score)
+    record_semantic_metric(
+        case,
+        metric="task_completion",
+        threshold=THRESHOLD_COMPLETENESS,
+        judge_model=judge.model_name,
+        score=score,
+        reason=getattr(metric, "reason", None),
+    )
+    return score, response, chunks
 
 
 @pytest.mark.parametrize("case", smoke_params(_CLEAN, {"ctrl-silver-deductible-exact-boundary"}))

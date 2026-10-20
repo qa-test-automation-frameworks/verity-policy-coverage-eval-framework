@@ -72,6 +72,8 @@ class TestSettings:
         assert s.model == "openai/gpt-4o-mini"
         assert s.temperature == 0.0
         assert s.semantic_samples == 1
+        assert s.max_tool_rounds == 3
+        assert s.max_tool_calls == 6
         assert s.retrieval.chunk_size == 160
         assert s.retrieval.chunk_overlap == 30
         assert s.retrieval.top_k == 3
@@ -83,6 +85,19 @@ class TestSettings:
     def test_invalid_semantic_samples_raises(self) -> None:
         with pytest.raises(ValueError):
             Settings(semantic_samples=0)
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("max_tool_rounds", 0),
+            ("max_tool_rounds", 9),
+            ("max_tool_calls", 0),
+            ("max_tool_calls", 25),
+        ],
+    )
+    def test_tool_loop_budgets_are_bounded(self, field: str, value: int) -> None:
+        with pytest.raises(ValueError):
+            Settings(_env_file=None, **{field: value})
 
     def test_semantic_samples_env_is_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
         import warnings
