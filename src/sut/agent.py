@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from sut.auth import member_token_valid
 from sut.citations import resolve_citations
@@ -422,9 +422,9 @@ class CoverageAgent:
         try:
             args: dict[str, Any] = json.loads(tc.function.arguments)
         except json.JSONDecodeError:
-            logger.exception("Malformed tool-call arguments for %s", fn_name)
+            logger.warning("Malformed JSON arguments for %s", fn_name)
             return self._safe_failure_response(
-                category="tool_unavailable",
+                category="invalid_tool_arguments",
                 start_index=start_index,
                 tool_invocations=tool_invocations,
                 trace_id=trace_id,
@@ -433,6 +433,22 @@ class CoverageAgent:
         with traced("tool.coverage_calculator"):
             try:
                 tool_result = run_coverage_calculator(args)
+            except ValidationError as exc:
+                error_types = sorted(
+                    {str(error["type"]) for error in exc.errors(include_input=False)}
+                )
+                details = ", ".join(error_types) or "schema_validation"
+                logger.warning(
+                    "Rejected invalid arguments for %s (validation errors: %s)",
+                    fn_name,
+                    details,
+                )
+                return self._safe_failure_response(
+                    category="invalid_tool_arguments",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
             except Exception:
                 logger.exception("Coverage tool call failed")
                 return self._safe_failure_response(
