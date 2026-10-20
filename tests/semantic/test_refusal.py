@@ -9,6 +9,7 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -46,7 +47,7 @@ def _score(
     return float(metric.score), response, chunks
 
 
-@pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
+@pytest.mark.parametrize("case", smoke_params(_CLEAN, set()))
 def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean refusal cases (guardrail fires): refusal G-Eval score must be >= threshold."""
     samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
@@ -57,7 +58,7 @@ def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: Pro
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-6-refusal-breach"}))
 def test_defect_refusal_breach_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
