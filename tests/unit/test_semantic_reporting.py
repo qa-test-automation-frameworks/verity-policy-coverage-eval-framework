@@ -10,6 +10,7 @@ from verity.semantic_reporting import (
     failure_reason,
     faithfulness_sut_failure_message,
     redact_failure_text,
+    semantic_sut_failure_message,
 )
 
 
@@ -27,6 +28,23 @@ def test_faithfulness_failure_message_preserves_real_failure_category() -> None:
         "System-under-test request failed (provider_unavailable); "
         "faithfulness score is unavailable for 'control-case'."
     )
+
+
+def test_semantic_failure_message_reports_sut_failure_before_scoring() -> None:
+    assert semantic_sut_failure_message("case-1", "empty_final_answer", "safe fallback") == (
+        "System-under-test request failed (empty_final_answer); "
+        "semantic score is unavailable for 'case-1'."
+    )
+
+
+def test_semantic_failure_message_rejects_empty_success_response() -> None:
+    assert semantic_sut_failure_message("case-1", "", "  \n") == (
+        "System-under-test returned an empty answer; semantic score is unavailable for 'case-1'."
+    )
+
+
+def test_semantic_failure_message_accepts_successful_response() -> None:
+    assert semantic_sut_failure_message("case-1", "", "Coverage details") is None
 
 
 def test_failure_text_redacts_common_secret_shapes(monkeypatch) -> None:

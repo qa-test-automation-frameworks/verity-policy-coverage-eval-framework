@@ -27,6 +27,23 @@ def faithfulness_sut_failure_message(case_id: str, failure_category: str | None)
     )
 
 
+def semantic_sut_failure_message(
+    case_id: str, failure_category: str | None, answer: str
+) -> str | None:
+    """Describe an SUT failure before passing its response to a semantic judge."""
+    if failure_category:
+        return (
+            f"System-under-test request failed ({failure_category}); "
+            f"semantic score is unavailable for {case_id!r}."
+        )
+    if not answer.strip():
+        return (
+            "System-under-test returned an empty answer; "
+            f"semantic score is unavailable for {case_id!r}."
+        )
+    return None
+
+
 def redact_failure_text(value: str) -> str:
     """Redact common credential forms and configured API-key values."""
     redacted = value
