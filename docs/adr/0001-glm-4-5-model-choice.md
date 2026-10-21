@@ -61,11 +61,14 @@ API key — no code change.
 Tier-3 tests pin GLM-4.5 internally regardless of this setting. However, at
 the time of this amendment the live Tier-2 route to GLM-4.5 (via both Z.ai
 and NVIDIA NIM) had not been successfully exercised end-to-end — see the
-Limitations section of `README.md` and `docs/calibration-report.md` for the
-specific errors hit. The committed live Tier-2 evidence and calibration
-report both use `VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini`
-instead, which is currently the only provider/model combination with a
-verified, reproducible live run in this repo.
+Limitations section of `README.md` for the specific errors hit. At the time,
+the committed live Tier-2 evidence and calibration report both used
+`VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini`. The dated live
+calibration report is now preserved at
+`reports/calibration/archive/live-2026-07-02/calibration-report.md`; the current
+`docs/calibration-report.md` is a synthetic authored-score replay. The historical
+live evidence remains useful context, but its report files do not retain a native
+run ID, so they do not establish a current, reproducible run.
 
 Anyone re-validating the default should run `make eval-semantic` and
 `make calibrate-live` with a working GLM-4.5 key and, if it succeeds,
@@ -73,14 +76,13 @@ update `docs/calibration-report.md` and `docs/defects-caught.md` in place;
 if it does not, capture the failure mode here rather than silently
 substituting a different model.
 
-## Amendment (2026-07-02, later): default switched to the live-verified pairing
+## Amendment (2026-07-02, later): default switched to the historically live-tested pairing
 
 `Settings.provider`/`Settings.model` (and the matching `JudgeConfig.model`)
 now default to `openrouter` / `openai/gpt-4o-mini` — the pairing described in
-the amendment above as "currently the only provider/model combination with a
-verified, reproducible live run in this repo." Shipping a default that had
-never been exercised live was the concern; the default now matches the
-committed evidence instead. `zai`/`glm-4.5` remains fully supported and is
+the amendment above as having historical live evidence in this repo. Shipping
+a default that had never been exercised live was the concern; this choice
+matched the evidence available on 2026-07-02. `zai`/`glm-4.5` remains fully supported and is
 what the hermetic Tier-1/Tier-3 suites pin internally regardless of this
 setting — set `VERITY_PROVIDER=zai` and `VERITY_MODEL=glm-4.5` in `.env` to
 use it for live runs once a working key is available, and flip the default

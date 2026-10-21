@@ -30,14 +30,18 @@ Implement a **judge calibration suite** in `verity/calibration.py` with:
   relative to how it scores other-family outputs.
 - **Hermetic replay**: 32 authored cassettes in `datasets/calibration/cassettes/`
   allow `make calibrate` to run the full suite with zero API calls.
-- **Committed report** at `docs/calibration-report.md` (mirrors the cassette-report
-  precedent of `docs/defects-caught.md`).
+- **Historical live report** is preserved at
+  `reports/calibration/archive/live-2026-07-02/calibration-report.md` with its 32-case
+  dataset and provider-response cassettes. `docs/calibration-report.md` now holds a later
+  synthetic authored-score replay and is not the live report.
 
-### Live Calibration Results (committed report)
+### Historical Live Calibration Results (2026-07-02)
 
 Measured 2026-07-02 with `VERITY_JUDGE_PROVIDER=openrouter VERITY_JUDGE_MODEL=openai/gpt-4o-mini`
 (GLM-4.5 was this ADR's original context and remains fully supported; this pairing is now the
-`JudgeConfig` default — see `docs/calibration-report.md`, `docs/adr/0001-glm-4-5-model-choice.md`,
+`JudgeConfig` default — see the archived report at
+`reports/calibration/archive/live-2026-07-02/calibration-report.md`,
+`docs/adr/0001-glm-4-5-model-choice.md`,
 and the README Limitations section for why):
 
 | Metric | Value |
@@ -47,9 +51,10 @@ and the README Limitations section for why):
 | Per-metric MAE | 0.125 |
 | Self-preference delta | -0.037 (own family = "other", i.e. non-GLM) |
 
-These are real measurements against live judge calls, not synthetic replay — see
-`docs/calibration-report.md` for the full per-case breakdown. Cohen's kappa (0.870) and raw
-agreement (93.8%) both clear this ADR's original acceptance bar (kappa ≥ 0.60, agreement ≥ 85%).
+These are historical measurements against live judge calls, not synthetic replay — see
+the archived report for the full per-case breakdown. The native run ID was not retained.
+Cohen's kappa (0.870) and raw agreement (93.8%) clear this ADR's original acceptance bar
+(kappa ≥ 0.60, agreement ≥ 85%).
 This calibration path uses the shared rubric text through `verity.calibration.build_scoring_prompt()`;
 Tier-2 DeepEval and RAGAS adapters wrap similar rubric intent in their own runtime prompt and
 score-extraction paths, so adapter-level calibration remains a separate validation step.

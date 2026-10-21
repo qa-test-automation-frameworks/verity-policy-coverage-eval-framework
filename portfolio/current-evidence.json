@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": {
+    "sourceSha": "4f1376be5e6a53be223e611a3072acca9d640b34",
+    "sourcePath": "."
+  },
+  "datasets": {
+    "golden": {
+      "path": "datasets/golden",
+      "version": "1.0.0",
+      "versionReason": null,
+      "count": 69,
+      "sha256": "ec79360e2a25b3cac01eca5c7ac411f6c72ddc26715cb703e9dec045b0eedc7e",
+      "hashAlgorithm": "sha256-path-nul-content-nul-v1"
+    },
+    "calibration": {
+      "path": "datasets/calibration/labeled.yaml",
+      "version": null,
+      "versionReason": "labeled.yaml has no explicit dataset version field",
+      "count": 56,
+      "sha256": "c72cf4dc02065f0e80b7832c645fa25fe7dbf78544d247cb86a156e067f18474",
+      "hashAlgorithm": "sha256-file-v1"
+    },
+    "historicalLiveCalibration": {
+      "path": "reports/calibration/archive/live-2026-07-02/labeled.yaml",
+      "version": null,
+      "versionReason": "the archived 32-case snapshot has no explicit dataset version field",
+      "count": 32,
+      "sha256": "ee1c37b6aed41e07f9f19444c9a3539f41a696430d379bb6e624533363c8bd47",
+      "hashAlgorithm": "sha256-file-v1"
+    }
+  },
+  "evaluationModes": {
+    "synthetic-replay": {
+      "status": "synthetic-demonstration",
+      "run": {
+        "id": null,
+        "reason": "The report replays hand-authored judge-score cassettes; no live provider run occurred."
+      },
+      "model": {
+        "value": null,
+        "source": null,
+        "reason": "The report model label describes the cassette configuration, not a measured live judge."
+      },
+      "judge": {
+        "value": null,
+        "source": null,
+        "reason": "Judge scores were hand-authored and replayed from cassettes."
+      },
+      "report": {
+        "path": "docs/calibration-report.md",
+        "sha256": "82c3e806a1a3813ff3f49fd2b94563c8408c38791292fcddf8c91b0de5e41857",
+        "date": "2026-07-04",
+        "dateReason": null,
+        "pathReason": null
+      },
+      "dataset": "calibration",
+      "datasetReason": null,
+      "nativeControlArtifacts": [],
+      "nativeControlArtifactsReason": "The synthetic report is the consolidated demonstration; its score inputs are authored fixtures, not native controls.",
+      "calibrationScope": "56 authored-score cases across seven rubric metrics; agreement statistics and self-bias calculations demonstrate report methodology only.",
+      "limitations": [
+        "The report is synthetic and is not a live judge-performance measurement.",
+        "Its rubric prompt path does not establish end-to-end DeepEval or RAGAS runtime-adapter calibration.",
+        "The report model label openai/glm-4.5 is not a measured judge identity for this replay."
+      ],
+      "summary": "The 2026-07-04 report replays 56 hand-authored cases across seven metrics; it demonstrates methodology and is not live calibration."
+    },
+    "live-rubric": {
+      "status": "incomplete-provenance",
+      "run": {
+        "id": null,
+        "reason": "The retained report and cassette files do not contain a native run/request ID; the archived source is Git commit 6ff151597aa7536ab49d140e4787dfd69ff2d49c."
+      },
+      "model": {
+        "value": "openrouter/openai/gpt-4o-mini",
+        "source": "reports/calibration/archive/live-2026-07-02/calibration-report.md",
+        "reason": null
+      },
+      "judge": {
+        "value": "openrouter/openai/gpt-4o-mini",
+        "source": "reports/calibration/archive/live-2026-07-02/calibration-report.md",
+        "reason": null
+      },
+      "report": {
+        "path": "reports/calibration/archive/live-2026-07-02/calibration-report.md",
+        "sha256": "54f10cce56cae178ba169d2c027a5ab3b813d2d9cc8f129949093c5dfc6311b4",
+        "date": "2026-07-02",
+        "dateReason": null,
+        "pathReason": null
+      },
+      "dataset": "historicalLiveCalibration",
+      "datasetReason": null,
+      "nativeControlArtifacts": [
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/00239f62eb2bdd6023e3d72b5479e613.json",
+          "sha256": "735194d5c2eb831a392423737b6fc33dbbeb497da6ab53e610d1e819077ef76d"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/076430e2018cd501b2b739670c23f6ce.json",
+          "sha256": "ccf50397c74e870f45d2a77b36390eb29be2f5995f0be36f1534739d41e66867"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/0e38a86337c7ef824b36421286aa59f7.json",
+          "sha256": "3ed37564c13f2961fd800c3e7c5660706f487e6f211da9c188a3ffc14202df19"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/131ca2e0e3488a3b9a8c714fc4b75541.json",
+          "sha256": "110a78a6300275839e017fe1cc442bf427b3115957743cad9892653037186764"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/2a352050069349f160bf4e04a19ed73b.json",
+          "sha256": "0ab56cdc057f31ddbb94233084731af57cb630f33b4f5f826d95274447d7df28"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/2ec224837c580fce54e82630ca46ac85.json",
+          "sha256": "a01e14439fd6dea7af6a40f4b05a2ecda78ce16eed455df2d89b10bc868adde2"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/3c82689b524fb1d4f59907cd7edca650.json",
+          "sha256": "0b268d8a891c267d1fdd01453fd85dd1b3275a188df583719b116a4c2c8489fa"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/544ef7626f27010b3dd70f9459313f6e.json",
+          "sha256": "dab6838a2500243f7e008fffa719ece6e09c967b1098027f9bfba916dcbe0fd8"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/5f247364f30169cd3512dd76b4213fde.json",
+          "sha256": "4e1f9882abc691c15a8ee4f44c8687d5253cdb9499e7a056ed42064a2ab77f86"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/60a721ae48f568cf5c57597327abc872.json",
+          "sha256": "7dc7cddc9ecdd925807186c660eb08596c31ebcf200ce1809530bd38675e18d5"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/62590004f2a83ad8dd8fb9f04530a3d9.json",
+          "sha256": "215b2c904425c96d0050b9d5b043ef4a994cb67490b36048528c22fb0febb1e1"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/642ebdff286da8c0691644263d061ec0.json",
+          "sha256": "12624aa549c19375f5ac7842687cdcf044a116ed9b0e29e9fc8956e20de4caf7"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/6479ed27d87992c0244a8204c6d30a36.json",
+          "sha256": "19aa32d83d1c7b51645dba4d8060f2faefc411f30fecb057608ec76c08521e8d"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/67774241c511d068ca612233f2e0b5b5.json",
+          "sha256": "15db1f3eac6fe42db437acecf1c18bcaefb57180b57d86e548e7bffa1f9fd4bc"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/6fc96c94c328acef14e01ea45b53a6b2.json",
+          "sha256": "d717337db130dd268bbf5a2814340740c8816d0adc18fcfb33eead68b38a454c"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/734ba82adbe1c3d610e20a2f954b9cda.json",
+          "sha256": "f5b02ec08aba6326ad23e76182a4f5570a1c0acb1b600fac01d27dcbc0e53eab"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/75eb4d1ed946794f80fba08319146256.json",
+          "sha256": "8251922471542863021084ab0a71e958738da8319c64c59cff875c9843153e7a"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/7982072f0c44a34bb121abb70ed9b6ce.json",
+          "sha256": "4875612681df4dc704f2e9e863c7d7f3af619e0e5ddffe8c063a2df50c57ed70"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/90bc475a7a50e5debeb1f321198f030b.json",
+          "sha256": "28f630702459446ca98a0fe49b280a8250ee7f9063c7a86562ac54211c1e10e4"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/9af3d9b3f601604f4c574d9d5b8e2e4d.json",
+          "sha256": "c3e3fa2bbe9ec940764be3f7156e30db8c1f08c8b8f1d3a2dcb7b80b41ed33ed"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/a1f50e7adb3ff47e71663aa9452edec4.json",
+          "sha256": "4e1f9882abc691c15a8ee4f44c8687d5253cdb9499e7a056ed42064a2ab77f86"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/b8ae43a13200d990eb70e1222a5542be.json",
+          "sha256": "6e6a65efb8542c1b2945cffe3834e47d05aa317788089f0c7c5418a5f173a8f4"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/bdfc8e9f0c964f82d2093b9e5f27f118.json",
+          "sha256": "65b8f36de0f135aa40d5479398d86b97e459545c0a158c7d95eee1afe55fc3ed"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/c34e9efbabff4503c144e3a5b8318f8e.json",
+          "sha256": "b6bb03bd0a789469dffa923fd4657405e9d0f9f7b8fa9f91c516deaece0de318"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/d14643f9e87b98be209d9b34d9f7fd86.json",
+          "sha256": "deff83ef5d304454620715946348959dfff726aa81d0e9cc459db9f16fa866bf"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/d47138ac74aa431ad8cdf09052c2b686.json",
+          "sha256": "85176f927aeecb8f3f1de89b8d4875cca59dd395de3b7d20c481dd4be1a0e73b"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/d494b7bc756fd3ffd32ed5d8a02de501.json",
+          "sha256": "66ffccded6ada0064b2b2c396cf3955965a90468d1d5092a36ef0d7e7fb79c1c"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/d5130a904594f124e6adc7a810a3d723.json",
+          "sha256": "3836395a688ed9512c0662811ebc6e17054dd6ebe4c3c6a1d9ef40c5f6b4c446"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/e25e017a1224ece43a12f62d8ee2b0dc.json",
+          "sha256": "e90b9e5409f1fe6176964728c56d3fbc7cf7e8559c25cb1db6f368dde7f219f0"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/e42f0cd9a7c6d6b1eba5904814913678.json",
+          "sha256": "def302cecc514ef7462be5a82a04436d962e885b4e98ddc1f97878a7c5fbaf5c"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/e5e2e90e05605eb52ab5079d73eeac13.json",
+          "sha256": "069ffe42c39cbdeab0291a4d81e15a586f857826f665a09e244902a9b39e61ba"
+        },
+        {
+          "path": "reports/calibration/archive/live-2026-07-02/cassettes/f134a2b900a49db69c926ad270ea78c5.json",
+          "sha256": "1e05bee432aa361561f28e6ba933487642fc6677867f727319eae133e44dc068"
+        }
+      ],
+      "nativeControlArtifactsReason": null,
+      "calibrationScope": "Historical live rubric/judge agreement on 32 cases across four metrics; the report records overall agreement 93.8%, kappa 0.870, and faithfulness agreement 75% with MAE 0.238.",
+      "limitations": [
+        "The dated report and 32 provider-response cassettes are preserved, but the native run/request ID was not retained.",
+        "This is historical rubric-prompt evidence; it does not calibrate current DeepEval or RAGAS runtime adapters.",
+        "It used a 32-case snapshot and does not cover the three metrics added later.",
+        "The archived Markdown replaces source hard-break trailing spaces with backslash line breaks; the source report remains recoverable at Git commit 6ff151597aa7536ab49d140e4787dfd69ff2d49c."
+      ],
+      "summary": "The archived 2026-07-02 report records 32 live rubric cases with openrouter/openai/gpt-4o-mini; it reports 75% faithfulness agreement and MAE 0.238. The native run ID was not retained."
+    },
+    "live-runtime-adapter": {
+      "status": "incomplete-provenance",
+      "run": {
+        "id": null,
+        "reason": "reports/semantic/results.json has no run ID or timestamp metadata; the Git commit time is not treated as execution time."
+      },
+      "model": {
+        "value": "openrouter/openai/gpt-4o-mini",
+        "source": "docs/thresholds.md, Committed live run section",
+        "reason": null
+      },
+      "judge": {
+        "value": "openrouter/openai/gpt-4o-mini",
+        "source": "docs/thresholds.md, Committed live run section",
+        "reason": null
+      },
+      "report": {
+        "path": "reports/semantic/results.json",
+        "sha256": "01b54dc80cc79e9bca8e286273c34e9cd82856e09d102a34660f1535405ed4a8",
+        "date": null,
+        "dateReason": "The JSON report contains no timestamp; its file-history date does not prove execution time.",
+        "pathReason": null
+      },
+      "dataset": null,
+      "datasetReason": "The report contains test node names and outcomes but no versioned dataset identity or dataset hash.",
+      "nativeControlArtifacts": [
+        {
+          "path": "reports/semantic/results.json",
+          "sha256": "01b54dc80cc79e9bca8e286273c34e9cd82856e09d102a34660f1535405ed4a8"
+        }
+      ],
+      "nativeControlArtifactsReason": null,
+      "calibrationScope": "The retained artifact has 56 test-node outcomes (46 passed, 10 failed), 14 metric measurements, and 40 control nodes (30 passed, 10 failed). It records semantic adapter execution outcomes, not judge-label agreement.",
+      "limitations": [
+        "Run identity and execution date are absent from the JSON artifact.",
+        "Model and judge pairing are sourced from docs/thresholds.md, not embedded in the artifact.",
+        "The result does not establish calibration agreement or a current run."
+      ],
+      "summary": "The retained semantic report shows 56 outcomes (46 passed, 10 failed) and 14 measurements, including 40 controls (30 passed, 10 failed); its run ID and execution date are missing."
+    }
+  },
+  "hallucinationPolarity": {
+    "runtimeMetric": {
+      "name": "deepeval_hallucination_score",
+      "polarity": "lower_is_better"
+    },
+    "calibrationMetric": {
+      "name": "hallucination_groundedness",
+      "polarity": "higher_is_better",
+      "sourceDatasetLabel": "hallucination"
+    }
+  },
+  "requiredEvidenceHeaders": [
+    {
+      "path": "docs/capability-status.md",
+      "header": "# Capability Status"
+    },
+    {
+      "path": "docs/calibration-report.md",
+      "header": "## Agreement with Human Labels"
+    },
+    {
+      "path": "reports/calibration/archive/live-2026-07-02/calibration-report.md",
+      "header": "## Agreement with Human Labels"
+    },
+    {
+      "path": "docs/thresholds.md",
+      "header": "## Committed live run: control-case failures"
+    }
+  ]
+}
