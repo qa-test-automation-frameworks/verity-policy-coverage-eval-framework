@@ -77,9 +77,13 @@ A 401/403/429, provider outage, invalid score, missing usage, truncation or
 nonzero cost if supplied stops the run and retains prior attempts.
 
 Default bounds: seven calls at most; 2,048 output tokens per call and 14,336 per
-run; 16,000 input UTF-8 bytes per call; 45-second timeout; at least 3.1 seconds
-between calls. Smaller remaining output budgets reduce the next request's
-`max_tokens`. Actual input/output token use is recorded; the input bound is
+run; 16,000 input UTF-8 bytes per call; 45-second timeout; at least 12.1 seconds
+between calls. The pacing floor reflects the latest observed 5-RPM limit for the
+selected free project; check the model's current quota before every run and use
+a longer interval if its current limit is lower. Calls from other keys in the
+same project share quota and can still cause a 429. Smaller remaining output
+budgets reduce the next request's `max_tokens`. Actual input/output token use is
+recorded; the input bound is
 explicitly bytes, not an asserted exact token count. No local proxy can enforce
 a zero-dollar invoice on a paid Gemini project; disabled billing is the control.
 

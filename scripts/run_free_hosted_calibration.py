@@ -33,6 +33,8 @@ from verity.config import JudgeConfig, Provider, Settings  # noqa: E402
 from verity.providers import LLMProvider  # noqa: E402
 
 DEFAULT_MODEL = "gemini-3.8-flash"
+MIN_INTERVAL_SECONDS = 12.1
+DEFAULT_INTERVAL_SECONDS = 12.1
 CATALOGUE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 # Standard-tier text pricing was rechecked on 2026-10-19. Availability checks
 # do NOT reveal the project billing plan; the operator separately attests it.
@@ -246,15 +248,23 @@ def main() -> int:
         "--max-tokens", type=int, default=2048, help="Output tokens per call, 1..4096"
     )
     parser.add_argument("--total-output-tokens", type=int, default=14336)
-    parser.add_argument("--interval", type=float, default=3.1, help="Seconds between calls, >=3")
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=DEFAULT_INTERVAL_SECONDS,
+        help="Seconds between calls, >=12.1 for the currently observed 5-RPM free quota",
+    )
     parser.add_argument("--out", type=Path, default=_ROOT / "reports/free-hosted")
     args = parser.parse_args()
     if (
         not 1 <= args.max_tokens <= 4096
         or not 1 <= args.total_output_tokens <= 28672
-        or not 3 <= args.interval <= 60
+        or not MIN_INTERVAL_SECONDS <= args.interval <= 60
     ):
-        parser.error("Per-call tokens: 1..4096; total output: 1..28672; interval: 3..60 seconds")
+        parser.error(
+            "Per-call tokens: 1..4096; total output: 1..28672; "
+            "interval: 12.1..60 seconds for the currently observed 5-RPM free quota"
+        )
     if args.heldout_study:
         if not args.live or args.heldout_dataset is None:
             parser.error("--heldout-study requires --live and --heldout-dataset")

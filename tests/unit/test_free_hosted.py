@@ -78,6 +78,29 @@ def test_live_mode_without_git_or_build_revision_stops_before_network(tmp_path, 
     assert "source commit" in receipt["stop_reason"]
 
 
+def test_cli_rejects_interval_below_observed_five_rpm_floor(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "free-hosted",
+            "--live",
+            "--confirm-free-project",
+            "--interval",
+            "3.1",
+            "--out",
+            str(tmp_path),
+        ],
+    )
+    with (
+        patch("scripts.run_free_hosted_calibration.httpx.get") as get,
+        pytest.raises(SystemExit) as exc_info,
+    ):
+        main()
+    assert exc_info.value.code == 2
+    get.assert_not_called()
+
+
 def test_actual_gemini_http_body_has_generation_bounds_and_no_paid_tools(monkeypatch):
     sent = []
 

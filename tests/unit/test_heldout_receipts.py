@@ -79,7 +79,7 @@ def make_receipt(
             "output_tokens_per_call": 2048,
             "output_tokens_per_run": 14336,
             "input_bytes_per_call": 16000,
-            "interval_seconds": 3.1,
+            "interval_seconds": 12.1,
             "retries": 0,
         },
         "start_index": start_index,
@@ -154,6 +154,54 @@ class HeldoutReceiptTests(unittest.TestCase):
             self.assertEqual(len(index["missing_case_ids"]), 50)
             self.assertFalse(scores_path.exists())
             self.assertTrue(index_path.exists())
+
+    def test_legacy_failed_only_receipt_is_preserved_without_accepting_its_scores(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            dataset = root / "heldout.yaml"
+            cases = create_dataset(dataset)
+            receipt_dir = root / "receipts"
+            receipt_dir.mkdir()
+            dataset_hash = hashlib.sha256(dataset.read_bytes()).hexdigest()
+            ids = [case["randomized_case_id"] for case in cases[:7]]
+            receipt_path = receipt_dir / "heldout-legacy-failed.json"
+            make_receipt(
+                receipt_path,
+                ids,
+                dataset_hash,
+                start_index=0,
+                status="failed",
+                failed_case_ids=set(ids),
+            )
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt["limits"]["interval_seconds"] = 3.1
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+            rows, index = reconcile_receipts(dataset, receipt_dir)
+
+            self.assertEqual(rows, [])
+            self.assertEqual(index["status"], "incomplete")
+            self.assertEqual(index["successful_case_count"], 0)
+            self.assertEqual(index["receipt_count"], 1)
+            self.assertEqual(len(index["receipts"][0]["attempts"]), 7)
+
+    def test_legacy_receipt_with_a_score_is_rejected_under_current_pacing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            dataset = root / "heldout.yaml"
+            cases = create_dataset(dataset)
+            receipt_dir = root / "receipts"
+            receipt_dir.mkdir()
+            dataset_hash = hashlib.sha256(dataset.read_bytes()).hexdigest()
+            ids = [case["randomized_case_id"] for case in cases[:7]]
+            receipt_path = receipt_dir / "heldout-too-fast.json"
+            make_receipt(receipt_path, ids, dataset_hash, start_index=0)
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt["limits"]["interval_seconds"] = 3.1
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "request bounds are absent"):
+                reconcile_receipts(dataset, receipt_dir)
 
     def test_duplicate_success_for_case_marks_run_incomplete(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

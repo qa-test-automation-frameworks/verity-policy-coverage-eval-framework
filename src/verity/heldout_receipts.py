@@ -13,6 +13,9 @@ from typing import Any
 from verity.calibration import load_heldout_calibration
 from verity.heldout_analysis import PLAN_ID, sha256_file
 
+MIN_INTERVAL_SECONDS = 12.1
+LEGACY_MIN_INTERVAL_SECONDS = 3.1
+
 
 def reconcile_receipts(
     dataset_path: Path, receipt_dir: Path
@@ -58,6 +61,19 @@ def reconcile_receipts(
         if receipt.get("billing_plan_verified_by_api") is not False:
             raise ValueError(f"{path}: unexpected billing-plan verification claim")
         limits = receipt.get("limits")
+        attempts = receipt.get("attempts")
+        if not isinstance(attempts, list):
+            raise ValueError(f"{path}: attempts must be a list")
+        has_success = any(
+            isinstance(attempt, dict) and attempt.get("status") == "success" for attempt in attempts
+        )
+        interval = limits.get("interval_seconds", 0) if isinstance(limits, dict) else 0
+        legacy_failure_only = (
+            receipt.get("status") == "failed"
+            and not has_success
+            and isinstance(interval, (int, float))
+            and LEGACY_MIN_INTERVAL_SECONDS <= interval < MIN_INTERVAL_SECONDS
+        )
         if (
             not isinstance(limits, dict)
             or limits.get("spend_usd") != 0
@@ -65,17 +81,13 @@ def reconcile_receipts(
             or limits.get("output_tokens_per_call") != 2048
             or limits.get("output_tokens_per_run") != 14336
             or limits.get("input_bytes_per_call") != 16000
-            or limits.get("interval_seconds", 0) < 3.1
+            or not isinstance(interval, (int, float))
+            or not math.isfinite(interval)
+            or (interval < MIN_INTERVAL_SECONDS and not legacy_failure_only)
             or limits.get("retries") != 0
         ):
             raise ValueError(f"{path}: frozen zero-spend request bounds are absent")
-        attempts = receipt.get("attempts")
-        if not isinstance(attempts, list):
-            raise ValueError(f"{path}: attempts must be a list")
         generation_config = receipt.get("generation_config")
-        has_success = any(
-            isinstance(attempt, dict) and attempt.get("status") == "success" for attempt in attempts
-        )
         if has_success and generation_config != {
             "temperature": 1.0,
             "reasoning_effort": "low",
