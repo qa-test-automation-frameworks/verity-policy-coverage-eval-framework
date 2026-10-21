@@ -184,15 +184,21 @@ runner = "python -m pytest -x -q"
 constraint-dependencies = [
     "aiohttp>=3.14.3",
     "anyio>=4.14.2",
+    "certifi>=2026.10.19",
     "datasets>=5.0.1",
     "fsspec>=2026.6.0",
     "langgraph-sdk>=0.4.4",
     "litellm>=1.106.0",
     "multidict>=6.9.1",
     "oauthlib>=4.0.0",
-    "pillow>=12.3.0",
+    "pillow>=13.0.0,<14",
     "pip>=26.2",
     "setuptools>=83.0.0",
     "urllib3>=2.8.0",
     "virtualenv>=21.7.13",
 ]
+# FastEmbed 0.9 caps Pillow below 13 for its image-embedding path. This
+# application only uses TextEmbedding, and the installed package has no Pillow
+# imports; override the cap for the security-fixed 13.x line until upstream
+# updates its metadata. Keep the override below the next major pending review.
+override-dependencies = ["pillow>=13.0.0,<14"]
