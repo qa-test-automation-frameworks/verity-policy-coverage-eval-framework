@@ -635,6 +635,11 @@ class CoverageAgent:
         # accumulator's lifetime total across every request it has ever served.
         start_index = len(self._llm_provider.accumulator.records)
 
+        if not member_id:
+            return self._safe_failure_response(
+                category="member_auth_required", start_index=start_index
+            )
+
         if not member_token_valid(
             member_id,
             member_token,

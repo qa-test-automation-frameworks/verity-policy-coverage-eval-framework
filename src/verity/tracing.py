@@ -23,10 +23,13 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import hmac
 import json
 import logging
 import os
+import secrets
 import sys
+import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -40,6 +43,45 @@ if TYPE_CHECKING:
 
 _ENABLED: bool = os.environ.get("VERITY_TRACING", "0").lower() not in ("0", "false", "")
 _TRACER: Any = None
+_IDENTIFIER_HMAC_KEY: bytes | None = None
+_IDENTIFIER_KEY_PID: int | None = None
+_IDENTIFIER_KEY_LOCK = threading.Lock()
+
+
+def _initialize_identifier_hmac_key(key: bytes | None = None) -> None:
+    """Start a trace run with a fresh process-local identifier pseudonym key."""
+    if key is not None and len(key) != 32:
+        raise ValueError("identifier HMAC key must be exactly 32 bytes")
+
+    global _IDENTIFIER_HMAC_KEY, _IDENTIFIER_KEY_PID
+    with _IDENTIFIER_KEY_LOCK:
+        _IDENTIFIER_HMAC_KEY = key if key is not None else secrets.token_bytes(32)
+        _IDENTIFIER_KEY_PID = os.getpid()
+
+
+def _reset_identifier_key_after_fork() -> None:
+    """Give a forked child its own lock and privacy scope."""
+    global _IDENTIFIER_HMAC_KEY, _IDENTIFIER_KEY_LOCK, _IDENTIFIER_KEY_PID
+    _IDENTIFIER_KEY_LOCK = threading.Lock()
+    _IDENTIFIER_HMAC_KEY = secrets.token_bytes(32)
+    _IDENTIFIER_KEY_PID = os.getpid()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_identifier_key_after_fork)
+
+
+def _identifier_hmac_key() -> bytes:
+    """Return the current process key, creating a new scope after a fork."""
+    global _IDENTIFIER_HMAC_KEY, _IDENTIFIER_KEY_PID
+    process_id = os.getpid()
+    with _IDENTIFIER_KEY_LOCK:
+        key = _IDENTIFIER_HMAC_KEY
+        if key is None or process_id != _IDENTIFIER_KEY_PID:
+            key = secrets.token_bytes(32)
+            _IDENTIFIER_HMAC_KEY = key
+            _IDENTIFIER_KEY_PID = process_id
+        return key
 
 
 def _init_file_exporter(export_dir: Path) -> Any:
@@ -76,10 +118,12 @@ def _span_to_dict(span: Any) -> dict[str, Any]:
 
 
 def init_tracing(service_name: str = "verity") -> None:
-    """Initialise the SDK TracerProvider (called once at process start)."""
+    """Initialise tracing and rotate the run-scoped identifier pseudonym key."""
     global _TRACER
     if not _ENABLED:
         return
+
+    _initialize_identifier_hmac_key()
 
     from opentelemetry import trace
     from opentelemetry.sdk.resources import Resource
@@ -119,15 +163,17 @@ def get_tracer() -> Any:
 
 
 def hash_identifier(value: str) -> str:
-    """Return a short, stable, non-reversible hash for a raw identifier.
+    """Return a run-scoped HMAC pseudonym for a non-empty raw identifier.
 
     Used to redact member IDs (and similar identifiers) before they're
     attached to exported trace spans, which may be visible to a wider
     audience than the request itself (observability backends, log
-    aggregators). The hash is deterministic within a run so spans for the
-    same member can still be correlated without exposing the raw ID.
+    aggregators). The same identifier maps consistently within one trace run;
+    each run uses a fresh in-memory key and cannot be correlated across runs.
     """
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+    if not value:
+        raise ValueError("identifier must not be empty")
+    return hmac.new(_identifier_hmac_key(), value.encode("utf-8"), hashlib.sha256).hexdigest()[:32]
 
 
 @contextmanager
