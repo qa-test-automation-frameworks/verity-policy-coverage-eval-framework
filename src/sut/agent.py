@@ -345,8 +345,8 @@ class CoverageAgent:
         and tool-result messages) so each provider request sees the complete
         conversation history. Returns an AgentResponse directly for any
         failure path (unknown tool, malformed args, tool error, invalid
-        conversation structure, provider failure, a repeated call, or an
-        exhausted round/call budget); otherwise returns the final
+        conversation structure, provider failure, an unrecoverable repeated
+        call, or an exhausted round/call budget); otherwise returns the final
         CompletionResult and the list of tool invocations made.
 
         `result` is `first_result` unchanged when no tool calls were made.
@@ -354,6 +354,7 @@ class CoverageAgent:
         result = first_result
         tool_invocations: list[ToolInvocation] = []
         seen_calls: set[tuple[str, str]] = set()
+        tool_results_by_call: dict[tuple[str, str], str] = {}
         tool_rounds = 0
 
         while result.tool_calls:
@@ -383,6 +384,7 @@ class CoverageAgent:
             messages.append(self._assistant_tool_call_message(result))
 
             round_signatures: set[tuple[str, str]] = set()
+            repeat_needs_synthesis = False
             for tc in result.tool_calls:
                 try:
                     normalized_arguments = json.dumps(
@@ -394,20 +396,32 @@ class CoverageAgent:
                     normalized_arguments = str(tc.function.arguments)
                 call_signature = (tc.function.name, normalized_arguments)
                 if call_signature in seen_calls:
+                    cached_result = tool_results_by_call.get(call_signature)
+                    if cached_result is None:
+                        logger.warning(
+                            "Repeated tool call for %s has no cached result; stopping the loop",
+                            tc.function.name,
+                        )
+                        return self._safe_failure_response(
+                            category="tool_loop_detected",
+                            start_index=start_index,
+                            tool_invocations=tool_invocations,
+                            trace_id=trace_id,
+                        )
                     logger.warning(
-                        "Repeated tool call detected for %s; stopping the tool loop",
+                        "Repeated tool call detected for %s; reusing its result for one final "
+                        "tool-free synthesis attempt",
                         tc.function.name,
                     )
-                    return self._safe_failure_response(
-                        category="tool_loop_detected",
-                        start_index=start_index,
-                        tool_invocations=tool_invocations,
-                        trace_id=trace_id,
+                    messages.append(
+                        {"role": "tool", "tool_call_id": tc.id, "content": cached_result}
                     )
+                    repeat_needs_synthesis = True
+                    continue
                 # Repeated calls in one assistant batch are not a loop: they
                 # must reach conversation validation, which checks duplicate
                 # tool-call IDs and enforces the clean-profile failure policy.
-                # Loop detection applies when a later round repeats a call.
+                # Reuse applies only when a later round repeats a call.
                 round_signatures.add(call_signature)
 
                 tool_turn = self._execute_tool_call(
@@ -420,6 +434,7 @@ class CoverageAgent:
                     return tool_turn
                 tool_invocations.append(tool_turn["invocation"])
                 messages.append(tool_turn["message"])
+                tool_results_by_call[call_signature] = tool_turn["message"]["content"]
 
             seen_calls.update(round_signatures)
             conv_check = validate_conversation(messages)
@@ -434,6 +449,45 @@ class CoverageAgent:
                     )
 
             tool_rounds += 1
+            if repeat_needs_synthesis:
+                # A repeated exact call cannot add information: the deterministic
+                # calculator result is already in the transcript. Give the model
+                # one bounded chance to explain that result, without advertising
+                # tools again. Existing call/round limits remain in force.
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "The calculator has already returned this exact result. Do not call "
+                            "a tool again. Use the result already in the conversation to give "
+                            "a concise, complete answer to the member's original question, "
+                            "without changing any values."
+                        ),
+                    }
+                )
+                try:
+                    result = self._llm_provider.complete(
+                        messages=messages,
+                        label="agent-repeat-recovery",
+                    )
+                except Exception:
+                    logger.exception("Provider call failed during repeated-tool recovery")
+                    return self._safe_failure_response(
+                        category="provider_unavailable",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+                if result.tool_calls:
+                    logger.warning("Provider requested another tool during tool-free recovery")
+                    return self._safe_failure_response(
+                        category="tool_loop_detected",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+                return result, tool_invocations
+
             try:
                 result = self._llm_provider.complete(
                     messages=messages,
