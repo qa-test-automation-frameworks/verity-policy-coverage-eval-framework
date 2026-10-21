@@ -10,9 +10,11 @@ priority over an unset dotenv file regardless of that flag.
 
 The hermetic tiers (unit, deterministic, adversarial) must produce the same
 result on every machine, independent of what a developer has configured
-locally for live runs. This fixture purges the ambient VERITY_* / legacy
-provider env vars for those tiers only, so their results depend solely on
-explicit fixture/test configuration rather than the local environment.
+locally for live runs. The shared `scripts/run_hermetic.py` launcher removes
+ambient VERITY settings and provider keys before pytest or optional SDKs are
+imported. This fixture keeps its per-test cleanup as a second boundary while
+preserving the launcher's `VERITY_DISABLE_DOTENV` switch so Pydantic settings
+cannot read a local `.env` file.
 Tests under tests/semantic and tests/live are left untouched — they are
 supposed to read the live, ambient configuration.
 """
@@ -68,6 +70,8 @@ def _isolate_hermetic_env(
         return
 
     for key in list(os.environ):
-        if key.startswith("VERITY_") or key in _LEGACY_KEYS_TO_PURGE:
+        if (
+            key.startswith("VERITY_") and key != "VERITY_DISABLE_DOTENV"
+        ) or key in _LEGACY_KEYS_TO_PURGE:
             monkeypatch.delenv(key, raising=False)
     yield

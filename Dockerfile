@@ -81,6 +81,7 @@ COPY --from=build /opt/runtime-libs/ /opt/runtime-libs/
 COPY --from=build /app/.venv/ /app/.venv/
 COPY --from=build --chown=65532:65532 /app/home/.cache/fastembed/ /app/home/.cache/fastembed/
 COPY --from=build /app/pyproject.toml ./pyproject.toml
+COPY --from=build /app/uv.lock ./uv.lock
 COPY --from=build /app/README.md ./README.md
 COPY --from=build /app/LICENSE ./LICENSE
 COPY --from=build /app/src/ ./src/
@@ -95,6 +96,7 @@ COPY --from=build /app/docs/ ./docs/
 COPY --from=build --chown=65532:65532 /app/reports/semantic/results.json ./reports/semantic/results.json
 COPY --from=build /app/Makefile ./Makefile
 
-# Default: run Tier-1 checks (no live calls, no API key)
-ENTRYPOINT ["/app/.venv/bin/python"]
+# Default: run Tier-1 checks through the same no-key, offline-after-preparation
+# launcher used by local Make targets and CI.
+ENTRYPOINT ["/app/.venv/bin/python", "/app/scripts/run_hermetic.py", "--", "/app/.venv/bin/python"]
 CMD ["-m", "pytest", "-p", "no:cacheprovider", "-m", "not live and not semantic", "--tb=short", "-q"]
