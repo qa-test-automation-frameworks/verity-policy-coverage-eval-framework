@@ -27,7 +27,7 @@ from verity.cost import RunAccumulator, reset_current_test_id, set_current_test_
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.latency import LIVE_BUDGET_MS
-from verity.providers import LLMProvider
+from verity.providers import RATE_LIMIT_STOP_THRESHOLD, LLMProvider
 from verity.reporting import (
     build_usage_report,
     render_cost_summary,
@@ -92,7 +92,9 @@ def settings() -> Settings:
     # silently change what this suite measures.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return Settings(sut_profile="seeded")
+        # Rate-limit failures must reach the shared circuit breaker without
+        # hidden SDK retries, even when a developer's .env sets VERITY_RETRIES.
+        return Settings(sut_profile="seeded", retries=0)
 
 
 @pytest.fixture(scope="session")
@@ -106,6 +108,7 @@ def golden_cases() -> list[GoldenCase]:
 
 
 _SESSION_ACCUMULATOR = RunAccumulator()
+_RATE_LIMIT_STOP_REPORTED = False
 
 
 def live_agent(settings: Settings) -> CoverageAgent:
@@ -354,6 +357,7 @@ def record_defect_measurement(
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]
 ) -> Generator[None, pytest.TestReport, None]:
+    global _RATE_LIMIT_STOP_REPORTED
     outcome = yield
     if call.when == "call":
         report = outcome.get_result()
@@ -379,6 +383,23 @@ def pytest_runtest_makereport(
                 terminal = item.config.pluginmanager.get_plugin("terminalreporter")
                 if terminal is not None:
                     terminal.write_line(f"SEMANTIC_FAILURE_JOURNAL_ERROR {item.nodeid}: {exc}")
+
+    if (
+        not os.environ.get("PYTEST_XDIST_WORKER")
+        and _SESSION_ACCUMULATOR.rate_limit_responses >= RATE_LIMIT_STOP_THRESHOLD
+    ):
+        message = (
+            "SEMANTIC_RATE_LIMIT_STOP: stopping after "
+            f"{RATE_LIMIT_STOP_THRESHOLD} provider HTTP 429 "
+            "responses; no further semantic tests will run."
+        )
+        if not getattr(item.session, "shouldfail", None):
+            item.session.shouldfail = message
+        if not _RATE_LIMIT_STOP_REPORTED:
+            terminal = item.config.pluginmanager.get_plugin("terminalreporter")
+            if terminal is not None:
+                terminal.write_line(message)
+            _RATE_LIMIT_STOP_REPORTED = True
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:

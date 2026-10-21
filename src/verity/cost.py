@@ -9,6 +9,12 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from typing import Any
 
+from verity.rate_limit import (
+    NVIDIA_RATE_LIMIT_WINDOW_SECONDS,
+    NVIDIA_REQUESTS_PER_MINUTE,
+    RollingWindowRateLimiter,
+)
+
 logger = logging.getLogger(__name__)
 _CURRENT_TEST_ID: ContextVar[str | None] = ContextVar("verity_test_id", default=None)
 
@@ -136,6 +142,7 @@ class RequestEvent:
     timestamp: float = field(default_factory=time.time)
     status: str = "started"
     latency_ms: float | None = None
+    rate_limit_wait_ms: float | None = None
     usage: Usage | None = None
     usage_reported: bool | None = None
     estimated_cost_usd: float | None = None
@@ -151,8 +158,26 @@ class RequestEvent:
 class RunAccumulator:
     records: list[CallRecord] = field(default_factory=list)
     requests: list[RequestEvent] = field(default_factory=list)
+    nvidia_rate_limiter: RollingWindowRateLimiter = field(
+        default_factory=lambda: RollingWindowRateLimiter(
+            NVIDIA_REQUESTS_PER_MINUTE, NVIDIA_RATE_LIMIT_WINDOW_SECONDS
+        ),
+        repr=False,
+        compare=False,
+    )
 
-    def begin_request(self, model: str, label: str = "", source: str = "provider") -> RequestEvent:
+    @property
+    def rate_limit_responses(self) -> int:
+        """Count provider submissions that ended with an HTTP 429 response."""
+        return sum(event.http_status == 429 for event in self.requests)
+
+    def begin_request(
+        self,
+        model: str,
+        label: str = "",
+        source: str = "provider",
+        rate_limit_wait_ms: float | None = None,
+    ) -> RequestEvent:
         """Start recording an API attempt without retaining request contents."""
         event = RequestEvent(
             request_id=uuid.uuid4().hex,
@@ -160,6 +185,7 @@ class RunAccumulator:
             label=label,
             test_id=_CURRENT_TEST_ID.get(),
             source=source,
+            rate_limit_wait_ms=rate_limit_wait_ms,
         )
         self.requests.append(event)
         return event

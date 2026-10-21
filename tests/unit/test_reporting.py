@@ -187,6 +187,17 @@ class TestUsageReport:
         assert "label=unlabeled model=fake/model source=provider status=started" in ledger
         assert "tokens=0/0/0 error=-" in ledger
 
+    def test_usage_summary_includes_nvidia_rolling_window_wait(self) -> None:
+        acc = RunAccumulator()
+        event = acc.begin_request("nvidia_nim/model", label="sut", rate_limit_wait_ms=1250.0)
+        acc.finish_request(event, latency_ms=5.0, usage=Usage(10, 5, 15))
+
+        rendered = render_usage_summary(build_usage_report(acc))
+
+        assert (
+            "NVIDIA rolling-window pacing: 1.250 seconds total wait across 1 request." in rendered
+        )
+
 
 class TestWriteStepSummary:
     def test_writes_to_local_file_when_no_env_var(

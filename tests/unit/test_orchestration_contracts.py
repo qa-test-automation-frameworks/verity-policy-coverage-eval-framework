@@ -67,17 +67,18 @@ class TestTimeoutAndRetryBudget:
         with patch(_PATCH, return_value=_mock_response()) as mock_call:
             provider.complete([{"role": "user", "content": "hi"}])
 
-        assert mock_call.call_args.kwargs["num_retries"] == 5
+        assert mock_call.call_args.kwargs["max_retries"] == 5
 
-    def test_default_timeout_and_retries_are_nonzero(self) -> None:
+    def test_default_timeout_is_nonzero_and_retries_are_disabled(self, monkeypatch) -> None:
         import warnings
 
+        monkeypatch.delenv("VERITY_RETRIES", raising=False)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            settings = Settings(provider=Provider.zai, model="glm-4.5")
+            settings = Settings(_env_file=None, provider=Provider.zai, model="glm-4.5")
 
         assert settings.timeout > 0
-        assert settings.retries >= 1
+        assert settings.retries == 0
 
 
 class TestRequestKeyIdempotency:
