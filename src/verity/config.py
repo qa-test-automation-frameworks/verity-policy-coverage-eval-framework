@@ -208,7 +208,9 @@ class Settings(BaseSettings):
     temperature: float = 0.0
     max_tokens: int = 2048
     timeout: int = 60
-    retries: int = 3
+    # Surface provider 429s immediately so the semantic-run circuit breaker can
+    # stop before the client retries rate-limited calls invisibly.
+    retries: int = 0
     semantic_samples: int = 1
 
     # Bound agentic tool use. A tool round is one assistant response followed

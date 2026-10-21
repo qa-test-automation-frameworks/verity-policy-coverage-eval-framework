@@ -12,7 +12,12 @@ import pytest
 from verity.cassettes import CassetteLibrary, CassetteMissError, CassettePayload, ReplayToolCall
 from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
-from verity.providers import CompletionResult, LLMProvider
+from verity.providers import (
+    RATE_LIMIT_STOP_THRESHOLD,
+    CompletionResult,
+    LLMProvider,
+    ProviderRateLimitCircuitOpenError,
+)
 
 
 def _mock_response(
@@ -412,3 +417,56 @@ class TestKeyFallback:
             provider.complete([{"role": "user", "content": "hi"}])
 
         mock_call.assert_called_once()
+
+
+class TestRateLimitCircuitBreaker:
+    def test_stops_after_five_429_responses_without_sending_a_sixth(
+        self, settings_no_key: Settings
+    ) -> None:
+        accumulator = RunAccumulator()
+        provider = LLMProvider(settings_no_key, accumulator)
+        rate_limit = _quota_error(429)
+
+        with patch(_PATCH, side_effect=rate_limit) as mock_call:
+            for request_number in range(1, RATE_LIMIT_STOP_THRESHOLD):
+                with pytest.raises(litellm.exceptions.APIError):
+                    provider.complete([{"role": "user", "content": f"request {request_number}"}])
+
+            with pytest.raises(ProviderRateLimitCircuitOpenError, match="opened after 5 HTTP 429"):
+                provider.complete([{"role": "user", "content": "fifth request"}])
+
+            with pytest.raises(ProviderRateLimitCircuitOpenError, match="open after 5 HTTP 429"):
+                provider.complete([{"role": "user", "content": "must not be sent"}])
+
+        assert mock_call.call_count == RATE_LIMIT_STOP_THRESHOLD
+        assert accumulator.rate_limit_responses == RATE_LIMIT_STOP_THRESHOLD
+        assert [event.http_status for event in accumulator.requests] == [
+            429
+        ] * RATE_LIMIT_STOP_THRESHOLD
+        assert all(event.status == "failed" for event in accumulator.requests)
+
+    def test_nvidia_uses_shared_rolling_limiter_and_disables_sdk_retries(self) -> None:
+        import warnings
+        from unittest.mock import MagicMock
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            settings = Settings(
+                _env_file=None,
+                provider=Provider.nvidia,
+                model="nvidia/nemotron-3.5-lightning-30b-a3b",
+                nvidia_api_key="test-key",
+                retries=3,
+            )
+        accumulator = RunAccumulator()
+        limiter = MagicMock()
+        limiter.acquire.return_value = 0.25
+        accumulator.nvidia_rate_limiter = limiter
+        provider = LLMProvider(settings, accumulator)
+
+        with patch(_PATCH, return_value=_mock_response()) as mock_call:
+            provider.complete([{"role": "user", "content": "hello"}])
+
+        limiter.acquire.assert_called_once_with()
+        assert mock_call.call_args.kwargs["max_retries"] == 0
+        assert accumulator.requests[0].rate_limit_wait_ms == 250.0

@@ -129,9 +129,16 @@ To inspect it, open the semantic workflow run in GitHub Actions and download the
 judge result, or verbosity-mode marker, keyed by test ID/case ID where applicable.
 
 The ledger counts each framework-level LiteLLM submission, including the secondary
-credential attempt when fallback is used. LiteLLM's own internal retries are not
-individually exposed by this layer and therefore do not create separate ledger rows.
-Cassette replay rows are marked `source: cassette` and represent no live API call.
+credential attempt when fallback is used. NVIDIA NIM calls are limited to 40 starts in any
+rolling 60-second window across the shared SUT/judge accumulator; each ledger row records
+the time spent waiting for a slot. NIM SDK retries are disabled so one ledger row represents
+one attempted NIM request. `VERITY_RETRIES` defaults to `0`, and semantic settings explicitly
+set it to `0` even when a developer `.env` overrides the default. Semantic runs share a
+circuit breaker across SUT and judge calls; after five recorded HTTP 429 responses, the
+current test is allowed to finish and pytest stops before starting another test. Cassette
+replay rows are marked `source: cassette` and represent no live API call. For non-NIM
+providers, explicitly enabled LiteLLM/SDK retries are not individually exposed and may make
+upstream request counts higher than ledger counts.
 
 ### Hermetic replay note
 

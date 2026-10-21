@@ -162,7 +162,8 @@ def build_usage_report(
             "credentials_or_headers_included": False,
             "count_scope": (
                 "One row per LLMProvider completion submission or cassette replay. "
-                "LiteLLM-internal transport retries are not individually exposed."
+                "NVIDIA NIM calls disable SDK retries and include rolling-window wait time; "
+                "other providers may have hidden retries if explicitly configured."
             ),
         },
         "suite": suite,
@@ -186,6 +187,9 @@ def render_usage_summary(report: dict[str, Any], *, include_tests: bool = True) 
         return f"partial {cost}; {unknown} unavailable" if unknown else cost
 
     suite = report["suite"]
+    nvidia_events = [
+        event for event in report["requests"] if event.get("rate_limit_wait_ms") is not None
+    ]
     lines = [
         "## LLM API Request & Token Usage",
         "",
@@ -203,8 +207,15 @@ def render_usage_summary(report: dict[str, Any], *, include_tests: bool = True) 
             "failures may have no usage metadata."
         ),
         "Estimated cost covers successful calls with reported usage; it is not billing data.",
-        "",
     ]
+    if nvidia_events:
+        wait_ms = sum(event["rate_limit_wait_ms"] or 0.0 for event in nvidia_events)
+        request_label = "request" if len(nvidia_events) == 1 else "requests"
+        lines.append(
+            f"NVIDIA rolling-window pacing: {wait_ms / 1000:.3f} seconds total wait "
+            f"across {len(nvidia_events)} {request_label}."
+        )
+    lines.append("")
     if include_tests and report["by_test"]:
         lines.extend(
             [
@@ -239,7 +250,8 @@ def render_request_ledger(report: dict[str, Any]) -> str:
         lines.append(
             f"{event['request_id']} test={test_id} label={event['label'] or 'unlabeled'} "
             f"model={event['model']} source={event['source']} status={event['status']} "
-            f"latency_ms={event['latency_ms']} tokens="
+            f"latency_ms={event['latency_ms']} "
+            f"pacing_wait_ms={event['rate_limit_wait_ms']} tokens="
             f"{usage.get('prompt_tokens', 0)}/{usage.get('completion_tokens', 0)}/"
             f"{usage.get('total_tokens', 0)} error={event['error_type'] or '-'}"
         )

@@ -8,6 +8,7 @@ API call. A cache miss raises CassetteMissError (fail-fast). When mode is
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -23,9 +24,16 @@ from verity.cassettes import (
     ReplayToolCall,
     request_key,
 )
-from verity.config import Settings, get_settings
+from verity.config import Provider, Settings, get_settings
 from verity.cost import CallRecord, RunAccumulator, Usage, usage_from_litellm
 from verity.tracing import record_call_span
+
+RATE_LIMIT_STOP_THRESHOLD = 5
+logger = logging.getLogger(__name__)
+
+
+class ProviderRateLimitCircuitOpenError(RuntimeError):
+    """Raised after repeated provider 429s to prevent more API submissions."""
 
 
 @dataclass
@@ -118,7 +126,9 @@ class LLMProvider:
             "temperature": temp,
             "max_tokens": max_tok,
             "timeout": s.timeout,
-            "num_retries": s.retries,
+            # NIM's rolling request limiter must observe each provider response;
+            # SDK retries could otherwise exceed the cap invisibly.
+            "max_retries": 0 if s.provider is Provider.nvidia else s.retries,
         }
         if api_base:
             kwargs["api_base"] = api_base
@@ -185,8 +195,25 @@ class LLMProvider:
 
     def _call_once(self, kwargs: dict[str, Any], label: str) -> tuple[Any, Any]:
         """Make one LiteLLM completion submission and record its safe metadata."""
+        if self._accumulator.rate_limit_responses >= RATE_LIMIT_STOP_THRESHOLD:
+            raise ProviderRateLimitCircuitOpenError(
+                f"Provider circuit is open after {RATE_LIMIT_STOP_THRESHOLD} HTTP 429 responses; "
+                "no further completion request was sent."
+            )
+        rate_limit_wait_ms: float | None = None
+        if self._settings.provider is Provider.nvidia:
+            wait_seconds = self._accumulator.nvidia_rate_limiter.acquire()
+            rate_limit_wait_ms = wait_seconds * 1000
+            if wait_seconds > 0:
+                logger.warning(
+                    "NVIDIA NIM rolling-window cap reached; delayed request by %.3f seconds",
+                    wait_seconds,
+                )
         event = self._accumulator.begin_request(
-            model=str(kwargs["model"]), label=label, source="provider"
+            model=str(kwargs["model"]),
+            label=label,
+            source="provider",
+            rate_limit_wait_ms=rate_limit_wait_ms,
         )
         start = time.monotonic()
         try:
@@ -194,6 +221,15 @@ class LLMProvider:
         except Exception as exc:
             latency_ms = (time.monotonic() - start) * 1000
             self._accumulator.finish_request(event, latency_ms=latency_ms, error=exc)
+            if (
+                event.http_status == 429
+                and self._accumulator.rate_limit_responses >= RATE_LIMIT_STOP_THRESHOLD
+            ):
+                raise ProviderRateLimitCircuitOpenError(
+                    f"Provider circuit opened after {RATE_LIMIT_STOP_THRESHOLD} HTTP 429 "
+                    "responses; "
+                    "the semantic run will stop without sending more completion requests."
+                ) from exc
             raise
 
         latency_ms = (time.monotonic() - start) * 1000
