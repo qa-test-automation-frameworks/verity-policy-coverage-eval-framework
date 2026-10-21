@@ -5,6 +5,12 @@ on:
     # Weekly: every Monday at 06:00 UTC
     - cron: "0 6 * * 1"
   workflow_dispatch:
+    inputs:
+      run_live:
+        description: Run the provider-backed red-team and calibration jobs
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   key_check:
@@ -22,7 +28,6 @@ jobs:
           fi
 
   redteam-hermetic:
-    needs: key_check
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -31,31 +36,77 @@ jobs:
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: "latest"
+          enable-cache: false
 
-      # Hermetic checks install only the base dependency set; live extras run in separate jobs.
+      - name: Install pinned Python
+        run: uv python install "$(cat .python-version)"
+
       - name: Install dependencies
-        run: uv sync --frozen
+        run: uv sync --frozen --extra dev --extra report
 
       - name: Hermetic adversarial suite
         run: |
-          mkdir -p reports/allure-results/adversarial
-          PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v \
+          mkdir -p reports/junit reports/allure-results/adversarial
+          env \
+            -u VERITY_ZAI_API_KEY -u VERITY_OPENROUTER_API_KEY -u VERITY_OPENROUTER_API_KEY_2 \
+            -u VERITY_TOGETHER_API_KEY -u VERITY_NVIDIA_API_KEY -u VERITY_GOOGLE_API_KEY \
+            -u ZAI_API_KEY -u OPENROUTER_API_KEY -u OPENROUTER_API_KEY_2 \
+            -u TOGETHER_API_KEY -u NVIDIA_API_KEY -u GOOGLE_API_KEY -u GEMINI_API_KEY \
+            -u VERITY_ZAI_API_BASE -u VERITY_OPENROUTER_API_BASE -u VERITY_TOGETHER_API_BASE \
+            -u VERITY_NVIDIA_API_BASE -u VERITY_GOOGLE_API_BASE \
+            -u ZAI_API_BASE -u OPENROUTER_API_BASE -u TOGETHER_API_BASE \
+            -u NVIDIA_API_BASE -u GOOGLE_API_BASE \
+            PYTHONPATH=src uv run --no-sync pytest tests/adversarial/ -m adversarial -v \
+            --junitxml reports/junit/adversarial.xml \
             --alluredir reports/allure-results/adversarial
-          if [ -f reports/security/summary-local.json ]; then
-            cp reports/security/summary-local.json reports/security/summary.json
-            cp reports/security/summary-local.md reports/security/summary.md
-          fi
+
+      - name: Verify adversarial reports
+        if: always()
+        run: |
+          test -s reports/junit/adversarial.xml
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          root = ET.parse("reports/junit/adversarial.xml").getroot()
+          suites = list(root.iter("testsuite"))
+          cases = list(root.iter("testcase"))
+          adversarial_cases = [
+              case
+              for case in cases
+              if "test_redteam_hermetic" in case.get("classname", "")
+          ]
+          if not cases or not adversarial_cases:
+              raise SystemExit("JUnit must contain collected adversarial test cases")
+          skipped = sum(int(suite.get("skipped", "0")) for suite in suites)
+          if len(cases) <= skipped:
+              raise SystemExit("JUnit contains no executed adversarial tests")
+          allure_results = list(Path("reports/allure-results/adversarial").glob("*-result.json"))
+          if not allure_results:
+              raise SystemExit("Allure result files are missing")
+          print(
+              f"Verified {len(adversarial_cases)} adversarial JUnit cases "
+              f"and {len(allure_results)} Allure results"
+          )
+          PY
 
       - name: Upload adversarial reports
+        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2, Node 24
         with:
           name: adversarial-reports
-          path: reports/allure-results/adversarial/
+          path: |
+            reports/junit/adversarial.xml
+            reports/allure-results/adversarial/
+            reports/security/summary-local.json
+            reports/security/summary-local.md
           if-no-files-found: warn
 
   redteam-live:
     needs: key_check
-    if: needs.key_check.outputs.has_key == 'true'
+    if: >-
+      needs.key_check.outputs.has_key == 'true' &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_live)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -65,6 +116,10 @@ jobs:
         with:
           version: "latest"
 
+      - name: Install pinned Python
+        run: uv python install "$(cat .python-version)"
+
+      # The Python provider imports only project base dependencies; pytest/report extras stay out.
       - name: Install dependencies
         run: uv sync --frozen
 
@@ -82,7 +137,7 @@ jobs:
           VERITY_CASSETTE_MODE: off
         run: |
           mkdir -p reports/redteam
-          npx --yes promptfoo@0.121.17 eval \
+          uv run --no-sync npx --yes promptfoo@0.121.17 eval \
             --config promptfoo/redteam.yaml \
             --output reports/redteam/results.json
 
@@ -94,7 +149,9 @@ jobs:
 
   calibrate-live:
     needs: key_check
-    if: needs.key_check.outputs.has_key == 'true'
+    if: >-
+      needs.key_check.outputs.has_key == 'true' &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_live)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -104,6 +161,10 @@ jobs:
         with:
           version: "latest"
 
+      - name: Install pinned Python
+        run: uv python install "$(cat .python-version)"
+
+      # Calibration imports base project modules, not pytest or semantic extras.
       - name: Install dependencies
         run: uv sync --frozen
 
@@ -116,7 +177,7 @@ jobs:
           VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
         run: |
           mkdir -p reports
-          PYTHONPATH=src uv run python scripts/run_calibration.py --record
+          PYTHONPATH=src uv run --no-sync python scripts/run_calibration.py --record
 
       - name: Upload calibration report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2, Node 24
