@@ -19,8 +19,10 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce
 COPY pyproject.toml uv.lock .python-version ./
 COPY README.md LICENSE ./
 
-# Install all extras (no API key required for Tier-1 checks)
-RUN uv sync --frozen --all-extras --no-install-project
+# Install the development/test extra only. CI-only security auditing lives in
+# its own extra and is not needed in this image. The Tier-1 image also excludes
+# the optional semantic extra (RAGAS/DeepEval), which runs separately in CI.
+RUN uv sync --frozen --extra dev --no-install-project
 
 # Pre-download the FastEmbed ONNX embedding model (all-MiniLM-L6-v2) into this
 # layer so `docker run` doesn't need network access. Same cache path CI's
@@ -41,8 +43,11 @@ COPY docs/ ./docs/
 COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY Makefile ./
 
-# Install the project itself
-RUN uv sync --frozen --all-extras
+# Install the project itself into a fresh environment after all source and
+# dependency inputs are present. The metadata gate scans recursively so it also
+# catches stale or duplicate package records nested below site-packages.
+RUN rm -rf .venv && uv sync --frozen --extra dev && \
+    uv run python scripts/check_runtime_package_versions.py
 
 # The final image needs the installed virtualenv, not uv's duplicate package
 # archives. Keep the separately pre-downloaded FastEmbed model cache.
@@ -94,4 +99,4 @@ COPY --from=build /app/Makefile ./Makefile
 
 # Default: run Tier-1 checks (no live calls, no API key)
 ENTRYPOINT ["/app/.venv/bin/python"]
-CMD ["-m", "pytest", "-p", "no:cacheprovider", "-m", "not live", "--tb=short", "-q"]
+CMD ["-m", "pytest", "-p", "no:cacheprovider", "-m", "not live and not semantic", "--tb=short", "-q"]

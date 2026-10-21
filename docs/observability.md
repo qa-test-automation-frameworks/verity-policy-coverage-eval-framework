@@ -42,8 +42,9 @@ Each `agent.answer()` call produces one trace with the following spans:
 | `retrieval` | `top_k` | Child of `agent.answer`; encloses retriever call |
 | `tool.coverage_calculator` | — | Child of `agent.answer`; only present on tool-use paths |
 
-If two provider calls occur (first turn + second turn after tool use), repeated
-`record_call_span()` calls sum token and cost fields on the `agent.answer` span.
+If a response requests tool use, the agent may make additional provider calls
+within its configured round and call budgets. Repeated `record_call_span()` calls
+sum token and cost fields on the `agent.answer` span.
 
 ---
 
@@ -91,6 +92,53 @@ The semantic (`tests/semantic/`) and adversarial (`tests/adversarial/`) suites
 both wire a shared session accumulator and call `write_step_summary` on session finish.
 Even hermetic (cassette replay) runs produce the cost table, since recorded token
 counts are replayed through `RunAccumulator`.
+
+### Semantic request and token ledger
+
+Semantic runs share one accumulator between the SUT and judge. At session end the
+framework prints suite totals and a per-test breakdown, with SUT and judge request
+counts and token totals. `VERITY_SEMANTIC_VERBOSITY=verbose` also prints each
+sanitized request row; `quiet` prints only suite totals. The full machine-readable
+ledger is always written to `reports/semantic/usage.json` locally and included in
+the `semantic-eval-reports` or `semantic-smoke-reports` Actions artifact. The
+`reports/semantic/results.json` manifest points to it and includes request totals.
+Download the artifact from the workflow run to compare past runs, subject to the
+repository's Actions artifact-retention policy.
+
+Each row contains a generated request ID, pytest node ID, model, label, source,
+status, latency, provider-reported prompt/completion/total tokens, and an estimated
+cost when a verified price is available. Failed attempts retain only the exception
+class and HTTP status. Prompts, credentials, and headers are not stored in this
+ledger. Missing provider usage is explicitly marked unavailable instead of inferred
+as a token count. Costs remain estimates from the reference price table, not billing data.
+
+When a live semantic workflow is run with `verbosity=verbose`, it also uploads a
+separate `semantic-case-evidence` artifact for 30 days. Its `case-evidence.jsonl`
+records each final SUT answer, case query and expected behavior, retrieved chunk text
+and provenance, tool arguments/results, answer citations, token counts, and the judge
+response text, score/rationale, or parsing error when available. Credential-shaped
+values are redacted before writing. Truncated judge output gets one larger-token retry;
+syntactically invalid JSON gets one correction retry. A valid JSON object with missing
+metric-specific fields remains a failed evaluation rather than having verdicts inferred.
+This trace is intended for the synthetic golden dataset; treat it as
+potentially sensitive because model answers can repeat information from their input.
+Standard and quiet runs do not retain answer text. The separate short-retention artifact
+keeps raw answers out of durable trend and portfolio evidence records.
+To inspect it, open the semantic workflow run in GitHub Actions and download the
+`semantic-case-evidence` artifact; each JSONL row is a SUT response, judge response,
+judge result, or verbosity-mode marker, keyed by test ID/case ID where applicable.
+
+The ledger counts each framework-level LiteLLM submission, including the secondary
+credential attempt when fallback is used. NVIDIA NIM calls are limited to 40 starts in any
+rolling 60-second window across the shared SUT/judge accumulator; each ledger row records
+the time spent waiting for a slot. NIM SDK retries are disabled so one ledger row represents
+one attempted NIM request. `VERITY_RETRIES` defaults to `0`, and semantic settings explicitly
+set it to `0` even when a developer `.env` overrides the default. Semantic runs share a
+circuit breaker across SUT and judge calls; after five recorded HTTP 429 responses, the
+current test is allowed to finish and pytest stops before starting another test. Cassette
+replay rows are marked `source: cassette` and represent no live API call. For non-NIM
+providers, explicitly enabled LiteLLM/SDK retries are not individually exposed and may make
+upstream request counts higher than ledger counts.
 
 ### Hermetic replay note
 

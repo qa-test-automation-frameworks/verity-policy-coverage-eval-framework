@@ -9,6 +9,7 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -16,6 +17,7 @@ from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.metrics.deepeval_metrics import THRESHOLD_DISAMBIGUATION, make_disambiguation
+from verity.semantic_reporting import semantic_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -36,6 +38,12 @@ def _score(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    failure_message = semantic_sut_failure_message(
+        case.id, response.failure_category, response.answer
+    )
+    if failure_message is not None:
+        pytest.fail(failure_message, pytrace=False)
+
     chunks = response.retrieved_chunks
     metric = make_disambiguation(judge)
     tc = LLMTestCase(
@@ -57,7 +65,7 @@ def test_clean_disambiguation(case: GoldenCase, settings: Settings, judge: Provi
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-4-urgent-care-contradiction"}))
 def test_defect_disambiguation_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

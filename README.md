@@ -123,8 +123,18 @@ cp .env.example .env
 # Add VERITY_OPENROUTER_API_KEY= to .env (the default provider; see .env.example for the zai/GLM-4.5 alternative)
 make smoke         # one live model call; prints tokens + cost
 make demo QUERY="Is bariatric surgery covered on my Bronze plan?"
+make eval-semantic-smoke # curated, fail-fast semantic smoke suite
 make eval-semantic # full Tier-2 semantic suite (under $0.20 at N=1; see verity/cost.py)
 ```
+
+The GitHub **Semantic Eval** workflow defaults manual runs to the smoke suite; select
+`full` only when you intend to spend more provider calls. Set the system-under-test
+provider/model independently from the optional judge provider/model to avoid judging a
+model with itself. Smoke runs begin with a fixed judge-format preflight and stop at the
+first failure. Their report artifact and evidence scope are separate from the full-suite
+report, so a smoke result cannot replace full-evaluation evidence. See
+[docs/semantic-smoke.md](docs/semantic-smoke.md) for the selected coverage and run
+limitations.
 
 `make demo` runs the hardened `clean` SUT profile by default (`VERITY_SUT_PROFILE`); the
 deterministic and semantic test suites pin `seeded` explicitly, since the defect-detection
@@ -214,7 +224,7 @@ docs/
 
 ## Limitations
 
-- **Tier 2 and Tier 3 require a live API key.** Hermetic Tier 1 needs no credentials. Semantic and adversarial evals require the API key matching `VERITY_PROVIDER`: `VERITY_ZAI_API_KEY`, `VERITY_OPENROUTER_API_KEY`, `VERITY_TOGETHER_API_KEY`, `VERITY_NVIDIA_API_KEY`, or `VERITY_GOOGLE_API_KEY`. An optional `VERITY_OPENROUTER_API_KEY_2` is used as a one-time retry target if the primary OpenRouter key is rejected for HTTP 402 (insufficient credits) or 429 (rate limit).
+- **Tier 2 and Tier 3 require live API keys.** Hermetic Tier 1 needs no credentials. Semantic runs need a key for the selected SUT provider and, when different, the judge provider; configure the matching `VERITY_*_API_KEY` secret for each. An optional `VERITY_OPENROUTER_API_KEY_2` is used as a one-time retry target if the primary OpenRouter key is rejected for HTTP 402 (insufficient credits) or 429 (rate limit).
 - **This is not a production insurance application.** The demo answers coverage questions over fictional policy documents. It does not approve claims, deny claims, provide medical advice, perform underwriting, evaluate pre-existing-condition rules, or replace human review.
 - **Committed live-run artifact matches the default pairing.** `docs/defects-caught.md` and `reports/semantic/results.json` reflect a real Tier-2 run against defects #1–#4, using `VERITY_PROVIDER=openrouter VERITY_MODEL=openai/gpt-4o-mini` for both SUT and judge (2026-07-02) — this is now the default in `src/verity/config.py`, chosen because the zai/GLM-4.5 route (NVIDIA NIM and Z.ai) was returning intermittent `DEGRADED function` errors at the time. zai/GLM-4.5 remains fully supported (see `docs/adr/0001-glm-4-5-model-choice.md`); re-run `make eval-semantic` with a working GLM-4.5 key to refresh evidence against that pairing instead.
 - **Calibration is a synthetic methodology artifact.** `docs/calibration-report.md` reflects a hermetic `make calibrate` replay over all 56 hand-authored calibration cases across 7 metrics. It verifies the agreement, kappa, MAE, and self-preference calculations without spending API credits. Run `make calibrate-live` with a configured judge key when changing the judge or promoting thresholds from methodology demonstration to live measurement.

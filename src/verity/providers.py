@@ -8,6 +8,7 @@ API call. A cache miss raises CassetteMissError (fail-fast). When mode is
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -23,9 +24,16 @@ from verity.cassettes import (
     ReplayToolCall,
     request_key,
 )
-from verity.config import Settings, get_settings
+from verity.config import Provider, Settings, get_settings
 from verity.cost import CallRecord, RunAccumulator, Usage, usage_from_litellm
 from verity.tracing import record_call_span
+
+RATE_LIMIT_STOP_THRESHOLD = 5
+logger = logging.getLogger(__name__)
+
+
+class ProviderRateLimitCircuitOpenError(RuntimeError):
+    """Raised after repeated provider 429s to prevent more API submissions."""
 
 
 @dataclass
@@ -66,6 +74,8 @@ class LLMProvider:
         max_tokens: int | None = None,
         label: str = "",
         reasoning_effort: str | None = None,
+        response_format: dict[str, Any] | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> CompletionResult:
         """Send a completion request and return a typed result with cost accounting."""
         s = self._settings
@@ -73,11 +83,33 @@ class LLMProvider:
         temp = temperature if temperature is not None else s.temperature
         max_tok = max_tokens if max_tokens is not None else s.max_tokens
         mode = s.cassette_mode
+        request_options: dict[str, Any] = {}
+        if response_format is not None:
+            request_options["response_format"] = response_format
+        if extra_body:
+            request_options["extra_body"] = extra_body
+        if reasoning_effort is not None:
+            request_options["reasoning_effort"] = reasoning_effort
 
         if mode == "replay":
-            key = request_key(litellm_model, messages, tools, temp, max_tok, reasoning_effort)
+            key = request_key(
+                litellm_model, messages, tools, temp, max_tok, request_options or None
+            )
             lib = self._get_cassette_library()
             payload = lib.lookup(key)
+            if payload is None and tools and not request_options:
+                # Older tool-follow-up cassettes were captured without tools
+                # advertised on the continuation request. Keep those fixtures
+                # replayable while preferring a tools-aware cassette whenever
+                # one exists.
+                legacy_key = request_key(litellm_model, messages, None, temp, max_tok)
+                payload = lib.lookup(legacy_key)
+            if payload is None and request_options and reasoning_effort is None:
+                # Older cassettes predate provider request options. They remain
+                # valid replays of the same prompt/model inputs; prefer the
+                # option-aware key but retain compatibility with those fixtures.
+                legacy_key = request_key(litellm_model, messages, tools, temp, max_tok)
+                payload = lib.lookup(legacy_key)
             if payload is None:
                 raise CassetteMissError(
                     f"No cassette found for key {key!r}. "
@@ -90,7 +122,7 @@ class LLMProvider:
         record_lib: CassetteLibrary | None = None
         if mode == "record":
             record_key = request_key(
-                litellm_model, messages, tools, temp, max_tok, reasoning_effort
+                litellm_model, messages, tools, temp, max_tok, request_options or None
             )
             record_lib = self._get_cassette_library()
 
@@ -101,7 +133,9 @@ class LLMProvider:
             "temperature": temp,
             "max_tokens": max_tok,
             "timeout": s.timeout,
-            "num_retries": s.retries,
+            # NIM's rolling request limiter must observe each provider response;
+            # SDK retries could otherwise exceed the cap invisibly.
+            "max_retries": 0 if s.provider is Provider.nvidia else s.retries,
         }
         if api_base:
             kwargs["api_base"] = api_base
@@ -112,17 +146,27 @@ class LLMProvider:
         if reasoning_effort is not None:
             kwargs["reasoning_effort"] = reasoning_effort
             kwargs["allowed_openai_params"] = ["reasoning_effort"]
+        if tools:
+            # LiteLLM currently imports its optional MCP proxy integration for
+            # every tool-bearing completion before checking whether any tool
+            # is an MCP tool. This application only sends OpenAI function
+            # tools, so bypass that unrelated import path while preserving
+            # ordinary function calling.
+            kwargs["_skip_mcp_handler"] = True
+        if response_format is not None:
+            kwargs["response_format"] = response_format
+        if extra_body:
+            kwargs["extra_body"] = extra_body
 
-        start = time.monotonic()
-        response = self._complete_with_key_fallback(kwargs)
-        latency_ms = (time.monotonic() - start) * 1000
-
-        usage = usage_from_litellm(response)
+        response, request_event = self._complete_with_key_fallback(kwargs, label=label)
+        latency_ms = request_event.latency_ms or 0.0
+        usage = request_event.usage or Usage(0, 0, 0)
         record = self._accumulator.log_call(
             model=litellm_model,
             usage=usage,
             latency_ms=latency_ms,
             label=label,
+            request_event=request_event,
         )
         record_call_span(record)
 
@@ -160,7 +204,56 @@ class LLMProvider:
             call_record=record,
         )
 
-    def _complete_with_key_fallback(self, kwargs: dict[str, Any]) -> Any:
+    def _call_once(self, kwargs: dict[str, Any], label: str) -> tuple[Any, Any]:
+        """Make one LiteLLM completion submission and record its safe metadata."""
+        if self._accumulator.rate_limit_responses >= RATE_LIMIT_STOP_THRESHOLD:
+            raise ProviderRateLimitCircuitOpenError(
+                f"Provider circuit is open after {RATE_LIMIT_STOP_THRESHOLD} HTTP 429 responses; "
+                "no further completion request was sent."
+            )
+        rate_limit_wait_ms: float | None = None
+        if self._settings.provider is Provider.nvidia:
+            wait_seconds = self._accumulator.nvidia_rate_limiter.acquire()
+            rate_limit_wait_ms = wait_seconds * 1000
+            if wait_seconds > 0:
+                logger.warning(
+                    "NVIDIA NIM rolling-window cap reached; delayed request by %.3f seconds",
+                    wait_seconds,
+                )
+        event = self._accumulator.begin_request(
+            model=str(kwargs["model"]),
+            label=label,
+            source="provider",
+            rate_limit_wait_ms=rate_limit_wait_ms,
+        )
+        start = time.monotonic()
+        try:
+            response = litellm.completion(**kwargs)
+        except Exception as exc:
+            latency_ms = (time.monotonic() - start) * 1000
+            self._accumulator.finish_request(event, latency_ms=latency_ms, error=exc)
+            if (
+                event.http_status == 429
+                and self._accumulator.rate_limit_responses >= RATE_LIMIT_STOP_THRESHOLD
+            ):
+                raise ProviderRateLimitCircuitOpenError(
+                    f"Provider circuit opened after {RATE_LIMIT_STOP_THRESHOLD} HTTP 429 "
+                    "responses; "
+                    "the semantic run will stop without sending more completion requests."
+                ) from exc
+            raise
+
+        latency_ms = (time.monotonic() - start) * 1000
+        try:
+            usage = usage_from_litellm(response)
+        except (AttributeError, TypeError, ValueError):
+            # Some compatible gateways omit usage metadata. Preserve the
+            # successful request count while making absent usage explicit.
+            usage = None
+        self._accumulator.finish_request(event, latency_ms=latency_ms, usage=usage)
+        return response, event
+
+    def _complete_with_key_fallback(self, kwargs: dict[str, Any], label: str) -> tuple[Any, Any]:
         """Call litellm.completion, retrying once with a secondary key on a quota/billing error.
 
         Only triggers on HTTP 402 (insufficient credits) or 429 (rate limit),
@@ -168,7 +261,7 @@ class LLMProvider:
         request being malformed. Any other error propagates immediately.
         """
         try:
-            return litellm.completion(**kwargs)
+            return self._call_once(kwargs, label)
         except openai.APIError as exc:
             if getattr(exc, "status_code", None) not in (402, 429):
                 raise
@@ -176,7 +269,7 @@ class LLMProvider:
             if not fallback_key or fallback_key == kwargs.get("api_key"):
                 raise
             fallback_kwargs = {**kwargs, "api_key": fallback_key}
-            return litellm.completion(**fallback_kwargs)
+            return self._call_once(fallback_kwargs, label)
 
     def _result_from_payload(self, payload: CassettePayload, label: str) -> CompletionResult:
         """Reconstruct a CompletionResult from a cassette payload."""
@@ -185,11 +278,14 @@ class LLMProvider:
             completion_tokens=payload.completion_tokens,
             total_tokens=payload.total_tokens,
         )
+        event = self._accumulator.begin_request(model=payload.model, label=label, source="cassette")
+        self._accumulator.finish_request(event, latency_ms=0.0, usage=usage)
         record = self._accumulator.log_call(
             model=payload.model,
             usage=usage,
             latency_ms=0.0,
             label=label,
+            request_event=event,
         )
         record_call_span(record)
         return CompletionResult(

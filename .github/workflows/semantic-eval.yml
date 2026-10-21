@@ -21,9 +21,48 @@ on:
         description: "Provider to use (zai, openrouter, together, nvidia, google)"
         required: false
         default: "openrouter"
+      model:
+        description: "SUT model ID (OpenRouter defaults to openai/gpt-4o-mini; Google defaults to gemini-3.8-flash)"
+        required: false
+        default: ""
+      judge_provider:
+        description: "Judge provider; choose same to reuse the system-under-test provider"
+        type: choice
+        required: true
+        default: same
+        options:
+          - same
+          - zai
+          - openrouter
+          - together
+          - nvidia
+          - google
+      judge_model:
+        description: "Optional judge model ID; defaults to the evaluated model when judge_provider is same"
+        required: false
+        default: ""
+      suite:
+        description: "Smoke is a curated, fail-fast subset; full runs the complete semantic suite"
+        type: choice
+        required: true
+        default: smoke
+        options:
+          - smoke
+          - full
+      verbosity:
+        description: "Pytest console detail and captured output"
+        type: choice
+        required: true
+        default: standard
+        options:
+          - quiet
+          - standard
+          - verbose
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Manual experiments must not cancel scheduled/push evidence runs (or be
+  # cancelled by them). A newer run of the same event class may replace it.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && 'manual' || 'automatic' }}
   cancel-in-progress: true
 
 jobs:
@@ -40,6 +79,10 @@ jobs:
       VERITY_NVIDIA_API_KEY: ${{ secrets.VERITY_NVIDIA_API_KEY }}
       VERITY_GOOGLE_API_KEY: ${{ secrets.VERITY_GOOGLE_API_KEY }}
       VERITY_PROVIDER: ${{ inputs.provider || 'openrouter' }}
+      VERITY_SEMANTIC_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'full' }}
+      VERITY_EVIDENCE_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite == 'smoke' && 'verity.semantic-smoke' || 'verity.semantic-evaluation' }}
+      VERITY_EVIDENCE_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite == 'smoke' && 'semantic-smoke' || 'semantic-evaluation' }}
+      VERITY_SEMANTIC_VERBOSITY: ${{ inputs.verbosity || 'standard' }}
       VERITY_SEMANTIC_SAMPLES: ${{ github.event_name == 'schedule' && '5' || '1' }}
       VERITY_TEMPERATURE: ${{ github.event_name == 'schedule' && '0.6' || '0.0' }}
       DEEPEVAL_TELEMETRY_OPT_OUT: "1"
@@ -50,7 +93,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1, Node 24
 
       - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
           version: "latest"
           enable-cache: true
@@ -72,24 +115,81 @@ jobs:
           echo "PYTEST_VERSION=$pytest_version" >> "$GITHUB_ENV"
           echo "UV_VERSION=$uv_version" >> "$GITHUB_ENV"
 
+      - name: Configure manual model and judge
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          INPUT_PROVIDER: ${{ inputs.provider || 'openrouter' }}
+          INPUT_MODEL: ${{ inputs.model }}
+          INPUT_JUDGE_PROVIDER: ${{ inputs.judge_provider || 'same' }}
+          INPUT_JUDGE_MODEL: ${{ inputs.judge_model }}
+        run: |
+          model="$INPUT_MODEL"
+          if [ -z "$model" ] && [ "$INPUT_PROVIDER" = "google" ]; then
+            model="gemini-3.8-flash"
+          fi
+          if [ -z "$model" ] && [ "$INPUT_PROVIDER" != "openrouter" ]; then
+            echo "::error::Set model for provider $INPUT_PROVIDER; only OpenRouter and Google have workflow defaults"
+            exit 1
+          fi
+
+          if [ -n "$model" ]; then
+            if [[ ! "$model" =~ ^[A-Za-z0-9._:/-]+$ ]]; then
+              echo "::error::Model IDs may contain only letters, numbers, '.', '_', ':', '/', and '-'"
+              exit 1
+            fi
+            echo "VERITY_MODEL=$model" >> "$GITHUB_ENV"
+          fi
+
+          if [ "$INPUT_JUDGE_PROVIDER" = "same" ]; then
+            judge_provider="$INPUT_PROVIDER"
+            judge_model="${INPUT_JUDGE_MODEL:-$model}"
+          else
+            judge_provider="$INPUT_JUDGE_PROVIDER"
+            judge_model="$INPUT_JUDGE_MODEL"
+            if [ -z "$judge_model" ]; then
+              echo "::error::Set judge_model when using a separate judge_provider"
+              exit 1
+            fi
+          fi
+
+          if [ -n "$judge_model" ] && [[ ! "$judge_model" =~ ^[A-Za-z0-9._:/-]+$ ]]; then
+            echo "::error::Judge model IDs may contain only letters, numbers, '.', '_', ':', '/', and '-'"
+            exit 1
+          fi
+
+          echo "VERITY_JUDGE_PROVIDER=$judge_provider" >> "$GITHUB_ENV"
+          if [ -n "$judge_model" ]; then
+            echo "VERITY_JUDGE_MODEL=$judge_model" >> "$GITHUB_ENV"
+          fi
+
       - name: Check provider key
         id: key_check
         run: |
           case "$VERITY_PROVIDER" in
-            zai) required_key="$VERITY_ZAI_API_KEY"; required_name="VERITY_ZAI_API_KEY" ;;
-            openrouter) required_key="$VERITY_OPENROUTER_API_KEY"; required_name="VERITY_OPENROUTER_API_KEY" ;;
-            together) required_key="$VERITY_TOGETHER_API_KEY"; required_name="VERITY_TOGETHER_API_KEY" ;;
-            nvidia) required_key="$VERITY_NVIDIA_API_KEY"; required_name="VERITY_NVIDIA_API_KEY" ;;
-            google) required_key="$VERITY_GOOGLE_API_KEY"; required_name="VERITY_GOOGLE_API_KEY" ;;
+            zai) sut_key="$VERITY_ZAI_API_KEY" ;;
+            openrouter) sut_key="$VERITY_OPENROUTER_API_KEY" ;;
+            together) sut_key="$VERITY_TOGETHER_API_KEY" ;;
+            nvidia) sut_key="$VERITY_NVIDIA_API_KEY" ;;
+            google) sut_key="$VERITY_GOOGLE_API_KEY" ;;
             *) echo "::error::Unsupported VERITY_PROVIDER: $VERITY_PROVIDER"; exit 1 ;;
           esac
 
-          if [ -z "$VERITY_ZAI_API_KEY$VERITY_OPENROUTER_API_KEY$VERITY_TOGETHER_API_KEY$VERITY_NVIDIA_API_KEY$VERITY_GOOGLE_API_KEY" ]; then
+          judge_provider="${VERITY_JUDGE_PROVIDER:-$VERITY_PROVIDER}"
+          case "$judge_provider" in
+            zai) judge_key="$VERITY_ZAI_API_KEY" ;;
+            openrouter) judge_key="$VERITY_OPENROUTER_API_KEY" ;;
+            together) judge_key="$VERITY_TOGETHER_API_KEY" ;;
+            nvidia) judge_key="$VERITY_NVIDIA_API_KEY" ;;
+            google) judge_key="$VERITY_GOOGLE_API_KEY" ;;
+            *) echo "::error::Unsupported VERITY_JUDGE_PROVIDER: $judge_provider"; exit 1 ;;
+          esac
+
+          if [ -z "$sut_key" ]; then
             echo "has_key=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No provider key secret configured; skipping semantic eval"
-          elif [ -z "$required_key" ]; then
-            echo "::error::$required_name is required when VERITY_PROVIDER=$VERITY_PROVIDER"
-            exit 1
+            echo "::warning::No key configured for system-under-test provider $VERITY_PROVIDER; skipping semantic eval"
+          elif [ -z "$judge_key" ]; then
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No key configured for judge provider $judge_provider; skipping semantic eval"
           else
             echo "has_key=true" >> "$GITHUB_OUTPUT"
           fi
@@ -100,12 +200,12 @@ jobs:
           EVIDENCE_CLASS=credentialed \
           EVIDENCE_REQUIRED=false \
           EVIDENCE_FRESHNESS_POLICY=quarterly_experiment_v1 \
-          EVIDENCE_PROFILE=semantic-evaluation \
+          EVIDENCE_PROFILE="$VERITY_EVIDENCE_PROFILE" \
           uv run --no-sync python scripts/evidence.py \
-            --scope verity.semantic-evaluation \
-            --skip-reason "No provider key configured; live semantic evaluation did not run"
+            --scope "$VERITY_EVIDENCE_SCOPE" \
+            --skip-reason "A key is missing for the selected system-under-test or judge provider; live semantic evaluation did not run"
           uv run --no-sync python scripts/validate_evidence.py \
-            reports/evidence/verity.semantic-evaluation.json
+            "reports/evidence/$VERITY_EVIDENCE_SCOPE.json"
 
       - name: Index corpus
         if: steps.key_check.outputs.has_key == 'true'
@@ -123,15 +223,33 @@ jobs:
         if: steps.key_check.outputs.has_key == 'true'
         run: |
           mkdir -p reports/allure-results/semantic reports/semantic reports/evidence/native
+          rm -f reports/semantic/results-local.json reports/semantic/results.json reports/semantic/failures.jsonl reports/semantic/usage.json reports/semantic/case-evidence.jsonl
           echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
-          uv run pytest tests/semantic/ -m semantic -v --tb=short \
+          case "$VERITY_SEMANTIC_VERBOSITY" in
+            quiet) pytest_args=(-q -q --tb=line --show-capture=no) ;;
+            standard) pytest_args=(--tb=short --show-capture=log) ;;
+            verbose) pytest_args=(-v --tb=long --show-capture=all) ;;
+            *) echo "::error::Unsupported semantic verbosity: $VERITY_SEMANTIC_VERBOSITY"; exit 1 ;;
+          esac
+
+          case "$VERITY_SEMANTIC_SUITE" in
+            smoke) pytest_args+=(-m "semantic and smoke" -x) ;;
+            full) pytest_args+=(-m semantic) ;;
+            *) echo "::error::Unsupported semantic suite: $VERITY_SEMANTIC_SUITE"; exit 1 ;;
+          esac
+
+          pytest_status=0
+          uv run pytest tests/semantic/ "${pytest_args[@]}" \
             --alluredir reports/allure-results/semantic \
-            --junitxml=reports/evidence/native/semantic.xml
-          if [ ! -s reports/semantic/results-local.json ]; then
+            --junitxml=reports/evidence/native/semantic.xml || pytest_status=$?
+          if [ -s reports/semantic/results-local.json ]; then
+            cp reports/semantic/results-local.json reports/semantic/results.json
+          elif [ "$pytest_status" -eq 0 ]; then
             echo "::error::Semantic eval completed without reports/semantic/results-local.json; no eval cases ran."
-            exit 1
+            pytest_status=1
+          else
+            echo "::warning::Semantic eval failed before producing reports/semantic/results-local.json."
           fi
-          cp reports/semantic/results-local.json reports/semantic/results.json
           uv run python - <<'PY'
           import json
           import os
@@ -148,6 +266,7 @@ jobs:
               json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
           )
           PY
+          exit "$pytest_status"
 
       - name: Emit semantic execution evidence
         if: always() && steps.key_check.outputs.has_key == 'true'
@@ -156,17 +275,17 @@ jobs:
             EVIDENCE_CLASS=credentialed \
             EVIDENCE_REQUIRED=false \
             EVIDENCE_FRESHNESS_POLICY=quarterly_experiment_v1 \
-            EVIDENCE_PROFILE=semantic-evaluation \
+            EVIDENCE_PROFILE="$VERITY_EVIDENCE_PROFILE" \
             uv run --no-sync python scripts/evidence.py \
-              --scope verity.semantic-evaluation \
+              --scope "$VERITY_EVIDENCE_SCOPE" \
               --junit reports/evidence/native/semantic.xml
           else
             EVIDENCE_CLASS=credentialed \
             EVIDENCE_REQUIRED=false \
             EVIDENCE_FRESHNESS_POLICY=quarterly_experiment_v1 \
-            EVIDENCE_PROFILE=semantic-evaluation \
+            EVIDENCE_PROFILE="$VERITY_EVIDENCE_PROFILE" \
             uv run --no-sync python scripts/evidence.py \
-              --scope verity.semantic-evaluation \
+              --scope "$VERITY_EVIDENCE_SCOPE" \
               --unavailable-reason "Semantic JUnit or result manifest was not produced"
           fi
 
@@ -174,10 +293,10 @@ jobs:
         if: always() && steps.key_check.outputs.has_key == 'true'
         run: |
           uv run --no-sync python scripts/validate_evidence.py \
-            reports/evidence/verity.semantic-evaluation.json
+            "reports/evidence/$VERITY_EVIDENCE_SCOPE.json"
 
-      - name: Upload semantic eval reports
-        if: steps.key_check.outputs.has_key == 'true'
+      - name: Upload full semantic eval reports
+        if: always() && steps.key_check.outputs.has_key == 'true' && env.VERITY_SEMANTIC_SUITE == 'full'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2, Node 24
         with:
           name: semantic-eval-reports
@@ -185,7 +304,31 @@ jobs:
             reports/allure-results/semantic/
             reports/semantic/results.json
             reports/semantic/provenance.json
+            reports/semantic/failures.jsonl
+            reports/semantic/usage.json
           if-no-files-found: warn
+
+      - name: Upload semantic smoke reports
+        if: always() && steps.key_check.outputs.has_key == 'true' && env.VERITY_SEMANTIC_SUITE == 'smoke'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2, Node 24
+        with:
+          name: semantic-smoke-reports
+          path: |
+            reports/allure-results/semantic/
+            reports/semantic/results.json
+            reports/semantic/provenance.json
+            reports/semantic/failures.jsonl
+            reports/semantic/usage.json
+          if-no-files-found: warn
+
+      - name: Upload verbose semantic case evidence
+        if: always() && steps.key_check.outputs.has_key == 'true' && env.VERITY_SEMANTIC_VERBOSITY == 'verbose'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2, Node 24
+        with:
+          name: semantic-case-evidence
+          path: reports/semantic/case-evidence.jsonl
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Upload semantic evidence bundle
         if: always()

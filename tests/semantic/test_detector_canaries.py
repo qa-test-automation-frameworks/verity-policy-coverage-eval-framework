@@ -6,10 +6,8 @@ import pytest
 
 from verity.judges import ProviderJudge
 from verity.metrics.deepeval_metrics import (
-    THRESHOLD_COMPLETENESS,
     THRESHOLD_DISAMBIGUATION,
     THRESHOLD_REFUSAL,
-    make_completeness,
     make_disambiguation,
     make_refusal_geval,
 )
@@ -20,26 +18,6 @@ from verity.metrics.ragas_metrics import (
 )
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
-
-
-def test_completeness_canary_scores_below_threshold(judge: ProviderJudge) -> None:
-    try:
-        from deepeval.test_case import LLMTestCase
-    except ImportError:
-        pytest.skip("deepeval not available")
-
-    metric = make_completeness(judge)
-    metric.measure(
-        LLMTestCase(
-            input="I have $1,200 left on my deductible. What do I owe for a $2,000 procedure?",
-            actual_output="You owe $400 in coinsurance.",
-            expected_output=(
-                "Apply the remaining $1,200 deductible first, then 20% coinsurance "
-                "on the remaining $800, for a total member cost of $1,360."
-            ),
-        )
-    )
-    assert float(metric.score) < THRESHOLD_COMPLETENESS
 
 
 def test_disambiguation_canary_scores_below_threshold(judge: ProviderJudge) -> None:

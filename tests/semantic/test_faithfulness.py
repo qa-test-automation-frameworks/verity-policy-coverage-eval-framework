@@ -11,9 +11,13 @@ from pathlib import Path
 
 import pytest
 
+from sut.agent import AgentResponse
+from sut.retriever import Chunk
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    record_semantic_metric,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -25,6 +29,7 @@ from verity.metrics.ragas_metrics import (
     ensure_ragas_compat,
     make_faithfulness,
 )
+from verity.semantic_reporting import semantic_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -39,7 +44,7 @@ def _score_faithfulness(
     case: GoldenCase,
     settings: Settings,
     judge: ProviderJudge,
-) -> tuple[float, object, object]:
+) -> tuple[float, AgentResponse, list[Chunk]]:
     ensure_ragas_compat()
     try:
         from ragas import SingleTurnSample
@@ -48,6 +53,12 @@ def _score_faithfulness(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    failure_message = semantic_sut_failure_message(
+        case.id, response.failure_category, response.answer
+    )
+    if failure_message is not None:
+        pytest.fail(failure_message, pytrace=False)
+
     chunks = response.retrieved_chunks
     contexts = [c.text for c in chunks]
 
@@ -57,13 +68,35 @@ def _score_faithfulness(
         response=response.answer,
         retrieved_contexts=contexts,
     )
-    score: float = metric.single_turn_score(sample)
+    try:
+        score: float = metric.single_turn_score(sample)
+    except Exception as exc:
+        record_semantic_metric(
+            case,
+            metric="faithfulness",
+            threshold=THRESHOLD_FAITHFULNESS,
+            judge_model=judge.model_name,
+            error=exc,
+        )
+        raise
+    record_semantic_metric(
+        case,
+        metric="faithfulness",
+        threshold=THRESHOLD_FAITHFULNESS,
+        judge_model=judge.model_name,
+        score=score,
+    )
     return score, response, chunks
 
 
 @pytest.mark.quarantine
-@pytest.mark.parametrize("case", _CLEAN_FAITH, ids=[c.id for c in _CLEAN_FAITH])
-def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
+@pytest.mark.parametrize("case", smoke_params(_CLEAN_FAITH, {"ctrl-silver-physical-therapy-limit"}))
+def test_clean_faithfulness(
+    case: GoldenCase,
+    settings: Settings,
+    judge: ProviderJudge,
+    request: pytest.FixtureRequest,
+) -> None:
     """Clean cases: faithfulness must be >= threshold (no hallucination).
 
     Quarantined: control-case gating on this metric is informational, not a
@@ -76,12 +109,18 @@ def test_clean_faithfulness(case: GoldenCase, settings: Settings, judge: Provide
     samples = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
-    assert threshold_pass(stat, THRESHOLD_FAITHFULNESS), (
-        f"Faithfulness below threshold for {case.id!r}: {stat}" + wilson_interval_message(stat)
-    )
+    if threshold_pass(stat, THRESHOLD_FAITHFULNESS):
+        return
+
+    failure = f"Faithfulness below threshold for {case.id!r}: {stat}{wilson_interval_message(stat)}"
+    if request.node.get_closest_marker("quarantine") is not None:
+        pytest.xfail(f"Quarantined, non-blocking calibration signal: {failure}")
+    pytest.fail(failure)
 
 
-@pytest.mark.parametrize("case", _DEFECT_FAITH, ids=[c.id for c in _DEFECT_FAITH])
+@pytest.mark.parametrize(
+    "case", smoke_params(_DEFECT_FAITH, {"defect-1-bariatric-bronze-hallucination"})
+)
 def test_defect_faithfulness_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

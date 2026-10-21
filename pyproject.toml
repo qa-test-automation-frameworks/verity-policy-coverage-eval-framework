@@ -22,7 +22,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "litellm>=1.45.0",
+    "litellm>=1.106.0",
     "pydantic>=2.7.0",
     "pydantic-settings>=2.3.0",
     "fastembed>=0.9.0,<1",
@@ -33,20 +33,30 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ruff==0.17.1",
-    "mypy>=1.10.0",
+    # The Tier-1 image verifies this package against a known security floor.
+    "setuptools>=83.0.0",
+    "mypy>=2.4.0",
     "jsonschema>=4.26.0",
     "pytest>=8.2.0",
     "pytest-cov>=5.0.0",
     "pytest-xdist>=3.6.0",
     "pre-commit>=3.7.0",
     "types-PyYAML>=6.0.12",
-    "pip-audit>=2.7.0",
     "bandit>=1.7.0",
     "hypothesis>=6.156.6",
 ]
+security = [
+    # CI uses this audit tool; keep pip and its vendored scanner SBOM out of the
+    # runtime test image, where dependency auditing is not performed.
+    "pip-audit>=2.7.0",
+]
 semantic = [
-    "deepeval>=1.5.0",
-    "ragas>=0.2.0",
+    # DeepEval 4.1 changes HallucinationMetric score polarity; keep <4.1 until its
+    # threshold and semantic-corpus calibrations are migrated and independently verified.
+    "deepeval>=1.5.0,<4.1.0",
+    # Stay on the reviewed version while its local-file/SSRF advisory is
+    # unpatched; reassess this bound before any version change.
+    "ragas==0.4.3",
 ]
 otel = [
     "opentelemetry-api>=1.25.0",
@@ -78,13 +88,19 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "N", "RUF"]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "N", "RUF", "TID"]
 ignore = [
     "ANN401",  # Any allowed for dynamic provider and ONNX model boundaries
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"]  # no return-type annotations required in tests
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"diskcache" = { msg = "Do not enable the vulnerable optional DiskCache backend without a reviewed dependency disposition." }
+"ragas.cache" = { msg = "Do not enable the vulnerable optional RAGAS DiskCache backend without a reviewed dependency disposition." }
+"ragas.metrics.collections" = { msg = "RAGAS collections include vulnerable multimodal URL/local-file processing; review before adoption." }
+"ragas.prompt.multi_modal_prompt" = { msg = "Review this multimodal prompt path for URL and local-file handling before adoption." }
 
 [tool.ruff.format]
 quote-style = "double"
@@ -130,6 +146,7 @@ markers = [
     "live: marks tests that make real LLM API calls (deselect with -m 'not live')",
     "deterministic: marks Tier-1 deterministic tests (no live calls)",
     "semantic: marks Tier-2 semantic eval tests (requires live LLM)",
+    "smoke: marks curated low-volume semantic smoke tests",
     "adversarial: marks Tier-3 adversarial/red-team tests",
     "flaky: marks live tests with known provider instability and documented retry policy (reserved: apply once a specific test has an observed instability history to document)",
     "quarantine: marks live tests that collect signal but should not block merges",
@@ -167,15 +184,21 @@ runner = "python -m pytest -x -q"
 constraint-dependencies = [
     "aiohttp>=3.14.3",
     "anyio>=4.14.2",
+    "certifi>=2026.10.19",
     "datasets>=5.0.1",
     "fsspec>=2026.6.0",
     "langgraph-sdk>=0.4.4",
-    "litellm>=1.90.7",
+    "litellm>=1.106.0",
     "multidict>=6.9.1",
     "oauthlib>=4.0.0",
-    "pillow>=12.3.0",
+    "pillow>=13.0.0,<14",
     "pip>=26.2",
     "setuptools>=83.0.0",
     "urllib3>=2.8.0",
     "virtualenv>=21.7.13",
 ]
+# FastEmbed 0.9 caps Pillow below 13 for its image-embedding path. This
+# application only uses TextEmbedding, and the installed package has no Pillow
+# imports; override the cap for the security-fixed 13.x line until upstream
+# updates its metadata. Keep the override below the next major pending review.
+override-dependencies = ["pillow>=13.0.0,<14"]

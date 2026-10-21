@@ -6,11 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from tests.semantic.conftest import live_agent, wilson_interval_message
+from tests.semantic.conftest import live_agent, smoke_params, wilson_interval_message
 from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.metrics.deepeval_metrics import THRESHOLD_ANSWER_RELEVANCY, make_answer_relevancy
+from verity.semantic_reporting import semantic_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -31,6 +32,12 @@ def _score(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    failure_message = semantic_sut_failure_message(
+        case.id, response.failure_category, response.answer
+    )
+    if failure_message is not None:
+        pytest.fail(failure_message, pytrace=False)
+
     chunks = response.retrieved_chunks
     metric = make_answer_relevancy(judge)
     tc = LLMTestCase(
@@ -42,8 +49,15 @@ def _score(
 
 
 @pytest.mark.quarantine
-@pytest.mark.parametrize("case", _RELEVANCY_CASES, ids=[c.id for c in _RELEVANCY_CASES])
-def test_answer_relevancy(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
+@pytest.mark.parametrize(
+    "case", smoke_params(_RELEVANCY_CASES, {"ctrl-silver-physical-therapy-limit"})
+)
+def test_answer_relevancy(
+    case: GoldenCase,
+    settings: Settings,
+    judge: ProviderJudge,
+    request: pytest.FixtureRequest,
+) -> None:
     """Clean cases must return a relevant, on-topic answer.
 
     Quarantined: the committed live control run recorded multiple failures on
@@ -56,6 +70,12 @@ def test_answer_relevancy(case: GoldenCase, settings: Settings, judge: ProviderJ
     samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_ANSWER_RELEVANCY)
-    assert threshold_pass(stat, THRESHOLD_ANSWER_RELEVANCY), (
-        f"Answer relevancy below threshold for {case.id!r}: {stat}" + wilson_interval_message(stat)
+    if threshold_pass(stat, THRESHOLD_ANSWER_RELEVANCY):
+        return
+
+    failure = f"Answer relevancy below threshold for {case.id!r}: {stat}" + wilson_interval_message(
+        stat
     )
+    if request.node.get_closest_marker("quarantine") is not None:
+        pytest.xfail(f"Quarantined, non-blocking calibration signal: {failure}")
+    pytest.fail(failure)

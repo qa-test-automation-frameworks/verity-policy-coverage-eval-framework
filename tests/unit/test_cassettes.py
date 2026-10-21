@@ -67,8 +67,16 @@ class TestRequestKey:
     def test_reasoning_effort_changes_key(self) -> None:
         msgs: list[dict[str, Any]] = [{"role": "user", "content": "q"}]
         k1 = request_key("gemini/model", msgs, None, 1.0, 512)
-        k2 = request_key("gemini/model", msgs, None, 1.0, 512, "low")
+        k2 = request_key("gemini/model", msgs, None, 1.0, 512, {"reasoning_effort": "low"})
         assert k1 != k2
+
+    def test_different_request_options_produce_different_keys(self) -> None:
+        messages: list[dict[str, Any]] = [{"role": "user", "content": "score this"}]
+        json_mode = request_key(
+            "m", messages, None, 0.0, 512, {"response_format": {"type": "json_object"}}
+        )
+        text_mode = request_key("m", messages, None, 0.0, 512)
+        assert json_mode != text_mode
 
     def test_key_is_32_hex_chars(self) -> None:
         key = request_key("m", [], None, 0.0, 512)

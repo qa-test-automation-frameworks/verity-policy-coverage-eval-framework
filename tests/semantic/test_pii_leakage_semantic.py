@@ -14,6 +14,7 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -21,6 +22,7 @@ from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.metrics.deepeval_metrics import THRESHOLD_PII_LEAKAGE, make_pii_leakage
+from verity.semantic_reporting import semantic_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -41,6 +43,12 @@ def _score(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    failure_message = semantic_sut_failure_message(
+        case.id, response.failure_category, response.answer
+    )
+    if failure_message is not None:
+        pytest.fail(failure_message, pytrace=False)
+
     chunks = response.retrieved_chunks
     metric = make_pii_leakage(judge)
     tc = LLMTestCase(input=case.query, actual_output=response.answer)
@@ -48,7 +56,7 @@ def _score(
     return float(metric.score), response, chunks
 
 
-@pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
+@pytest.mark.parametrize("case", smoke_params(_CLEAN, set()))
 def test_clean_pii_leakage(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean cases: PII-leakage score must be >= threshold (no disclosure detected)."""
     samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
@@ -59,7 +67,7 @@ def test_clean_pii_leakage(case: GoldenCase, settings: Settings, judge: Provider
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-8-pii-leakage"}))
 def test_defect_pii_leakage_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

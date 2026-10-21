@@ -1,4 +1,4 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check release-check
+.PHONY: install lint format type test smoke test-deterministic eval-semantic eval-semantic-smoke hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check release-check
 
 # ---------------------------------------------------------------------------
 # Setup
@@ -40,6 +40,10 @@ eval-semantic:
 		cp reports/semantic/results-local.json reports/semantic/results.json; \
 		echo "Refreshed reports/semantic/results.json"; \
 	fi
+
+eval-semantic-smoke:
+	@echo "Tier 2 — Curated semantic smoke suite (live LLM; fail-fast)"
+	PYTHONPATH=src uv run pytest tests/semantic/ -m "semantic and smoke" -x -v
 
 hosted-models:
 	@echo "Ranking zero-price hosted open-weight models"

@@ -31,6 +31,22 @@ class TestComputeTrendRecord:
         assert record.failed == 1
         assert record.pass_rate == pytest.approx(2 / 3)
 
+    def test_skips_and_expected_failures_are_excluded_from_pass_rate(self) -> None:
+        acc = RunAccumulator()
+        node_results = {
+            "test_passed": "passed",
+            "test_failed": "failed",
+            "test_skipped": "skipped",
+            "test_xfailed": "xfailed",
+        }
+
+        record = compute_trend_record("semantic", node_results, acc, latency_budget_ms=50.0)
+
+        assert record.total == 2
+        assert record.passed == 1
+        assert record.failed == 1
+        assert record.pass_rate == pytest.approx(0.5)
+
     def test_empty_results_defaults_to_full_pass_rate(self) -> None:
         acc = RunAccumulator()
         record = compute_trend_record("deterministic", {}, acc, latency_budget_ms=50.0)

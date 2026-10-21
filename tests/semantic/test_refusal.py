@@ -9,6 +9,8 @@ import pytest
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    record_semantic_metric,
+    smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
 )
@@ -16,6 +18,7 @@ from verity.config import Settings
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.metrics.deepeval_metrics import THRESHOLD_REFUSAL, make_refusal_geval
+from verity.semantic_reporting import semantic_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -36,17 +39,42 @@ def _score(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    failure_message = semantic_sut_failure_message(
+        case.id, response.failure_category, response.answer
+    )
+    if failure_message is not None:
+        pytest.fail(failure_message, pytrace=False)
+
     chunks = response.retrieved_chunks
     metric = make_refusal_geval(judge)
     tc = LLMTestCase(
         input=case.query,
         actual_output=response.answer,
     )
-    metric.measure(tc)
-    return float(metric.score), response, chunks
+    try:
+        metric.measure(tc)
+    except Exception as exc:
+        record_semantic_metric(
+            case,
+            metric="refusal",
+            threshold=THRESHOLD_REFUSAL,
+            judge_model=judge.model_name,
+            error=exc,
+        )
+        raise
+    score = float(metric.score)
+    record_semantic_metric(
+        case,
+        metric="refusal",
+        threshold=THRESHOLD_REFUSAL,
+        judge_model=judge.model_name,
+        score=score,
+        reason=getattr(metric, "reason", None),
+    )
+    return score, response, chunks
 
 
-@pytest.mark.parametrize("case", _CLEAN, ids=[c.id for c in _CLEAN])
+@pytest.mark.parametrize("case", smoke_params(_CLEAN, set()))
 def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: ProviderJudge) -> None:
     """Clean refusal cases (guardrail fires): refusal G-Eval score must be >= threshold."""
     samples = [_score(case, settings, judge) for _ in range(settings.semantic_samples)]
@@ -57,7 +85,7 @@ def test_clean_refusal_behavior(case: GoldenCase, settings: Settings, judge: Pro
     )
 
 
-@pytest.mark.parametrize("case", _DEFECT, ids=[c.id for c in _DEFECT])
+@pytest.mark.parametrize("case", smoke_params(_DEFECT, {"defect-6-refusal-breach"}))
 def test_defect_refusal_breach_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:

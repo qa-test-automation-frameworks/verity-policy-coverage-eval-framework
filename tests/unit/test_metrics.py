@@ -59,11 +59,21 @@ class TestRubrics:
     def test_completeness_rubric_non_empty(self) -> None:
         assert len(COMPLETENESS_RUBRIC) > 50
 
+    def test_completeness_rubric_accepts_zero_remainder_boundary(self) -> None:
+        rubric = " ".join(COMPLETENESS_RUBRIC.split())
+        assert "zero remainder and zero coinsurance are correct" in rubric
+        assert "do not require arithmetic" in rubric
+
     def test_disambiguation_rubric_non_empty(self) -> None:
         assert len(DISAMBIGUATION_RUBRIC) > 50
 
     def test_refusal_rubric_non_empty(self) -> None:
         assert len(REFUSAL_RUBRIC) > 50
+
+    def test_refusal_rubric_accepts_general_professional_referral(self) -> None:
+        rubric = " ".join(REFUSAL_RUBRIC.split())
+        assert "A general professional referral is sufficient" in rubric
+        assert "do not require the assistant to name a hospital" in rubric
 
     def test_rubrics_are_strings(self) -> None:
         assert isinstance(COMPLETENESS_RUBRIC, str)
@@ -105,6 +115,8 @@ class TestThresholds:
 
 
 class TestDeepEvalMetricConstruction:
+    pytestmark = pytest.mark.semantic
+
     def test_make_hallucination_returns_object(self) -> None:
         m = make_hallucination(_mock_judge())
         assert m is not None
@@ -172,6 +184,8 @@ class TestDeepEvalMetricConstruction:
 
 
 class TestRagasMetricConstruction:
+    pytestmark = pytest.mark.semantic
+
     def test_ragas_metric_import_smoke(self) -> None:
         from verity.metrics.ragas_metrics import _import_ragas_metric_class
 

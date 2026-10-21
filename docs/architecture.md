@@ -51,7 +51,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 |--------|---------------|
 | `config.py` | Pydantic-settings root config (`Settings`), sub-configs for provider, judge, retrieval, and cassette mode |
 | `providers.py` | `LLMProvider` wrapping LiteLLM; cassette record/replay path; cost accounting via `RunAccumulator`; span recording via `record_call_span()` |
-| `cost.py` | `Usage`, `Cost`, `CallRecord`, `RunAccumulator`; per-label token and cost accounting; price table keyed by model slug |
+| `cost.py` | `Usage`, `Cost`, `CallRecord`, sanitized `RequestEvent`, `RunAccumulator`; per-test and per-label token, request, and cost accounting |
 | `cassettes.py` | SHA-256 keyed cassette library; `request_key(messages, model, tools)` deterministic hash; `CassetteMissError` on replay miss |
 | `golden.py` | `GoldenCase` Pydantic schema (query, member_id, behavior, ground_truth, must_contain, expected_tool, defect_id, ...); `load_golden()` YAML loader |
 | `checks.py` | Pure deterministic assertion functions: `validate_response_schema`, `check_refusal`, `check_human_review`, `check_tool_args`, `scan_pii`, `check_pii`, `scan_injection`, `check_injection`, `check_must_contain`, `check_must_not_contain` |
@@ -63,7 +63,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `calibration.py` | `CalibrationCase` schema; `compute_agreement()` (raw %, Cohen's kappa, MAE); `compute_self_bias()` (GLM vs other delta); `score_all()` via rubric scoring prompt |
 | `adversarial.py` | `AdversarialProbe` Pydantic schema (category, defense, expected_outcome, must_not_contain, retrieval_fixture_id); `load_probes()` |
 | `tracing.py` | `_ENABLED` flag gated on `VERITY_TRACING` env; `init_tracing()` SDK TracerProvider; `traced(name, **attrs)` context manager (no-op when disabled); `record_call_span(call_record)` attaches gen_ai.* attributes |
-| `reporting.py` | `render_cost_summary(accumulator)` -> per-label markdown table; `write_step_summary(text)` -> `$GITHUB_STEP_SUMMARY` or `reports/cost-summary-local.md` |
+| `reporting.py` | Per-label cost summary, per-test SUT/judge usage report, and sanitized request ledger; writes CI/local summaries |
 
 ### `src/sut/`
 
@@ -74,7 +74,7 @@ See [ADR-0002](adr/0002-three-layer-eval-pyramid.md) for the rationale.
 | `retriever.py` | `PolicyRetriever` (FastEmbed/ONNX embeddings with a local transactional SQLite cosine index, markdown-aware chunker, 160-word chunks / top-3 default); `InMemoryCosineRetriever`; `FixtureRetriever` (JSON-backed, no model download for hermetic tests) |
 | `tools/coverage_calculator.py` | Deterministic Pydantic-typed cost calculator + `COVERAGE_CALCULATOR_SCHEMA`; tool arguments intentionally ambiguously named (seeded defect #5) |
 | `guardrails.py` | `check_input()` (regex `_OUT_OF_SCOPE_PATTERNS`; gap = seeded defect #6); `scrub_output()` (masks member-id and date patterns); `log_member_context()` (naive DEBUG logging = seeded defect #8) |
-| `agent.py` | `CoverageAgent.answer()`: load member, check scope, retrieve chunks, first LLM turn, optional tool-use second turn, scrub output; wraps all spans via `traced()` |
+| `agent.py` | `CoverageAgent.answer()`: load member, check scope, retrieve chunks, bounded multi-round tool-use loop (defaults: 3 rounds / 6 calls), scrub output; wraps all spans via `traced()` |
 
 ---
 
@@ -94,12 +94,12 @@ agent.answer(query, member_id)
 |   |   \-- record_call_span(call_record)       # OTel attributes
 |   |
 |   +-- [if tool_call in response]
-|   |   +-- [span: tool.coverage_calculator]
-|   |   |   \-- run_coverage_calculator(args)  # deterministic
-|   |   \-- provider.complete(messages + tool_result, ...)  # second turn
-|   |       +-- cassette replay / live call
-|   |       +-- accumulator.log_call(...)
-|   |       \-- record_call_span(call_record)
+|   |   \-- bounded loop (max 3 rounds / 6 calls by default; one tool-free synthesis attempt when a later round repeats an exact calculator call)
+|   |       +-- [span: tool.coverage_calculator] run_coverage_calculator(args)
+|   |       \-- provider.complete(messages + tool_result, ...)  # next turn
+|   |           +-- cassette replay / live call
+|   |           +-- accumulator.log_call(...)
+|   |           \-- record_call_span(call_record)
 |   |
 |   \-- guardrails.scrub_output(answer)         # defect #8 gap here
 |

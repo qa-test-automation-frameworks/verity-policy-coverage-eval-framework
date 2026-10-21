@@ -106,7 +106,10 @@ class JudgeConfig(BaseSettings):
 
     model: str = "openai/gpt-4o-mini"
     temperature: float = 0.0
-    max_tokens: int = 1024
+    # RAGAS faithfulness evaluations can emit several structured statement
+    # verdicts. A 1k-token ceiling truncates those JSON objects on some models;
+    # keep a larger default while allowing callers to lower it explicitly.
+    max_tokens: int = 4096
     # Optional: run the judge on a different provider than the SUT model.
     # Defaults to the SUT's provider when unset, so single-provider setups
     # keep working unchanged; set this to avoid sharing one provider's rate
@@ -205,8 +208,16 @@ class Settings(BaseSettings):
     temperature: float = 0.0
     max_tokens: int = 2048
     timeout: int = 60
-    retries: int = 3
+    # Surface provider 429s immediately so the semantic-run circuit breaker can
+    # stop before the client retries rate-limited calls invisibly.
+    retries: int = 0
     semantic_samples: int = 1
+
+    # Bound agentic tool use. A tool round is one assistant response followed
+    # by execution of its requested calls; the model may ask for another round
+    # after receiving those tool results.
+    max_tool_rounds: int = Field(default=3, ge=1, le=8)
+    max_tool_calls: int = Field(default=6, ge=1, le=24)
 
     # Optional member-scoped request token enforcement for demos that need
     # a lightweight cross-member access boundary. Disabled by default.

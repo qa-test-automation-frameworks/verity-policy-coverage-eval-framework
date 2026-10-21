@@ -9,29 +9,56 @@ Run with: make eval-semantic  (requires API key in .env)
 from __future__ import annotations
 
 import json
+import logging
 import os
 import warnings
 from collections.abc import Generator
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from sut.agent import AgentResponse, CoverageAgent
 from sut.retriever import Chunk, PolicyRetriever
 from verity.config import Settings
-from verity.cost import RunAccumulator
+from verity.cost import RunAccumulator, reset_current_test_id, set_current_test_id
 from verity.golden import GoldenCase, load_golden
 from verity.judges import ProviderJudge
 from verity.latency import LIVE_BUDGET_MS
-from verity.providers import LLMProvider
-from verity.reporting import render_cost_summary, write_step_summary
+from verity.providers import RATE_LIMIT_STOP_THRESHOLD, LLMProvider
+from verity.reporting import (
+    build_usage_report,
+    render_cost_summary,
+    render_request_ledger,
+    render_usage_summary,
+    write_step_summary,
+)
+from verity.semantic_reporting import (
+    append_case_evidence_event,
+    append_failure_event,
+    failure_reason,
+)
 from verity.statistics import StatResult, pass_rate_wilson_interval
 from verity.trends import append_trend, compute_trend_record
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
 
 _GOLDEN_DIR = Path("datasets/golden")
+logger = logging.getLogger(__name__)
+
+
+def smoke_params(cases, selected_ids: set[str]):
+    """Mark selected parametrized cases for the low-volume live smoke suite."""
+    return [
+        pytest.param(
+            case,
+            id=case.id,
+            marks=pytest.mark.smoke if case.id in selected_ids else (),
+        )
+        for case in cases
+    ]
 
 
 def _require_api_key() -> None:
@@ -65,12 +92,14 @@ def settings() -> Settings:
     # silently change what this suite measures.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return Settings(sut_profile="seeded")
+        # Rate-limit failures must reach the shared circuit breaker without
+        # hidden SDK retries, even when a developer's .env sets VERITY_RETRIES.
+        return Settings(sut_profile="seeded", retries=0)
 
 
 @pytest.fixture(scope="session")
 def judge(settings: Settings) -> ProviderJudge:
-    return ProviderJudge(settings=settings)
+    return ProviderJudge(settings=settings, accumulator=_SESSION_ACCUMULATOR)
 
 
 @pytest.fixture(scope="session")
@@ -79,6 +108,7 @@ def golden_cases() -> list[GoldenCase]:
 
 
 _SESSION_ACCUMULATOR = RunAccumulator()
+_RATE_LIMIT_STOP_REPORTED = False
 
 
 def live_agent(settings: Settings) -> CoverageAgent:
@@ -88,9 +118,163 @@ def live_agent(settings: Settings) -> CoverageAgent:
     return CoverageAgent(settings=settings, retriever=retriever, provider=provider)
 
 
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(
+    item: pytest.Item, nextitem: pytest.Item | None
+) -> Generator[None, None, None]:
+    """Attribute provider calls made during fixtures, test code, and teardown."""
+    # Pytest can register this nested conftest hook while collecting a broader
+    # suite. Keep usage attribution limited to semantic cases; unrelated unit
+    # tests should not inherit a semantic test id.
+    if not item.nodeid.startswith("tests/semantic/"):
+        yield
+        return
+
+    token = set_current_test_id(item.nodeid)
+    try:
+        yield
+    finally:
+        reset_current_test_id(token)
+
+
 _NODE_RESULTS: dict[str, str] = {}
 _SEMANTIC_MEASUREMENTS: dict[str, dict[str, object]] = {}
 _NODE_FAILURE_DETAILS: dict[str, str] = {}
+
+
+def _case_evidence_path() -> Path:
+    return Path(
+        os.environ.get(
+            "VERITY_SEMANTIC_CASE_EVIDENCE_PATH",
+            "reports/semantic/case-evidence.jsonl",
+        )
+    )
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Start each run with a fresh case-evidence artifact and disclose its mode."""
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        return
+    path = _case_evidence_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("", encoding="utf-8")
+    verbosity = os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard")
+    if verbosity != "verbose":
+        append_case_evidence_event(
+            path,
+            event={
+                "schema_version": 1,
+                "record_type": "case_evidence_mode",
+                "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                "verbosity": verbosity,
+                "model_answers_recorded": False,
+                "reason": "Set VERITY_SEMANTIC_VERBOSITY=verbose to retain case traces.",
+            },
+        )
+
+
+@pytest.fixture(autouse=True)
+def capture_semantic_case_answers(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> None:
+    """Record final SUT answers and supporting evidence only in verbose runs."""
+    if os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard") != "verbose":
+        return
+
+    original_answer = CoverageAgent.answer
+    sample_number = 0
+    case = getattr(request.node, "callspec", None)
+    case = case.params.get("case") if case is not None else None
+    case_id = getattr(case, "id", request.node.name)
+
+    def _answer_with_evidence(
+        agent: CoverageAgent, query: str, *args: Any, **kwargs: Any
+    ) -> AgentResponse:
+        nonlocal sample_number
+        response = original_answer(agent, query, *args, **kwargs)
+        sample_number += 1
+        event = {
+            "schema_version": 1,
+            "record_type": "sut_response",
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "nodeid": request.node.nodeid,
+            "case_id": case_id,
+            "sample": sample_number,
+            "query": query,
+            "expected_behavior": getattr(case, "behavior", None),
+            "expected_output": getattr(case, "ground_truth", None),
+            "answer": response.answer,
+            "citations": response.citations,
+            "tool_invocations": [
+                call.model_dump(mode="json") for call in response.tool_invocations
+            ],
+            "retrieved_chunks": [
+                {
+                    "source": chunk.source,
+                    "section": chunk.section,
+                    "chunk_id": chunk.chunk_id,
+                    "rank": chunk.rank,
+                    "score": chunk.score,
+                    "corpus_fingerprint": chunk.corpus_fingerprint,
+                    "text": chunk.text,
+                }
+                for chunk in response.retrieved_chunks
+            ],
+            "refused": response.refused,
+            "refusal_reason": response.refusal_reason,
+            "failure_category": response.failure_category,
+            "requires_human_review": response.requires_human_review,
+            "usage": {
+                "prompt_tokens": response.prompt_tokens,
+                "completion_tokens": response.completion_tokens,
+                "total_tokens": response.total_tokens,
+                "estimated_cost_usd": response.estimated_cost_usd,
+            },
+            "trace_id": response.trace_id,
+        }
+        try:
+            append_case_evidence_event(_case_evidence_path(), event=event)
+        except OSError:
+            logger.exception("Could not persist verbose semantic case evidence")
+        return response
+
+    monkeypatch.setattr(CoverageAgent, "answer", _answer_with_evidence)
+
+
+def record_semantic_metric(
+    case: GoldenCase,
+    *,
+    metric: str,
+    threshold: float,
+    judge_model: str | None = None,
+    score: float | None = None,
+    reason: str | None = None,
+    error: Exception | None = None,
+) -> None:
+    """Append judge score/rationale or parse failure to the verbose case trace."""
+    if os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard") != "verbose":
+        return
+    event: dict[str, object] = {
+        "schema_version": 1,
+        "record_type": "judge_result",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "case_id": case.id,
+        "metric": metric,
+        "judge_model": judge_model,
+        "threshold": threshold,
+        "status": "error" if error is not None else "scored",
+    }
+    if score is not None:
+        event["score"] = score
+    if reason:
+        event["reason"] = reason
+    if error is not None:
+        event["error_type"] = type(error).__name__
+        event["error"] = str(error)[:5000]
+    try:
+        append_case_evidence_event(_case_evidence_path(), event=event)
+    except OSError:
+        logger.exception("Could not persist verbose semantic judge evidence")
 
 
 def _chunk_evidence(chunks: list[Chunk]) -> list[dict[str, object]]:
@@ -180,17 +364,66 @@ def record_defect_measurement(
 def pytest_runtest_makereport(
     item: pytest.Item, call: pytest.CallInfo[None]
 ) -> Generator[None, pytest.TestReport, None]:
+    global _RATE_LIMIT_STOP_REPORTED
     outcome = yield
     if call.when == "call":
         report = outcome.get_result()
         _NODE_RESULTS[item.nodeid] = report.outcome
         if report.failed:
-            _NODE_FAILURE_DETAILS[item.nodeid] = str(report.longrepr)
+            longrepr = str(report.longrepr)
+            try:
+                event_path = Path(
+                    os.environ.get(
+                        "VERITY_SEMANTIC_FAILURES_PATH",
+                        "reports/semantic/failures.jsonl",
+                    )
+                )
+                event = append_failure_event(event_path, nodeid=item.nodeid, longrepr=longrepr)
+                _NODE_FAILURE_DETAILS[item.nodeid] = str(event["details"])
+                terminal = item.config.pluginmanager.get_plugin("terminalreporter")
+                if terminal is not None:
+                    terminal.write_line(f"SEMANTIC_FAILURE {item.nodeid}: {event['reason']}")
+            except OSError as exc:
+                # Preserve the original test failure, but make a broken journal
+                # visible instead of silently losing the diagnostic.
+                _NODE_FAILURE_DETAILS[item.nodeid] = failure_reason(longrepr)
+                terminal = item.config.pluginmanager.get_plugin("terminalreporter")
+                if terminal is not None:
+                    terminal.write_line(f"SEMANTIC_FAILURE_JOURNAL_ERROR {item.nodeid}: {exc}")
+
+    if (
+        not os.environ.get("PYTEST_XDIST_WORKER")
+        and _SESSION_ACCUMULATOR.rate_limit_responses >= RATE_LIMIT_STOP_THRESHOLD
+    ):
+        message = (
+            "SEMANTIC_RATE_LIMIT_STOP: stopping after "
+            f"{RATE_LIMIT_STOP_THRESHOLD} provider HTTP 429 "
+            "responses; no further semantic tests will run."
+        )
+        if not getattr(item.session, "shouldfail", None):
+            item.session.shouldfail = message
+        if not _RATE_LIMIT_STOP_REPORTED:
+            terminal = item.config.pluginmanager.get_plugin("terminalreporter")
+            if terminal is not None:
+                terminal.write_line(message)
+            _RATE_LIMIT_STOP_REPORTED = True
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    summary = render_cost_summary(_SESSION_ACCUMULATOR)
+    usage_report = build_usage_report(_SESSION_ACCUMULATOR, _NODE_RESULTS)
+    usage_summary = render_usage_summary(usage_report)
+    summary = render_cost_summary(_SESSION_ACCUMULATOR) + usage_summary
     write_step_summary(summary)
+    terminal = session.config.pluginmanager.get_plugin("terminalreporter")
+    if terminal is not None and not os.environ.get("PYTEST_XDIST_WORKER"):
+        verbosity = os.environ.get("VERITY_SEMANTIC_VERBOSITY", "standard")
+        terminal.write_sep("=", "LLM API request and token usage")
+        rendered_usage = render_usage_summary(usage_report, include_tests=verbosity != "quiet")
+        for line in rendered_usage.splitlines():
+            terminal.write_line(line)
+        if verbosity == "verbose":
+            for line in render_request_ledger(usage_report).splitlines():
+                terminal.write_line(line)
     if os.environ.get("PYTEST_XDIST_WORKER"):
         # `make eval-semantic` runs this tier serially specifically so this
         # hook sees every case; under `pytest -n auto` each worker/controller
@@ -198,6 +431,9 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         # row, silently overwriting one another (see the deterministic
         # conftest's matching guard on its own trend append).
         return
+    usage_path = Path("reports/semantic/usage.json")
+    usage_path.parent.mkdir(parents=True, exist_ok=True)
+    usage_path.write_text(json.dumps(usage_report, indent=2), encoding="utf-8")
     if _NODE_RESULTS:
         out = Path("reports/semantic/results-local.json")
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -220,7 +456,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                 "totals": {
                     "tokens": record.total_tokens,
                     "cost_usd": record.total_cost_usd,
+                    "requests": usage_report["suite"]["requests"],
+                    "successful_requests": usage_report["suite"]["succeeded"],
+                    "failed_requests": usage_report["suite"]["failed"],
+                    "incomplete_requests": usage_report["suite"]["incomplete"],
                 },
+                "usage_report": "usage.json",
             },
             "trend": asdict(record),
             "outcomes": _NODE_RESULTS,

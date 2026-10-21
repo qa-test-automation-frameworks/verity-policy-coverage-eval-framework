@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from sut.auth import member_token_valid
 from sut.citations import resolve_citations
@@ -339,49 +339,175 @@ class CoverageAgent:
         start_index: int,
         trace_id: str,
     ) -> AgentResponse | tuple[CompletionResult, list[ToolInvocation]]:
-        """Run the single supported round of tool calls, if the first-turn
-        result requested any, and the follow-up LLM call with their results.
+        """Run a bounded sequence of tool-call rounds and follow-up completions.
 
         Mutates `messages` in place (appends the assistant tool-call message
-        and tool-result messages) to build the exact conversation the second
-        LLM call sees. Returns an AgentResponse directly for any failure path
-        (unknown tool, malformed args, tool error, invalid conversation
-        structure, provider failure, or an unsupported second round of tool
-        calls) so the caller can return it immediately; otherwise returns the
-        final CompletionResult and the list of tool invocations made.
+        and tool-result messages) so each provider request sees the complete
+        conversation history. Returns an AgentResponse directly for any
+        failure path (unknown tool, malformed args, tool error, invalid
+        conversation structure, provider failure, an unrecoverable repeated
+        call, or an exhausted round/call budget); otherwise returns the final
+        CompletionResult and the list of tool invocations made.
 
         `result` is `first_result` unchanged when no tool calls were made.
         """
         result = first_result
         tool_invocations: list[ToolInvocation] = []
+        seen_calls: set[tuple[str, str]] = set()
+        tool_results_by_call: dict[tuple[str, str], str] = {}
+        tool_rounds = 0
 
-        if not result.tool_calls:
-            return result, tool_invocations
+        while result.tool_calls:
+            if tool_rounds >= self.settings.max_tool_rounds:
+                logger.warning("Tool round budget exhausted after %d rounds", tool_rounds)
+                return self._safe_failure_response(
+                    category="tool_round_limit",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
 
-        messages.append(self._assistant_tool_call_message(result))
+            if len(tool_invocations) + len(result.tool_calls) > self.settings.max_tool_calls:
+                logger.warning(
+                    "Tool call budget exceeded: completed=%d requested=%d maximum=%d",
+                    len(tool_invocations),
+                    len(result.tool_calls),
+                    self.settings.max_tool_calls,
+                )
+                return self._safe_failure_response(
+                    category="tool_call_limit",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
 
-        for tc in result.tool_calls:
-            tool_turn = self._execute_tool_call(
-                tc=tc,
-                start_index=start_index,
-                tool_invocations=tool_invocations,
-                trace_id=trace_id,
-            )
-            if isinstance(tool_turn, AgentResponse):
-                return tool_turn
-            tool_invocations.append(tool_turn["invocation"])
-            messages.append(tool_turn["message"])
+            messages.append(self._assistant_tool_call_message(result))
 
-        final_result = self._complete_after_tool_calls(
-            messages=messages,
-            is_clean=is_clean,
-            start_index=start_index,
-            tool_invocations=tool_invocations,
-            trace_id=trace_id,
-        )
-        if isinstance(final_result, AgentResponse):
-            return final_result
-        return final_result, tool_invocations
+            round_signatures: set[tuple[str, str]] = set()
+            repeat_needs_synthesis = False
+            for tc in result.tool_calls:
+                try:
+                    normalized_arguments = json.dumps(
+                        json.loads(tc.function.arguments),
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                except (TypeError, json.JSONDecodeError):
+                    normalized_arguments = str(tc.function.arguments)
+                call_signature = (tc.function.name, normalized_arguments)
+                if call_signature in seen_calls:
+                    cached_result = tool_results_by_call.get(call_signature)
+                    if cached_result is None:
+                        logger.warning(
+                            "Repeated tool call for %s has no cached result; stopping the loop",
+                            tc.function.name,
+                        )
+                        return self._safe_failure_response(
+                            category="tool_loop_detected",
+                            start_index=start_index,
+                            tool_invocations=tool_invocations,
+                            trace_id=trace_id,
+                        )
+                    logger.warning(
+                        "Repeated tool call detected for %s; reusing its result for one final "
+                        "tool-free synthesis attempt",
+                        tc.function.name,
+                    )
+                    messages.append(
+                        {"role": "tool", "tool_call_id": tc.id, "content": cached_result}
+                    )
+                    repeat_needs_synthesis = True
+                    continue
+                # Repeated calls in one assistant batch are not a loop: they
+                # must reach conversation validation, which checks duplicate
+                # tool-call IDs and enforces the clean-profile failure policy.
+                # Reuse applies only when a later round repeats a call.
+                round_signatures.add(call_signature)
+
+                tool_turn = self._execute_tool_call(
+                    tc=tc,
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
+                if isinstance(tool_turn, AgentResponse):
+                    return tool_turn
+                tool_invocations.append(tool_turn["invocation"])
+                messages.append(tool_turn["message"])
+                tool_results_by_call[call_signature] = tool_turn["message"]["content"]
+
+            seen_calls.update(round_signatures)
+            conv_check = validate_conversation(messages)
+            if not conv_check.passed:
+                logger.warning("Conversation structure check failed: %s", conv_check.message)
+                if is_clean:
+                    return self._safe_failure_response(
+                        category="invalid_conversation_structure",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+
+            tool_rounds += 1
+            if repeat_needs_synthesis:
+                # A repeated exact call cannot add information: the deterministic
+                # calculator result is already in the transcript. Give the model
+                # one bounded chance to explain that result, without advertising
+                # tools again. Existing call/round limits remain in force.
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "The calculator has already returned this exact result. Do not call "
+                            "a tool again. Use the result already in the conversation to give "
+                            "a concise, complete answer to the member's original question, "
+                            "without changing any values."
+                        ),
+                    }
+                )
+                try:
+                    result = self._llm_provider.complete(
+                        messages=messages,
+                        label="agent-repeat-recovery",
+                    )
+                except Exception:
+                    logger.exception("Provider call failed during repeated-tool recovery")
+                    return self._safe_failure_response(
+                        category="provider_unavailable",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+                if result.tool_calls:
+                    logger.warning("Provider requested another tool during tool-free recovery")
+                    return self._safe_failure_response(
+                        category="tool_loop_detected",
+                        start_index=start_index,
+                        tool_invocations=tool_invocations,
+                        trace_id=trace_id,
+                    )
+                return result, tool_invocations
+
+            try:
+                result = self._llm_provider.complete(
+                    messages=messages,
+                    tools=[COVERAGE_CALCULATOR_SCHEMA],
+                    label=(
+                        "agent-second-turn"
+                        if tool_rounds == 1
+                        else f"agent-follow-up-turn-{tool_rounds + 1}"
+                    ),
+                )
+            except Exception:
+                logger.exception("Provider call failed after tool handling")
+                return self._safe_failure_response(
+                    category="provider_unavailable",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
+
+        return result, tool_invocations
 
     def _assistant_tool_call_message(self, result: CompletionResult) -> dict[str, Any]:
         return {
@@ -422,9 +548,9 @@ class CoverageAgent:
         try:
             args: dict[str, Any] = json.loads(tc.function.arguments)
         except json.JSONDecodeError:
-            logger.exception("Malformed tool-call arguments for %s", fn_name)
+            logger.warning("Malformed JSON arguments for %s", fn_name)
             return self._safe_failure_response(
-                category="tool_unavailable",
+                category="invalid_tool_arguments",
                 start_index=start_index,
                 tool_invocations=tool_invocations,
                 trace_id=trace_id,
@@ -433,6 +559,22 @@ class CoverageAgent:
         with traced("tool.coverage_calculator"):
             try:
                 tool_result = run_coverage_calculator(args)
+            except ValidationError as exc:
+                error_types = sorted(
+                    {str(error["type"]) for error in exc.errors(include_input=False)}
+                )
+                details = ", ".join(error_types) or "schema_validation"
+                logger.warning(
+                    "Rejected invalid arguments for %s (validation errors: %s)",
+                    fn_name,
+                    details,
+                )
+                return self._safe_failure_response(
+                    category="invalid_tool_arguments",
+                    start_index=start_index,
+                    tool_invocations=tool_invocations,
+                    trace_id=trace_id,
+                )
             except Exception:
                 logger.exception("Coverage tool call failed")
                 return self._safe_failure_response(
@@ -450,48 +592,6 @@ class CoverageAgent:
                 "content": json.dumps(tool_result),
             },
         }
-
-    def _complete_after_tool_calls(
-        self,
-        *,
-        messages: list[dict[str, Any]],
-        is_clean: bool,
-        start_index: int,
-        tool_invocations: list[ToolInvocation],
-        trace_id: str,
-    ) -> AgentResponse | CompletionResult:
-        conv_check = validate_conversation(messages)
-        if not conv_check.passed:
-            logger.warning("Conversation structure check failed: %s", conv_check.message)
-            if is_clean:
-                return self._safe_failure_response(
-                    category="invalid_conversation_structure",
-                    start_index=start_index,
-                    tool_invocations=tool_invocations,
-                    trace_id=trace_id,
-                )
-
-        try:
-            result = self._llm_provider.complete(messages=messages, label="agent-second-turn")
-        except Exception:
-            logger.exception("Provider call failed after tool handling")
-            return self._safe_failure_response(
-                category="provider_unavailable",
-                start_index=start_index,
-                tool_invocations=tool_invocations,
-                trace_id=trace_id,
-            )
-
-        if result.tool_calls:
-            logger.warning("Second-turn tool_calls ignored; treating as tool_unavailable")
-            return self._safe_failure_response(
-                category="tool_unavailable",
-                start_index=start_index,
-                tool_invocations=tool_invocations,
-                trace_id=trace_id,
-            )
-
-        return result
 
     def _safe_failure_response(
         self,
@@ -576,7 +676,7 @@ class CoverageAgent:
                     retrieved_chunks=chunks,
                 )
 
-            # 6-7. Handle tool calls (single round) and the follow-up LLM call
+            # 6-7. Handle bounded multi-round tool calls and follow-up completions
             tool_round = self._handle_tool_call_round(
                 first_result=result,
                 messages=messages,
@@ -590,6 +690,15 @@ class CoverageAgent:
 
         # 8. Output guardrail
         final_answer = scrub_output(result.content)
+        if not final_answer.strip():
+            logger.warning("Provider returned an empty final answer")
+            return self._safe_failure_response(
+                category="empty_final_answer",
+                start_index=start_index,
+                tool_invocations=tool_invocations,
+                trace_id=trace_id,
+                retrieved_chunks=chunks,
+            )
 
         # 9. Prefer citations the model itself named; fall back to lexical
         # overlap only when the model didn't cite anything resolvable.
