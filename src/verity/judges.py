@@ -94,18 +94,19 @@ class ProviderJudge:
     def accumulator(self) -> RunAccumulator:
         return self._acc
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, structured_output: bool = True) -> str:
         """Synchronous generation — used by DeepEval and RAGAS metrics."""
         messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
         request_options: dict[str, Any] = {
             "label": "judge",
             "max_tokens": self._judge_settings.max_tokens,
-            # The evaluation adapters consume structured scoring output. Ask
-            # compatible providers for JSON at the protocol level instead of
-            # relying on prompt instructions alone.
-            "response_format": {"type": "json_object"},
         }
-        if self._judge_settings.provider == Provider.nvidia:
+        if structured_output:
+            # DeepEval's scoring prompts consume JSON. RAGAS supplies a
+            # different Pydantic schema for each prompt, so a generic
+            # json_object mode can interfere with its schema-repair prompt.
+            request_options["response_format"] = {"type": "json_object"}
+        if structured_output and self._judge_settings.provider == Provider.nvidia:
             # Nemotron can spend its token budget on reasoning before emitting
             # JSON; NVIDIA recommends disabling thinking for structured output.
             request_options["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
@@ -241,13 +242,15 @@ class ProviderJudge:
         except Exception:
             logger.exception("Could not persist verbose semantic judge output")
 
-    async def a_generate(self, prompt: str) -> str:
+    async def a_generate(self, prompt: str, *, structured_output: bool = True) -> str:
         """Async generation — used by async evaluation paths."""
         # run_in_executor does not copy ContextVars automatically, so carry
         # the active pytest test id into the worker explicitly.
         context = contextvars.copy_context()
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, context.run, self.generate, prompt)
+        return await loop.run_in_executor(
+            None, context.run, self.generate, prompt, structured_output
+        )
 
 
 def _finish_reason(raw_response: Any) -> str | None:
@@ -366,7 +369,14 @@ class RagasJudge:
                 callbacks: Any = None,
             ) -> Any:
                 text = prompt.to_string() if hasattr(prompt, "to_string") else str(prompt)
-                generations = [Generation(text=await judge.a_generate(text)) for _ in range(n)]
+                # RAGAS emits its own per-prompt Pydantic schema and also uses
+                # a StringIO schema when repairing malformed output. A generic
+                # JSON-object constraint can cause the repair call to repeat
+                # the invalid object instead of returning the required wrapper.
+                generations = [
+                    Generation(text=await judge.a_generate(text, structured_output=False))
+                    for _ in range(n)
+                ]
                 return LLMResult(generations=[generations])
 
         return _RagasLLMShim()

@@ -94,7 +94,7 @@ agent.answer(query, member_id)
 |   |   \-- record_call_span(call_record)       # OTel attributes
 |   |
 |   +-- [if tool_call in response]
-|   |   \-- bounded loop (max 3 rounds / 6 calls by default)
+|   |   \-- bounded loop (max 3 rounds / 6 calls by default; one tool-free synthesis attempt when a later round repeats an exact calculator call)
 |   |       +-- [span: tool.coverage_calculator] run_coverage_calculator(args)
 |   |       \-- provider.complete(messages + tool_result, ...)  # next turn
 |   |           +-- cassette replay / live call

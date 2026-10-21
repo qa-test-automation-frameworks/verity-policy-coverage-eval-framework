@@ -285,6 +285,16 @@ class TestRagasJudge:
         assert len(result.generations) == 1
         assert result.generations[0][0].text == "ragas response text"
 
+    def test_ragas_generation_leaves_schema_control_to_ragas(self) -> None:
+        judge = _make_provider_judge('{"text": "ragas response text"}')
+        rj = RagasJudge(judge)
+
+        asyncio.run(rj.adapter.generate("schema-specific RAGAS prompt"))
+
+        kwargs = judge._provider.complete.call_args.kwargs
+        assert "response_format" not in kwargs
+        assert "extra_body" not in kwargs
+
     def test_generate_respects_n(self) -> None:
         judge = _make_provider_judge("chat result text")
         rj = RagasJudge(judge)
