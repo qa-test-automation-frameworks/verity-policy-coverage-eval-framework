@@ -371,9 +371,9 @@ class TestParseJudgeScore:
         assert "score-protocol-valid-control" in report
         assert "score-protocol-invalid-100" in report
         assert "test/judge" in report
-        retained = Path(
-            "reports/calibration/score-protocol-negative-control.md"
-        ).read_text(encoding="utf-8")
+        retained = Path("reports/calibration/score-protocol-negative-control.md").read_text(
+            encoding="utf-8"
+        )
         assert "score-protocol-invalid-100" in retained
         assert "score_protocol_format_mismatch:length=10" in retained
         assert "**Invalid:** 1" in retained
@@ -381,9 +381,7 @@ class TestParseJudgeScore:
     def test_v1_rationales_are_rejected_and_v2_scores_are_unchanged(self) -> None:
         archive = Path("reports/calibration/archive/authored-score-v1/cassettes")
         version_two = Path("datasets/calibration/cassettes/authored-score-v2")
-        manifest_path = Path(
-            "datasets/calibration/cassettes/authored-score-v2-manifest.json"
-        )
+        manifest_path = Path("datasets/calibration/cassettes/authored-score-v2-manifest.json")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         assert manifest["formatVersion"] == "authored-score-v2"
         assert manifest["cassetteCount"] == 112
@@ -399,9 +397,7 @@ class TestParseJudgeScore:
         )
         old_files = sorted(archive.glob("*.json"))
         assert len(old_files) == 112
-        mappings = {
-            entry["source_v1"].split("/")[-1]: entry for entry in manifest["cassettes"]
-        }
+        mappings = {entry["source_v1"].split("/")[-1]: entry for entry in manifest["cassettes"]}
         for old_path in old_files:
             old_payload = json.loads(old_path.read_text(encoding="utf-8"))
             old_content = old_payload["content"]
@@ -412,20 +408,12 @@ class TestParseJudgeScore:
 
             new_path = version_two / old_path.name
             mapping = mappings[old_path.name]
-            assert (
-                hashlib.sha256(old_path.read_bytes()).hexdigest()
-                == mapping["source_v1_sha256"]
-            )
-            assert (
-                hashlib.sha256(new_path.read_bytes()).hexdigest()
-                == mapping["target_v2_sha256"]
-            )
+            assert hashlib.sha256(old_path.read_bytes()).hexdigest() == mapping["source_v1_sha256"]
+            assert hashlib.sha256(new_path.read_bytes()).hexdigest() == mapping["target_v2_sha256"]
             new_payload = json.loads(new_path.read_text(encoding="utf-8"))
             new_content = new_payload["content"]
             assert re.fullmatch(r"Score: (0|[1-9]|10)", new_content)
-            assert parse_judge_score(new_content) == pytest.approx(
-                int(old_match.group(1)) / 10
-            )
+            assert parse_judge_score(new_content) == pytest.approx(int(old_match.group(1)) / 10)
 
 
 # ---------------------------------------------------------------------------

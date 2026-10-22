@@ -22,9 +22,7 @@ from verity.runtime_adapter_calibration import (
 
 
 def test_authored_controls_are_separate_and_versioned() -> None:
-    dataset = load_dataset(
-        Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml")
-    )
+    dataset = load_dataset(Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml"))
     assert dataset.cohort_kind == "authored-control"
     assert len(dataset.cases) == 14
     assert {case.adapter_key for case in dataset.cases} == set(ADAPTERS)
@@ -43,9 +41,7 @@ def test_wilson_interval_explains_empty_class_denominator() -> None:
 
 
 def test_invalid_case_stays_in_completeness_not_confusion_matrix() -> None:
-    dataset = load_dataset(
-        Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml")
-    )
+    dataset = load_dataset(Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml"))
     labels = authored_control_labels(dataset)
     attempts = [
         MeasurementAttempt(
@@ -90,9 +86,7 @@ def test_invalid_case_stays_in_completeness_not_confusion_matrix() -> None:
 
 
 def test_adapter_polarity_uses_the_frozen_threshold_and_handles_adverse_scores() -> None:
-    dataset = load_dataset(
-        Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml")
-    )
+    dataset = load_dataset(Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml"))
     labels = authored_control_labels(dataset)
     attempts = []
     for case in dataset.cases:
@@ -141,9 +135,7 @@ def test_small_perfect_heldout_samples_remain_insufficient_for_promotion() -> No
 
 
 def test_one_class_confounded_adapter_is_not_rescued_by_other_adapters() -> None:
-    dataset = load_dataset(
-        Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml")
-    )
+    dataset = load_dataset(Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml"))
     labels = authored_control_labels(dataset)
     for case in dataset.cases:
         if case.adapter_key == "answer_relevancy":
@@ -174,9 +166,7 @@ def test_one_class_confounded_adapter_is_not_rescued_by_other_adapters() -> None
 
 @pytest.mark.parametrize("disposition", ["duplicate", "missing"])
 def test_measurement_ids_must_match_the_frozen_dataset(disposition: str) -> None:
-    dataset = load_dataset(
-        Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml")
-    )
+    dataset = load_dataset(Path("datasets/calibration/runtime-adapters/authored-controls-v1.yaml"))
     labels = authored_control_labels(dataset)
     attempts = [
         MeasurementAttempt(

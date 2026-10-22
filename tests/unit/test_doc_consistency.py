@@ -81,9 +81,7 @@ class TestCalibrationReportConsistency:
         valid_cases = [case for case, _ in valid]
         judge_scores = [score for _, score in valid]
         agreement = compute_agreement(valid_cases, judge_scores)
-        bias = compute_self_bias(
-            valid_cases, judge_scores, judge_family=_judge_family(settings)
-        )
+        bias = compute_self_bias(valid_cases, judge_scores, judge_family=_judge_family(settings))
 
         assert f"**{agreement.raw_agreement:.1%}**" in report_text
         assert f"**{agreement.cohen_kappa:.3f}**" in report_text

@@ -141,6 +141,7 @@ _AUTHORED_SCORES: dict[str, int] = {
     "calib-context-precision-008": 1,
 }
 
+
 def _load_authored_rationales() -> dict[str, str]:
     """Load explanations kept beside the versioned synthetic score cassettes."""
     with _AUTHORED_EXPLANATIONS_PATH.open(encoding="utf-8") as stream:
@@ -255,9 +256,7 @@ def _run_hermetic(
     return score_all_detailed(cases, judge)
 
 
-def _run_live(
-    cases: list[CalibrationCase], settings: Settings
-) -> list[CalibrationScoreAttempt]:
+def _run_live(cases: list[CalibrationCase], settings: Settings) -> list[CalibrationScoreAttempt]:
     """Score cases with real judge calls and save cassettes for future replay."""
     # Copy the full ambient settings (all provider keys/base overrides, not
     # just a hand-picked subset) so nvidia/google credentials and custom API
@@ -484,8 +483,7 @@ def render_incomplete_report(
         ]
     if bias is not None:
         lines.append(
-            f"- Self-preference delta on valid measurements: "
-            f"{bias.self_preference_delta:+.3f}"
+            f"- Self-preference delta on valid measurements: {bias.self_preference_delta:+.3f}"
         )
     lines += [
         "",
@@ -502,8 +500,7 @@ def render_incomplete_report(
             outcome = "valid"
             score_text = f"{attempt.score:.1f}"
         lines.append(
-            f"| `{case.id}` | {case.metric} | `{attempt.judge_model}` "
-            f"| {score_text} | {outcome} |"
+            f"| `{case.id}` | {case.metric} | `{attempt.judge_model}` | {score_text} | {outcome} |"
         )
     lines += [
         "",
@@ -622,9 +619,7 @@ def main() -> None:
     else:
         if agreement is None or bias is None:
             raise RuntimeError("A complete calibration run must have agreement and bias results")
-        report_md = render_report(
-            cases, valid_scores, agreement, bias, judge_model, mode_label
-        )
+        report_md = render_report(cases, valid_scores, agreement, bias, judge_model, mode_label)
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(report_md)

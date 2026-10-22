@@ -108,9 +108,7 @@ def _check_live_key(settings: Any) -> None:
 def _validate_locked_dependencies(adapter_keys: set[str]) -> None:
     from importlib.metadata import PackageNotFoundError, version
 
-    dependencies = {
-        ADAPTERS[key].dependency: ADAPTERS[key].locked_version for key in adapter_keys
-    }
+    dependencies = {ADAPTERS[key].dependency: ADAPTERS[key].locked_version for key in adapter_keys}
     for package, locked in dependencies.items():
         try:
             installed = version(package)
@@ -165,9 +163,7 @@ class BudgetedJudge:
 
     def _estimate_cost_for_tokens(self, prompt_tokens: int, completion_tokens: int) -> Any:
         total = prompt_tokens + completion_tokens
-        return self._estimate_cost(
-            Usage(prompt_tokens, completion_tokens, total), self.model_name
-        )
+        return self._estimate_cost(Usage(prompt_tokens, completion_tokens, total), self.model_name)
 
     def _reserve(self, prompt: str) -> float:
         encoded_bytes = len(prompt.encode("utf-8"))
@@ -465,9 +461,7 @@ def main() -> None:
         if args.source_sha != head_sha or not clean:
             parser.error("--live requires --source-sha equal to HEAD and a clean working tree")
         live_settings_module = __import__("verity.config", fromlist=["Settings"])
-        live_settings = live_settings_module.Settings().model_copy(
-            update={"cassette_mode": "off"}
-        )
+        live_settings = live_settings_module.Settings().model_copy(update={"cassette_mode": "off"})
         if not 1 <= live_settings.judge.max_tokens <= _MAX_RESPONSE_TOKENS:
             parser.error(
                 f"judge max_tokens must be between 1 and {_MAX_RESPONSE_TOKENS} "
@@ -529,12 +523,8 @@ def main() -> None:
         assert live_settings is not None
         reviewer_one = load_reviewer_labels(args.reviewer_one, dataset)
         reviewer_two = load_reviewer_labels(args.reviewer_two, dataset)
-        labels = resolve_heldout_labels(
-            dataset, reviewer_one, reviewer_two, args.adjudication
-        )
-        accumulator = RequestBoundAccumulator(
-            args.max_requests, args.max_requests_per_minute
-        )
+        labels = resolve_heldout_labels(dataset, reviewer_one, reviewer_two, args.adjudication)
+        accumulator = RequestBoundAccumulator(args.max_requests, args.max_requests_per_minute)
         judge = BudgetedJudge(live_settings, accumulator, args.max_cost_usd)
         attempts = _score_live(dataset, judge, args.max_requests)
         mode_name = "live-runtime-adapter"

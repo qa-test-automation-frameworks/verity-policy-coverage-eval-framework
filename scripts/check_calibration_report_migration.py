@@ -12,34 +12,40 @@ def report_fingerprint(path: Path) -> dict[str, list[str]]:
     overall = [
         line
         for line in lines
-        if line.startswith((
-            "| Raw agreement |",
-            "| Cohen's kappa |",
-            "| MAE (0-1 scale) |",
-            "| N |",
-        ))
+        if line.startswith(
+            (
+                "| Raw agreement |",
+                "| Cohen's kappa |",
+                "| MAE (0-1 scale) |",
+                "| N |",
+            )
+        )
     ]
     per_metric = [
         line
         for line in lines
-        if line.startswith((
-            "| answer_relevancy |",
-            "| completeness |",
-            "| context_precision |",
-            "| disambiguation |",
-            "| faithfulness |",
-            "| hallucination |",
-            "| refusal |",
-        ))
+        if line.startswith(
+            (
+                "| answer_relevancy |",
+                "| completeness |",
+                "| context_precision |",
+                "| disambiguation |",
+                "| faithfulness |",
+                "| hallucination |",
+                "| refusal |",
+            )
+        )
     ]
     self_bias = [
         line
         for line in lines
-        if line.startswith((
-            "| GLM (own family) |",
-            "| Other family |",
-            "| **Self-preference delta** |",
-        ))
+        if line.startswith(
+            (
+                "| GLM (own family) |",
+                "| Other family |",
+                "| **Self-preference delta** |",
+            )
+        )
     ]
     case_scores = [line for line in lines if line.startswith("| `calib-")]
     return {

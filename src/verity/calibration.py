@@ -347,11 +347,7 @@ class ScoreProtocolError(ValueError):
     """
 
     def __init__(self, reason: str, response_length: int | None) -> None:
-        self.reason = (
-            reason
-            if reason in {"empty", "format_mismatch", "non_string"}
-            else "format_mismatch"
-        )
+        self.reason = reason if reason in {"empty", "format_mismatch", "non_string"} else "format_mismatch"
         self.response_length = response_length
         length = "unknown" if response_length is None else str(response_length)
         self.diagnostic = f"score_protocol_{self.reason}:length={length}"[:96]
@@ -403,9 +399,7 @@ class CalibrationScoreAttempt:
     invalid_reason: str | None = None
 
 
-def score_all_detailed(
-    cases: list[CalibrationCase], judge: Any
-) -> list[CalibrationScoreAttempt]:
+def score_all_detailed(cases: list[CalibrationCase], judge: Any) -> list[CalibrationScoreAttempt]:
     """Attempt every case and preserve failures without turning them into scores."""
     judge_model = str(getattr(judge, "model_name", "unknown"))[:160]
     results: list[CalibrationScoreAttempt] = []

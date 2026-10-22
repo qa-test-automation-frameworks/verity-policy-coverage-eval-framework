@@ -1,0 +1,96 @@
+{
+  "case": {
+    "authoritative_truth": {
+      "current_amount_minor": 44500,
+      "currency": "USD",
+      "effective_date": "2024-07-01",
+      "evidence_id": "ev-defect-2-silver-premium-stale",
+      "source": "src/sut/corpus/amendments.md#§A1",
+      "superseded_amounts_minor": [42000]
+    },
+    "dataset_version": "1.0.0",
+    "id": "defect-2-silver-premium-stale",
+    "query": "What is the Silver plan monthly premium?"
+  },
+  "controls": [
+    {
+      "answer": "The current Silver plan monthly premium is $420.",
+      "control": "stale",
+      "decision": "quarantine",
+      "errors": 0,
+      "evidence_file": "src/sut/corpus/silver.md",
+      "grounding": {
+        "all_answer_amounts_appear_in_evidence": true,
+        "answer_amounts_minor": [42000],
+        "method": "literal amount match in the authored evidence file"
+      },
+      "invalid_measurements": 0,
+      "measurement_status": "valid_oracle_result",
+      "temporal": {
+        "authoritative_evidence_id": "ev-defect-2-silver-premium-stale",
+        "current_claim": 42000,
+        "reasons": ["The answer explicitly claims superseded amount $420.00 is current."],
+        "status": "FAIL"
+      }
+    },
+    {
+      "answer": "The amended Silver plan monthly premium is $445 effective 2024-07-01.",
+      "control": "current",
+      "decision": "ship",
+      "errors": 0,
+      "evidence_file": "src/sut/corpus/amendments.md",
+      "grounding": {
+        "all_answer_amounts_appear_in_evidence": true,
+        "answer_amounts_minor": [44500],
+        "method": "literal amount match in the authored evidence file"
+      },
+      "invalid_measurements": 0,
+      "measurement_status": "valid_oracle_result",
+      "temporal": {
+        "authoritative_evidence_id": "ev-defect-2-silver-premium-stale",
+        "current_claim": 44500,
+        "reasons": ["The current-value claim matches $445.00."],
+        "status": "PASS"
+      }
+    }
+  ],
+  "decision": "quarantine",
+  "decision_policy": {
+    "FAIL": "quarantine the authored answer control",
+    "PASS": "ship the authored answer control",
+    "REVIEW": "inconclusive; inspect the answer",
+    "production_decision": "none; controls are not a deployment evaluation"
+  },
+  "hypothesis": "A grounded obsolete premium can pass a grounding-only check; the temporal oracle should quarantine it.",
+  "identities": {
+    "control_config": {
+      "id": "temporal-decision-v1",
+      "sha256": "6ad1eee8bd4393dce92e01f6b2986a08e0bdef0a2fc5ba112fd6c8feefbb4a34"
+    },
+    "corpus_files": {
+      "src/sut/corpus/amendments.md": "d79131d6fd24a81c47d6f8edcfe4c30e0784a25c99053b2b4c7c7cab539a96c9",
+      "src/sut/corpus/silver.md": "c8eda617e6fa2806c7f85ab442a29dfd43493e4f098c8c2f6a174b86349f7a33"
+    },
+    "framework_files": {
+      "scripts/temporal_decision_case.py": "11704f691907125e8d87db84d1ecf8c423bd9a5716e73d0b07c23cbe4d8de371",
+      "src/verity/temporal_checks.py": "44524f8b580663e96d96e91d3533c3500dd396251fea7449215a928acc3050ac"
+    },
+    "golden_file": {
+      "path": "datasets/golden/defects.yaml",
+      "sha256": "535ee5c5db225ededd003d99c5224dcc034ec88717fc27df556c36f3fd8b4b3a"
+    },
+    "provider_configuration": "none; no provider is called"
+  },
+  "sampling": {
+    "authored_control_outputs": 2,
+    "cost_usd": null,
+    "independent_case_denominator": 1,
+    "independent_model_samples": 0,
+    "input_tokens": null,
+    "output_tokens": null,
+    "provider_requests": 0
+  },
+  "schema_version": 1,
+  "source_kind": "authored_control",
+  "uncertainty": "No Wilson interval is calculated for this purposive one-case authored control. When used on sampled measurements, a Wilson interval estimates the probability of crossing a fixed threshold under those sampled conditions; it does not express confidence that the mean score is correct or estimate a production population."
+}
