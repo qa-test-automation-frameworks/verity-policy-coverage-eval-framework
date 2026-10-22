@@ -3,7 +3,8 @@
     "total": 8,
     "caught": 4,
     "verified": 1,
-    "not_reproduced": 3,
+    "not_reproduced": 2,
+    "unresolved": 1,
     "covered": 0,
     "missed": 0
   },
@@ -27,13 +28,15 @@
       "description": "Stale Context (Silver Premium)",
       "failure_mode": "SUT reports $420 premium instead of $445 (amended value)",
       "catching_tiers": [
-        "Tier 2 \u2014 Semantic"
+        "Tier 1 \u2014 Temporal oracle",
+        "Tier 2 \u2014 Semantic grounding"
       ],
-      "hermetic_check": "Ground-truth mismatch vs amended figure",
-      "status": "NOT_REPRODUCED",
+      "hermetic_check": "Authored temporal amount expectation; faithfulness is grounding only",
+      "status": "UNRESOLVED",
       "details": [
-        "Semantic: defect-2-silver-premium-stale not_reproduced by faithfulness (score=1.0, threshold=0.7)",
-        "Semantic: defect-2-silver-premium-stale-v2 not_reproduced by faithfulness (score=0.75, threshold=0.7)"
+        "UNRESOLVED \u2014 stored faithfulness results measure grounding only; no temporal amount result is present",
+        "Grounding only: defect-2-silver-premium-stale faithfulness score=1.0, threshold=0.7",
+        "Grounding only: defect-2-silver-premium-stale-v2 faithfulness score=0.75, threshold=0.7"
       ]
     },
     {

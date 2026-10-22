@@ -195,7 +195,7 @@ constraint-dependencies = [
     "pip>=26.2",
     "setuptools>=83.0.0",
     "urllib3>=2.8.0",
-    "virtualenv>=21.7.13",
+    "virtualenv>=21.14.9",
 ]
 # FastEmbed 0.9 caps Pillow below 13 for its image-embedding path. This
 # application only uses TextEmbedding, and the installed package has no Pillow

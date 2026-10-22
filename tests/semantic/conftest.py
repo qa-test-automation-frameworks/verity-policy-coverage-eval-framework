@@ -41,6 +41,7 @@ from verity.semantic_reporting import (
     failure_reason,
 )
 from verity.statistics import StatResult, pass_rate_wilson_interval
+from verity.temporal_checks import TemporalCheckResult
 from verity.trends import append_trend, compute_trend_record
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
@@ -351,6 +352,70 @@ def record_defect_measurement(
             f"Seeded behavior for {case.id!r} did not reproduce under the current "
             f"model/judge pairing ({metric} threshold {threshold}, got {score:.3f})"
         )
+
+
+def record_grounding_measurement(
+    case: GoldenCase,
+    *,
+    metric: str,
+    score: float,
+    threshold: float,
+    scores: list[float],
+    response: AgentResponse | None,
+    retrieved_chunks: list[Chunk] | None,
+    wilson_interval: dict[str, float] | None,
+) -> None:
+    """Retain a grounding score without using it to decide temporal correctness."""
+    measurement_key = f"{case.id}::{metric}"
+    _SEMANTIC_MEASUREMENTS[measurement_key] = {
+        "case_id": case.id,
+        "defect_id": case.defect_id,
+        "metric": metric,
+        "score": score,
+        "threshold": threshold,
+        "threshold_passed": score >= threshold,
+        "status": "GROUNDING_ONLY",
+        "scores": scores,
+        "retrieved_chunks": _chunk_evidence(retrieved_chunks or []),
+        "response": _response_evidence(response),
+        "wilson_interval": wilson_interval,
+    }
+
+
+def record_temporal_measurement(
+    case: GoldenCase,
+    *,
+    result: TemporalCheckResult,
+    sample_results: list[TemporalCheckResult],
+    response: AgentResponse | None,
+    retrieved_chunks: list[Chunk] | None,
+    apply_xfail: bool = True,
+) -> None:
+    """Record a temporal oracle outcome separately from its grounding score."""
+    if case.temporal_amount is None:
+        raise ValueError(f"Golden case {case.id!r} has no temporal amount expectation")
+    status_by_result = {"PASS": "NOT_REPRODUCED", "FAIL": "VERIFIED", "REVIEW": "UNRESOLVED"}
+    status = status_by_result[result["status"]]
+    _SEMANTIC_MEASUREMENTS[f"{case.id}::temporal_amount"] = {
+        "case_id": case.id,
+        "defect_id": case.defect_id,
+        "metric": "temporal_amount",
+        "status": status,
+        "temporal_status": result["status"],
+        "current_claim": result["current_claim"],
+        "authoritative_evidence_id": result["authoritative_evidence_id"],
+        "reasons": result["reasons"],
+        "sample_results": sample_results,
+        "retrieved_chunks": _chunk_evidence(retrieved_chunks or []),
+        "response": _response_evidence(response),
+    }
+    if apply_xfail and result["status"] == "PASS":
+        pytest.xfail(
+            f"The stale-premium behavior did not reproduce: the answer matches the "
+            f"authored current amount ({result['authoritative_evidence_id']})"
+        )
+    if apply_xfail and result["status"] == "REVIEW":
+        pytest.xfail("Temporal amount result is unresolved and needs review")
 
 
 @pytest.hookimpl(hookwrapper=True)

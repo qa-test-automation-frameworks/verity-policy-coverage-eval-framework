@@ -60,9 +60,16 @@ cases are expected to score well above this; defect cases should score ≥ 0.5.
 
 | Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
 |---|---|---|---|---|---|
-| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #2, #7 | synthetic PASS (88% agreement) |
+| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #7 | synthetic PASS (88% agreement) |
 | Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) | synthetic PASS (100% agreement) |
 | Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | synthetic PASS (100% agreement) |
+
+Faithfulness measures whether answer claims are supported by retrieved passages. It cannot
+establish that a supported passage is current: a response that repeats the superseded `$420`
+value from `silver.md` can still be faithful to its context. Defect #2 therefore uses the
+separate deterministic `check_temporal_amount` oracle against the authored `$445` amendment.
+Its `PASS` / `FAIL` / `REVIEW` result is recorded independently; only temporal `PASS` can mark
+the stale-premium behavior `NOT_REPRODUCED`, while `REVIEW` remains `UNRESOLVED`.
 
 The Calibration column reflects `docs/calibration-report.md`'s per-metric breakdown.
 `not yet run` means the metric has no dedicated calibration cases in
@@ -123,7 +130,7 @@ distribution.
 | Defect | Tier 1 (deterministic) | Tier 2 (semantic) |
 |---|---|---|
 | #1 Hallucination (bariatric) | — | Faithfulness, Hallucination |
-| #2 Stale context (premium) | — | Faithfulness |
+| #2 Stale context (premium) | Temporal amount oracle | Faithfulness (grounding only) |
 | #3 Multi-hop calculation | — | G-Eval Completeness |
 | #4 Contradiction not surfaced | — | G-Eval Disambiguation |
 | #5 Tool arg transposition | `check_tool_args` | Task Completion |

@@ -102,10 +102,10 @@ def _import_ragas_metric_class(name: str) -> Any:
 
 
 def make_faithfulness(judge: ProviderJudge) -> Any:
-    """RAGAS Faithfulness — detects hallucination, stale context, injection compliance.
+    """RAGAS Faithfulness — measures whether answer claims are grounded in retrieval.
 
-    Primary targets: defect #1 (bariatric hallucination), defect #2 (stale premium),
-    defect #7 (injection compliance language not grounded in authoritative corpus).
+    It can help detect unsupported claims in defects #1 and #7. It cannot establish
+    whether a retrieved fact is current, so defect #2 uses a separate temporal oracle.
 
     Callers compare the returned metric's score against THRESHOLD_FAITHFULNESS
     (this factory does not take a threshold — RAGAS metrics score, they don't
