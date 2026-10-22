@@ -36,7 +36,14 @@ cases:
       The Silver plan monthly premium is $445, effective 2024-07-01 per Amendment Bulletin
       #2024-A2 (amendments.md §A1). The original figure of $420 in silver.md §1 is superseded.
     must_contain: ["445"]
-    must_not_contain: ["420"]
+    temporal_amount:
+      as_of_date: "2024-07-01"
+      current_amount_minor: 44500
+      superseded_amounts_minor: [42000]
+      currency: USD
+      authoritative_evidence_id: ev-defect-2-silver-premium-stale
+      authoritative_source: src/sut/corpus/amendments.md#§A1
+      effective_date: "2024-07-01"
     expected_citations: [amendments.md]
     expects_defect: true
     defect_id: 2

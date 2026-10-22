@@ -26,10 +26,12 @@ calibration status). Each item below names the exact command or file that would 
   actually reduces the control failure rate — that's the evidence needed to lift the
   `@pytest.mark.quarantine` markers on `test_clean_faithfulness` and `test_answer_relevancy`
   (KI-3 in `docs/known-issues.md`).
-- **Reproduce defects #1–#3 live with the default pairing.** The committed run marks these
-  `NOT_REPRODUCED` for `openrouter/openai/gpt-4o-mini` — a fact about that model's quality, not
-  a detector gap (the hermetic/adversarial replay proves the detectors fire). Re-running against
-  a different model may or may not reproduce them; either outcome is worth recording.
+- **Refresh live defect evidence with the default pairing.** The historical run marked defects
+  #1–#3 `NOT_REPRODUCED` for `openrouter/openai/gpt-4o-mini`, but its faithfulness score cannot
+  establish whether defect #2's premium was current. The report now treats that old temporal
+  outcome as `UNRESOLVED`; only a separately recorded temporal oracle result can mark #2
+  `NOT_REPRODUCED`. Re-running against a configured model may reproduce defects #1–#4; retain
+  the observed result without treating authored fixtures as live evidence.
 
 ## Sample-size and scale
 

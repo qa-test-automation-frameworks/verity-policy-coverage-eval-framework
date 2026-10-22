@@ -1,8 +1,10 @@
 """Generate the defects-caught matrix report.
 
 Runs hermetic checks (cassette replay, no API key) for defects 5-8 via
-deterministic and adversarial replay. Defects 1-4 (semantic-only) are marked
-VERIFIED or NOT_REPRODUCED from reports/semantic/results.json when present, otherwise COVERED
+deterministic and adversarial replay. Defects 1, 3, and 4 use semantic checks;
+defect 2 also has a separate deterministic temporal amount oracle. They are marked
+VERIFIED, NOT_REPRODUCED, or UNRESOLVED from reports/semantic/results.json when present
+otherwise COVERED
 with a reference to the ground-truth and threshold that will catch them.
 
 Outputs:
@@ -22,7 +24,7 @@ from typing import Literal
 # Catalog — static metadata for all 8 seeded defects
 # ---------------------------------------------------------------------------
 
-Status = Literal["CAUGHT", "VERIFIED", "NOT_REPRODUCED", "COVERED", "MISSED"]
+Status = Literal["CAUGHT", "VERIFIED", "NOT_REPRODUCED", "UNRESOLVED", "COVERED", "MISSED"]
 
 
 @dataclass
@@ -48,8 +50,8 @@ DEFECT_CATALOG: list[DefectEntry] = [
         id=2,
         description="Stale Context (Silver Premium)",
         failure_mode="SUT reports $420 premium instead of $445 (amended value)",
-        catching_tiers=["Tier 2 — Semantic"],
-        hermetic_check="Ground-truth mismatch vs amended figure",
+        catching_tiers=["Tier 1 — Temporal oracle", "Tier 2 — Semantic grounding"],
+        hermetic_check="Authored temporal amount expectation; faithfulness is grounding only",
     ),
     DefectEntry(
         id=3,
@@ -264,9 +266,16 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
         for entry in catalog:
             if entry.id <= 4:
                 entry.status = "COVERED"
-                entry.details.append(
-                    "COVERED — run `make eval-semantic` with a configured API key to verify live"
-                )
+                if entry.id == 2:
+                    entry.details.append(
+                        "COVERED — run a live seeded-premium case to record the separate "
+                        "temporal oracle result; faithfulness only measures grounding"
+                    )
+                else:
+                    entry.details.append(
+                        "COVERED — run `make eval-semantic` with a configured API key "
+                        "to verify live"
+                    )
         return
 
     try:
@@ -299,33 +308,82 @@ def _ingest_semantic_results(catalog: list[DefectEntry]) -> None:
             continue
         variant_measurements = by_defect.get(entry.id)
         if variant_measurements:
+            if entry.id == 2:
+                temporal_measurements = [
+                    measurement
+                    for measurement in variant_measurements
+                    if measurement.get("metric") == "temporal_amount"
+                ]
+                grounding_measurements = [
+                    measurement
+                    for measurement in variant_measurements
+                    if measurement.get("metric") == "faithfulness"
+                ]
+                if not temporal_measurements:
+                    entry.status = "UNRESOLVED"
+                    entry.details.append(
+                        "UNRESOLVED — stored faithfulness results measure grounding only; "
+                        "no temporal amount result is present"
+                    )
+                    for measurement in grounding_measurements:
+                        entry.details.append(
+                            "Grounding only: "
+                            f"{measurement.get('case_id', '?')} faithfulness "
+                            f"score={measurement.get('score')}, "
+                            f"threshold={measurement.get('threshold')}"
+                        )
+                    continue
+                variant_measurements = temporal_measurements
+
             # Conservative aggregation: all variants must pass threshold before
             # reporting that the seeded behavior did not reproduce for this run.
-            all_non_reproduced = all(
-                m.get("status") in {"FIXED", "NOT_REPRODUCED"} for m in variant_measurements
-            )
-            entry.status = "NOT_REPRODUCED" if all_non_reproduced else "VERIFIED"
+            statuses = {m.get("status") for m in variant_measurements}
+            if "VERIFIED" in statuses:
+                entry.status = "VERIFIED"
+            elif "UNRESOLVED" in statuses:
+                entry.status = "UNRESOLVED"
+            elif statuses and statuses <= {"FIXED", "NOT_REPRODUCED"}:
+                entry.status = "NOT_REPRODUCED"
+            else:
+                entry.status = "UNRESOLVED" if entry.id == 2 else "VERIFIED"
             for m in variant_measurements:
                 case_id = m.get("case_id", "?")
                 status = m.get("status", "VERIFIED")
-                status_label = (
-                    "not_reproduced"
-                    if status in {"FIXED", "NOT_REPRODUCED"}
-                    else str(status).lower()
-                )
                 metric = m.get("metric", "semantic")
-                score = m.get("score")
-                threshold = m.get("threshold")
-                entry.details.append(
-                    f"Semantic: {case_id} {status_label} by {metric} "
-                    f"(score={score}, threshold={threshold})"
-                )
+                if metric == "temporal_amount":
+                    temporal_status = m.get("temporal_status", "REVIEW")
+                    current_claim = m.get("current_claim")
+                    reasons = m.get("reasons", [])
+                    entry.details.append(
+                        f"Temporal: {case_id} {str(temporal_status).lower()} "
+                        f"(current_claim_minor={current_claim}, "
+                        f"evidence_id={m.get('authoritative_evidence_id')}, reasons={reasons})"
+                    )
+                else:
+                    status_label = (
+                        "not_reproduced"
+                        if status in {"FIXED", "NOT_REPRODUCED"}
+                        else str(status).lower()
+                    )
+                    score = m.get("score")
+                    threshold = m.get("threshold")
+                    qualifier = "Grounding only: " if entry.id == 2 else "Semantic: "
+                    entry.details.append(
+                        f"{qualifier}{case_id} {status_label} by {metric} "
+                        f"(score={score}, threshold={threshold})"
+                    )
             continue
 
         key = defect_key_map.get(entry.id, "")
         if key in sem_results:
-            entry.status = "VERIFIED"
-            entry.details.append(f"Semantic: verified via {key}")
+            if entry.id == 2:
+                entry.status = "UNRESOLVED"
+                entry.details.append(
+                    f"UNRESOLVED — historical semantic result {key} has no temporal amount result"
+                )
+            else:
+                entry.status = "VERIFIED"
+                entry.details.append(f"Semantic: verified via {key}")
         else:
             entry.status = "COVERED"
             entry.details.append("COVERED — semantic results present but case not found")
@@ -345,6 +403,7 @@ _EVIDENCE_TYPE: dict[Status, str] = {
     "CAUGHT": "authored-cassette detector replay",
     "VERIFIED": "live semantic run",
     "NOT_REPRODUCED": "live semantic run",
+    "UNRESOLVED": "temporal result unavailable or needs review",
     "COVERED": "not yet executed",
     "MISSED": "authored-cassette detector replay",
 }
@@ -481,6 +540,7 @@ def render_markdown(
     semantic_tier = [e for e in catalog if e.id <= 4]
     verified = [e for e in semantic_tier if e.status == "VERIFIED"]
     not_reproduced = [e for e in semantic_tier if e.status == "NOT_REPRODUCED"]
+    unresolved = [e for e in semantic_tier if e.status == "UNRESOLVED"]
 
     def _ids(entries: list[DefectEntry]) -> str:
         """Render defect ids as '#1-#3' for a contiguous run, else '#1, #2, #5'."""
@@ -489,7 +549,31 @@ def render_markdown(
             return f"#{ids[0]}-#{ids[-1]}"
         return ", ".join(f"#{i}" for i in ids)
 
-    if verified and not_reproduced:
+    if unresolved:
+        parts: list[str] = []
+        if verified:
+            parts.append(
+                f"Defect{'s' if len(verified) > 1 else ''} {_ids(verified)} "
+                "reproduced the seeded behavior"
+            )
+        if not_reproduced:
+            verb = "were" if len(not_reproduced) > 1 else "was"
+            parts.append(
+                f"Defect{'s' if len(not_reproduced) > 1 else ''} {_ids(not_reproduced)} "
+                f"{verb} not reproduced by their applicable checks"
+            )
+        verb = "remain" if len(unresolved) > 1 else "remains"
+        parts.append(
+            f"Defect{'s' if len(unresolved) > 1 else ''} {_ids(unresolved)} {verb} `UNRESOLVED`"
+        )
+        semantic_summary = (
+            "Live semantic evidence is reported below: "
+            + "; ".join(parts)
+            + ". Defect #2 is unresolved unless its separate temporal amount result is present; "
+            "faithfulness alone measures grounding and cannot establish which premium is current. "
+            "Re-run `make eval-semantic` to refresh."
+        )
+    elif verified and not_reproduced:
         semantic_summary = (
             f"Defects 1-4 have a live Tier-2 semantic run committed, but only "
             f"defect{'s' if len(verified) > 1 else ''} {_ids(verified)} reproduced for the "
@@ -533,7 +617,8 @@ def render_markdown(
         "check function) fires on a known-bad output; it does not by itself prove the "
         "SUT ever produces that output live. ✅ VERIFIED rows mean a live semantic run "
         "reproduced the seeded behavior. 🟡 NOT REPRODUCED rows mean the live run passed "
-        "the relevant threshold for that provider/model pairing. ⬜ COVERED rows have no "
+        "the relevant threshold for that provider/model pairing. 🟠 UNRESOLVED rows have "
+        "evidence, but the applicable check could not decide. ⬜ COVERED rows have no "
         "run at all yet — ground truth and thresholds are committed, but nothing has "
         "executed against them. See `docs/architecture.md` and the Limitations section "
         "of `README.md` for the full evidence caveat.",
@@ -556,6 +641,7 @@ def render_markdown(
         "CAUGHT": "✅ CAUGHT",
         "VERIFIED": "✅ VERIFIED",
         "NOT_REPRODUCED": "🟡 NOT REPRODUCED",
+        "UNRESOLVED": "🟠 UNRESOLVED",
         "COVERED": "⬜ COVERED",
         "MISSED": "❌ MISSED",
     }
@@ -578,7 +664,7 @@ def render_markdown(
             "## Risk Weight Breakdown",
             "",
             "Defect-catalog status grouped by the risk_weight of its golden case "
-            "(pending = ⬜ COVERED, not yet run).",
+            "(pending includes COVERED, NOT REPRODUCED, and UNRESOLVED evidence).",
             "",
             "| Risk Weight | Pass | Pending | Fail |",
             "|-------------|-----:|--------:|-----:|",
@@ -603,6 +689,8 @@ def render_markdown(
         "| ✅ VERIFIED | Confirmed by a live semantic run (`reports/semantic/results.json`) |",
         "| 🟡 NOT REPRODUCED | Live semantic run passed the quality threshold; "
         "seeded behavior did not reproduce for this provider/model pairing |",
+        "| 🟠 UNRESOLVED | Evidence exists, but the applicable check could not determine "
+        "whether the seeded behavior reproduced |",
         "| ⬜ COVERED | Ground-truth + metric threshold established; requires API key |",
         "| ❌ MISSED | Check ran hermetically and the defect was NOT detected (regression) |",
         "",
@@ -624,7 +712,8 @@ def render_markdown(
         lines += [
             f"### Defect #{entry.id} - {entry.description}",
             "",
-            f"**Check:** `{entry.hermetic_check}`  ",
+            f"**Check:** `{entry.hermetic_check}`",
+            "",
             f"**Status:** {status_icon[entry.status]}",
             "",
         ]
@@ -638,8 +727,10 @@ def render_markdown(
         "",
         "## Semantic-Tier Coverage (Defects 1-4)",
         "",
-        "These defects require live LLM judge calls to verify. "
-        "The ground-truth, metric choice, and threshold are committed in "
+        "Defects #1, #3, and #4 use live LLM judge checks. Defect #2 uses a separate "
+        "deterministic temporal oracle on the live SUT answer; faithfulness measures "
+        "grounding only and cannot establish which premium is current. The ground truth "
+        "and expectations are committed in "
         "`datasets/golden/*.yaml` and `docs/thresholds.md`.",
         "",
     ]
@@ -650,7 +741,8 @@ def render_markdown(
         lines += [
             f"### Defect #{entry.id} - {entry.description}",
             "",
-            f"**Check:** {entry.hermetic_check}  ",
+            f"**Check:** {entry.hermetic_check}",
+            "",
             f"**Status:** {status_icon[entry.status]}",
             "",
         ]
@@ -676,6 +768,7 @@ def build_json(catalog: list[DefectEntry]) -> dict[str, object]:
             "caught": sum(1 for e in catalog if e.status == "CAUGHT"),
             "verified": sum(1 for e in catalog if e.status == "VERIFIED"),
             "not_reproduced": sum(1 for e in catalog if e.status == "NOT_REPRODUCED"),
+            "unresolved": sum(1 for e in catalog if e.status == "UNRESOLVED"),
             "covered": sum(1 for e in catalog if e.status == "COVERED"),
             "missed": sum(1 for e in catalog if e.status == "MISSED"),
         },
@@ -731,7 +824,8 @@ def main() -> None:
     assert isinstance(summary, dict)
     print(
         f"\nSummary: {summary['caught']} CAUGHT + {summary['verified']} VERIFIED "
-        f"+ {summary['not_reproduced']} NOT_REPRODUCED + {summary['covered']} COVERED "
+        f"+ {summary['not_reproduced']} NOT_REPRODUCED "
+        f"+ {summary['unresolved']} UNRESOLVED + {summary['covered']} COVERED "
         f"+ {summary['missed']} MISSED "
         f"(out of {summary['total']})"
     )
