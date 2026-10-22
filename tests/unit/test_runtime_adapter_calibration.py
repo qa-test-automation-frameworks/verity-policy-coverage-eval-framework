@@ -11,8 +11,8 @@ from verity.runtime_adapter_calibration import (
     ADAPTERS,
     MeasurementAttempt,
     analyze_adapter_calibration,
-    authored_control_labels,
     build_registry,
+    authored_control_labels,
     load_dataset,
     load_reviewer_labels,
     resolve_heldout_labels,
@@ -137,7 +137,7 @@ def test_small_perfect_heldout_samples_remain_insufficient_for_promotion() -> No
         specificity_interval=eight_case_interval,
     )
 
-    assert status == "insufficient evidence: Wilson lower bound below predeclared bar"
+    assert status == "insufficient evidence: fewer than nine valid cases in a class"
 
 
 def test_one_class_confounded_adapter_is_not_rescued_by_other_adapters() -> None:

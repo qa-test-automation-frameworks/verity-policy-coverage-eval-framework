@@ -45,19 +45,19 @@ _MAX_RESPONSE_TOKENS = 8192
 _JUDGE_MAX_ATTEMPTS = 3
 
 
-class RequestCeilingExceeded(RuntimeError):
+class RequestCeilingError(RuntimeError):
     """Raised before submitting a request beyond the explicitly set ceiling."""
 
 
-class CostCeilingExceeded(RuntimeError):
+class CostCeilingError(RuntimeError):
     """Raised before an estimated request budget would exceed the set ceiling."""
 
 
-class PromptCeilingExceeded(RuntimeError):
+class PromptCeilingError(RuntimeError):
     """Raised when a judge prompt is larger than the bounded live-study plan."""
 
 
-class RateCeilingExceeded(RuntimeError):
+class RateCeilingError(RuntimeError):
     """Raised before a provider submission exceeds the live per-minute ceiling."""
 
 
@@ -134,14 +134,14 @@ class RequestBoundAccumulator(RunAccumulator):
 
     def begin_request(self, *args: Any, **kwargs: Any) -> Any:
         if len(self.requests) >= self.max_requests:
-            raise RequestCeilingExceeded("adapter_request_ceiling_reached")
+            raise RequestCeilingError("adapter_request_ceiling_reached")
         now = time.monotonic()
         while self._request_times and now - self._request_times[0] >= 60:
             self._request_times.popleft()
         if len(self._request_times) >= self.max_requests_per_minute:
-            raise RateCeilingExceeded("adapter_rate_ceiling_reached")
+            raise RateCeilingError("adapter_rate_ceiling_reached")
         if not self.total_cost.priced:
-            raise CostCeilingExceeded("unpriced_model_budget_refused")
+            raise CostCeilingError("unpriced_model_budget_refused")
         self._request_times.append(now)
         return super().begin_request(*args, **kwargs)
 
@@ -172,7 +172,7 @@ class BudgetedJudge:
     def _reserve(self, prompt: str) -> float:
         encoded_bytes = len(prompt.encode("utf-8"))
         if encoded_bytes > _MAX_PROMPT_BYTES:
-            raise PromptCeilingExceeded("adapter_prompt_byte_ceiling_reached")
+            raise PromptCeilingError("adapter_prompt_byte_ceiling_reached")
         # Allow room for one correction prompt and cap each of the judge's
         # bounded retries at its existing 8,192-token ceiling.
         prompt_tokens = _JUDGE_MAX_ATTEMPTS * (encoded_bytes + _MAX_RESPONSE_TOKENS)
@@ -182,7 +182,7 @@ class BudgetedJudge:
         with self._lock:
             current = self._accumulator.total_cost.total_usd
             if current + self._reserved_usd + reserve > self._max_cost_usd:
-                raise CostCeilingExceeded("adapter_estimated_cost_ceiling_reached")
+                raise CostCeilingError("adapter_estimated_cost_ceiling_reached")
             self._reserved_usd += reserve
         return reserve
 
@@ -224,9 +224,9 @@ class BudgetedJudge:
     def _verify_accounting(self, request_start: int) -> None:
         events = self._accumulator.requests[request_start:]
         if any(event.usage_reported is not True for event in events):
-            raise CostCeilingExceeded("request_missing_usage_metadata")
+            raise CostCeilingError("request_missing_usage_metadata")
         if self._accumulator.total_cost.total_usd > self._max_cost_usd:
-            raise CostCeilingExceeded("adapter_actual_estimated_cost_ceiling_reached")
+            raise CostCeilingError("adapter_actual_estimated_cost_ceiling_reached")
 
 
 def _native_metric(case: AdapterCase, judge: Any) -> float:
@@ -278,10 +278,10 @@ def _safe_error_code(exc: BaseException) -> str:
     if isinstance(
         exc,
         (
-            RequestCeilingExceeded,
-            CostCeilingExceeded,
-            PromptCeilingExceeded,
-            RateCeilingExceeded,
+            RequestCeilingError,
+            CostCeilingError,
+            PromptCeilingError,
+            RateCeilingError,
         ),
     ):
         return f"safety_limit:{type(exc).__name__}"
@@ -317,10 +317,10 @@ def _score_live(
             else:
                 attempts.append(MeasurementAttempt(case.case_id, "completed", raw_score=score))
         except (
-            RequestCeilingExceeded,
-            CostCeilingExceeded,
-            PromptCeilingExceeded,
-            RateCeilingExceeded,
+            RequestCeilingError,
+            CostCeilingError,
+            PromptCeilingError,
+            RateCeilingError,
         ) as exc:
             attempts.append(
                 MeasurementAttempt(case.case_id, "invalid", invalid_reason=_safe_error_code(exc))
@@ -382,7 +382,13 @@ def _render_markdown(report: dict[str, Any]) -> str:
             f"{item['raw_agreement'] if item['raw_agreement'] is not None else 'n/a'} | "
             f"{sens_ci_text} / {spec_ci_text} | {item['promotion_status']} |"
         )
-    lines += ["", "## Case-level raw scores", "", "| Case | Pair | Adapter | Label | Score | Decision | Status |", "|---|---|---|---|---:|---|---|"]
+    lines += [
+        "",
+        "## Case-level raw scores",
+        "",
+        "| Case | Pair | Adapter | Label | Score | Decision | Status |",
+        "|---|---|---|---|---:|---|---|",
+    ]
     for key, item in sorted(report["per_adapter"].items()):
         for measurement in item["measurements"]:
             decision = measurement["normalized_bad_decision"]
@@ -445,7 +451,9 @@ def main() -> None:
         if dataset.cohort_kind != "independently-labeled-heldout":
             parser.error("--live requires an independently-labeled-heldout dataset")
         if not args.reviewer_one or not args.reviewer_two:
-            parser.error("--live requires --reviewer-one and --reviewer-two complete label receipts")
+            parser.error(
+                "--live requires --reviewer-one and --reviewer-two complete label receipts"
+            )
         if args.max_cases is None or not len(dataset.cases) <= args.max_cases <= 500:
             parser.error("--live requires --max-cases to cover the cohort and be at most 500")
         if args.max_requests is None or not 1 <= args.max_requests <= 500:
@@ -462,7 +470,8 @@ def main() -> None:
         )
         if not 1 <= live_settings.judge.max_tokens <= _MAX_RESPONSE_TOKENS:
             parser.error(
-                f"judge max_tokens must be between 1 and {_MAX_RESPONSE_TOKENS} for this bounded run"
+                f"judge max_tokens must be between 1 and {_MAX_RESPONSE_TOKENS} "
+                "for this bounded run"
             )
         _check_live_key(live_settings)
         _validate_locked_dependencies({case.adapter_key for case in dataset.cases})

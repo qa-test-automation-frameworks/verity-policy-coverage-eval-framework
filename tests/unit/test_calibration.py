@@ -333,7 +333,7 @@ class TestParseJudgeScore:
     def test_rejects_every_non_contract_shape(self, text: str) -> None:
         with pytest.raises(ScoreProtocolError) as caught:
             parse_judge_score(text)
-        assert text not in str(caught.value)
+        assert not text or text not in str(caught.value)
         assert len(caught.value.diagnostic) <= 96
 
     def test_score_100_is_an_invalid_incomplete_measurement(self) -> None:
@@ -496,9 +496,16 @@ class TestCalibrationJsonArtifact:
             # env-isolated Settings instance — not a matching provider/model.
             settings = Settings(_env_file=None, provider=Provider.zai, model="glm-4.5")
 
-        judge_scores = _run_hermetic(cases, settings)
-        agreement = compute_agreement(cases, judge_scores)
-        bias = compute_self_bias(cases, judge_scores)
+        attempts = _run_hermetic(cases, settings)
+        valid = [
+            (case, float(attempt.score))
+            for case, attempt in zip(cases, attempts, strict=True)
+            if attempt.score is not None
+        ]
+        valid_cases = [case for case, _ in valid]
+        judge_scores = [score for _, score in valid]
+        agreement = compute_agreement(valid_cases, judge_scores)
+        bias = compute_self_bias(valid_cases, judge_scores)
 
         raw: dict = {
             "judge": {
@@ -508,8 +515,8 @@ class TestCalibrationJsonArtifact:
             "agreement": {"n": agreement.n},
             "self_bias": {"self_preference_delta": round(bias.self_preference_delta, 4)},
             "per_case": [
-                {"id": c.id, "human": c.human_score, "judge": round(s, 3)}
-                for c, s in zip(cases, judge_scores, strict=False)
+                {"id": case.id, "human": case.human_score, "judge": round(score, 3)}
+                for case, score in valid
             ],
         }
 

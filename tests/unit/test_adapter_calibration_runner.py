@@ -8,9 +8,9 @@ import pytest
 
 from scripts.run_adapter_calibration import (
     BudgetedJudge,
-    RateCeilingExceeded,
+    RateCeilingError,
     RequestBoundAccumulator,
-    RequestCeilingExceeded,
+    RequestCeilingError,
 )
 from verity.cost import RunAccumulator, Usage
 
@@ -18,13 +18,13 @@ from verity.cost import RunAccumulator, Usage
 def test_request_and_rate_ceilings_reject_before_recording_an_extra_call() -> None:
     request_limited = RequestBoundAccumulator(max_requests=1, max_requests_per_minute=2)
     request_limited.begin_request(model="openai/gpt-4o-mini")
-    with pytest.raises(RequestCeilingExceeded):
+    with pytest.raises(RequestCeilingError):
         request_limited.begin_request(model="openai/gpt-4o-mini")
     assert len(request_limited.requests) == 1
 
     rate_limited = RequestBoundAccumulator(max_requests=2, max_requests_per_minute=1)
     rate_limited.begin_request(model="openai/gpt-4o-mini")
-    with pytest.raises(RateCeilingExceeded):
+    with pytest.raises(RateCeilingError):
         rate_limited.begin_request(model="openai/gpt-4o-mini")
     assert len(rate_limited.requests) == 1
 

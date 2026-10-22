@@ -303,7 +303,9 @@ def load_reviewer_labels(path: Path, dataset: AdapterDataset) -> ReviewerLabels:
         extra = actual_fields - _LABEL_FIELDS
         if missing or extra:
             details = sorted(missing | extra)
-            raise ValueError(f"{path}: label CSV columns do not match protocol: {', '.join(details)}")
+            raise ValueError(
+                f"{path}: label CSV columns do not match protocol: {', '.join(details)}"
+            )
         rows = list(reader)
     expected_cases = {case.case_id: case for case in dataset.cases}
     if len(rows) != len(expected_cases):
@@ -418,7 +420,14 @@ def resolve_heldout_labels(
 def _load_adjudications(
     path: Path, dataset_sha256: str, disagreement_ids: set[str]
 ) -> tuple[dict[str, dict[str, str]], str]:
-    required = {"dataset_sha256", "case_id", "adjudicator_id", "label", "rationale", "reviewed_at_utc"}
+    required = {
+        "dataset_sha256",
+        "case_id",
+        "adjudicator_id",
+        "label",
+        "rationale",
+        "reviewed_at_utc",
+    }
     with path.open(newline="", encoding="utf-8-sig") as stream:
         reader = csv.DictReader(stream)
         fieldnames = reader.fieldnames or []
@@ -619,13 +628,17 @@ def analyze_adapter_calibration(
             elif attempt.status == "invalid":
                 invalid += 1
                 if attempt.raw_score is not None:
-                    raise ValueError(f"invalid measurement {case.case_id!r} must not retain a score")
+                    raise ValueError(
+                        f"invalid measurement {case.case_id!r} must not retain a score"
+                    )
                 if not attempt.invalid_reason:
                     raise ValueError(f"invalid measurement {case.case_id!r} needs an error code")
             else:
                 not_attempted += 1
                 if attempt.raw_score is not None:
-                    raise ValueError(f"unattempted measurement {case.case_id!r} must not retain a score")
+                    raise ValueError(
+                        f"unattempted measurement {case.case_id!r} must not retain a score"
+                    )
             outcome = {
                 "case_id": case.case_id,
                 "pair_id": case.pair_id,

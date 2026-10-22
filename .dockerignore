@@ -7,9 +7,16 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 htmlcov/
-reports/
+reports/*
 !reports/semantic/
 !reports/semantic/results.json
+!reports/calibration/
+reports/calibration/*
+!reports/calibration/score-protocol-negative-control.md
+!reports/calibration/archive/
+reports/calibration/archive/*
+!reports/calibration/archive/authored-score-v1/
+!reports/calibration/archive/authored-score-v1/**
 site/
 .env
 .env.*
