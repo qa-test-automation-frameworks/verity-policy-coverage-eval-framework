@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import os
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,6 +17,21 @@ class Provider(StrEnum):
     together = "together"
     nvidia = "nvidia"
     google = "google"
+
+
+class _VeritySettings(BaseSettings):
+    """Base settings with an explicit switch for hermetic no-key commands."""
+
+    def __init__(self, **values: Any) -> None:
+        disable_dotenv = os.getenv("VERITY_DISABLE_DOTENV", "").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+        if disable_dotenv and "_env_file" not in values:
+            values["_env_file"] = None
+        super().__init__(**values)
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +113,7 @@ def resolve_provider(
     return litellm_model, api_base
 
 
-class JudgeConfig(BaseSettings):
+class JudgeConfig(_VeritySettings):
     """Configuration for the LLM-as-judge (swappable, pinned, temp=0)."""
 
     model_config = SettingsConfigDict(
@@ -117,7 +133,7 @@ class JudgeConfig(BaseSettings):
     provider: Provider | None = None
 
 
-class RetrievalConfig(BaseSettings):
+class RetrievalConfig(_VeritySettings):
     """Configuration for the SUT RAG retriever."""
 
     model_config = SettingsConfigDict(
@@ -131,7 +147,7 @@ class RetrievalConfig(BaseSettings):
     persist_dir: Path = Path(".verity-index")
 
 
-class Settings(BaseSettings):
+class Settings(_VeritySettings):
     """Root settings object; reads from .env or environment variables."""
 
     model_config = SettingsConfigDict(

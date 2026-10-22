@@ -5,7 +5,7 @@
 ## Context
 
 Tier-1 deterministic tests must run on every PR with:
-- Zero live API calls (no secrets required, no cost, no flakiness from outages).
+- Zero live provider calls (no secrets required, no cost, no flakiness from outages).
 - Reproducible results — the same commit must produce the same pass/fail every run.
 - Fast execution (target: < 3 minutes for the full Tier-1 suite).
 
@@ -33,9 +33,10 @@ API key. Committing cassettes makes the test suite self-contained and forkable.
 ## Consequences
 
 **Easier:**
-- `make test` (Tier 1) works with zero environment setup beyond Python + uv.
+- `make test` (Tier 1) works without provider credentials after the public embedding model has been prepared and cached.
 - No API key is ever required to run a full CI check on a PR.
 - Cassette files serve as a human-readable record of what the LLM actually said.
+- The shared `scripts/run_hermetic.py` launcher clears provider keys, disables SDK and Pydantic dotenv loading, opts out of DeepEval telemetry, uses LiteLLM's bundled cost map, and keeps cached model use offline.
 
 **Harder:**
 - When the SUT prompt template changes, cassettes must be re-authored to match

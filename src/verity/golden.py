@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
 
 
 class ExpectedTool(BaseModel):
@@ -60,6 +61,36 @@ class DateExpectation(BaseModel):
         return self
 
 
+class TemporalAmountExpectation(BaseModel):
+    """Authoritative current and superseded currency amounts for one bounded case."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    as_of_date: date
+    current_amount_minor: StrictInt
+    superseded_amounts_minor: list[StrictInt]
+    currency: Literal["USD"]
+    authoritative_evidence_id: str
+    authoritative_source: str
+    effective_date: date
+
+    @model_validator(mode="after")
+    def _validate_temporal_amount(self) -> TemporalAmountExpectation:
+        if self.current_amount_minor < 0 or any(
+            amount < 0 for amount in self.superseded_amounts_minor
+        ):
+            raise ValueError("temporal amounts must be nonnegative minor units")
+        if len(self.superseded_amounts_minor) != len(set(self.superseded_amounts_minor)):
+            raise ValueError("superseded amounts must be unique")
+        if self.current_amount_minor in self.superseded_amounts_minor:
+            raise ValueError("current and superseded amounts must be disjoint")
+        if self.effective_date > self.as_of_date:
+            raise ValueError("effective_date cannot be later than as_of_date")
+        if not self.authoritative_evidence_id.strip() or not self.authoritative_source.strip():
+            raise ValueError("authoritative evidence ID and source are required")
+        return self
+
+
 ExpectationCategory = Literal[
     "coverage_decision",
     "amount",
@@ -89,6 +120,7 @@ class GoldenCase(BaseModel):
     must_not_contain: list[str] = Field(default_factory=list)
     numeric_expectations: list[NumericExpectation] = Field(default_factory=list)
     date_expectations: list[DateExpectation] = Field(default_factory=list)
+    temporal_amount: TemporalAmountExpectation | None = None
     expected_citations: list[str] = Field(default_factory=list)
     requires_human_review: bool = False
     expected_tool: ExpectedTool | None = None
@@ -108,6 +140,15 @@ class GoldenCase(BaseModel):
     # Normalized expectation categories this case exercises, e.g. what kind of
     # claim is being checked (a dollar amount, a refusal, a tool call, ...).
     expectation_categories: list[ExpectationCategory] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _temporal_evidence_is_listed(self) -> GoldenCase:
+        if (
+            self.temporal_amount is not None
+            and self.temporal_amount.authoritative_evidence_id not in self.evidence_ids
+        ):
+            raise ValueError("temporal authoritative evidence ID must appear in evidence_ids")
+        return self
 
 
 def load_golden(directory: Path | str | None = None) -> list[GoldenCase]:

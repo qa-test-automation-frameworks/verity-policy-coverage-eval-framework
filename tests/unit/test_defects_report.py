@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 from pathlib import Path
 
+import pytest
 from scripts.defects_report import (
     DEFECT_CATALOG,
     DefectEntry,
@@ -62,9 +63,15 @@ class TestCatalogStructure:
     def test_defects_1_to_4_have_only_semantic_tier(self) -> None:
         for e in DEFECT_CATALOG:
             if e.id <= 4:
-                assert e.catching_tiers == ["Tier 2 — Semantic"], (
-                    f"Defect #{e.id} catching_tiers unexpected: {e.catching_tiers}"
-                )
+                if e.id == 2:
+                    assert e.catching_tiers == [
+                        "Tier 1 — Temporal oracle",
+                        "Tier 2 — Semantic grounding",
+                    ]
+                else:
+                    assert e.catching_tiers == ["Tier 2 — Semantic"], (
+                        f"Defect #{e.id} catching_tiers unexpected: {e.catching_tiers}"
+                    )
 
     def test_defects_7_8_have_adversarial_tier(self) -> None:
         for e in DEFECT_CATALOG:
@@ -100,6 +107,12 @@ class TestRenderMarkdown:
         catalog = _catalog_with_statuses({6: "MISSED"})
         md = render_markdown(catalog)
         assert "❌ MISSED" in md
+
+    def test_unresolved_shows_review_state(self) -> None:
+        catalog = _catalog_with_statuses({2: "UNRESOLVED"})
+        md = render_markdown(catalog)
+        assert "🟠 UNRESOLVED" in md
+        assert "faithfulness alone measures grounding" in md
 
     def test_verified_shows_checkmark(self) -> None:
         catalog = _catalog_with_statuses({2: "VERIFIED"})
@@ -265,7 +278,15 @@ class TestBuildJson:
         assert "summary" in data
         summary = data["summary"]
         assert isinstance(summary, dict)
-        for key in ("total", "caught", "verified", "not_reproduced", "covered", "missed"):
+        for key in (
+            "total",
+            "caught",
+            "verified",
+            "not_reproduced",
+            "unresolved",
+            "covered",
+            "missed",
+        ):
             assert key in summary, f"Key {key!r} missing from summary"
 
     def test_summary_total_is_eight(self) -> None:
@@ -291,6 +312,7 @@ class TestBuildJson:
             int(summary["caught"])
             + int(summary["verified"])
             + int(summary["not_reproduced"])
+            + int(summary["unresolved"])
             + int(summary["covered"])
             + int(summary["missed"])
         )
@@ -393,6 +415,96 @@ class TestIngestSemanticResults:
         defect_1 = next(e for e in catalog if e.id == 1)
         assert defect_1.status == "NOT_REPRODUCED"
         assert any("faithfulness" in d for d in defect_1.details)
+
+    def test_faithfulness_cannot_mark_temporal_defect_not_reproduced(self, tmp_path: Path) -> None:
+        import copy
+        import json
+        import os
+
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        sem_dir = tmp_path / "reports" / "semantic"
+        sem_dir.mkdir(parents=True)
+        (sem_dir / "results.json").write_text(
+            json.dumps(
+                {
+                    "measurements": {
+                        "defect-2-silver-premium-stale::faithfulness": {
+                            "case_id": "defect-2-silver-premium-stale",
+                            "defect_id": 2,
+                            "metric": "faithfulness",
+                            "score": 1.0,
+                            "threshold": 0.7,
+                            "status": "NOT_REPRODUCED",
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        defect_2 = next(entry for entry in catalog if entry.id == 2)
+        assert defect_2.status == "UNRESOLVED"
+        assert any("grounding only" in detail for detail in defect_2.details)
+
+    @pytest.mark.parametrize(
+        ("temporal_status", "expected_status"),
+        [("FAIL", "VERIFIED"), ("PASS", "NOT_REPRODUCED"), ("REVIEW", "UNRESOLVED")],
+    )
+    def test_temporal_result_controls_temporal_defect_status(
+        self, tmp_path: Path, temporal_status: str, expected_status: str
+    ) -> None:
+        import copy
+        import json
+        import os
+
+        from scripts.defects_report import DEFECT_CATALOG, _ingest_semantic_results
+
+        sem_dir = tmp_path / "reports" / "semantic"
+        sem_dir.mkdir(parents=True)
+        status = {
+            "FAIL": "VERIFIED",
+            "PASS": "NOT_REPRODUCED",
+            "REVIEW": "UNRESOLVED",
+        }[temporal_status]
+        (sem_dir / "results.json").write_text(
+            json.dumps(
+                {
+                    "measurements": {
+                        "defect-2-silver-premium-stale::temporal_amount": {
+                            "case_id": "defect-2-silver-premium-stale",
+                            "defect_id": 2,
+                            "metric": "temporal_amount",
+                            "status": status,
+                            "temporal_status": temporal_status,
+                            "current_claim": 42000 if temporal_status == "FAIL" else 44500,
+                            "authoritative_evidence_id": "ev-defect-2-silver-premium-stale",
+                            "reasons": ["authored fixture result"],
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        catalog = copy.deepcopy(DEFECT_CATALOG)
+        original = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            _ingest_semantic_results(catalog)
+        finally:
+            os.chdir(original)
+
+        defect_2 = next(entry for entry in catalog if entry.id == 2)
+        assert defect_2.status == expected_status
 
     def test_same_case_multiple_metrics_are_all_rendered(self, tmp_path: Path) -> None:
         import copy

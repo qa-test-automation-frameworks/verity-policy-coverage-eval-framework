@@ -61,15 +61,15 @@ def ensure_ragas_compat() -> None:
 
 # Per-metric thresholds
 #
-# THRESHOLD_FAITHFULNESS is flagged REVIEW in the last calibration run
-# (docs/calibration-report.md: 75% raw agreement, MAE 0.238, below the
-# project's 85%-agreement / 0.20-MAE bar for every other calibrated metric).
-# The committed live semantic run's clean-control failures are concentrated
-# on this exact metric (see the Control-Case Results section of
-# docs/defects-caught.md), consistent with the calibration finding rather
-# than an unrelated anomaly. Re-running `make calibrate-live` against a
-# GLM-4.5 judge (`VERITY_JUDGE_PROVIDER=zai VERITY_JUDGE_MODEL=glm-4.5`) is
-# the next step before trusting this threshold as tightly as the others below.
+# The historical live rubric-calibration report (archived at
+# reports/calibration/archive/live-2026-07-02/calibration-report.md) recorded
+# 75% faithfulness agreement and MAE 0.238 for 8 cases. The current
+# docs/calibration-report.md is a synthetic authored-score replay and does not
+# replace that live result. Both reports use the custom calibration rubric path;
+# neither establishes current RAGAS runtime-adapter calibration. The separate
+# committed live semantic report has clean-control failures concentrated on
+# faithfulness and answer relevancy (docs/defects-caught.md). A fresh live
+# calibration and control run is needed before claiming current agreement.
 THRESHOLD_FAITHFULNESS: float = 0.7  # defects #1, #2, #7 fall below
 THRESHOLD_CONTEXT_PRECISION: float = 0.6
 THRESHOLD_CONTEXT_RECALL: float = 0.6
@@ -102,10 +102,10 @@ def _import_ragas_metric_class(name: str) -> Any:
 
 
 def make_faithfulness(judge: ProviderJudge) -> Any:
-    """RAGAS Faithfulness — detects hallucination, stale context, injection compliance.
+    """RAGAS Faithfulness — measures whether answer claims are grounded in retrieval.
 
-    Primary targets: defect #1 (bariatric hallucination), defect #2 (stale premium),
-    defect #7 (injection compliance language not grounded in authoritative corpus).
+    It can help detect unsupported claims in defects #1 and #7. It cannot establish
+    whether a retrieved fact is current, so defect #2 uses a separate temporal oracle.
 
     Callers compare the returned metric's score against THRESHOLD_FAITHFULNESS
     (this factory does not take a threshold — RAGAS metrics score, they don't

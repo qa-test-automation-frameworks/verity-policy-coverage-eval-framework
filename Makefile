@@ -1,10 +1,14 @@
-.PHONY: install lint format type test smoke test-deterministic eval-semantic eval-semantic-smoke hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check release-check
+.PHONY: install prepare-embeddings lint format type test smoke test-deterministic eval-semantic eval-semantic-smoke hosted-models live-canary redteam redteam-live calibrate calibrate-live trace-demo defects-report profile-comparison model-comparison retrieval-ablation dataset-matrix report-allure report-site demo record docker-test clean mutation-test mutation-report flake-check release-check
 
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
 install:
 	uv sync --all-extras
+
+# Download/cache the public embedding model before running offline no-key checks.
+prepare-embeddings:
+	uv run python scripts/prepare_embedding_model.py
 
 # ---------------------------------------------------------------------------
 # Code quality
@@ -22,15 +26,15 @@ type:
 # Tests
 # ---------------------------------------------------------------------------
 test:
-	PYTHONPATH=src uv run pytest -m "not live" -v
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python -m pytest -m "not live" -v
 
 smoke:
 	@echo "Running live model-identity smoke test (requires API key in .env)"
 	PYTHONPATH=src PYTHONUNBUFFERED=1 uv run pytest -m live -v -s
 
 test-deterministic:
-	@echo "Tier 1 — Deterministic eval (cassette replay; no live calls) [M2]"
-	PYTHONPATH=src uv run pytest tests/deterministic/ -m "not live" -v
+	@echo "Tier 1 — Deterministic eval (cassette replay; offline after model preparation) [M2]"
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python -m pytest tests/deterministic/ -m "not live" -v
 
 eval-semantic:
 	@echo "Tier 2 — Semantic eval (DeepEval + RAGAS; live LLM) [M3]"
@@ -70,12 +74,12 @@ live-canary:
 
 record:
 	@echo "Writing hash-keyed cassettes from authored YAML fixtures (no API key required)"
-	PYTHONPATH=src uv run python scripts/record_cassettes.py --author $(if $(CASE),--case $(CASE))
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python scripts/record_cassettes.py --author $(if $(CASE),--case $(CASE))
 
 redteam:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest (no API key required)"
 	@echo "Runs serially (no xdist) so reports/security/summary.* reflects the full run."
-	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python -m pytest tests/adversarial/ -m adversarial -v
 	@if [ -f reports/security/summary-local.json ]; then \
 		cp reports/security/summary-local.json reports/security/summary.json; \
 		cp reports/security/summary-local.md reports/security/summary.md; \
@@ -89,7 +93,7 @@ flake-check:
 
 redteam-live:
 	@echo "Tier 3 — Adversarial red-team: hermetic pytest + promptfoo live eval"
-	PYTHONPATH=src uv run pytest tests/adversarial/ -m adversarial -v
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python -m pytest tests/adversarial/ -m adversarial -v
 	@if [ -f reports/security/summary-local.json ]; then \
 		cp reports/security/summary-local.json reports/security/summary.json; \
 		cp reports/security/summary-local.md reports/security/summary.md; \
@@ -105,7 +109,7 @@ redteam-live:
 
 calibrate:
 	@echo "Judge calibration — hermetic replay (authored cassettes; no API key required)"
-	PYTHONPATH=src uv run python scripts/run_calibration.py
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python scripts/run_calibration.py
 	@echo "Report written to docs/calibration-report.md"
 
 calibrate-live:
@@ -114,7 +118,7 @@ calibrate-live:
 
 trace-demo:
 	@echo "Trace demo — one hermetic agent run with OTEL file exporter (no API key required)"
-	VERITY_TRACING=1 VERITY_TRACE_EXPORTER=file PYTHONPATH=src uv run python scripts/trace_demo.py
+	VERITY_TRACING=1 VERITY_TRACE_EXPORTER=file PYTHONPATH=src uv run python scripts/run_hermetic.py -- python scripts/trace_demo.py
 
 mutation-test:
 	@echo "Mutation testing (strict) — src/sut/tools/coverage_calculator.py + src/verity/checks.py (requires: uv sync --extra mutation)"
@@ -130,20 +134,20 @@ mutation-report:
 
 defects-report:
 	@echo "Defects-caught matrix — hermetic replay for defects 5-8; semantic ingestion when available"
-	PYTHONPATH=src:. uv run python scripts/defects_report.py
+	PYTHONPATH=src:. uv run python scripts/run_hermetic.py -- python scripts/defects_report.py
 	@echo "Report written to docs/defects-caught.md"
 
 profile-comparison:
 	@echo "Seeded vs. clean SUT profile comparison — hermetic, no API key required"
-	PYTHONPATH=src:. uv run python scripts/profile_comparison.py
+	PYTHONPATH=src:. uv run python scripts/run_hermetic.py -- python scripts/profile_comparison.py
 
 retrieval-ablation:
 	@echo "Retrieval parameter ablation — real embedding retriever, no API key required"
-	PYTHONPATH=src:. uv run python scripts/retrieval_ablation.py
+	PYTHONPATH=src:. uv run python scripts/run_hermetic.py -- python scripts/retrieval_ablation.py
 
 dataset-matrix:
 	@echo "Golden dataset coverage matrix — hermetic, no API key required"
-	PYTHONPATH=src:. uv run python scripts/dataset_matrix.py
+	PYTHONPATH=src:. uv run python scripts/run_hermetic.py -- python scripts/dataset_matrix.py
 
 model-comparison:
 	@if [ -z "$(LEFT_PROVIDER)$(LEFT_MODEL)$(RIGHT_PROVIDER)$(RIGHT_MODEL)" ]; then \
@@ -157,7 +161,7 @@ model-comparison:
 
 report-allure:
 	@echo "Tier 1+3 hermetic suites with Allure results capture (no API key required)"
-	PYTHONPATH=src uv run pytest tests/unit/ tests/deterministic/ tests/adversarial/ \
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python -m pytest tests/unit/ tests/deterministic/ tests/adversarial/ \
 		-m "not live" --alluredir reports/allure-results -v
 	@if command -v allure >/dev/null 2>&1; then \
 		allure generate reports/allure-results --clean -o reports/allure-report; \
@@ -190,14 +194,14 @@ release-check:
 	uv run ruff check src tests scripts promptfoo
 	uv run ruff format --check src tests scripts promptfoo
 	uv run mypy src
-	PYTHONPATH=src uv run pytest -m "not live" --cov=src --cov-report=term-missing \
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python -m pytest -m "not live" --cov=src --cov-report=term-missing \
 		--cov-report=json:reports/coverage.json --cov-fail-under=80
 	uv run python scripts/check_module_coverage.py reports/coverage.json
 	uv run python scripts/check_vuln_exceptions.py
 	uv run pip-audit --desc $$(grep -vE '^\s*(#|$$)' .pip-audit-ignore | sed 's/^/--ignore-vuln /' | tr '\n' ' ')
 	uv run bandit -r src/ -ll -c pyproject.toml
-	PYTHONPATH=src uv run python scripts/run_calibration.py --out /tmp/calibration-release-check.md
-	PYTHONPATH=src:. uv run python scripts/defects_report.py
+	PYTHONPATH=src uv run python scripts/run_hermetic.py -- python scripts/run_calibration.py --out /tmp/calibration-release-check.md
+	PYTHONPATH=src:. uv run python scripts/run_hermetic.py -- python scripts/defects_report.py
 	git diff --exit-code docs/defects-caught.md
 	PYTHONPATH=src:. uv run python scripts/build_report_site.py
 	@echo ""
@@ -211,7 +215,7 @@ release-check:
 # ---------------------------------------------------------------------------
 docker-test:
 	@echo "Building container and running Tier-1 checks (no API key required)"
-	docker build -t verity-eval:local . && docker run --rm verity-eval:local
+	docker build -t verity-eval:local . && docker run --network none --rm verity-eval:local
 
 # Cleanup
 # ---------------------------------------------------------------------------

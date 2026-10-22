@@ -1,8 +1,8 @@
-"""Tier-2: RAGAS Faithfulness — detects hallucination and stale context.
+"""Tier-2: RAGAS Faithfulness measures grounding in retrieved context.
 
-Targets defects #1 (bariatric hallucination) and #2 (stale Silver premium).
-Clean controls assert faithfulness >= threshold; defect cases record whether the live SUT
-still falls below it.
+Faithfulness is a grounding signal for defect #1 and other unsupported claims. The
+stale Silver premium has a separate deterministic temporal oracle because an answer
+can be faithful to outdated retrieval. Clean controls assert faithfulness >= threshold.
 """
 
 from __future__ import annotations
@@ -16,7 +16,9 @@ from sut.retriever import Chunk
 from tests.semantic.conftest import (
     live_agent,
     record_defect_measurement,
+    record_grounding_measurement,
     record_semantic_metric,
+    record_temporal_measurement,
     smoke_params,
     wilson_interval_message,
     wilson_interval_payload,
@@ -31,6 +33,7 @@ from verity.metrics.ragas_metrics import (
 )
 from verity.semantic_reporting import semantic_sut_failure_message
 from verity.statistics import aggregate, threshold_pass
+from verity.temporal_checks import TemporalCheckResult, check_temporal_amount
 
 pytestmark = [pytest.mark.semantic, pytest.mark.live]
 
@@ -53,13 +56,28 @@ def _score_faithfulness(
 
     agent = live_agent(settings)
     response = agent.answer(case.query, member_id=case.member_id)
+    chunks = response.retrieved_chunks
     failure_message = semantic_sut_failure_message(
         case.id, response.failure_category, response.answer
     )
     if failure_message is not None:
+        if case.temporal_amount is not None:
+            unresolved: TemporalCheckResult = {
+                "status": "REVIEW",
+                "current_claim": None,
+                "authoritative_evidence_id": case.temporal_amount.authoritative_evidence_id,
+                "reasons": [failure_message],
+            }
+            record_temporal_measurement(
+                case,
+                result=unresolved,
+                sample_results=[unresolved],
+                response=response,
+                retrieved_chunks=chunks,
+                apply_xfail=False,
+            )
         pytest.fail(failure_message, pytrace=False)
 
-    chunks = response.retrieved_chunks
     contexts = [c.text for c in chunks]
 
     metric = make_faithfulness(judge)
@@ -124,11 +142,47 @@ def test_clean_faithfulness(
 def test_defect_faithfulness_detected(
     case: GoldenCase, settings: Settings, judge: ProviderJudge
 ) -> None:
-    """Defect cases: faithfulness must fall BELOW threshold (defect detected)."""
+    """Measure grounding, then use the temporal oracle for the stale-premium case."""
     samples = [_score_faithfulness(case, settings, judge) for _ in range(settings.semantic_samples)]
     scores = [sample[0] for sample in samples]
     stat = aggregate(scores, score_threshold=THRESHOLD_FAITHFULNESS)
     passed = threshold_pass(stat, THRESHOLD_FAITHFULNESS)
+    if case.temporal_amount is not None:
+        temporal_samples = [
+            check_temporal_amount(case.temporal_amount, sample[1].answer) for sample in samples
+        ]
+        if any(result["status"] == "FAIL" for result in temporal_samples):
+            temporal_result = next(
+                result for result in temporal_samples if result["status"] == "FAIL"
+            )
+        elif all(result["status"] == "PASS" for result in temporal_samples):
+            temporal_result = temporal_samples[-1]
+        else:
+            temporal_result = {
+                "status": "REVIEW",
+                "current_claim": None,
+                "authoritative_evidence_id": case.temporal_amount.authoritative_evidence_id,
+                "reasons": ["At least one sampled answer needs temporal review."],
+            }
+        record_grounding_measurement(
+            case,
+            metric="faithfulness",
+            score=stat.mean,
+            threshold=THRESHOLD_FAITHFULNESS,
+            scores=scores,
+            response=samples[-1][1],
+            retrieved_chunks=samples[-1][2],
+            wilson_interval=wilson_interval_payload(stat),
+        )
+        record_temporal_measurement(
+            case,
+            result=temporal_result,
+            sample_results=temporal_samples,
+            response=samples[-1][1],
+            retrieved_chunks=samples[-1][2],
+        )
+        return
+
     record_defect_measurement(
         case,
         metric="faithfulness",

@@ -82,7 +82,8 @@ jobs:
         run: |
           mkdir -p reports/evidence/native
           echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
-          uv run pytest -m "not live and not evidence_control" -n auto --cov=src --cov-report=term-missing \
+          uv run --no-sync python scripts/run_hermetic.py -- python -m pytest \
+            -m "not live and not evidence_control" -n auto --cov=src --cov-report=term-missing \
             --cov-report=json:reports/coverage.json --cov-fail-under=80 \
             --junitxml=reports/evidence/native/deterministic.xml
         env:
@@ -108,12 +109,16 @@ jobs:
       - name: Hermetic Tier-2/3 evidence gate (no API key — cassette replay only)
         # Smoke-tests that the calibration and defects-report pipelines run
         # end-to-end without a provider key. --out writes calibration to a
-        # scratch path rather than docs/calibration-report.md, which holds
-        # committed evidence from an actual live run (see README Limitations)
-        # that this hermetic smoke run must not overwrite.
+        # scratch path rather than docs/calibration-report.md, which is the
+        # committed synthetic authored-score replay (not a live judge run).
         run: |
-          PYTHONPATH=src uv run python scripts/run_calibration.py --out /tmp/calibration-hermetic-check.md
-          PYTHONPATH=src:. uv run python scripts/defects_report.py
+          PYTHONPATH=src uv run --no-sync python scripts/run_hermetic.py -- \
+            python scripts/run_calibration.py --out /tmp/calibration-hermetic-check.md
+          PYTHONPATH=src:. uv run --no-sync python scripts/run_hermetic.py -- \
+            python scripts/defects_report.py
+
+      - name: Validate current evidence inventory
+        run: uv run python scripts/check_current_evidence.py
 
       - name: Regenerated docs match committed copies
         # defects_report.py above overwrites docs/defects-caught.md in place;

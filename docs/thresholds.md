@@ -55,14 +55,24 @@ See `verity/statistics.py` for the implementation.
 Hallucination (DeepEval) is scored as the fraction of claims NOT grounded in
 context, so a passing test means `score < 0.5` (low hallucination rate). Clean
 cases are expected to score well above this; defect cases should score ≥ 0.5.
+The synthetic calibration data keeps the legacy case label `hallucination`, but its
+0–10 rubric score is normalized as `hallucination_groundedness` (10 = fully grounded).
+That higher-is-better rubric result is not the raw DeepEval metric.
 
 ### RAGAS metrics
 
 | Metric | Constant | Threshold | Mode | Targets defect(s) | Calibration |
 |---|---|---|---|---|---|
-| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #2, #7 | synthetic PASS (88% agreement) |
+| Faithfulness | `THRESHOLD_FAITHFULNESS` | 0.70 | mean | #1, #7 | synthetic PASS (88% agreement) |
 | Context Precision | `THRESHOLD_CONTEXT_PRECISION` | 0.60 | mean | — (retrieval health) | synthetic PASS (100% agreement) |
 | Answer Relevancy | `THRESHOLD_ANSWER_RELEVANCY` | 0.70 | mean | — (baseline) | synthetic PASS (100% agreement) |
+
+Faithfulness measures whether answer claims are supported by retrieved passages. It cannot
+establish that a supported passage is current: a response that repeats the superseded `$420`
+value from `silver.md` can still be faithful to its context. Defect #2 therefore uses the
+separate deterministic `check_temporal_amount` oracle against the authored `$445` amendment.
+Its `PASS` / `FAIL` / `REVIEW` result is recorded independently; only temporal `PASS` can mark
+the stale-premium behavior `NOT_REPRODUCED`, while `REVIEW` remains `UNRESOLVED`.
 
 The Calibration column reflects `docs/calibration-report.md`'s per-metric breakdown.
 `not yet run` means the metric has no dedicated calibration cases in
@@ -88,12 +98,16 @@ unaffected. See `docs/known-issues.md` (KI-3) for the tracked entry.
 The committed `reports/semantic/results.json` run (`openrouter/openai/gpt-4o-mini` as both
 SUT and judge — see README Limitations) has 10 of 40 control-tier test nodes failing,
 listed in the "Control-Case Results" section of `docs/defects-caught.md`. All 10 are
-faithfulness or answer-relevancy assertions. This lines up with `docs/calibration-report.md`,
-which independently flags faithfulness as the one metric below the 85%-agreement /
-0.20-MAE calibration bar (75% agreement, MAE 0.238) for this same judge — the calibration
-data and the live control failures are two independent signals pointing at the same
-weak metric, not an unrelated anomaly. Re-run `make eval-semantic` with a GLM-4.5 key
-(`VERITY_PROVIDER=zai VERITY_MODEL=glm-4.5`) to see whether the failure rate is judge-specific.
+faithfulness or answer-relevancy assertions. The 75% faithfulness agreement and 0.238 MAE
+belong to a separate historical live rubric-calibration report generated 2026-07-02 with
+32 cases and `openrouter/openai/gpt-4o-mini`; that dated report is preserved at
+`reports/calibration/archive/live-2026-07-02/calibration-report.md`. The current
+`docs/calibration-report.md` is a 56-case synthetic replay generated 2026-07-04; its 88%
+faithfulness agreement and 0.025 MAE are authored-score demonstration values, not a fresh
+live measurement and not directly comparable to the historical report. The old semantic
+control failures and the historical rubric result remain separate signals with incomplete
+run metadata. Re-run `make eval-semantic` and `make calibrate-live` with a configured
+provider before claiming a current live result.
 
 ---
 
@@ -123,7 +137,7 @@ distribution.
 | Defect | Tier 1 (deterministic) | Tier 2 (semantic) |
 |---|---|---|
 | #1 Hallucination (bariatric) | — | Faithfulness, Hallucination |
-| #2 Stale context (premium) | — | Faithfulness |
+| #2 Stale context (premium) | Temporal amount oracle | Faithfulness (grounding only) |
 | #3 Multi-hop calculation | — | G-Eval Completeness |
 | #4 Contradiction not surfaced | — | G-Eval Disambiguation |
 | #5 Tool arg transposition | `check_tool_args` | Task Completion |

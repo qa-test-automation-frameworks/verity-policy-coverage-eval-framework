@@ -26,10 +26,12 @@ calibration status). Each item below names the exact command or file that would 
   actually reduces the control failure rate — that's the evidence needed to lift the
   `@pytest.mark.quarantine` markers on `test_clean_faithfulness` and `test_answer_relevancy`
   (KI-3 in `docs/known-issues.md`).
-- **Reproduce defects #1–#3 live with the default pairing.** The committed run marks these
-  `NOT_REPRODUCED` for `openrouter/openai/gpt-4o-mini` — a fact about that model's quality, not
-  a detector gap (the hermetic/adversarial replay proves the detectors fire). Re-running against
-  a different model may or may not reproduce them; either outcome is worth recording.
+- **Refresh live defect evidence with the default pairing.** The historical run marked defects
+  #1–#3 `NOT_REPRODUCED` for `openrouter/openai/gpt-4o-mini`, but its faithfulness score cannot
+  establish whether defect #2's premium was current. The report now treats that old temporal
+  outcome as `UNRESOLVED`; only a separately recorded temporal oracle result can mark #2
+  `NOT_REPRODUCED`. Re-running against a configured model may reproduce defects #1–#4; retain
+  the observed result without treating authored fixtures as live evidence.
 
 ## Sample-size and scale
 
@@ -37,7 +39,8 @@ calibration status). Each item below names the exact command or file that would 
   uses `VERITY_SEMANTIC_SAMPLES=1` like push runs; only the nightly schedule uses N=5. Consider
   a `samples` input on `workflow_dispatch` so a reviewer triggering the workflow manually can
   opt into the full distribution-over-N statistics (see ADR-0005).
-- **Grow the golden dataset further.** 56 cases today, up from 41 — still sized to demonstrate
+- **Grow the golden dataset further.** 69 cases today, loaded by `verity.golden.load_golden`,
+  up from 41 — still sized to demonstrate
   the evaluation patterns, not to measure production model quality. `docs/dataset-coverage.md`
   shows where the thinnest categories are (currently `limits`); add cases there first.
 - **Grow the adversarial probe corpus further.** 71 probes across 9 categories today, up from

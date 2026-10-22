@@ -65,17 +65,18 @@ A real example, generated hermetically (cassette replay, no API key) and committ
 
 ```json
 {"name": "retrieval", "trace_id": "f9dd04fae71243a004af403f5ed5b08c", "span_id": "e7c5c8dfd0611af0", "start_ns": 1782995718788599931, "end_ns": 1782995718789313667, "attributes": {"top_k": 0}, "status": "UNSET"}
-{"name": "agent.answer", "trace_id": "f9dd04fae71243a004af403f5ed5b08c", "span_id": "bf7832c05452c2c6", "start_ns": 1782995718785514820, "end_ns": 1782995718790087910, "attributes": {"member_id_hash": "5757dbffa1fefe96", "query_len": 34, "gen_ai.request.model": "openai/glm-4.5", "gen_ai.operation.name": "agent-first-turn", "gen_ai.usage.input_tokens": 130, "gen_ai.usage.output_tokens": 58, "gen_ai.usage.total_tokens": 188, "gen_ai.usage.cost_usd": 0.0002056}, "status": "UNSET"}
+{"name": "agent.answer", "trace_id": "f9dd04fae71243a004af403f5ed5b08c", "span_id": "bf7832c05452c2c6", "start_ns": 1782995718785514820, "end_ns": 1782995718790087910, "attributes": {"member_id_hash": "f075150fe49adeddce808308c1a17f66", "query_len": 34, "gen_ai.request.model": "openai/glm-4.5", "gen_ai.operation.name": "agent-first-turn", "gen_ai.usage.input_tokens": 130, "gen_ai.usage.output_tokens": 58, "gen_ai.usage.total_tokens": 188, "gen_ai.usage.cost_usd": 0.0002056}, "status": "UNSET"}
 ```
 
 ### Identifier redaction
 
-`agent.answer` traces `member_id_hash` (a truncated SHA-256 of the raw member ID via
-`verity.tracing.hash_identifier`), not the raw member ID. Spans and their exports may reach
-a wider audience than the request itself (observability backends, log aggregators), so the
-raw identifier never leaves the process on this path. The hash is deterministic within a
-process, so spans for the same member can still be correlated across a trace without
-exposing the identifier itself.
+`agent.answer` traces `member_id_hash`, a 128-bit truncated HMAC-SHA-256 pseudonym from
+`verity.tracing.hash_identifier`. `init_tracing` creates a fresh in-memory 32-byte key for
+each trace run. The same member can be correlated within that run; pseudonyms do not link
+across runs. Each process, including a forked child, has its own privacy scope. The key is
+not logged or exported. This is run-scoped pseudonymization, not anonymization: trace
+attributes still reveal within-run linkage. Prompt and response redaction are separate
+controls and are not provided by this identifier pseudonym.
 
 ---
 

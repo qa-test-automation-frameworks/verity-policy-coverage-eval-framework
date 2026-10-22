@@ -43,8 +43,15 @@ jobs:
       - name: Check exception scope against lockfile
         run: python3 scripts/check_vuln_exception_scope.py
 
-      - name: Run packaged Tier-1 checks
-        run: docker run --rm verity-eval:scan
+      - name: Verify prepared model and run Tier-1 without network
+        # The image build may download the public embedding model. This run
+        # validates the prepared cache and then the full no-key tier with
+        # Docker networking disabled, so the test boundary is enforced by the
+        # host rather than only by mocked sockets in one subprocess test.
+        run: |
+          docker run --rm --network none --entrypoint /app/.venv/bin/python verity-eval:scan \
+            scripts/run_hermetic.py -- /app/.venv/bin/python scripts/prepare_embedding_model.py
+          docker run --rm --network none verity-eval:scan
 
       - name: Scan image with Trivy
         # v0.36.0 includes the fix for duplicate package entries in embedded wheel SBOMs.

@@ -130,13 +130,15 @@ Score from 0 to 10:
 Evaluate: are the response's factual claims grounded in the retrieved context?
 """
 
-# Scores groundedness (10 = fully grounded, no hallucinated claims), the inverse
+# Calibration names this normalized quality score `hallucination_groundedness`
+# (10 = fully grounded, no hallucinated claims), the inverse
 # direction of DeepEval's raw HallucinationMetric score (where a HIGH score means
 # MORE hallucination and a passing test requires score < threshold — see
 # THRESHOLD_HALLUCINATION in verity/metrics/deepeval_metrics.py). Calibration
 # keeps every rubric on the same "10 = good" scale for a uniform human_score/
 # human_pass convention across metrics; a hermetic/live judge-agreement result
-# for "hallucination" measures agreement on this groundedness framing, not on
+# for the dataset label "hallucination" measures agreement on this
+# `hallucination_groundedness` framing, not on
 # DeepEval's raw score polarity.
 HALLUCINATION_RUBRIC = """\
 You will evaluate whether an AI assistant's response contains claims that are NOT
@@ -153,7 +155,8 @@ Score from 0 to 10, where 10 means no hallucination at all:
   context outright.
 - 0: The response is essentially fabricated with respect to the context provided.
 
-Evaluate: how much of the response is hallucinated (unsupported by the context)?
+Evaluate: how well-grounded is the response in the context? Score 10 for fully grounded
+answers and 0 for fabricated answers.
 """
 
 ANSWER_RELEVANCY_RUBRIC = """\

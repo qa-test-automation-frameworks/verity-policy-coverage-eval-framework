@@ -103,12 +103,13 @@ git clone <repo-url>
 cd verity-policy-coverage-eval-framework
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --all-extras
+make prepare-embeddings  # one-time public model download if the cache is cold
 make test-deterministic  # replayed SUT checks; zero live calls
 make test                # unit + deterministic + adversarial checks; zero live calls
 make defects-report      # regenerate docs/defects-caught.md from local evidence
 ```
 
-Expected first success: `make test-deterministic` should run without provider credentials, network calls, or paid services. If pytest plugin socket creation is blocked by a local sandbox, run the targeted command with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` and keep `UV_CACHE_DIR` pointed at a writable directory.
+The no-key commands run through `scripts/run_hermetic.py`, which clears ambient provider credentials, disables dotenv loading and SDK telemetry, and keeps model downloads offline. After `make prepare-embeddings` has cached the public ONNX model, these checks need no provider credentials, provider requests, or paid services. A fresh machine may need network access once to download that model. If a local sandbox blocks pytest plugin socket creation, retry the targeted command with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` and keep `UV_CACHE_DIR` pointed at a writable directory.
 
 For a bounded Gemini free-tier experiment, see the
 [hosted smoke guide](docs/free-hosted-calibration.md).

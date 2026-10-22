@@ -10,14 +10,63 @@ import pytest
 os.environ.setdefault("VERITY_TRACING", "0")
 
 
-def test_hash_identifier_is_deterministic_and_not_reversible() -> None:
-    from verity.tracing import hash_identifier
+def test_hash_identifier_uses_run_scoped_hmac_and_known_vector(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from verity import tracing
 
-    h1 = hash_identifier("MBR-001")
-    h2 = hash_identifier("MBR-001")
-    assert h1 == h2
-    assert "MBR-001" not in h1
-    assert h1 != hash_identifier("MBR-002")
+    key = bytes(range(32))
+    monkeypatch.setattr(tracing, "_IDENTIFIER_HMAC_KEY", None)
+    monkeypatch.setattr(tracing, "_IDENTIFIER_KEY_PID", None)
+    tracing._initialize_identifier_hmac_key(key)
+
+    pseudonym = tracing.hash_identifier("MBR-001")
+    assert pseudonym == "f075150fe49adeddce808308c1a17f66"
+    assert len(pseudonym) == 32
+    assert tracing.hash_identifier("MBR-001") == pseudonym
+    assert tracing.hash_identifier("MBR-002") != pseudonym
+    assert tracing.hash_identifier("會員-🙂") == "2f2c57f868ea1ab764682d2f70791faa"
+
+
+def test_hash_identifier_rotates_between_runs_and_rejects_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from verity import tracing
+
+    monkeypatch.setattr(tracing, "_IDENTIFIER_HMAC_KEY", None)
+    monkeypatch.setattr(tracing, "_IDENTIFIER_KEY_PID", None)
+    first_key = bytes(range(32))
+    second_key = bytes(range(1, 33))
+    tracing._initialize_identifier_hmac_key(first_key)
+    first = tracing.hash_identifier("MBR-001")
+    tracing._initialize_identifier_hmac_key(second_key)
+    second = tracing.hash_identifier("MBR-001")
+
+    assert first != second
+
+    tracing._initialize_identifier_hmac_key()
+    random_first = tracing.hash_identifier("MBR-001")
+    tracing._initialize_identifier_hmac_key()
+    random_second = tracing.hash_identifier("MBR-001")
+    assert random_first != random_second
+
+    with pytest.raises(ValueError, match="must not be empty"):
+        tracing.hash_identifier("")
+    with pytest.raises(ValueError, match="exactly 32 bytes"):
+        tracing._initialize_identifier_hmac_key(b"short")
+
+
+def test_forked_process_gets_a_new_identifier_scope() -> None:
+    from verity import tracing
+
+    tracing._initialize_identifier_hmac_key(bytes(range(32)))
+    parent_pseudonym = tracing.hash_identifier("MBR-001")
+    parent_lock = tracing._IDENTIFIER_KEY_LOCK
+
+    tracing._reset_identifier_key_after_fork()
+
+    assert tracing._IDENTIFIER_KEY_LOCK is not parent_lock
+    assert tracing.hash_identifier("MBR-001") != parent_pseudonym
 
 
 def test_traced_noop_when_disabled() -> None:
@@ -110,6 +159,8 @@ def test_agent_answer_span_excludes_raw_member_id(monkeypatch: pytest.MonkeyPatc
     tracer = provider.get_tracer("test")
     monkeypatch.setattr(tracing, "_ENABLED", True)
     monkeypatch.setattr(tracing, "_TRACER", tracer)
+    test_key = bytes(range(32))
+    tracing._initialize_identifier_hmac_key(test_key)
 
     settings = Settings(
         _env_file=None,
@@ -131,7 +182,9 @@ def test_agent_answer_span_excludes_raw_member_id(monkeypatch: pytest.MonkeyPatc
     attrs = answer_spans[0].attributes
     assert "member_id" not in attrs
     assert attrs["member_id_hash"] == tracing.hash_identifier("MBR-001")
-    assert "MBR-001" not in str(attrs.values())
+    exported_attributes = str(attrs.values())
+    assert "MBR-001" not in exported_attributes
+    assert test_key.hex() not in exported_attributes
 
 
 def test_trace_id_hex_returns_empty_string_for_no_span() -> None:
@@ -265,8 +318,11 @@ class TestInitTracing:
         monkeypatch.setattr(tracing, "_ENABLED", True)
         monkeypatch.setattr(tracing, "_TRACER", None)
         monkeypatch.setenv("VERITY_TRACE_EXPORTER", "console")
+        tracing._initialize_identifier_hmac_key(bytes(range(32)))
+        before_run = tracing.hash_identifier("MBR-001")
         tracing.init_tracing("test-console-service")
         assert tracing.get_tracer() is not None
+        assert tracing.hash_identifier("MBR-001") != before_run
 
     def test_file_exporter_writes_span_file(self, tmp_path: object) -> None:
         """Exercise _init_file_exporter's export() directly — OTel only allows one
