@@ -92,11 +92,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| Wins / ties / losses | {quality['wins']} / {quality['ties']} / {quality['losses']} |",
         f"| Paired mean correctness delta | {_percent(quality['paired_mean_delta'])} |",
         f"| Paired bootstrap 95% interval | `{interval_text}` |",
-        f"| Cost delta, challenger − baseline | {cost_delta_text} USD "
+        f"| Cost delta, challenger - baseline | {cost_delta_text} USD "
         f"({cost['paired_cost_count']}/{cost['paired_cost_denominator']} pairs) |",
         f"| Cost savings supported | {cost['cost_saving_supported']} — "
         f"{cost['reason']} |",
-        f"| Latency delta, challenger − baseline | {latency_delta_text} ms "
+        f"| Latency delta, challenger - baseline | {latency_delta_text} ms "
         f"({latency['paired_latency_count']}/{latency['paired_latency_denominator']} pairs) |",
         f"| Mean input tokens, baseline / challenger | "
         f"{report['tokens']['baseline_mean_input_tokens']} / "
@@ -118,9 +118,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         "Critical challenger failure rejects first. Otherwise invalid or incomplete pairs, "
         "or fewer than 30 independent valid cases, are inconclusive. With adequate data, "
         "the paired case bootstrap uses 2,000 resamples and seed 20261021: the baseline "
-        "wins if the upper bound is below −0.02, the result is inconclusive if the interval "
-        "crosses −0.02, and the candidate wins the quality-only policy if the lower bound "
-        "is at least −0.02. This does not deploy anything automatically.",
+        "wins if the upper bound is below -0.02, the result is inconclusive if the interval "
+        "crosses -0.02, and the candidate wins the quality-only policy if the lower bound "
+        "is at least -0.02. This does not deploy anything automatically.",
         "",
     ]
     if report["diagnostics"]:
