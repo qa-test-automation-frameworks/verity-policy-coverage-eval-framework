@@ -503,6 +503,9 @@ def analyze_paired_comparison(
             "is not measured live/replay."
         )
     )
+    evidence_scope = (
+        "method_demo_only" if source_kind == "authored_control" else "measured_or_mixed_source"
+    )
     cohort_hashes = {
         str(record.get("cohort_hash"))
         for record in [*baseline.values(), *challenger.values()]
@@ -511,7 +514,7 @@ def analyze_paired_comparison(
     return {
         "schema_version": SCHEMA_VERSION,
         "source_kind": source_kind,
-        "evidence_scope": "method_demo_only" if source_kind == "authored_control" else "measured_or_mixed_source",
+        "evidence_scope": evidence_scope,
         "input_valid": input_valid,
         "identities": {
             "cohort_hash": next(iter(cohort_hashes)) if len(cohort_hashes) == 1 else None,
