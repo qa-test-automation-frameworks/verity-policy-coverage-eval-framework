@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-
 from scripts.verify_failure_control import verify
 
 pytestmark = pytest.mark.evidence_control
