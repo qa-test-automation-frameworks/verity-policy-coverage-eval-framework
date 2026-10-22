@@ -347,7 +347,9 @@ class ScoreProtocolError(ValueError):
     """
 
     def __init__(self, reason: str, response_length: int | None) -> None:
-        self.reason = reason if reason in {"empty", "format_mismatch", "non_string"} else "format_mismatch"
+        if reason not in {"empty", "format_mismatch", "non_string"}:
+            reason = "format_mismatch"
+        self.reason = reason
         self.response_length = response_length
         length = "unknown" if response_length is None else str(response_length)
         self.diagnostic = f"score_protocol_{self.reason}:length={length}"[:96]
