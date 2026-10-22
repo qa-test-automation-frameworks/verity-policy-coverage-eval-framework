@@ -13,9 +13,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-import litellm
-import openai
-
 from verity.cassettes import (
     CassetteLibrary,
     CassetteMissError,
@@ -30,6 +27,20 @@ from verity.tracing import record_call_span
 
 RATE_LIMIT_STOP_THRESHOLD = 5
 logger = logging.getLogger(__name__)
+
+
+def _litellm_completion(**kwargs: Any) -> Any:
+    """Load LiteLLM only when a request is routed to a live provider."""
+    import litellm
+
+    return litellm.completion(**kwargs)
+
+
+def _is_openai_api_error(exc: Exception) -> bool:
+    """Load OpenAI's exception class only after a live completion fails."""
+    import openai
+
+    return isinstance(exc, openai.APIError)
 
 
 class ProviderRateLimitCircuitOpenError(RuntimeError):
@@ -217,7 +228,7 @@ class LLMProvider:
         )
         start = time.monotonic()
         try:
-            response = litellm.completion(**kwargs)
+            response = _litellm_completion(**kwargs)
         except Exception as exc:
             latency_ms = (time.monotonic() - start) * 1000
             self._accumulator.finish_request(event, latency_ms=latency_ms, error=exc)
@@ -251,7 +262,9 @@ class LLMProvider:
         """
         try:
             return self._call_once(kwargs, label)
-        except openai.APIError as exc:
+        except Exception as exc:
+            if not _is_openai_api_error(exc):
+                raise
             if getattr(exc, "status_code", None) not in (402, 429):
                 raise
             fallback_key = self._settings.resolved_fallback_api_key()

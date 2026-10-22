@@ -134,6 +134,9 @@ class TestSettings:
     ) -> None:
         import warnings
 
+        # This test explicitly covers dotenv loading, so opt out of the
+        # hermetic launcher's default for this one isolated case.
+        monkeypatch.delenv("VERITY_DISABLE_DOTENV", raising=False)
         env_file = tmp_path / ".env"
         env_file.write_text("VERITY_TOP_K=5\nVERITY_CHUNK_SIZE=120\n", encoding="utf-8")
         monkeypatch.chdir(tmp_path)

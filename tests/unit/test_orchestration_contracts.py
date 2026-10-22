@@ -21,7 +21,7 @@ from verity.config import Provider, Settings
 from verity.cost import RunAccumulator
 from verity.providers import CompletionResult, LLMProvider
 
-_PATCH = "verity.providers.litellm.completion"
+_PATCH = "verity.providers._litellm_completion"
 
 
 def _mock_response(content: str = "Test response") -> MagicMock:

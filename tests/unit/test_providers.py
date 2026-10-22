@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import litellm.exceptions
 import pytest
 
 from verity.cassettes import CassetteLibrary, CassetteMissError, CassettePayload, ReplayToolCall
@@ -44,7 +43,7 @@ def _mock_response(
     return mock_resp
 
 
-_PATCH = "verity.providers.litellm.completion"
+_PATCH = "verity.providers._litellm_completion"
 
 
 @pytest.fixture()
@@ -340,13 +339,19 @@ class TestCassetteReplay:
         assert result.tool_calls[0].function.name == "coverage_calculator"
 
 
-def _quota_error(status_code: int) -> litellm.exceptions.APIError:
-    return litellm.exceptions.APIError(
-        status_code=status_code,
-        message="insufficient credits",
-        llm_provider="openrouter",
-        model="openai/gpt-4o-mini",
-    )
+def _openai_api_error_type() -> type[Exception]:
+    import openai
+
+    return openai.APIError
+
+
+def _quota_error(status_code: int) -> Exception:
+    import httpx
+    import openai
+
+    request = httpx.Request("POST", "https://api.example.test/v1/chat/completions")
+    response = httpx.Response(status_code, request=request)
+    return openai.APIStatusError("insufficient credits", response=response, body=None)
 
 
 class TestKeyFallback:
@@ -399,7 +404,7 @@ class TestKeyFallback:
 
         with (
             patch(_PATCH, side_effect=_quota_error(500)) as mock_call,
-            pytest.raises(litellm.exceptions.APIError),
+            pytest.raises(_openai_api_error_type()),
         ):
             provider.complete([{"role": "user", "content": "hi"}])
 
@@ -412,7 +417,7 @@ class TestKeyFallback:
 
         with (
             patch(_PATCH, side_effect=_quota_error(402)) as mock_call,
-            pytest.raises(litellm.exceptions.APIError),
+            pytest.raises(_openai_api_error_type()),
         ):
             provider.complete([{"role": "user", "content": "hi"}])
 
@@ -429,7 +434,7 @@ class TestRateLimitCircuitBreaker:
 
         with patch(_PATCH, side_effect=rate_limit) as mock_call:
             for request_number in range(1, RATE_LIMIT_STOP_THRESHOLD):
-                with pytest.raises(litellm.exceptions.APIError):
+                with pytest.raises(_openai_api_error_type()):
                     provider.complete([{"role": "user", "content": f"request {request_number}"}])
 
             with pytest.raises(ProviderRateLimitCircuitOpenError, match="opened after 5 HTTP 429"):
