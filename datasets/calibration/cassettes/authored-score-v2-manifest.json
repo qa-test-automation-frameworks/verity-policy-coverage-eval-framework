@@ -1,0 +1,686 @@
+{
+  "cassetteCount": 112,
+  "cassettes": [
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/01ad4d5c1b62398d49810a22263eb369.json",
+      "source_v1_sha256": "a6c2aad4b2b6b9778088677008bcaf0efeb444e3e3746059854c92a828314846",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/01ad4d5c1b62398d49810a22263eb369.json",
+      "target_v2_sha256": "b980230df120c26322fd1f58023da636e1f53e8314f755cb0afd641eba47bc04"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/039612c1dfe06bf69e6c7c9d8d9fe65a.json",
+      "source_v1_sha256": "98cfae35f5f01ca396c2a32919f84e7ac51bc9ee3f3fd128912dfc7b35a00fb0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/039612c1dfe06bf69e6c7c9d8d9fe65a.json",
+      "target_v2_sha256": "19d1200d030ba8449691409243cfae38f1fbd7880561a78533619bc68050a89e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/04179b51f9021b4151511fac60b9b425.json",
+      "source_v1_sha256": "04eb136464df48302ecea89ee2bae8c6a595f8a72b003fc6a2ca696d91b12555",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/04179b51f9021b4151511fac60b9b425.json",
+      "target_v2_sha256": "6102e0b485afe06e3994194a8ad14821b526f46dcb92a97404157fac6341c38f"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/083547540efa1696b4c98de22a14bfbe.json",
+      "source_v1_sha256": "85fa5f604e79cfc094cb3f012294b9f97c81a9887e58f499573470af32e7e142",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/083547540efa1696b4c98de22a14bfbe.json",
+      "target_v2_sha256": "8d58019123f258ed30d0276ed5a6588f7bfe2f1f9d70f843e37bcb1348daf91e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/090746fb42935716036757b4e68556b8.json",
+      "source_v1_sha256": "0a988517862a70119ccca3b5e098815cce98289f1fb2be73c346d47a2335c55a",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/090746fb42935716036757b4e68556b8.json",
+      "target_v2_sha256": "633036c02f3b5fd56eb85766e5945f2bfb1e04e93f31276c20fb2038c1000e9a"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/097228e735f225a7c89a6246baa58169.json",
+      "source_v1_sha256": "a6ae6277e073236140959026398238a5480524abd032ed2dc806031ba1dcd94c",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/097228e735f225a7c89a6246baa58169.json",
+      "target_v2_sha256": "fadf2caf61097a1ef51332d0f40d77b03d86c16dc2ac078bac640ef8dc726ccf"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/0b05cbe851ae4675467d5d5e0dc070bc.json",
+      "source_v1_sha256": "d9a6bee4b10e401807caaea06fe4a1dede125cee1e47f5c22ebd5a56ffaa7940",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/0b05cbe851ae4675467d5d5e0dc070bc.json",
+      "target_v2_sha256": "e2a0fb4bf5a2a3d4374a88f6741a369876d86ac168f0c68ea8fc15d8ccc4daf7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/0df4df798d78d8873a4e1d68e983331a.json",
+      "source_v1_sha256": "f99fe2cbfe96449f7b235a860b56a90f33cc5a416c8f3a33aea22604b74f2073",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/0df4df798d78d8873a4e1d68e983331a.json",
+      "target_v2_sha256": "ad3a8ae6d7daf5077236b8fe94a53591658788870bb9db9f7c24dd2edab9ef15"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/0f5da02f8c25f26eeeddfc5102513f06.json",
+      "source_v1_sha256": "2eea11ca4a3beb988ebb2e05e661fd11d8050071619d3d794acaf5e243c657f0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/0f5da02f8c25f26eeeddfc5102513f06.json",
+      "target_v2_sha256": "27962a59b8b57b6ad2cfbc508282ee0c4d23501e74d6cd19ab318bf08667761e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/11ea1594d55b697ef77d5bc3b85496f0.json",
+      "source_v1_sha256": "51f7b553064ba018d06d22b635cbd8a7f0ba594f401d88a0c4a15699d77020db",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/11ea1594d55b697ef77d5bc3b85496f0.json",
+      "target_v2_sha256": "33af804ca77575f911a2a4f79e7cd14cabf27d4893a00a80a37f57703d249b1d"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/1385347f00a374b3622d5741f60ff0c7.json",
+      "source_v1_sha256": "d20c85784b0d38e5010f47fc2020936f22afcb38dbdc70c6a4cffcb63bf07237",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/1385347f00a374b3622d5741f60ff0c7.json",
+      "target_v2_sha256": "2f6d6b3ea703f7c18cf7f597dd5ebc16436fd968379f859cf6fb0f2a7091ffa7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/139d2f2d913c9c31978af50591677d1d.json",
+      "source_v1_sha256": "2bb19dd35cd004faeefd71029858d0b9bb4d56c2943013cf83af3c197428c624",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/139d2f2d913c9c31978af50591677d1d.json",
+      "target_v2_sha256": "ec6aca19cbbf355936208f9eaa7f599c9b755012ca2ba4ff5e6cd31a725ee529"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/13e5b5b39c290e7838e2520e02725a47.json",
+      "source_v1_sha256": "d8ce77888a8855cd51c8faefd4a325b6e26c7555ea8585b2a215ca4b9aa28ce9",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/13e5b5b39c290e7838e2520e02725a47.json",
+      "target_v2_sha256": "687a2c386a12931e5bc025f432a92eb16e22073528d761b427ba0b92ced8a7b5"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/15ef71c0d4e5ce40c557c540bcbd8813.json",
+      "source_v1_sha256": "f70c3b024f01eced034125335f39d7c8ee7aceef44a4b16468b5273ea6a1864b",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/15ef71c0d4e5ce40c557c540bcbd8813.json",
+      "target_v2_sha256": "40f53b78d336613be618f7c50f4325069343789606f2717d0a5bd67258c50316"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/165273d40e7dba7ced5e96323154ca30.json",
+      "source_v1_sha256": "a52205b2583de639393d4fd1910c1ed2fca1b596758bd4add8997a6f65800af0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/165273d40e7dba7ced5e96323154ca30.json",
+      "target_v2_sha256": "f23c0d45704b3ab885432ffaaa54bb88628e776b921896a6fcd9bf11678b24ad"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/1a5e1ac0d9ad72a3f756089a587c0aa7.json",
+      "source_v1_sha256": "3f04721b9152c25402b02b4c1d99cf417eb3eaa3af2e7f6c55e80b41dbdbdae4",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/1a5e1ac0d9ad72a3f756089a587c0aa7.json",
+      "target_v2_sha256": "8a16d61dfcc8ad87bc969664c381bdd5020044816e9f85dc8b61dd2ee535fd7c"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/1a5fb19ebee9ba19dabbe3875d53eff1.json",
+      "source_v1_sha256": "d40f0a4df890f9ed992a026053b9d762b0dcb55d18a9ef74e36f63c5f0c3f9cf",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/1a5fb19ebee9ba19dabbe3875d53eff1.json",
+      "target_v2_sha256": "30bf207226d0ba89961e9f45fecd772f2480ed73fd5a7b39f3ca663271705454"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/1ce576f6350e543c0710646497188603.json",
+      "source_v1_sha256": "4f79611d9f65d74b24aa8b62b2a31d61bdb194302d6507dcc470af577f479562",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/1ce576f6350e543c0710646497188603.json",
+      "target_v2_sha256": "3fc908c7ae4cbb2b459e89e17d52901938d995c14afd21aeefe3eb92cc0727b1"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/1efd27bc6d47eda47d5395b71d40048b.json",
+      "source_v1_sha256": "3f04721b9152c25402b02b4c1d99cf417eb3eaa3af2e7f6c55e80b41dbdbdae4",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/1efd27bc6d47eda47d5395b71d40048b.json",
+      "target_v2_sha256": "8a16d61dfcc8ad87bc969664c381bdd5020044816e9f85dc8b61dd2ee535fd7c"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/1f20f3c3533bf0d54a3c20697c270fe3.json",
+      "source_v1_sha256": "d0734eebdfd4acdf9b2cb09a82c1d81d1862436c3ed63f4d1c4876f159c0aead",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/1f20f3c3533bf0d54a3c20697c270fe3.json",
+      "target_v2_sha256": "d7a05febb5d90db0ace8538ee73d02d11e68afbd921fe1d03c1ff026f1c0bc8e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/2128c639387a56d25bc9ab55f4959c5c.json",
+      "source_v1_sha256": "04eb136464df48302ecea89ee2bae8c6a595f8a72b003fc6a2ca696d91b12555",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/2128c639387a56d25bc9ab55f4959c5c.json",
+      "target_v2_sha256": "6102e0b485afe06e3994194a8ad14821b526f46dcb92a97404157fac6341c38f"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/23d3210f8dfe2c63cb8d2c19fdf72dd9.json",
+      "source_v1_sha256": "51f7b553064ba018d06d22b635cbd8a7f0ba594f401d88a0c4a15699d77020db",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/23d3210f8dfe2c63cb8d2c19fdf72dd9.json",
+      "target_v2_sha256": "33af804ca77575f911a2a4f79e7cd14cabf27d4893a00a80a37f57703d249b1d"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/2b946c250dd6085e31ca73c31edf6b29.json",
+      "source_v1_sha256": "e32a2e55d37d964a273171c3255f410839a211385281a544de1fa4bd07a794fd",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/2b946c250dd6085e31ca73c31edf6b29.json",
+      "target_v2_sha256": "fd1046860098c6601b2278bf8ca19df640fd2bbefd9b80f35654c0d51ff3a6be"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/2d886ad9fcb9cbdd478b9036c049f4b2.json",
+      "source_v1_sha256": "be7b1fe13411ba808c7b3e0afcab26fc17509f3fda0b4918cf509e9188a8fd54",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/2d886ad9fcb9cbdd478b9036c049f4b2.json",
+      "target_v2_sha256": "53c6a065ed0914fdd98db26c662fa295eda552a07a846132e4bd57a142111ec1"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/2eb541faf481fd072b1ce4b1b38eb171.json",
+      "source_v1_sha256": "9eb1c41a9c92b9fe3600428ba531bb1633aab194048ed84f505847495581299f",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/2eb541faf481fd072b1ce4b1b38eb171.json",
+      "target_v2_sha256": "0e634ba6d4f7642584135cda221e0807bf45cc0c0fded07b424001fcbe2275f9"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/31c2f9a386c970a8ebaf4fd8a8aa6cfa.json",
+      "source_v1_sha256": "a4df5aa79b6077a8693d3e631318db41d071972e300f72b3166073b1bd5562cd",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/31c2f9a386c970a8ebaf4fd8a8aa6cfa.json",
+      "target_v2_sha256": "206159fa83453fa50c53191e12c364b40501b1046aa4d6ceb99f920420c5b444"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/340db62a8e18ff4dcebab1e027152cbf.json",
+      "source_v1_sha256": "9081cf26121071c994e89399eff26b8e4a6ef408a08b2993c111054db8b6cacf",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/340db62a8e18ff4dcebab1e027152cbf.json",
+      "target_v2_sha256": "a8cb5414217adbb647e3b1fb86335727fbdca825a04889ac61fb2ec7dbfafc34"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/3478e6f6394dfec4babb1cf9fe0b8df5.json",
+      "source_v1_sha256": "98cfae35f5f01ca396c2a32919f84e7ac51bc9ee3f3fd128912dfc7b35a00fb0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/3478e6f6394dfec4babb1cf9fe0b8df5.json",
+      "target_v2_sha256": "19d1200d030ba8449691409243cfae38f1fbd7880561a78533619bc68050a89e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/36b7dbd6aafb6d9fd06c275a0bddf998.json",
+      "source_v1_sha256": "04af0175ffcd07339c2d74a0ca08ed858e411f01457ced62df6f7e270b927812",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/36b7dbd6aafb6d9fd06c275a0bddf998.json",
+      "target_v2_sha256": "225581e4edc6dda76f43fafb8f6ab221988517dd8b00d912094d811ff126e20b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/3aaaefb64e86f6c9be84335f8b80d1c8.json",
+      "source_v1_sha256": "d22e82438926cab566eea3709840dd46c58e35ea354429c2f8bc9bef552893de",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/3aaaefb64e86f6c9be84335f8b80d1c8.json",
+      "target_v2_sha256": "3f23f6363937c95bd30b8c6cf901cf74a8e41c6c9ead1938787345d75ef471e3"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/3ba976986201b7d8b03be3145a4e8fa4.json",
+      "source_v1_sha256": "d9a6bee4b10e401807caaea06fe4a1dede125cee1e47f5c22ebd5a56ffaa7940",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/3ba976986201b7d8b03be3145a4e8fa4.json",
+      "target_v2_sha256": "e2a0fb4bf5a2a3d4374a88f6741a369876d86ac168f0c68ea8fc15d8ccc4daf7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/3ddc8841c557cf549dadefb18cea1d78.json",
+      "source_v1_sha256": "22db5597b03cc770f6ae759e91d771a13cb052583a390a1af45956eb378415ac",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/3ddc8841c557cf549dadefb18cea1d78.json",
+      "target_v2_sha256": "1ffbd2a623afdc7c320c0e53fe838830b2fd3534ec99eae5ae5d575ec4eaf92c"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/3e0b7ef7e3979dff0f1b9897fcfb060a.json",
+      "source_v1_sha256": "f3ef76fac69bc42ab4234439fca285c5d2d8c2edab4a8a30feba0cb672abf108",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/3e0b7ef7e3979dff0f1b9897fcfb060a.json",
+      "target_v2_sha256": "5c8c7705b14209cb7f707d5b38aad76d5553a3b5b02dc50ddccca868effec5a4"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/3ec877640c674e8ebb1801706079bb12.json",
+      "source_v1_sha256": "d213ab083533ad64cf8a275121596effb23ad3455b7c4a3b1efad3b1ee89f240",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/3ec877640c674e8ebb1801706079bb12.json",
+      "target_v2_sha256": "6b3ba29970b83c90ee687f00ace4db6d84a6e51ddcb120407db6a1b0ba3f0903"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/3ee90eb15879039b2ebf39a6f9681d44.json",
+      "source_v1_sha256": "1431a75af0dbecc039dba9ae9b30f237c77e158160cc23be3b187b8b3d8f076b",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/3ee90eb15879039b2ebf39a6f9681d44.json",
+      "target_v2_sha256": "065d5ec2197c67d9e6ca6fc8e4f961866d95dd12973d2e5cc5e2af2b6d492ae8"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/4034209c8a15a0ed62491762fa4c27a2.json",
+      "source_v1_sha256": "2bb19dd35cd004faeefd71029858d0b9bb4d56c2943013cf83af3c197428c624",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/4034209c8a15a0ed62491762fa4c27a2.json",
+      "target_v2_sha256": "ec6aca19cbbf355936208f9eaa7f599c9b755012ca2ba4ff5e6cd31a725ee529"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/414380ea436b8be09a6ac13781811f45.json",
+      "source_v1_sha256": "9f52af85dddbaa5eccb3c824fccc3c94cf44f3dc373321cb62116090809da01f",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/414380ea436b8be09a6ac13781811f45.json",
+      "target_v2_sha256": "745fae96d6aa595dff2bb83306ea9280c330e15c4b3de8565a70fd0d01c8e030"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/429b72e2f132fc23525e55be37e6deb2.json",
+      "source_v1_sha256": "728982a1dc2055ab7f72afe032ffcd5e8c1b1695022e2dc9acd29b1c77070544",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/429b72e2f132fc23525e55be37e6deb2.json",
+      "target_v2_sha256": "b243dd6fe82d0c53998ee4d4044ab3ba04c926bdb102d20542cebc9c46d7c47b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/45c0e27e82faf85ac4482799ac57ea06.json",
+      "source_v1_sha256": "9f52af85dddbaa5eccb3c824fccc3c94cf44f3dc373321cb62116090809da01f",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/45c0e27e82faf85ac4482799ac57ea06.json",
+      "target_v2_sha256": "745fae96d6aa595dff2bb83306ea9280c330e15c4b3de8565a70fd0d01c8e030"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/4667217f0cb656b9619eafdf5f1304ec.json",
+      "source_v1_sha256": "a5049cfca2e739b2c714d2266b67f05768af56b22ccbbee4a2cb9d85a9641dc8",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/4667217f0cb656b9619eafdf5f1304ec.json",
+      "target_v2_sha256": "a2dbd092deae83d66e85e9bbb8b2bbc85e23b83f20505127846bb8f4ec71ab99"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/46f193efffbca7ac597967686cde6fc8.json",
+      "source_v1_sha256": "dd906c33f36e31b2f524486de1e3240ba86f8692fe3130248c3abe2f0448be44",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/46f193efffbca7ac597967686cde6fc8.json",
+      "target_v2_sha256": "2c48d80b69eaac7fad61200e62f29945aa6f90e5791c6206cb339f2f0d641f35"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/4a1f5f333374b9e0b3c29b8fad30c2b9.json",
+      "source_v1_sha256": "2eea11ca4a3beb988ebb2e05e661fd11d8050071619d3d794acaf5e243c657f0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/4a1f5f333374b9e0b3c29b8fad30c2b9.json",
+      "target_v2_sha256": "27962a59b8b57b6ad2cfbc508282ee0c4d23501e74d6cd19ab318bf08667761e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/4bdf43d2695b03a4e72dbd7c29ec0797.json",
+      "source_v1_sha256": "ada8aa0b585079f9510d55ff198122b6ba4ee164304fc3ccba1ce0b867fad381",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/4bdf43d2695b03a4e72dbd7c29ec0797.json",
+      "target_v2_sha256": "2116eb72ccbbc6d4f385997250a52fb3de07d0fdd3794f7013d37494efe0539d"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/4f1b14aa0f047ba31ea0166934107d06.json",
+      "source_v1_sha256": "b45d2847bf69f4e7f2c6d17d7817da7c3007b48a784beb6a998eee2b3c57352a",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/4f1b14aa0f047ba31ea0166934107d06.json",
+      "target_v2_sha256": "6f2f613bc9ba2c1a7283c2b8171774ed941e0085c7d519aa906ce34bf20f258b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/51d3d570ff5c72f4e9b4e65e8b289bf5.json",
+      "source_v1_sha256": "05c3bde7731398f02cc2ed0b6eafffc4e681a47662f1d0f800ef6ee5191ab8b9",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/51d3d570ff5c72f4e9b4e65e8b289bf5.json",
+      "target_v2_sha256": "2a9e2d159f5d8827e3a4b3c661610fbe977c8276a32a4a62619a51ee0981e4d9"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/539a817670b12ff269e52e8fbad6fbbc.json",
+      "source_v1_sha256": "2eea11ca4a3beb988ebb2e05e661fd11d8050071619d3d794acaf5e243c657f0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/539a817670b12ff269e52e8fbad6fbbc.json",
+      "target_v2_sha256": "27962a59b8b57b6ad2cfbc508282ee0c4d23501e74d6cd19ab318bf08667761e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/54ad296718447824245c421719a4a9f5.json",
+      "source_v1_sha256": "d20c85784b0d38e5010f47fc2020936f22afcb38dbdc70c6a4cffcb63bf07237",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/54ad296718447824245c421719a4a9f5.json",
+      "target_v2_sha256": "2f6d6b3ea703f7c18cf7f597dd5ebc16436fd968379f859cf6fb0f2a7091ffa7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/59139ff0d6bc51542b4c53b03838068c.json",
+      "source_v1_sha256": "3bea2587aea4dabc68317765e471902212c72336c6b7d30b1d33b58c85c75d9f",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/59139ff0d6bc51542b4c53b03838068c.json",
+      "target_v2_sha256": "43b94fc6fd6aab1458a71ae799cb0c7a239ad36412ea35a40866dab1640a03ae"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/59e4d69c1cec2a9b3d868d15ec1458fd.json",
+      "source_v1_sha256": "f3ef76fac69bc42ab4234439fca285c5d2d8c2edab4a8a30feba0cb672abf108",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/59e4d69c1cec2a9b3d868d15ec1458fd.json",
+      "target_v2_sha256": "5c8c7705b14209cb7f707d5b38aad76d5553a3b5b02dc50ddccca868effec5a4"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/5e1d55711c4efa0d07b08ee035682bd4.json",
+      "source_v1_sha256": "425a7a885740f447440d8bb8f7079ee0645bbc12bb6b43cb4c8db11cb82e9708",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/5e1d55711c4efa0d07b08ee035682bd4.json",
+      "target_v2_sha256": "5ea394ee3cec8918d5aefce076f1a120bf370402b0ab5e6ba2f1eb0fe9d30284"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/5f4a5eb15bf3d287847dda6c2080d50d.json",
+      "source_v1_sha256": "95d51cee2c299fe13a095d23ed8eb969c3a0f8abcce14010612874a809df8ccb",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/5f4a5eb15bf3d287847dda6c2080d50d.json",
+      "target_v2_sha256": "799390605ace3a6c97b5faff8415121cb05909e15e522631ffe79becd21dd494"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/63ce093f70690b2ff7ec872fc483d187.json",
+      "source_v1_sha256": "d0734eebdfd4acdf9b2cb09a82c1d81d1862436c3ed63f4d1c4876f159c0aead",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/63ce093f70690b2ff7ec872fc483d187.json",
+      "target_v2_sha256": "d7a05febb5d90db0ace8538ee73d02d11e68afbd921fe1d03c1ff026f1c0bc8e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/65bd1ac78c554d3ede31eec8de105ae6.json",
+      "source_v1_sha256": "9ed7a110829eb8e1e4023fdd6145d42e5181984eeb2f8a9952da0ba8e5289a44",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/65bd1ac78c554d3ede31eec8de105ae6.json",
+      "target_v2_sha256": "5542c168462db44e33d01cb3ad346059e4ee1422622c1098968650a4f08e9fe4"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/6691789532c37433f941434ac5840898.json",
+      "source_v1_sha256": "0b52bf6c9bb7013922466fcc5f04acdb92d9bc7c288393dc830bffb15f40a9f9",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/6691789532c37433f941434ac5840898.json",
+      "target_v2_sha256": "b60d14e166ce90b4bea07d7b1ec5ab907fe0252668a99e20786884c62615bd34"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/66adf9e5e6ec2152c256b78f62f9d759.json",
+      "source_v1_sha256": "9081cf26121071c994e89399eff26b8e4a6ef408a08b2993c111054db8b6cacf",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/66adf9e5e6ec2152c256b78f62f9d759.json",
+      "target_v2_sha256": "a8cb5414217adbb647e3b1fb86335727fbdca825a04889ac61fb2ec7dbfafc34"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/69c098a5b2d09ba7d2377b4475eb8885.json",
+      "source_v1_sha256": "d22e82438926cab566eea3709840dd46c58e35ea354429c2f8bc9bef552893de",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/69c098a5b2d09ba7d2377b4475eb8885.json",
+      "target_v2_sha256": "3f23f6363937c95bd30b8c6cf901cf74a8e41c6c9ead1938787345d75ef471e3"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/6d31351f735c35f514b3e5ec3d9b6785.json",
+      "source_v1_sha256": "425a7a885740f447440d8bb8f7079ee0645bbc12bb6b43cb4c8db11cb82e9708",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/6d31351f735c35f514b3e5ec3d9b6785.json",
+      "target_v2_sha256": "5ea394ee3cec8918d5aefce076f1a120bf370402b0ab5e6ba2f1eb0fe9d30284"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/6eebac45984cb03ad2cc83df03d5010f.json",
+      "source_v1_sha256": "b5974938b1141dd08c98e1a618fe22e6a4a875c564bb36e92c4a4efaf58b3ca2",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/6eebac45984cb03ad2cc83df03d5010f.json",
+      "target_v2_sha256": "d1c6b2a377a4957346558e113493050b8fcfcad7bf56e3834144a505a0ed75a7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/6f5f0c4ea5883f01942d198b51ef66cf.json",
+      "source_v1_sha256": "728982a1dc2055ab7f72afe032ffcd5e8c1b1695022e2dc9acd29b1c77070544",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/6f5f0c4ea5883f01942d198b51ef66cf.json",
+      "target_v2_sha256": "b243dd6fe82d0c53998ee4d4044ab3ba04c926bdb102d20542cebc9c46d7c47b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/6fe1aaf8177a176247f17b2302c7e689.json",
+      "source_v1_sha256": "be7b1fe13411ba808c7b3e0afcab26fc17509f3fda0b4918cf509e9188a8fd54",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/6fe1aaf8177a176247f17b2302c7e689.json",
+      "target_v2_sha256": "53c6a065ed0914fdd98db26c662fa295eda552a07a846132e4bd57a142111ec1"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/704b36dfee23137554d68ef3df119372.json",
+      "source_v1_sha256": "b58228c57a5b47ab09f3b932a68d53c33ae4f93777ae41bbbfbac49fb5efeeb8",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/704b36dfee23137554d68ef3df119372.json",
+      "target_v2_sha256": "84d0916a56f4c036e129c699b4449d30f992a387711a74fe47755b4f74d8b2b1"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/71edd27326ae0f2a4413d023de061108.json",
+      "source_v1_sha256": "be7b1fe13411ba808c7b3e0afcab26fc17509f3fda0b4918cf509e9188a8fd54",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/71edd27326ae0f2a4413d023de061108.json",
+      "target_v2_sha256": "53c6a065ed0914fdd98db26c662fa295eda552a07a846132e4bd57a142111ec1"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/763878cda0d3f8a373c9629ee5e6c28f.json",
+      "source_v1_sha256": "f99fe2cbfe96449f7b235a860b56a90f33cc5a416c8f3a33aea22604b74f2073",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/763878cda0d3f8a373c9629ee5e6c28f.json",
+      "target_v2_sha256": "ad3a8ae6d7daf5077236b8fe94a53591658788870bb9db9f7c24dd2edab9ef15"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/7ca86036f24906b72d339f07049981b1.json",
+      "source_v1_sha256": "85fa5f604e79cfc094cb3f012294b9f97c81a9887e58f499573470af32e7e142",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/7ca86036f24906b72d339f07049981b1.json",
+      "target_v2_sha256": "8d58019123f258ed30d0276ed5a6588f7bfe2f1f9d70f843e37bcb1348daf91e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/7d5689448f5722cd65f167568bfed2ab.json",
+      "source_v1_sha256": "d22e82438926cab566eea3709840dd46c58e35ea354429c2f8bc9bef552893de",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/7d5689448f5722cd65f167568bfed2ab.json",
+      "target_v2_sha256": "3f23f6363937c95bd30b8c6cf901cf74a8e41c6c9ead1938787345d75ef471e3"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/883cd8a465cd8ca46565863779e3c6b0.json",
+      "source_v1_sha256": "c69aff8e81ab3e879347d6cd58fc567acdaa8652e4c98711cfa9c5302c3bb4e7",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/883cd8a465cd8ca46565863779e3c6b0.json",
+      "target_v2_sha256": "4fd069f981ab8e4285ec18e56f6b993fd3213996aad6784255970830c8d5fbca"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/8dd9df0027497317fac9e13af010adec.json",
+      "source_v1_sha256": "0b52bf6c9bb7013922466fcc5f04acdb92d9bc7c288393dc830bffb15f40a9f9",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/8dd9df0027497317fac9e13af010adec.json",
+      "target_v2_sha256": "b60d14e166ce90b4bea07d7b1ec5ab907fe0252668a99e20786884c62615bd34"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/9325fa7a8466649d2a214d02665fe26e.json",
+      "source_v1_sha256": "f9f7d8cfd2c3ed58f0c4ce8754b0459658fee3109454cabb14df2a2df36f18e6",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/9325fa7a8466649d2a214d02665fe26e.json",
+      "target_v2_sha256": "27f48f6193e5edfe00abbb15b0d8413102798b026e31515b22e323ecd186d86e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/93b426a2bb0c97c2d419e0a9597642e1.json",
+      "source_v1_sha256": "e37b65d95be0caf6b69d34bab3267b712b4de7b5d5140167dfcb84328091b5fe",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/93b426a2bb0c97c2d419e0a9597642e1.json",
+      "target_v2_sha256": "9ac24f8efe7f9a8685d010c13e82a24298fc59f345a2e8f44200f8f81e5c06d2"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/9819729b3841990dd1af519f57505e69.json",
+      "source_v1_sha256": "b45d2847bf69f4e7f2c6d17d7817da7c3007b48a784beb6a998eee2b3c57352a",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/9819729b3841990dd1af519f57505e69.json",
+      "target_v2_sha256": "6f2f613bc9ba2c1a7283c2b8171774ed941e0085c7d519aa906ce34bf20f258b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/a06e61be1d8084f1e24ce9a91462e4d9.json",
+      "source_v1_sha256": "cc0e629e054a31c7103b09513f4be7d5acc589c245315d5138a6b5545e1394c0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/a06e61be1d8084f1e24ce9a91462e4d9.json",
+      "target_v2_sha256": "a68e0a50bfc008b5df585b5244b514170c10ab40e3af37af3930bfe718f53aa0"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/a38457fb3eb5f20078bc02593ee050ce.json",
+      "source_v1_sha256": "22db5597b03cc770f6ae759e91d771a13cb052583a390a1af45956eb378415ac",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/a38457fb3eb5f20078bc02593ee050ce.json",
+      "target_v2_sha256": "1ffbd2a623afdc7c320c0e53fe838830b2fd3534ec99eae5ae5d575ec4eaf92c"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/a47bdaf8ecd32631862806fd0aac2181.json",
+      "source_v1_sha256": "04af0175ffcd07339c2d74a0ca08ed858e411f01457ced62df6f7e270b927812",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/a47bdaf8ecd32631862806fd0aac2181.json",
+      "target_v2_sha256": "225581e4edc6dda76f43fafb8f6ab221988517dd8b00d912094d811ff126e20b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/a761fb78323675f0417d9c27c53d4f9b.json",
+      "source_v1_sha256": "b58228c57a5b47ab09f3b932a68d53c33ae4f93777ae41bbbfbac49fb5efeeb8",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/a761fb78323675f0417d9c27c53d4f9b.json",
+      "target_v2_sha256": "84d0916a56f4c036e129c699b4449d30f992a387711a74fe47755b4f74d8b2b1"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/a7b16b2ce597392a4f97a73fdda39f23.json",
+      "source_v1_sha256": "a6ae6277e073236140959026398238a5480524abd032ed2dc806031ba1dcd94c",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/a7b16b2ce597392a4f97a73fdda39f23.json",
+      "target_v2_sha256": "fadf2caf61097a1ef51332d0f40d77b03d86c16dc2ac078bac640ef8dc726ccf"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/a83156f47c729a67072813fd91737100.json",
+      "source_v1_sha256": "06a08c844d5b019b1c027a950d7a66b658cc3daad13603d2e15d94d02577bd33",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/a83156f47c729a67072813fd91737100.json",
+      "target_v2_sha256": "4bf122c2d40c85543834e7529f2d4ddb9a7da8eba9270fd6b92ebd31d73fd0a4"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/aa2607495dfd2ab29a196298940c7c68.json",
+      "source_v1_sha256": "b648c07bc0134e714bac76e79732b9dee9e7f8f2de3eea7adbb5608293725a27",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/aa2607495dfd2ab29a196298940c7c68.json",
+      "target_v2_sha256": "b816ca785c80cd863e31cb1eb4e304d4bccfe71bd92a27046d2d9485964acc61"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/ab12cd5c78aaaa9f448455674a90cc3f.json",
+      "source_v1_sha256": "dd906c33f36e31b2f524486de1e3240ba86f8692fe3130248c3abe2f0448be44",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/ab12cd5c78aaaa9f448455674a90cc3f.json",
+      "target_v2_sha256": "2c48d80b69eaac7fad61200e62f29945aa6f90e5791c6206cb339f2f0d641f35"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/abed37157c383cc1617f52635fd75b93.json",
+      "source_v1_sha256": "04af0175ffcd07339c2d74a0ca08ed858e411f01457ced62df6f7e270b927812",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/abed37157c383cc1617f52635fd75b93.json",
+      "target_v2_sha256": "225581e4edc6dda76f43fafb8f6ab221988517dd8b00d912094d811ff126e20b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/aca7d1fc3aea58319f772f3779314749.json",
+      "source_v1_sha256": "8a0fb9b068bc0e89ad12a79f496212121968ffbfbefc12289fb6b1c33f9786d4",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/aca7d1fc3aea58319f772f3779314749.json",
+      "target_v2_sha256": "92d4a3e70443fdea39dc01cce83d96caf6f1e194c9ef0024122f000757f16771"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/b779fe36f5e462913f7776d5a4c2edb9.json",
+      "source_v1_sha256": "3bea2587aea4dabc68317765e471902212c72336c6b7d30b1d33b58c85c75d9f",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/b779fe36f5e462913f7776d5a4c2edb9.json",
+      "target_v2_sha256": "43b94fc6fd6aab1458a71ae799cb0c7a239ad36412ea35a40866dab1640a03ae"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/b7eae9618ecc6e3b8021b4679c241ac4.json",
+      "source_v1_sha256": "32e995b7211e1d75b1eaed87639846bab2ae46b256dae317f3518608cbaff9fb",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/b7eae9618ecc6e3b8021b4679c241ac4.json",
+      "target_v2_sha256": "94e9cf055858df3a5ab8e39e7bf94f1b860b67868fa41618d6aea3aab020caf2"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/b917747774b8303d397a31de57c0b4c2.json",
+      "source_v1_sha256": "06a08c844d5b019b1c027a950d7a66b658cc3daad13603d2e15d94d02577bd33",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/b917747774b8303d397a31de57c0b4c2.json",
+      "target_v2_sha256": "4bf122c2d40c85543834e7529f2d4ddb9a7da8eba9270fd6b92ebd31d73fd0a4"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/c249db1b0603eb4879ba57dd0cdff1f9.json",
+      "source_v1_sha256": "cc0e629e054a31c7103b09513f4be7d5acc589c245315d5138a6b5545e1394c0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/c249db1b0603eb4879ba57dd0cdff1f9.json",
+      "target_v2_sha256": "a68e0a50bfc008b5df585b5244b514170c10ab40e3af37af3930bfe718f53aa0"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/c327bef7c40afa1e699df9e141a8f43e.json",
+      "source_v1_sha256": "c69aff8e81ab3e879347d6cd58fc567acdaa8652e4c98711cfa9c5302c3bb4e7",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/c327bef7c40afa1e699df9e141a8f43e.json",
+      "target_v2_sha256": "4fd069f981ab8e4285ec18e56f6b993fd3213996aad6784255970830c8d5fbca"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/c5a416bb3afa9c11a896766067c5bd18.json",
+      "source_v1_sha256": "b5974938b1141dd08c98e1a618fe22e6a4a875c564bb36e92c4a4efaf58b3ca2",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/c5a416bb3afa9c11a896766067c5bd18.json",
+      "target_v2_sha256": "d1c6b2a377a4957346558e113493050b8fcfcad7bf56e3834144a505a0ed75a7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/c6c74219458eb297a4e8936d26778194.json",
+      "source_v1_sha256": "98cfae35f5f01ca396c2a32919f84e7ac51bc9ee3f3fd128912dfc7b35a00fb0",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/c6c74219458eb297a4e8936d26778194.json",
+      "target_v2_sha256": "19d1200d030ba8449691409243cfae38f1fbd7880561a78533619bc68050a89e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/c8ea8e6dfd8d44acf03e66e8da433b91.json",
+      "source_v1_sha256": "f70c3b024f01eced034125335f39d7c8ee7aceef44a4b16468b5273ea6a1864b",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/c8ea8e6dfd8d44acf03e66e8da433b91.json",
+      "target_v2_sha256": "40f53b78d336613be618f7c50f4325069343789606f2717d0a5bd67258c50316"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/c968f3f00a48a9aea2d0c2d778fd2040.json",
+      "source_v1_sha256": "3f04721b9152c25402b02b4c1d99cf417eb3eaa3af2e7f6c55e80b41dbdbdae4",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/c968f3f00a48a9aea2d0c2d778fd2040.json",
+      "target_v2_sha256": "8a16d61dfcc8ad87bc969664c381bdd5020044816e9f85dc8b61dd2ee535fd7c"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/cb2686c90b53e2846269d6a969d5fc7e.json",
+      "source_v1_sha256": "a6c2aad4b2b6b9778088677008bcaf0efeb444e3e3746059854c92a828314846",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/cb2686c90b53e2846269d6a969d5fc7e.json",
+      "target_v2_sha256": "b980230df120c26322fd1f58023da636e1f53e8314f755cb0afd641eba47bc04"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/cc2fb8db615640c6803a8d21ff16f871.json",
+      "source_v1_sha256": "1431a75af0dbecc039dba9ae9b30f237c77e158160cc23be3b187b8b3d8f076b",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/cc2fb8db615640c6803a8d21ff16f871.json",
+      "target_v2_sha256": "065d5ec2197c67d9e6ca6fc8e4f961866d95dd12973d2e5cc5e2af2b6d492ae8"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/cc85114b95980aff600429b2a77bc267.json",
+      "source_v1_sha256": "f3ef76fac69bc42ab4234439fca285c5d2d8c2edab4a8a30feba0cb672abf108",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/cc85114b95980aff600429b2a77bc267.json",
+      "target_v2_sha256": "5c8c7705b14209cb7f707d5b38aad76d5553a3b5b02dc50ddccca868effec5a4"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/d133afcf8a5fb563d47272acf1444331.json",
+      "source_v1_sha256": "9eb1c41a9c92b9fe3600428ba531bb1633aab194048ed84f505847495581299f",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/d133afcf8a5fb563d47272acf1444331.json",
+      "target_v2_sha256": "0e634ba6d4f7642584135cda221e0807bf45cc0c0fded07b424001fcbe2275f9"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/d2cf0182a971aa49f48e8106b39575bd.json",
+      "source_v1_sha256": "51f7b553064ba018d06d22b635cbd8a7f0ba594f401d88a0c4a15699d77020db",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/d2cf0182a971aa49f48e8106b39575bd.json",
+      "target_v2_sha256": "33af804ca77575f911a2a4f79e7cd14cabf27d4893a00a80a37f57703d249b1d"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/d71df410bed624e8a6b97a053a9b5760.json",
+      "source_v1_sha256": "3bea2587aea4dabc68317765e471902212c72336c6b7d30b1d33b58c85c75d9f",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/d71df410bed624e8a6b97a053a9b5760.json",
+      "target_v2_sha256": "43b94fc6fd6aab1458a71ae799cb0c7a239ad36412ea35a40866dab1640a03ae"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/da165acb6fb191c358ea66b6fdd79090.json",
+      "source_v1_sha256": "b648c07bc0134e714bac76e79732b9dee9e7f8f2de3eea7adbb5608293725a27",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/da165acb6fb191c358ea66b6fdd79090.json",
+      "target_v2_sha256": "b816ca785c80cd863e31cb1eb4e304d4bccfe71bd92a27046d2d9485964acc61"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/dedd14f803cd5cbea95a64163214668c.json",
+      "source_v1_sha256": "e37b65d95be0caf6b69d34bab3267b712b4de7b5d5140167dfcb84328091b5fe",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/dedd14f803cd5cbea95a64163214668c.json",
+      "target_v2_sha256": "9ac24f8efe7f9a8685d010c13e82a24298fc59f345a2e8f44200f8f81e5c06d2"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/e2a407fcf083363d4eca667aa735e72e.json",
+      "source_v1_sha256": "f9f7d8cfd2c3ed58f0c4ce8754b0459658fee3109454cabb14df2a2df36f18e6",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/e2a407fcf083363d4eca667aa735e72e.json",
+      "target_v2_sha256": "27f48f6193e5edfe00abbb15b0d8413102798b026e31515b22e323ecd186d86e"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/e3afa6fd3c543b01cf00db523cd00d2e.json",
+      "source_v1_sha256": "04eb136464df48302ecea89ee2bae8c6a595f8a72b003fc6a2ca696d91b12555",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/e3afa6fd3c543b01cf00db523cd00d2e.json",
+      "target_v2_sha256": "6102e0b485afe06e3994194a8ad14821b526f46dcb92a97404157fac6341c38f"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/e50683f7b6b6bfa21c8cf19888102ec7.json",
+      "source_v1_sha256": "225b3e87bcbfd98ed7da28e9415323b1074d41a737cafc02387c0e39d3406b69",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/e50683f7b6b6bfa21c8cf19888102ec7.json",
+      "target_v2_sha256": "e030af334b46a48806232ced3086876c41b3b755624e00a1e8d2f26be49a4a78"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/e5879a39ee4ef46dc2719092ee345c36.json",
+      "source_v1_sha256": "9b731841c290881c4b27cab98169fe2eabe781a194ee9dfc896688854e2f0a8a",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/e5879a39ee4ef46dc2719092ee345c36.json",
+      "target_v2_sha256": "364e0ee7f9bc96f7e9625861143e4c7b9df4f8d7501c47eb5325a971d5ca0b84"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/e664a30635f41786fc03b16f93d98df8.json",
+      "source_v1_sha256": "b5974938b1141dd08c98e1a618fe22e6a4a875c564bb36e92c4a4efaf58b3ca2",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/e664a30635f41786fc03b16f93d98df8.json",
+      "target_v2_sha256": "d1c6b2a377a4957346558e113493050b8fcfcad7bf56e3834144a505a0ed75a7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/e733321462a82ddf43f986fda74c87fd.json",
+      "source_v1_sha256": "d9a6bee4b10e401807caaea06fe4a1dede125cee1e47f5c22ebd5a56ffaa7940",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/e733321462a82ddf43f986fda74c87fd.json",
+      "target_v2_sha256": "e2a0fb4bf5a2a3d4374a88f6741a369876d86ac168f0c68ea8fc15d8ccc4daf7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/ecb9f9af0c58ea0ce165b5a392d6b61f.json",
+      "source_v1_sha256": "ef24cfb3c6a57e337a8d6339a2b62f0d6a433f0ae39d644826d70114bb918aaa",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/ecb9f9af0c58ea0ce165b5a392d6b61f.json",
+      "target_v2_sha256": "cc50e163b405da0f2495eb1735b44f7100c2806caddd9ba3411bb43955ed60c1"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/ee05c186ba1dcdf8907a48ab30a0c29e.json",
+      "source_v1_sha256": "e991458d91da1f88173fe4599ff537c8ad792f92ccfaf7563c1f16fb33e3507c",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/ee05c186ba1dcdf8907a48ab30a0c29e.json",
+      "target_v2_sha256": "5044d588214c17be501c093a28b2b009d026e3c5bf520ac08d4e6836d5a87989"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/efd641a71440c1ee3969a5fe38b52b6d.json",
+      "source_v1_sha256": "ada8aa0b585079f9510d55ff198122b6ba4ee164304fc3ccba1ce0b867fad381",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/efd641a71440c1ee3969a5fe38b52b6d.json",
+      "target_v2_sha256": "2116eb72ccbbc6d4f385997250a52fb3de07d0fdd3794f7013d37494efe0539d"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/f2b47f28198bf9fd36dbc3d7ef5028ec.json",
+      "source_v1_sha256": "a4df5aa79b6077a8693d3e631318db41d071972e300f72b3166073b1bd5562cd",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/f2b47f28198bf9fd36dbc3d7ef5028ec.json",
+      "target_v2_sha256": "206159fa83453fa50c53191e12c364b40501b1046aa4d6ceb99f920420c5b444"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/f4ec6e6680691db878a66a2bf12b78c0.json",
+      "source_v1_sha256": "a6ae6277e073236140959026398238a5480524abd032ed2dc806031ba1dcd94c",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/f4ec6e6680691db878a66a2bf12b78c0.json",
+      "target_v2_sha256": "fadf2caf61097a1ef51332d0f40d77b03d86c16dc2ac078bac640ef8dc726ccf"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/fa73b6cfd448f29ebbd56234999b7ebf.json",
+      "source_v1_sha256": "22db5597b03cc770f6ae759e91d771a13cb052583a390a1af45956eb378415ac",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/fa73b6cfd448f29ebbd56234999b7ebf.json",
+      "target_v2_sha256": "1ffbd2a623afdc7c320c0e53fe838830b2fd3534ec99eae5ae5d575ec4eaf92c"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/fb8354bd2e4cba3170a71371450e1f99.json",
+      "source_v1_sha256": "728982a1dc2055ab7f72afe032ffcd5e8c1b1695022e2dc9acd29b1c77070544",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/fb8354bd2e4cba3170a71371450e1f99.json",
+      "target_v2_sha256": "b243dd6fe82d0c53998ee4d4044ab3ba04c926bdb102d20542cebc9c46d7c47b"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/fc1c2c7bf27ffdc0a2e6491b04e09225.json",
+      "source_v1_sha256": "d20c85784b0d38e5010f47fc2020936f22afcb38dbdc70c6a4cffcb63bf07237",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/fc1c2c7bf27ffdc0a2e6491b04e09225.json",
+      "target_v2_sha256": "2f6d6b3ea703f7c18cf7f597dd5ebc16436fd968379f859cf6fb0f2a7091ffa7"
+    },
+    {
+      "source_v1": "reports/calibration/archive/authored-score-v1/cassettes/ffc993f8d9bc4fc54cc4d7f429f6da6c.json",
+      "source_v1_sha256": "05c3bde7731398f02cc2ed0b6eafffc4e681a47662f1d0f800ef6ee5191ab8b9",
+      "target_v2": "datasets/calibration/cassettes/authored-score-v2/ffc993f8d9bc4fc54cc4d7f429f6da6c.json",
+      "target_v2_sha256": "2a9e2d159f5d8827e3a4b3c661610fbe977c8276a32a4a62619a51ee0981e4d9"
+    }
+  ],
+  "formatVersion": "authored-score-v2",
+  "migration": "format-only; frozen integer scores retained; rationale moved to a sidecar",
+  "rationaleSidecar": {
+    "path": "datasets/calibration/authored-score-explanations-v2.yaml",
+    "sha256": "cf95850a62e9ec8e4330eb6b6fc915affd6885d0e3e905b484cd4d56087497c6"
+  },
+  "schemaVersion": 1,
+  "sourceArchiveManifest": "reports/calibration/archive/authored-score-v1/manifest.json",
+  "sourceArchiveManifestSha256": "735778e456b45cf19269dde3bcb7f61da4afa1d76968b5ecd0330f83549f162f"
+}

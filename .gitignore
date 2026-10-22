@@ -65,6 +65,9 @@ reports/calibration/*
 reports/calibration/archive/*
 !reports/calibration/archive/live-2026-07-02/
 !reports/calibration/archive/live-2026-07-02/**
+!reports/calibration/archive/authored-score-v1/
+!reports/calibration/archive/authored-score-v1/**
+!reports/calibration/score-protocol-negative-control.md
 !reports/semantic/
 reports/semantic/*
 !reports/semantic/results.json

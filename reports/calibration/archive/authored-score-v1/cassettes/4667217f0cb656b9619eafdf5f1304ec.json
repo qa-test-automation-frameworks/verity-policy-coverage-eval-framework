@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-answer-relevancy-004 (answer_relevancy)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 4\n\nAnswers the PA question instead of the visit-count question.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

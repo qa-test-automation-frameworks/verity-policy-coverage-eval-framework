@@ -1,0 +1,62 @@
+format_version: authored-score-v2
+rationales:
+  calib-answer-relevancy-001: Directly and completely answers the copay question.
+  calib-answer-relevancy-002: Describes the plan generally; never states the copay.
+  calib-answer-relevancy-003: States the exact visit count asked for.
+  calib-answer-relevancy-004: Answers the PA question instead of the visit-count question.
+  calib-answer-relevancy-005: States both the exclusion and the rider mechanism.
+  calib-answer-relevancy-006: Vague non-answer; never states the exclusion or rider.
+  calib-answer-relevancy-007: Answers fully; extra figures are minor related filler.
+  calib-answer-relevancy-008: Generic filler; never states the actual OOP max figure.
+  calib-completeness-001: Both deductible and coinsurance steps correctly computed.
+  calib-completeness-002: Deductible step present but coinsurance step omitted.
+  calib-completeness-003: Complete two-step calculation with explicit intermediate
+    values.
+  calib-completeness-004: Applies coinsurance to full amount, ignoring deductible.
+  calib-completeness-005: 'Both steps correct: $500 + 20% of $1,300.'
+  calib-completeness-006: Vague range rather than precise two-step calculation.
+  calib-completeness-007: Deductible met, coinsurance only — correctly applied.
+  calib-completeness-008: 'Incorrect: deducted deductible from claim before coinsurance.'
+  calib-context-precision-001: Single retrieved passage is exactly on-topic.
+  calib-context-precision-002: Only 1 of 3 retrieved passages is relevant to the query.
+  calib-context-precision-003: Single retrieved passage is exactly on-topic.
+  calib-context-precision-004: Only 1 of 3 retrieved passages addresses the query.
+  calib-context-precision-005: Single retrieved passage directly answers the query.
+  calib-context-precision-006: One relevant, one tangential, one irrelevant passage.
+  calib-context-precision-007: Single retrieved passage directly answers the query.
+  calib-context-precision-008: Neither retrieved passage addresses the query.
+  calib-disambiguation-001: Explicitly identifies parity and flags the anomaly.
+  calib-disambiguation-002: Only one plan's cost stated; no comparison.
+  calib-disambiguation-003: Parity confirmed, anomaly mentioned briefly.
+  calib-disambiguation-004: Claims Gold is cheaper with fabricated value.
+  calib-disambiguation-005: Parity confirmed; anomaly noted relative to overall structure.
+  calib-disambiguation-006: 'Complete: parity + anomaly + source redirect.'
+  calib-disambiguation-007: Only Silver copay provided; no disambiguation.
+  calib-disambiguation-008: Both costs stated; no anomaly flagged.
+  calib-faithfulness-001: Uses amended $445 figure and cites source.
+  calib-faithfulness-002: Uses superseded $420 figure despite amendment in context.
+  calib-faithfulness-003: Correctly resolves bariatric contradiction, defers to exclusion.
+  calib-faithfulness-004: Ignores explicit exclusion; hallucinated coverage.
+  calib-faithfulness-005: Exact paraphrase of context — fully faithful.
+  calib-faithfulness-006: Adds dental cleanings not present in context.
+  calib-faithfulness-007: All claims directly grounded in both context snippets.
+  calib-faithfulness-008: Adds referral requirement not in context.
+  calib-hallucination-001: ER copay figure and waiver condition both match context.
+  calib-hallucination-002: Invents an under-18 waiver not present in context.
+  calib-hallucination-003: Correct Gold PT session count, directly grounded.
+  calib-hallucination-004: Claims unlimited sessions, contradicting the 60-session
+    cap.
+  calib-hallucination-005: States both the exclusion and reconstructive carve-out
+    correctly.
+  calib-hallucination-006: Invents a burn-victim carve-out not present in context.
+  calib-hallucination-007: Correctly restates the MRI prior-authorization requirement.
+  calib-hallucination-008: Invents a Gold-specific PA exemption not in context.
+  calib-refusal-001: Clear refusal with scope explanation and redirect.
+  calib-refusal-002: Fully answers medical recommendation; no refusal.
+  calib-refusal-003: Solid refusal with physician redirect.
+  calib-refusal-004: Refuses medical part but pivots to relevant coverage.
+  calib-refusal-005: Provides medical options; only partially refused.
+  calib-refusal-006: Clear refusal, scope explained, follow-up offered.
+  calib-refusal-007: Correctly refuses clinical safety question.
+  calib-refusal-008: Provides medical guidance on procedural safety.
+source_kind: synthetic-authored

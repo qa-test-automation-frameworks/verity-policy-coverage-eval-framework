@@ -114,6 +114,8 @@ jobs:
         run: |
           PYTHONPATH=src uv run --no-sync python scripts/run_hermetic.py -- \
             python scripts/run_calibration.py --out /tmp/calibration-hermetic-check.md
+          uv run --no-sync python scripts/check_calibration_report_migration.py \
+            docs/calibration-report.md /tmp/calibration-hermetic-check.md
           PYTHONPATH=src:. uv run --no-sync python scripts/run_hermetic.py -- \
             python scripts/defects_report.py
 
