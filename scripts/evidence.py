@@ -39,6 +39,18 @@ def parse_started(value: str | None) -> str:
     return parsed.astimezone(dt.UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
+def parse_completed(value: str | None) -> str:
+    if not value:
+        return utc_now()
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise EvidenceError("EVIDENCE_COMPLETED_AT is invalid") from error
+    if parsed.tzinfo is None:
+        raise EvidenceError("EVIDENCE_COMPLETED_AT must include a timezone")
+    return parsed.astimezone(dt.UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 def parse_count(suite: ET.Element, key: str) -> int | None:
     raw = suite.get(key)
     if raw is None:
@@ -244,7 +256,7 @@ def make_record(
             "disposition": "unavailable",
             "reason": unavailable_reason[:500],
             "startedAt": parse_started(env.get("EVIDENCE_STARTED_AT")),
-            "completedAt": utc_now(),
+            "completedAt": parse_completed(env.get("EVIDENCE_COMPLETED_AT")),
             "integrity": "unavailable",
             "counts": null_counts(
                 "Test execution was attempted but native results were unavailable."
@@ -266,7 +278,7 @@ def make_record(
                 if disposition == "failed"
                 else None,
                 "startedAt": parse_started(env.get("EVIDENCE_STARTED_AT")),
-                "completedAt": utc_now(),
+                "completedAt": parse_completed(env.get("EVIDENCE_COMPLETED_AT")),
                 "integrity": "complete",
                 "counts": counts,
                 "measurements": [],
@@ -278,7 +290,7 @@ def make_record(
                 "disposition": "unavailable",
                 "reason": results["reason"][:500],
                 "startedAt": parse_started(env.get("EVIDENCE_STARTED_AT")),
-                "completedAt": utc_now(),
+                "completedAt": parse_completed(env.get("EVIDENCE_COMPLETED_AT")),
                 "integrity": "empty"
                 if state == "empty"
                 else "partial"
