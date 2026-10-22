@@ -6,11 +6,17 @@ import re
 import tomllib
 from pathlib import Path
 
+import pytest
 import yaml
 
 _ROOT = Path(__file__).parents[2]
-_WORKFLOW = yaml.safe_load((_ROOT / ".github/workflows/adversarial.yml").read_text())
+_WORKFLOW_PATH = _ROOT / ".github/workflows/adversarial.yml"
+_WORKFLOW = yaml.safe_load(_WORKFLOW_PATH.read_text()) if _WORKFLOW_PATH.is_file() else {}
 _PROJECT = tomllib.loads((_ROOT / "pyproject.toml").read_text())
+pytestmark = pytest.mark.skipif(
+    not _WORKFLOW_PATH.is_file(),
+    reason="workflow source is not included in the packaged test image",
+)
 
 
 def _steps(job_name: str) -> dict[str, dict[str, object]]:
