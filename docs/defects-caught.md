@@ -46,6 +46,16 @@ Re-run `make eval-semantic` with a configured key to refresh this section; a cle
 
 ---
 
+## Risk Weight Breakdown
+
+Defect-catalog status grouped by the risk_weight of its golden case (pending includes COVERED, NOT REPRODUCED, and UNRESOLVED evidence).
+
+| Risk Weight | Pass | Pending | Fail |
+|-------------|-----:|--------:|-----:|
+| high | 5 | 3 | 0 |
+
+---
+
 ## Legend
 
 | Status | Meaning |
