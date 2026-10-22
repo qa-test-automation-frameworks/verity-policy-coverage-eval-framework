@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "purpose": "live tuning-set smoke, NOT independent calibration",
+  "started_at": "2026-10-18T03:34:18.168977+00:00",
+  "source_sha": "4c5aa328c49d2b1329914e2ed1c63c07b0a4fd05",
+  "source_tree_dirty": false,
+  "implementation_file_sha256": {
+    "scripts/run_free_hosted_calibration.py": "8c390d1c3431e56d310e84572bec923ea4985808e8477d24b5d3ef2cf58cb529",
+    "src/verity/config.py": "985c9543f1d3f38fac3a5867f1342e3a9b2f3d25b9a8ef62dc1d4ed4cdc53944",
+    "src/verity/providers.py": "945ace43867583adf5f6e5eb9465f00fcd55a97e88bea739440d048b35bbeb96"
+  },
+  "litellm_version": "1.90.7",
+  "requested_model": "gemini-3.8-flash",
+  "free_project_confirmed_by_operator": true,
+  "billing_plan_verified_by_api": false,
+  "pricing_source": "https://ai.google.dev/gemini-api/docs/pricing",
+  "pricing_reviewed_on": "2026-10-18",
+  "catalogue_url": "https://generativelanguage.googleapis.com/v1beta/models",
+  "limits": {
+    "calls": 7,
+    "output_tokens_per_call": 2048,
+    "output_tokens_per_run": 14336,
+    "input_bytes_per_call": 16000,
+    "interval_seconds": 3.1,
+    "retries": 0,
+    "spend_usd": 0
+  },
+  "attempts": [
+    {
+      "case_id": "calib-answer-relevancy-001",
+      "prompt_sha256": "1786531103d3737f3d7c575b7a4d398a89ad685ff0818bf07824487dc79f7dd6",
+      "output_token_limit": 2048,
+      "started_at": "2026-10-18T03:34:18.545454+00:00",
+      "status": "success",
+      "response": "Score: 10",
+      "response_id": "Oj7UarW6Oamyg8UPtZjf8Qk",
+      "response_model": "gemini-3.8-flash",
+      "upstream_provider": null,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 320,
+        "completion_tokens": 112,
+        "total_tokens": 432
+      },
+      "provider_reported_cost_usd": null,
+      "score": 1.0,
+      "latency_ms": 1904.23
+    },
+    {
+      "case_id": "calib-completeness-001",
+      "prompt_sha256": "fa2394caa6ecdf4b866e2902b56541318e02169c3b8fbc1fc4cfb80d276e8617",
+      "output_token_limit": 2048,
+      "started_at": "2026-10-18T03:34:23.550950+00:00",
+      "status": "failed",
+      "error_type": "ServiceUnavailableError",
+      "http_status": 503,
+      "latency_ms": 1773.41
+    }
+  ],
+  "status": "failed",
+  "catalogue_model": {
+    "name": "models/gemini-3.8-flash",
+    "version": "3.0",
+    "displayName": "Gemini 3.8 Flash",
+    "description": "Gemini 3.8 Flash",
+    "inputTokenLimit": 1048576,
+    "outputTokenLimit": 65536,
+    "supportedGenerationMethods": [
+      "generateContent",
+      "countTokens",
+      "createCachedContent",
+      "batchGenerateContent"
+    ],
+    "temperature": 1,
+    "topP": 0.95,
+    "topK": 64,
+    "maxTemperature": 2,
+    "thinking": true
+  },
+  "catalogue_checked_at": "2026-10-18T03:34:18.470567+00:00",
+  "dataset_sha256": "c72cf4dc02065f0e80b7832c645fa25fe7dbf78544d247cb86a156e067f18474",
+  "selected_case_ids": [
+    "calib-answer-relevancy-001",
+    "calib-completeness-001",
+    "calib-context-precision-001",
+    "calib-disambiguation-001",
+    "calib-faithfulness-001",
+    "calib-hallucination-001",
+    "calib-refusal-001"
+  ],
+  "error_type": "ServiceUnavailableError",
+  "http_status": 503,
+  "ended_at": "2026-10-18T03:34:25.325688+00:00"
+}

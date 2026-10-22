@@ -111,6 +111,12 @@ make defects-report      # regenerate docs/defects-caught.md from local evidence
 
 The no-key commands run through `scripts/run_hermetic.py`, which clears ambient provider credentials, disables dotenv loading and SDK telemetry, and keeps model downloads offline. After `make prepare-embeddings` has cached the public ONNX model, these checks need no provider credentials, provider requests, or paid services. A fresh machine may need network access once to download that model. If a local sandbox blocks pytest plugin socket creation, retry the targeted command with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` and keep `UV_CACHE_DIR` pointed at a writable directory.
 
+For a bounded Gemini free-tier experiment, see the
+[hosted smoke guide](docs/free-hosted-calibration.md).
+`make calibrate-free-check` checks model availability without inference.
+Live smoke requires an explicit confirmation that the key's project has billing
+disabled; its results remain separate from independent held-out calibration.
+
 **With an API key (Tier 2 demo):**
 
 ```bash

@@ -124,6 +124,13 @@ def pytest_runtest_protocol(
     item: pytest.Item, nextitem: pytest.Item | None
 ) -> Generator[None, None, None]:
     """Attribute provider calls made during fixtures, test code, and teardown."""
+    # Pytest can register this nested conftest hook while collecting a broader
+    # suite. Keep usage attribution limited to semantic cases; unrelated unit
+    # tests should not inherit a semantic test id.
+    if not item.nodeid.startswith("tests/semantic/"):
+        yield
+        return
+
     token = set_current_test_id(item.nodeid)
     try:
         yield

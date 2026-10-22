@@ -4,13 +4,15 @@ _Hermetically proven from cassette replay — no API key required._
 
 **4 of 8 defects caught hermetically** (defects 5-8 via deterministic + adversarial replay). Live semantic evidence is reported below: Defect #4 reproduced the seeded behavior; Defects #1, #3 were not reproduced by their applicable checks; Defect #2 remains `UNRESOLVED`. Defect #2 is unresolved unless its separate temporal amount result is present; faithfulness alone measures grounding and cannot establish which premium is current. Re-run `make eval-semantic` to refresh.
 
+**Semantic evidence freshness:** legacy semantic snapshot has no embedded run timestamp or source commit; treat it as historical, not a current evaluation.
+
 **Scope of proof.** ✅ CAUGHT rows replay hand-authored cassettes: the candidate output that trips the check was written by the case author, not produced by a live model run. This proves the *detector* (regex/schema/check function) fires on a known-bad output; it does not by itself prove the SUT ever produces that output live. ✅ VERIFIED rows mean a live semantic run reproduced the seeded behavior. 🟡 NOT REPRODUCED rows mean the live run passed the relevant threshold for that provider/model pairing. 🟠 UNRESOLVED rows have evidence, but the applicable check could not decide. ⬜ COVERED rows have no run at all yet — ground truth and thresholds are committed, but nothing has executed against them. See `docs/architecture.md` and the Limitations section of `README.md` for the full evidence caveat.
 
 ---
 
-## Control-Case Results (Committed Live Run)
+## Semantic Control-Case Results
 
-The committed semantic run also exercises clean control cases — 40 control-tier test nodes ran, 30 passed, 10 failed.
+The included semantic report exercises clean control cases — 40 control-tier test nodes ran, 30 passed, 10 failed.
 
 Failing control nodes from this run (see `docs/thresholds.md` for the metric this provider/judge pairing is weakest on):
 

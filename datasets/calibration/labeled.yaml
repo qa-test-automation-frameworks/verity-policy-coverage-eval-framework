@@ -1,5 +1,5 @@
-# Human-annotated calibration dataset for judge agreement and self-bias measurement.
-# 32 cases across 4 metrics (8 each), balanced 50/50 across output_family (glm/other).
+# Synthetic-labeled methodology dataset for judge agreement and self-bias measurement.
+# 56 cases across 7 metrics (8 each), balanced 50/50 across output_family (glm/other).
 # human_score is 0.0–1.0; human_pass uses threshold=0.5.
 
 cases:

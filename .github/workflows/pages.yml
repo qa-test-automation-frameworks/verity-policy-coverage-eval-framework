@@ -72,6 +72,9 @@ jobs:
             --alluredir reports/allure-results \
             -v --tb=short
 
+      - name: Remove tracked semantic snapshot before artifact restore
+        run: rm -f reports/semantic/results.json reports/semantic/provenance.json
+
       - name: Download latest semantic eval artifact
         id: download_semantic
         uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151  # v21
@@ -81,6 +84,37 @@ jobs:
           name: semantic-eval-reports
           path: reports/
           if_no_artifact_found: warn
+
+      - name: Reject semantic artifacts without provenance
+        id: validate_semantic
+        run: |
+          if [ ! -s reports/semantic/results.json ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! uv run python - <<'PY'
+          import json
+          from pathlib import Path
+
+          try:
+              results = json.loads(Path("reports/semantic/results.json").read_text())
+              provenance = json.loads(Path("reports/semantic/provenance.json").read_text())
+          except (OSError, json.JSONDecodeError):
+              raise SystemExit(1)
+          required = ("run_id", "run_url", "completed_at", "commit_sha")
+          if not all(isinstance(provenance.get(key), str) and provenance[key] for key in required):
+              raise SystemExit(1)
+          run = results.get("run")
+          if not isinstance(run, dict) or run.get("git_sha") != provenance["commit_sha"]:
+              raise SystemExit(1)
+          PY
+          then
+            rm -f reports/semantic/results.json reports/semantic/provenance.json
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Semantic artifact lacked valid run provenance and was excluded."
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download latest adversarial report artifact
         id: download_adversarial
@@ -93,10 +127,10 @@ jobs:
           if_no_artifact_found: warn
 
       - name: Warn on missing live report inputs
-        if: steps.download_semantic.outcome == 'failure' || steps.download_adversarial.outcome == 'failure'
+        if: steps.validate_semantic.outputs.available != 'true' || steps.download_adversarial.outcome == 'failure'
         run: |
-          if [ "${{ steps.download_semantic.outcome }}" = "failure" ]; then
-            echo "::warning::Semantic report artifact was not downloaded; report site may use stale or missing live inputs."
+          if [ "${{ steps.validate_semantic.outputs.available }}" != "true" ]; then
+            echo "::warning::No provenance-validated semantic artifact is available; semantic-only defects will be shown as COVERED."
           fi
           if [ "${{ steps.download_adversarial.outcome }}" = "failure" ]; then
             echo "::warning::Adversarial report artifact was not downloaded; report site may use stale or missing live inputs."

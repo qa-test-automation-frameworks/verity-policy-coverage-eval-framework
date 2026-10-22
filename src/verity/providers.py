@@ -84,6 +84,7 @@ class LLMProvider:
         temperature: float | None = None,
         max_tokens: int | None = None,
         label: str = "",
+        reasoning_effort: str | None = None,
         response_format: dict[str, Any] | None = None,
         extra_body: dict[str, Any] | None = None,
     ) -> CompletionResult:
@@ -98,9 +99,13 @@ class LLMProvider:
             request_options["response_format"] = response_format
         if extra_body:
             request_options["extra_body"] = extra_body
+        if reasoning_effort is not None:
+            request_options["reasoning_effort"] = reasoning_effort
 
         if mode == "replay":
-            key = request_key(litellm_model, messages, tools, temp, max_tok, request_options)
+            key = request_key(
+                litellm_model, messages, tools, temp, max_tok, request_options or None
+            )
             lib = self._get_cassette_library()
             payload = lib.lookup(key)
             if payload is None and tools and not request_options:
@@ -110,7 +115,7 @@ class LLMProvider:
                 # one exists.
                 legacy_key = request_key(litellm_model, messages, None, temp, max_tok)
                 payload = lib.lookup(legacy_key)
-            if payload is None and request_options:
+            if payload is None and request_options and reasoning_effort is None:
                 # Older cassettes predate provider request options. They remain
                 # valid replays of the same prompt/model inputs; prefer the
                 # option-aware key but retain compatibility with those fixtures.
@@ -127,7 +132,9 @@ class LLMProvider:
         record_key: str | None = None
         record_lib: CassetteLibrary | None = None
         if mode == "record":
-            record_key = request_key(litellm_model, messages, tools, temp, max_tok, request_options)
+            record_key = request_key(
+                litellm_model, messages, tools, temp, max_tok, request_options or None
+            )
             record_lib = self._get_cassette_library()
 
         # Live call (mode == "off" or mode == "record")
@@ -147,6 +154,10 @@ class LLMProvider:
             kwargs["api_key"] = api_key
         if tools:
             kwargs["tools"] = tools
+        if reasoning_effort is not None:
+            kwargs["reasoning_effort"] = reasoning_effort
+            kwargs["allowed_openai_params"] = ["reasoning_effort"]
+        if tools:
             # LiteLLM currently imports its optional MCP proxy integration for
             # every tool-bearing completion before checking whether any tool
             # is an MCP tool. This application only sends OpenAI function

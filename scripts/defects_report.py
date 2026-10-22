@@ -504,9 +504,9 @@ def _render_control_case_section(sem_path: Path) -> list[str]:
     lines = [
         "---",
         "",
-        "## Control-Case Results (Committed Live Run)",
+        "## Semantic Control-Case Results",
         "",
-        f"The committed semantic run also exercises clean control cases — {len(control)} "
+        f"The included semantic report exercises clean control cases — {len(control)} "
         f"control-tier test nodes ran, {passed} passed"
         + (f", {other} other" if other else "")
         + f", {len(failed)} failed.",
@@ -525,6 +525,67 @@ def _render_control_case_section(sem_path: Path) -> list[str]:
         "run should show 0 failed here."
     )
     return lines
+
+
+def _semantic_provenance_note() -> str:
+    """Describe the age and source of semantic data in the generated report."""
+    results_path = Path("reports/semantic/results.json")
+    if not results_path.is_file():
+        return (
+            "**Semantic evidence freshness:** no semantic result artifact was available "
+            "for this report build; defects 1-4 remain COVERED."
+        )
+
+    try:
+        results = json.loads(results_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return (
+            "**Semantic evidence freshness:** the semantic result file could not be "
+            "read; do not treat it as current evidence."
+        )
+
+    provenance_path = Path("reports/semantic/provenance.json")
+    try:
+        provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        provenance = None
+
+    if isinstance(provenance, dict):
+        run_id = provenance.get("run_id")
+        run_url = provenance.get("run_url")
+        completed_at = provenance.get("completed_at")
+        commit_sha = provenance.get("commit_sha")
+        if all(
+            isinstance(value, str) and value
+            for value in (run_id, run_url, completed_at, commit_sha)
+        ):
+            run = results.get("run") if isinstance(results, dict) else None
+            if not isinstance(run, dict) or run.get("git_sha") != commit_sha:
+                return (
+                    "**Semantic evidence freshness:** artifact provenance does not match "
+                    "the recorded semantic result commit; treat this data as historical."
+                )
+            return (
+                f"**Semantic evidence source:** [GitHub Actions run {run_id}]({run_url}), "
+                f"completed {completed_at} (UTC), code commit `{commit_sha}`. This is the "
+                "latest semantic artifact included, not the time this report was generated."
+            )
+
+    run = results.get("run") if isinstance(results, dict) else None
+    if isinstance(run, dict):
+        timestamp = run.get("timestamp")
+        git_sha = run.get("git_sha")
+        if isinstance(timestamp, str) and isinstance(git_sha, str):
+            return (
+                f"**Semantic evidence source:** recorded run timestamp `{timestamp}`, "
+                f"code commit `{git_sha}`. This is a prior measurement, not the time this "
+                "report was generated."
+            )
+
+    return (
+        "**Semantic evidence freshness:** legacy semantic snapshot has no embedded run "
+        "timestamp or source commit; treat it as historical, not a current evaluation."
+    )
 
 
 def render_markdown(
@@ -575,7 +636,7 @@ def render_markdown(
         )
     elif verified and not_reproduced:
         semantic_summary = (
-            f"Defects 1-4 have a live Tier-2 semantic run committed, but only "
+            f"Defects 1-4 have semantic results available, but only "
             f"defect{'s' if len(verified) > 1 else ''} {_ids(verified)} reproduced for the "
             f"provider/model pairing in that run; defect{'s' if len(not_reproduced) > 1 else ''} "
             f"{_ids(not_reproduced)} are `NOT_REPRODUCED` and should be read as retained "
@@ -584,14 +645,14 @@ def render_markdown(
         )
     elif verified:
         semantic_summary = (
-            f"Defects 1-4 have a live Tier-2 semantic run committed "
+            f"Defects 1-4 have semantic results available "
             f"({len(verified)} of {len(semantic_tier)} defects reproduced for the "
             f"provider/model pairing in that run; see per-defect status below). "
             f"Re-run `make eval-semantic` to refresh."
         )
     elif not_reproduced:
         semantic_summary = (
-            f"Defects 1-4 have a live Tier-2 semantic run committed, but none reproduced "
+            f"Defects 1-4 have semantic results available, but none reproduced "
             f"for the provider/model pairing in that run; "
             f"defect{'s' if len(not_reproduced) > 1 else ''} {_ids(not_reproduced)} are "
             f"`NOT_REPRODUCED` and should be read as retained regression tripwires, not as "
@@ -610,6 +671,8 @@ def render_markdown(
         f"**{len(hermetically_proven)} of 8 defects caught hermetically** "
         f"(defects 5-8 via deterministic + adversarial replay). "
         f"{semantic_summary}",
+        "",
+        _semantic_provenance_note(),
         "",
         "**Scope of proof.** ✅ CAUGHT rows replay hand-authored cassettes: the "
         "candidate output that trips the check was written by the case author, not "

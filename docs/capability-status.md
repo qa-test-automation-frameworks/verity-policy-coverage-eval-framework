@@ -3,7 +3,7 @@
 <!-- current-evidence:start -->
 ## Current evidence
 
-The inventory is generated from `portfolio/current-evidence.json`; its source snapshot is `4f1376be5e6a53be223e611a3072acca9d640b34`.
+The inventory is generated from `portfolio/current-evidence.json`; its source snapshot is `dfcad3e843f1dc25f7b18a3c616460748b111ea1`.
 The current golden corpus has **69 cases** (version `1.0.0`; hash `ec79360e2a25…`).
 
 - **Synthetic rubric replay:** The 2026-07-04 report replays 56 hand-authored cases across seven metrics; it demonstrates methodology and is not live calibration.

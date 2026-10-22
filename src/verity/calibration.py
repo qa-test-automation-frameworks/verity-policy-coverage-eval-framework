@@ -22,10 +22,30 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+MetricName = Literal[
+    "completeness",
+    "disambiguation",
+    "refusal",
+    "faithfulness",
+    "hallucination",
+    "answer_relevancy",
+    "context_precision",
+]
+CALIBRATION_METRICS: tuple[MetricName, ...] = (
+    "answer_relevancy",
+    "completeness",
+    "context_precision",
+    "disambiguation",
+    "faithfulness",
+    "hallucination",
+    "refusal",
+)
+HELDOUT_CASES_PER_METRIC = 8
 
 # ---------------------------------------------------------------------------
 # Schema
@@ -36,15 +56,7 @@ class CalibrationCase(BaseModel):
     """A single human-annotated example for judge calibration."""
 
     id: str
-    metric: Literal[
-        "completeness",
-        "disambiguation",
-        "refusal",
-        "faithfulness",
-        "hallucination",
-        "answer_relevancy",
-        "context_precision",
-    ]
+    metric: MetricName
     query: str
     context: list[str] = Field(default_factory=list)
     candidate_output: str
@@ -54,6 +66,27 @@ class CalibrationCase(BaseModel):
     rationale: str = ""
 
 
+class CalibrationPromptCase(BaseModel):
+    """An unlabeled, blinded case that can be scored without fabricating labels."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    randomized_case_id: str
+    metric: MetricName
+    query: str
+    context: list[str] = Field(default_factory=list)
+    candidate_output: str
+
+
+class ScoringCase(Protocol):
+    """Fields used to build a judge prompt, shared by labeled and unlabeled cases."""
+
+    metric: MetricName
+    query: str
+    context: list[str]
+    candidate_output: str
+
+
 def load_calibration(path: Path) -> list[CalibrationCase]:
     """Load all calibration cases from a YAML file."""
     with path.open() as fh:
@@ -61,6 +94,28 @@ def load_calibration(path: Path) -> list[CalibrationCase]:
     if not isinstance(raw, dict):
         return []
     return [CalibrationCase.model_validate(item) for item in raw.get("cases", [])]
+
+
+def load_heldout_calibration(path: Path) -> list[CalibrationPromptCase]:
+    """Load a complete 56-case unlabeled held-out study dataset."""
+    with path.open(encoding="utf-8") as fh:
+        raw: Any = yaml.safe_load(fh)
+    if not isinstance(raw, dict) or not isinstance(raw.get("cases"), list):
+        raise ValueError("Held-out dataset must be a YAML object containing a cases list")
+    cases = [CalibrationPromptCase.model_validate(item) for item in raw["cases"]]
+    if len(cases) != len(CALIBRATION_METRICS) * HELDOUT_CASES_PER_METRIC:
+        raise ValueError("Held-out dataset must contain exactly 56 cases")
+    case_ids = [case.randomized_case_id for case in cases]
+    if len(set(case_ids)) != len(case_ids) or any(not case_id for case_id in case_ids):
+        raise ValueError("Held-out randomized case IDs must be unique and non-empty")
+    if any(not case.query.strip() or not case.candidate_output.strip() for case in cases):
+        raise ValueError("Held-out cases require non-empty queries and candidate outputs")
+    counts = {
+        metric: sum(case.metric == metric for case in cases) for metric in CALIBRATION_METRICS
+    }
+    if any(count != HELDOUT_CASES_PER_METRIC for count in counts.values()):
+        raise ValueError("Held-out dataset must contain exactly eight cases per metric")
+    return cases
 
 
 # ---------------------------------------------------------------------------
@@ -258,7 +313,7 @@ def _get_rubric(metric: str) -> str:
     return _METRIC_RUBRIC_MAP[metric]
 
 
-def build_scoring_prompt(case: CalibrationCase) -> str:
+def build_scoring_prompt(case: ScoringCase) -> str:
     """Build the deterministic scoring prompt sent to the judge.
 
     The prompt is deterministic (depends only on the case fields), making the

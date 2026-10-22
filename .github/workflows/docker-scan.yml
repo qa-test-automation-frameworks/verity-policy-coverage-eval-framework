@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1, Node 24
 
       - name: Build image
-        run: docker build -t verity-eval:scan .
+        run: docker build --build-arg VERITY_SOURCE_SHA="${{ github.sha }}" -t verity-eval:scan .
 
       # Validate the copied runtime filesystem, not only the builder-stage
       # environment. Trivy scans this final image and this check must inspect
