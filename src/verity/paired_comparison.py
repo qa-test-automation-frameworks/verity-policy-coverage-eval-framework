@@ -175,10 +175,7 @@ def _record_errors(record: Mapping[str, Any], side: str, line: int) -> list[dict
         value = record.get(field)
         if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
             add("invalid_hash", f"{field} must be a lowercase SHA-256")
-    if (
-        not isinstance(record.get("source_kind"), str)
-        or record["source_kind"] not in _SOURCE_KINDS
-    ):
+    if not isinstance(record.get("source_kind"), str) or record["source_kind"] not in _SOURCE_KINDS:
         add("source_kind", "source_kind is not supported")
     if (
         not isinstance(record.get("measurement_status"), str)
@@ -241,15 +238,11 @@ def _index_records(
         errors.append(_diagnostic("empty_input", "no usable case records were supplied", side=side))
     for field in ("candidate_id", "cohort_hash", "source_kind", "config_id", "source_id"):
         values = {
-            record.get(field)
-            for record in indexed.values()
-            if isinstance(record.get(field), str)
+            record.get(field) for record in indexed.values() if isinstance(record.get(field), str)
         }
         if len(values) > 1:
             errors.append(
-                _diagnostic(
-                    "mixed_identity", f"{field} changes within the {side} input", side=side
-                )
+                _diagnostic("mixed_identity", f"{field} changes within the {side} input", side=side)
             )
     return indexed, errors
 
@@ -315,9 +308,7 @@ def analyze_paired_comparison(
     diagnostics.extend(baseline_errors)
     diagnostics.extend(challenger_errors)
     baseline_candidate_ids = sorted({str(row.get("candidate_id")) for row in baseline.values()})
-    challenger_candidate_ids = sorted(
-        {str(row.get("candidate_id")) for row in challenger.values()}
-    )
+    challenger_candidate_ids = sorted({str(row.get("candidate_id")) for row in challenger.values()})
     if (
         len(baseline_candidate_ids) == 1
         and len(challenger_candidate_ids) == 1
@@ -466,8 +457,7 @@ def analyze_paired_comparison(
     source_kinds = {
         str(record.get("source_kind"))
         for record in [*baseline.values(), *challenger.values()]
-        if isinstance(record.get("source_kind"), str)
-        and record.get("source_kind") in _SOURCE_KINDS
+        if isinstance(record.get("source_kind"), str) and record.get("source_kind") in _SOURCE_KINDS
     }
     source_kind = next(iter(source_kinds)) if len(source_kinds) == 1 else "mixed"
     challenger_critical = any(
@@ -521,11 +511,7 @@ def analyze_paired_comparison(
     return {
         "schema_version": SCHEMA_VERSION,
         "source_kind": source_kind,
-        "evidence_scope": (
-            "method_demo_only"
-            if source_kind == "authored_control"
-            else "measured_or_mixed_source"
-        ),
+        "evidence_scope": "method_demo_only" if source_kind == "authored_control" else "measured_or_mixed_source",
         "input_valid": input_valid,
         "identities": {
             "cohort_hash": next(iter(cohort_hashes)) if len(cohort_hashes) == 1 else None,

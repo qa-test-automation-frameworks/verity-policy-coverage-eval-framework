@@ -59,9 +59,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     baseline = identities["baseline"]
     challenger = identities["challenger"]
     interval = quality["bootstrap_95_percentile_interval"]
-    interval_text = (
-        "unknown" if interval is None else f"[{interval[0]:+.3f}, {interval[1]:+.3f}]"
-    )
+    interval_text = "unknown" if interval is None else f"[{interval[0]:+.3f}, {interval[1]:+.3f}]"
     denominators = report["denominators"]
     cost_delta = cost["challenger_minus_baseline_mean_usd"]
     cost_delta_text = "unknown" if cost_delta is None else f"{cost_delta:.6f}"
@@ -94,8 +92,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| Paired bootstrap 95% interval | `{interval_text}` |",
         f"| Cost delta, challenger - baseline | {cost_delta_text} USD "
         f"({cost['paired_cost_count']}/{cost['paired_cost_denominator']} pairs) |",
-        f"| Cost savings supported | {cost['cost_saving_supported']} — "
-        f"{cost['reason']} |",
+        f"| Cost savings supported | {cost['cost_saving_supported']} — {cost['reason']} |",
         f"| Latency delta, challenger - baseline | {latency_delta_text} ms "
         f"({latency['paired_latency_count']}/{latency['paired_latency_denominator']} pairs) |",
         f"| Mean input tokens, baseline / challenger | "
