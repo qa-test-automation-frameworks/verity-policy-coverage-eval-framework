@@ -2,6 +2,9 @@
 
 This protocol prepares an independent evaluation of the Verity semantic judge.
 It does not report human labels, live provider results, or threshold promotion.
+The runtime DeepEval/RAGAS adapter protocol is separate and is documented in
+[Runtime-Adapter Calibration Protocol v1](runtime-adapter-calibration.md); do
+not treat D05 rubric scores as runtime-adapter measurements.
 The current `datasets/calibration/labeled.yaml` is a tuning/methodology set: its
 labels are synthetic and its replay cassettes are authored. Do not select those
 cases as the held-out evaluation set or describe their results as independent

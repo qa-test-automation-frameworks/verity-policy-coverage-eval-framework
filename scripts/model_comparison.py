@@ -10,10 +10,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 _SRC = Path(__file__).parent.parent / "src"
 if str(_SRC) not in sys.path:
@@ -24,6 +28,12 @@ from sut.retriever import PolicyRetriever  # noqa: E402
 from verity.config import Provider, Settings  # noqa: E402
 from verity.cost import RunAccumulator  # noqa: E402
 from verity.golden import GoldenCase, load_golden  # noqa: E402
+from verity.paired_comparison import (  # noqa: E402
+    evaluate_golden_response,
+    golden_cohort_hash,
+    golden_input_hash,
+    golden_oracle_version,
+)
 from verity.providers import LLMProvider  # noqa: E402
 
 _DEFAULT_OUT = Path("reports/model-comparison.md")
@@ -71,7 +81,95 @@ def _settings(provider: str, model: str) -> Settings:
     return Settings(provider=Provider(provider), model=model, cassette_mode="off")
 
 
-def _run_case(case: GoldenCase, settings: Settings) -> ModelResult:
+def _config_id(settings: Settings) -> str:
+    payload = {
+        "provider": settings.provider.value,
+        "model": settings.model,
+        "retrieval": settings.retrieval.model_dump(mode="json"),
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _current_source_id() -> str:
+    configured = os.environ.get("GITHUB_SHA", "").strip()
+    if configured:
+        return configured
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    if status.stdout.strip():
+        raise SystemExit(
+            "The paired export needs a clean source tree; pass --source-id for an "
+            "explicit immutable revision."
+        )
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def _append_contract_record(
+    *,
+    sink: list[dict[str, Any]],
+    case: GoldenCase,
+    candidate_id: str,
+    settings: Settings,
+    cohort_hash: str,
+    source_id: str,
+    response: Any | None,
+    accumulator: RunAccumulator,
+    invalid: bool = False,
+) -> None:
+    if invalid or response is None:
+        correct = None
+        critical_failure = False
+        oracle_notes = ["candidate_call_failed"]
+        input_tokens = output_tokens = latency_ms = None
+    else:
+        correct, critical_failure, oracle_notes = evaluate_golden_response(case, response)
+        input_tokens = response.prompt_tokens if response.prompt_tokens >= 0 else None
+        output_tokens = response.completion_tokens if response.completion_tokens >= 0 else None
+        latency_ms = sum(record.latency_ms for record in accumulator.records) or None
+    sink.append(
+        {
+            "schema_version": 1,
+            "cohort_hash": cohort_hash,
+            "case_id": case.id,
+            "candidate_id": candidate_id,
+            "input_hash": golden_input_hash(case),
+            "oracle_version": golden_oracle_version(case),
+            "correct": correct,
+            "critical_failure": critical_failure,
+            "measurement_status": "invalid" if invalid else "valid",
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            # RunAccumulator's price table is an estimate, not a billing record.
+            "cost_usd": None,
+            "latency_ms": latency_ms,
+            "source_kind": "live",
+            "config_id": _config_id(settings),
+            "source_id": source_id,
+            "oracle_notes": oracle_notes,
+        }
+    )
+
+
+def _run_case(
+    case: GoldenCase,
+    settings: Settings,
+    *,
+    contract_sink: list[dict[str, Any]] | None = None,
+    candidate_id: str = "",
+    cohort_hash: str = "",
+    source_id: str = "",
+) -> ModelResult:
     accumulator = RunAccumulator()
     retriever = PolicyRetriever(settings.retrieval)
     provider = LLMProvider(settings, accumulator)
@@ -79,6 +177,18 @@ def _run_case(case: GoldenCase, settings: Settings) -> ModelResult:
     try:
         response = agent.answer(case.query, member_id=case.member_id)
     except Exception as exc:  # live provider and local retrieval failures are report data
+        if contract_sink is not None:
+            _append_contract_record(
+                sink=contract_sink,
+                case=case,
+                candidate_id=candidate_id,
+                settings=settings,
+                cohort_hash=cohort_hash,
+                source_id=source_id,
+                response=None,
+                accumulator=accumulator,
+                invalid=True,
+            )
         return ModelResult(
             case_id=case.id,
             provider=settings.provider.value,
@@ -88,6 +198,17 @@ def _run_case(case: GoldenCase, settings: Settings) -> ModelResult:
             citation_count=0,
             answer_chars=0,
             error=str(exc),
+        )
+    if contract_sink is not None:
+        _append_contract_record(
+            sink=contract_sink,
+            case=case,
+            candidate_id=candidate_id,
+            settings=settings,
+            cohort_hash=cohort_hash,
+            source_id=source_id,
+            response=response,
+            accumulator=accumulator,
         )
     return ModelResult(
         case_id=case.id,
@@ -100,11 +221,33 @@ def _run_case(case: GoldenCase, settings: Settings) -> ModelResult:
     )
 
 
-def compare_cases(cases: list[GoldenCase], left: Settings, right: Settings) -> list[CaseComparison]:
+def compare_cases(
+    cases: list[GoldenCase],
+    left: Settings,
+    right: Settings,
+    *,
+    contract_sink: list[dict[str, Any]] | None = None,
+    source_id: str = "",
+) -> list[CaseComparison]:
     rows: list[CaseComparison] = []
+    cohort_hash = golden_cohort_hash(cases) if contract_sink is not None else ""
     for case in cases:
-        left_result = _run_case(case, left)
-        right_result = _run_case(case, right)
+        left_result = _run_case(
+            case,
+            left,
+            contract_sink=contract_sink,
+            candidate_id="baseline",
+            cohort_hash=cohort_hash,
+            source_id=source_id,
+        )
+        right_result = _run_case(
+            case,
+            right,
+            contract_sink=contract_sink,
+            candidate_id="challenger",
+            cohort_hash=cohort_hash,
+            source_id=source_id,
+        )
         rows.append(
             CaseComparison(
                 case_id=case.id,
@@ -161,6 +304,21 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=0, help="Maximum cases to run; 0 means all")
     parser.add_argument("--out", default=str(_DEFAULT_OUT))
     parser.add_argument("--json-out", default=str(_DEFAULT_JSON))
+    parser.add_argument(
+        "--contract-out",
+        type=Path,
+        help=(
+            "optional paired-analysis JSONL export; costs stay unknown unless actual "
+            "billing is measured"
+        ),
+    )
+    parser.add_argument(
+        "--source-id",
+        help=(
+            "immutable source revision for the optional paired-analysis export "
+            "(defaults to Git HEAD)"
+        ),
+    )
     args = parser.parse_args()
 
     cases = load_golden(Path("datasets/golden"))
@@ -176,7 +334,15 @@ def main() -> None:
     right = _settings(args.right_provider, args.right_model)
     _require_provider_key(left, "Left model comparison")
     _require_provider_key(right, "Right model comparison")
-    rows = compare_cases(cases, left, right)
+    contract_records: list[dict[str, Any]] = []
+    source_id = args.source_id or (_current_source_id() if args.contract_out else "")
+    rows = compare_cases(
+        cases,
+        left,
+        right,
+        contract_sink=contract_records if args.contract_out else None,
+        source_id=source_id,
+    )
 
     left_label = f"{args.left_provider}/{args.left_model}"
     right_label = f"{args.right_provider}/{args.right_model}"
@@ -189,7 +355,15 @@ def main() -> None:
     json_out = Path(args.json_out)
     json_out.parent.mkdir(parents=True, exist_ok=True)
     json_out.write_text(json.dumps([asdict(row) for row in rows], indent=2))
-    print(f"Wrote {out} and {json_out}")
+    written = [out, json_out]
+    if args.contract_out:
+        args.contract_out.parent.mkdir(parents=True, exist_ok=True)
+        args.contract_out.write_text(
+            "".join(json.dumps(record, sort_keys=True) + "\n" for record in contract_records),
+            encoding="utf-8",
+        )
+        written.append(args.contract_out)
+    print("Wrote " + ", ".join(map(str, written)))
 
 
 if __name__ == "__main__":

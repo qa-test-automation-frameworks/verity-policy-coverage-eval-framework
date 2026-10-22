@@ -49,7 +49,7 @@
       },
       "report": {
         "path": "docs/calibration-report.md",
-        "sha256": "82c3e806a1a3813ff3f49fd2b94563c8408c38791292fcddf8c91b0de5e41857",
+        "sha256": "38de57c7ca0c666fd390c215dd46a87c3b3a4848caf1e39d5d56e8b82a580743",
         "date": "2026-07-04",
         "dateReason": null,
         "pathReason": null
@@ -58,13 +58,13 @@
       "datasetReason": null,
       "nativeControlArtifacts": [],
       "nativeControlArtifactsReason": "The synthetic report is the consolidated demonstration; its score inputs are authored fixtures, not native controls.",
-      "calibrationScope": "56 authored-score cases across seven rubric metrics; agreement statistics and self-bias calculations demonstrate report methodology only.",
+      "calibrationScope": "56 authored-score cases across seven rubric metrics; the score-only v2 cassette migration is format-only and the agreement/self-bias figures remain synthetic rubric-methodology evidence.",
       "limitations": [
         "The report is synthetic and is not a live judge-performance measurement.",
         "Its rubric prompt path does not establish end-to-end DeepEval or RAGAS runtime-adapter calibration.",
         "The report model label openai/glm-4.5 is not a measured judge identity for this replay."
       ],
-      "summary": "The 2026-07-04 report replays 56 hand-authored cases across seven metrics; it demonstrates methodology and is not live calibration."
+      "summary": "The report carries forward the 2026-07-04 synthetic replay of 56 hand-authored cases in score-only v2 cassette format; it demonstrates rubric methodology and is not live or runtime-adapter calibration."
     },
     "live-rubric": {
       "status": "incomplete-provenance",

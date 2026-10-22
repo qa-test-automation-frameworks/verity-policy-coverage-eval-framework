@@ -57,6 +57,10 @@ codebase-memory/
 # Each un-ignored directory must also un-ignore its own "*" before the
 # specific file exception, since git won't descend into an ignored dir.
 reports/*
+# Keep this deterministic authored decision-case report as a checked-in artifact.
+!reports/case-studies/
+reports/case-studies/*
+!reports/case-studies/temporal-regression-decision.json
 # The current calibration report is synthetic; keep this dated live report,
 # its 32-case input, and provider-response cassettes as historical evidence.
 !reports/calibration/
@@ -65,6 +69,9 @@ reports/calibration/*
 reports/calibration/archive/*
 !reports/calibration/archive/live-2026-07-02/
 !reports/calibration/archive/live-2026-07-02/**
+!reports/calibration/archive/authored-score-v1/
+!reports/calibration/archive/authored-score-v1/**
+!reports/calibration/score-protocol-negative-control.md
 !reports/semantic/
 reports/semantic/*
 !reports/semantic/results.json

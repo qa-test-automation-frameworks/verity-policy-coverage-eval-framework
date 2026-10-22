@@ -335,16 +335,39 @@ def build_scoring_prompt(case: ScoringCase) -> str:
     )
 
 
-_SCORE_PATTERN = re.compile(r"[Ss]core[:\s]+(\d+(?:\.\d+)?)")
+_SCORE_PATTERN = re.compile(r"Score: (0|[1-9]|10)", re.ASCII)
+
+
+class ScoreProtocolError(ValueError):
+    """A judge response did not follow the frozen score-only protocol.
+
+    The diagnostic intentionally records only a fixed reason and response
+    length. Judge output may contain sensitive or provider-owned text and must
+    not be copied into public reports or trends.
+    """
+
+    def __init__(self, reason: str, response_length: int | None) -> None:
+        if reason not in {"empty", "format_mismatch", "non_string"}:
+            reason = "format_mismatch"
+        self.reason = reason
+        self.response_length = response_length
+        length = "unknown" if response_length is None else str(response_length)
+        self.diagnostic = f"score_protocol_{self.reason}:length={length}"[:96]
+        super().__init__(self.diagnostic)
 
 
 def parse_judge_score(text: str) -> float:
-    """Extract a 0-1 normalized score from strict `Score: N` judge text."""
-    m = _SCORE_PATTERN.search(text)
-    if not m:
-        raise ValueError(f"Could not parse judge score from response: {text[:120]!r}")
-    raw = float(m.group(1))
-    return min(max(raw / 10.0, 0.0), 1.0)
+    """Parse only outer ASCII whitespace plus the exact frozen `Score: N` form."""
+    if not isinstance(text, str):
+        raise ScoreProtocolError("non_string", None)
+    response_length = len(text)
+    normalized = text.strip(" \t\n\r\v\f")
+    if not normalized:
+        raise ScoreProtocolError("empty", response_length)
+    match = _SCORE_PATTERN.fullmatch(normalized)
+    if match is None:
+        raise ScoreProtocolError("format_mismatch", response_length)
+    return int(match.group(1)) / 10.0
 
 
 def score_case(case: CalibrationCase, judge: Any) -> float:
@@ -365,3 +388,49 @@ def score_case(case: CalibrationCase, judge: Any) -> float:
 def score_all(cases: list[CalibrationCase], judge: Any) -> list[float]:
     """Score all calibration cases and return a list of 0-1 scores."""
     return [score_case(c, judge) for c in cases]
+
+
+@dataclass(frozen=True)
+class CalibrationScoreAttempt:
+    """Sanitized outcome for one case, including invalid provider responses."""
+
+    case_id: str
+    metric: str
+    judge_model: str
+    score: float | None
+    invalid_reason: str | None = None
+
+
+def score_all_detailed(cases: list[CalibrationCase], judge: Any) -> list[CalibrationScoreAttempt]:
+    """Attempt every case and preserve failures without turning them into scores."""
+    judge_model = str(getattr(judge, "model_name", "unknown"))[:160]
+    results: list[CalibrationScoreAttempt] = []
+    for case in cases:
+        try:
+            score = score_case(case, judge)
+        except Exception as exc:
+            if isinstance(exc, ScoreProtocolError):
+                reason = exc.diagnostic
+            else:
+                error_type = type(exc).__name__
+                safe_type = re.sub(r"[^A-Za-z0-9_.-]", "_", error_type)[:64] or "Exception"
+                reason = f"provider_or_metric_error:{safe_type}"
+            results.append(
+                CalibrationScoreAttempt(
+                    case_id=case.id,
+                    metric=case.metric,
+                    judge_model=judge_model,
+                    score=None,
+                    invalid_reason=reason,
+                )
+            )
+        else:
+            results.append(
+                CalibrationScoreAttempt(
+                    case_id=case.id,
+                    metric=case.metric,
+                    judge_model=judge_model,
+                    score=score,
+                )
+            )
+    return results

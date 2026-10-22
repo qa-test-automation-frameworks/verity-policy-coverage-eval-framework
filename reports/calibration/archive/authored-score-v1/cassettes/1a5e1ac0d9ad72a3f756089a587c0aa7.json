@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-completeness-005 (completeness)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 10\n\nBoth steps correct: $500 + 20% of $1,300.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}

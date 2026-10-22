@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 from pathlib import Path
 
 import pytest
@@ -9,11 +12,13 @@ from pydantic import ValidationError
 
 from verity.calibration import (
     CalibrationCase,
+    ScoreProtocolError,
     build_scoring_prompt,
     compute_agreement,
     compute_self_bias,
     load_calibration,
     parse_judge_score,
+    score_all_detailed,
 )
 
 # ---------------------------------------------------------------------------
@@ -297,12 +302,8 @@ class TestParseJudgeScore:
     def test_standard_format(self) -> None:
         assert parse_judge_score("Score: 8") == pytest.approx(0.8)
 
-    def test_lowercase(self) -> None:
-        assert parse_judge_score("score: 7") == pytest.approx(0.7)
-
-    def test_with_surrounding_text(self) -> None:
-        text = "The response is mostly grounded. Score: 9\nThe output faithfully..."
-        assert parse_judge_score(text) == pytest.approx(0.9)
+    def test_allows_outer_ascii_whitespace(self) -> None:
+        assert parse_judge_score(" \tScore: 7\r\n") == pytest.approx(0.7)
 
     def test_zero(self) -> None:
         assert parse_judge_score("Score: 0") == pytest.approx(0.0)
@@ -310,21 +311,109 @@ class TestParseJudgeScore:
     def test_ten_normalized(self) -> None:
         assert parse_judge_score("Score: 10") == pytest.approx(1.0)
 
-    def test_clamps_above_ten(self) -> None:
-        assert parse_judge_score("Score: 15") == pytest.approx(1.0)
-
-    def test_missing_score_prefix_raises(self) -> None:
-        with pytest.raises(ValueError, match="Could not parse judge score"):
-            parse_judge_score("This response earns a 7.")
-
-    def test_no_number_raises(self) -> None:
-        with pytest.raises(ValueError, match="Could not parse judge score"):
-            parse_judge_score("I cannot evaluate this.")
-
-    def test_ambiguous_multiple_numbers_without_score_prefix_raises(self) -> None:
-        text = "I'd rate this 8 out of 10, far better than the 3 it deserves."
-        with pytest.raises(ValueError, match="Could not parse judge score"):
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "Score: 100",
+            "Score: -1",
+            "Score: 7.5",
+            "The response is grounded. Score: 9",
+            "```\nScore: 9\n```",
+            "Score: 9\nScore: 8",
+            "Rating: 8",
+            "Score: NaN",
+            "",
+            "   ",
+            "score: 7",
+            "Score:  7",
+            "Score:\t7",
+            "\u00a0Score: 7",
+        ],
+    )
+    def test_rejects_every_non_contract_shape(self, text: str) -> None:
+        with pytest.raises(ScoreProtocolError) as caught:
             parse_judge_score(text)
+        assert not text or text not in str(caught.value)
+        assert len(caught.value.diagnostic) <= 96
+
+    def test_score_100_is_an_invalid_incomplete_measurement(self) -> None:
+        class InvalidJudge:
+            model_name = "test/judge"
+
+            def generate(self, _prompt: str) -> str:
+                return next(self._responses)
+
+            def __init__(self) -> None:
+                self._responses = iter(("Score: 8", "Score: 100"))
+
+        valid_case = _case().model_copy(update={"id": "score-protocol-valid-control"})
+        invalid_case = _case().model_copy(update={"id": "score-protocol-invalid-100"})
+        cases = [valid_case, invalid_case]
+        attempts = score_all_detailed(cases, InvalidJudge())
+        assert attempts[0].score == pytest.approx(0.8)
+        assert attempts[1].score is None
+        assert attempts[1].invalid_reason == "score_protocol_format_mismatch:length=10"
+
+        valid_cases = [valid_case]
+        valid_scores = [0.8]
+        agreement = compute_agreement(valid_cases, valid_scores)
+        bias = compute_self_bias(valid_cases, valid_scores)
+
+        from scripts.run_calibration import render_incomplete_report
+
+        report = render_incomplete_report(
+            cases, attempts, agreement, bias, "test/judge", "synthetic control"
+        )
+        assert "FAILURE — INCOMPLETE (1/2 valid; 1 invalid)" in report
+        assert "invalid_output_count:** 1" in report
+        assert "Raw agreement on valid measurements: 100.0%" in report
+        assert "Score: 100" not in report
+        assert "score-protocol-valid-control" in report
+        assert "score-protocol-invalid-100" in report
+        assert "test/judge" in report
+        retained = Path("reports/calibration/score-protocol-negative-control.md").read_text(
+            encoding="utf-8"
+        )
+        assert "score-protocol-invalid-100" in retained
+        assert "score_protocol_format_mismatch:length=10" in retained
+        assert "**Invalid:** 1" in retained
+
+    def test_v1_rationales_are_rejected_and_v2_scores_are_unchanged(self) -> None:
+        archive = Path("reports/calibration/archive/authored-score-v1/cassettes")
+        version_two = Path("datasets/calibration/cassettes/authored-score-v2")
+        manifest_path = Path("datasets/calibration/cassettes/authored-score-v2-manifest.json")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["formatVersion"] == "authored-score-v2"
+        assert manifest["cassetteCount"] == 112
+        archived_manifest = Path(manifest["sourceArchiveManifest"])
+        sidecar_path = Path(manifest["rationaleSidecar"]["path"])
+        assert (
+            hashlib.sha256(archived_manifest.read_bytes()).hexdigest()
+            == manifest["sourceArchiveManifestSha256"]
+        )
+        assert (
+            hashlib.sha256(sidecar_path.read_bytes()).hexdigest()
+            == manifest["rationaleSidecar"]["sha256"]
+        )
+        old_files = sorted(archive.glob("*.json"))
+        assert len(old_files) == 112
+        mappings = {entry["source_v1"].split("/")[-1]: entry for entry in manifest["cassettes"]}
+        for old_path in old_files:
+            old_payload = json.loads(old_path.read_text(encoding="utf-8"))
+            old_content = old_payload["content"]
+            old_match = re.match(r"Score: (0|[1-9]|10)\n", old_content)
+            assert old_match is not None
+            with pytest.raises(ScoreProtocolError):
+                parse_judge_score(old_content)
+
+            new_path = version_two / old_path.name
+            mapping = mappings[old_path.name]
+            assert hashlib.sha256(old_path.read_bytes()).hexdigest() == mapping["source_v1_sha256"]
+            assert hashlib.sha256(new_path.read_bytes()).hexdigest() == mapping["target_v2_sha256"]
+            new_payload = json.loads(new_path.read_text(encoding="utf-8"))
+            new_content = new_payload["content"]
+            assert re.fullmatch(r"Score: (0|[1-9]|10)", new_content)
+            assert parse_judge_score(new_content) == pytest.approx(int(old_match.group(1)) / 10)
 
 
 # ---------------------------------------------------------------------------
@@ -395,9 +484,16 @@ class TestCalibrationJsonArtifact:
             # env-isolated Settings instance — not a matching provider/model.
             settings = Settings(_env_file=None, provider=Provider.zai, model="glm-4.5")
 
-        judge_scores = _run_hermetic(cases, settings)
-        agreement = compute_agreement(cases, judge_scores)
-        bias = compute_self_bias(cases, judge_scores)
+        attempts = _run_hermetic(cases, settings)
+        valid = [
+            (case, float(attempt.score))
+            for case, attempt in zip(cases, attempts, strict=True)
+            if attempt.score is not None
+        ]
+        valid_cases = [case for case, _ in valid]
+        judge_scores = [score for _, score in valid]
+        agreement = compute_agreement(valid_cases, judge_scores)
+        bias = compute_self_bias(valid_cases, judge_scores)
 
         raw: dict = {
             "judge": {
@@ -407,8 +503,8 @@ class TestCalibrationJsonArtifact:
             "agreement": {"n": agreement.n},
             "self_bias": {"self_preference_delta": round(bias.self_preference_delta, 4)},
             "per_case": [
-                {"id": c.id, "human": c.human_score, "judge": round(s, 3)}
-                for c, s in zip(cases, judge_scores, strict=False)
+                {"id": case.id, "human": case.human_score, "judge": round(score, 3)}
+                for case, score in valid
             ],
         }
 

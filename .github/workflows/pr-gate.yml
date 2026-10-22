@@ -114,6 +114,8 @@ jobs:
         run: |
           PYTHONPATH=src uv run --no-sync python scripts/run_hermetic.py -- \
             python scripts/run_calibration.py --out /tmp/calibration-hermetic-check.md
+          uv run --no-sync python scripts/check_calibration_report_migration.py \
+            docs/calibration-report.md /tmp/calibration-hermetic-check.md
           PYTHONPATH=src:. uv run --no-sync python scripts/run_hermetic.py -- \
             python scripts/defects_report.py
 
@@ -157,32 +159,83 @@ jobs:
       - name: Static security scan (medium/high only)
         run: uv run bandit -r src/ -ll -c pyproject.toml
 
-      - name: Record and verify the expected pytest failure
+      - name: Record the intentional pytest failure
         if: always() && matrix.python-version == '3.12.15'
+        id: failure-control-raw
         run: |
+          set -euo pipefail
           mkdir -p reports/evidence/native
-          echo "EVIDENCE_STARTED_AT=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+          rm -f reports/evidence/native/failure-control.xml reports/evidence/native/failure-control-exit.txt
+          started_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "started_at=$started_at" >> "$GITHUB_OUTPUT"
           set +e
           VERITY_EVIDENCE_FAILURE_CONTROL=1 uv run --no-sync pytest \
             tests/evidence/test_failure_control.py -m evidence_control -q \
             --junitxml=reports/evidence/native/failure-control.xml
           native_exit=$?
           set -e
-          uv run --no-sync python scripts/verify_failure_control.py \
-            --junit reports/evidence/native/failure-control.xml --native-exit "$native_exit"
+          completed_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "completed_at=$completed_at" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$native_exit" > reports/evidence/native/failure-control-exit.txt
 
-      - name: Emit expected-failure evidence
+      - name: Emit raw expected-failure evidence
         if: always() && matrix.python-version == '3.12.15'
+        env:
+          EVIDENCE_REQUIRED: "false"
+          EVIDENCE_STARTED_AT: ${{ steps.failure-control-raw.outputs.started_at }}
+          EVIDENCE_COMPLETED_AT: ${{ steps.failure-control-raw.outputs.completed_at }}
         run: |
           uv run --no-sync python scripts/evidence.py \
             --scope "verity.failure-control-py${{ matrix.python-version }}" \
             --junit reports/evidence/native/failure-control.xml
 
-      - name: Validate expected-failure evidence
+      - name: Verify the raw failure in a separate pytest process
+        if: always() && matrix.python-version == '3.12.15'
+        id: failure-control-verifier
+        run: |
+          set -euo pipefail
+          mkdir -p reports/evidence/native
+          rm -f reports/evidence/native/failure-control-verification.xml \
+            reports/evidence/native/failure-control-verification-exit.txt
+          started_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "started_at=$started_at" >> "$GITHUB_OUTPUT"
+          set +e
+          VERITY_EVIDENCE_CONTROL_VERIFIER=1 uv run --no-sync pytest \
+            tests/evidence/test_control_verdict.py \
+            -m evidence_control -q \
+            --junitxml=reports/evidence/native/failure-control-verification.xml
+          verifier_exit=$?
+          set -e
+          completed_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "completed_at=$completed_at" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$verifier_exit" \
+            > reports/evidence/native/failure-control-verification-exit.txt
+          exit "$verifier_exit"
+
+      - name: Emit required verifier evidence
+        if: always() && matrix.python-version == '3.12.15'
+        env:
+          EVIDENCE_REQUIRED: "true"
+          EVIDENCE_STARTED_AT: ${{ steps.failure-control-verifier.outputs.started_at }}
+          EVIDENCE_COMPLETED_AT: ${{ steps.failure-control-verifier.outputs.completed_at }}
+        run: |
+          if [ -s reports/evidence/native/failure-control-verification.xml ]; then
+            uv run --no-sync python scripts/evidence.py \
+              --scope "verity.failure-control-verification-py${{ matrix.python-version }}" \
+              --junit reports/evidence/native/failure-control-verification.xml
+          else
+            uv run --no-sync python scripts/evidence.py \
+              --scope "verity.failure-control-verification-py${{ matrix.python-version }}" \
+              --unavailable-reason "Verifier process did not produce native JUnit results."
+          fi
+
+      - name: Validate failure-control evidence records
         if: always() && matrix.python-version == '3.12.15'
         run: |
           uv run --no-sync python scripts/validate_evidence.py \
             "reports/evidence/verity.failure-control-py${{ matrix.python-version }}.json"
+          uv run --no-sync python scripts/validate_evidence.py \
+            "reports/evidence/verity.failure-control-verification-py${{ matrix.python-version }}.json"
 
       - name: Upload pytest evidence bundle
         if: always()

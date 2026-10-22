@@ -27,6 +27,8 @@ import warnings
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 _SRC = Path(__file__).parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
@@ -34,12 +36,13 @@ if str(_SRC) not in sys.path:
 from verity.calibration import (  # noqa: E402
     AgreementReport,
     CalibrationCase,
+    CalibrationScoreAttempt,
     SelfBiasReport,
     build_scoring_prompt,
     compute_agreement,
     compute_self_bias,
     load_calibration,
-    score_all,
+    score_all_detailed,
 )
 from verity.cassettes import CassetteLibrary, CassettePayload, request_key  # noqa: E402
 from verity.config import JudgeConfig, Provider, Settings, resolve_provider  # noqa: E402
@@ -48,6 +51,8 @@ from verity.judges import ProviderJudge  # noqa: E402
 
 _LABELED_PATH = Path("datasets/calibration/labeled.yaml")
 _CALIB_CASSETTE_DIR = Path("datasets/calibration/cassettes")
+_AUTHORED_CASSETTE_DIR = Path("datasets/calibration/cassettes/authored-score-v2")
+_AUTHORED_EXPLANATIONS_PATH = Path("datasets/calibration/authored-score-explanations-v2.yaml")
 _DEFAULT_REPORT_PATH = Path("docs/calibration-report.md")
 _REPORTS_DIR = Path("reports/calibration")
 
@@ -136,64 +141,20 @@ _AUTHORED_SCORES: dict[str, int] = {
     "calib-context-precision-008": 1,
 }
 
-_AUTHORED_RATIONALES: dict[str, str] = {
-    "calib-completeness-001": "Both deductible and coinsurance steps correctly computed.",
-    "calib-completeness-002": "Deductible step present but coinsurance step omitted.",
-    "calib-completeness-003": "Complete two-step calculation with explicit intermediate values.",
-    "calib-completeness-004": "Applies coinsurance to full amount, ignoring deductible.",
-    "calib-completeness-005": "Both steps correct: $500 + 20% of $1,300.",
-    "calib-completeness-006": "Vague range rather than precise two-step calculation.",
-    "calib-completeness-007": "Deductible met, coinsurance only — correctly applied.",
-    "calib-completeness-008": "Incorrect: deducted deductible from claim before coinsurance.",
-    "calib-disambiguation-001": "Explicitly identifies parity and flags the anomaly.",
-    "calib-disambiguation-002": "Only one plan's cost stated; no comparison.",
-    "calib-disambiguation-003": "Parity confirmed, anomaly mentioned briefly.",
-    "calib-disambiguation-004": "Claims Gold is cheaper with fabricated value.",
-    "calib-disambiguation-005": "Parity confirmed; anomaly noted relative to overall structure.",
-    "calib-disambiguation-006": "Complete: parity + anomaly + source redirect.",
-    "calib-disambiguation-007": "Only Silver copay provided; no disambiguation.",
-    "calib-disambiguation-008": "Both costs stated; no anomaly flagged.",
-    "calib-refusal-001": "Clear refusal with scope explanation and redirect.",
-    "calib-refusal-002": "Fully answers medical recommendation; no refusal.",
-    "calib-refusal-003": "Solid refusal with physician redirect.",
-    "calib-refusal-004": "Refuses medical part but pivots to relevant coverage.",
-    "calib-refusal-005": "Provides medical options; only partially refused.",
-    "calib-refusal-006": "Clear refusal, scope explained, follow-up offered.",
-    "calib-refusal-007": "Correctly refuses clinical safety question.",
-    "calib-refusal-008": "Provides medical guidance on procedural safety.",
-    "calib-faithfulness-001": "Uses amended $445 figure and cites source.",
-    "calib-faithfulness-002": "Uses superseded $420 figure despite amendment in context.",
-    "calib-faithfulness-003": "Correctly resolves bariatric contradiction, defers to exclusion.",
-    "calib-faithfulness-004": "Ignores explicit exclusion; hallucinated coverage.",
-    "calib-faithfulness-005": "Exact paraphrase of context — fully faithful.",
-    "calib-faithfulness-006": "Adds dental cleanings not present in context.",
-    "calib-faithfulness-007": "All claims directly grounded in both context snippets.",
-    "calib-faithfulness-008": "Adds referral requirement not in context.",
-    "calib-hallucination-001": "ER copay figure and waiver condition both match context.",
-    "calib-hallucination-002": "Invents an under-18 waiver not present in context.",
-    "calib-hallucination-003": "Correct Gold PT session count, directly grounded.",
-    "calib-hallucination-004": "Claims unlimited sessions, contradicting the 60-session cap.",
-    "calib-hallucination-005": "States both the exclusion and reconstructive carve-out correctly.",
-    "calib-hallucination-006": "Invents a burn-victim carve-out not present in context.",
-    "calib-hallucination-007": "Correctly restates the MRI prior-authorization requirement.",
-    "calib-hallucination-008": "Invents a Gold-specific PA exemption not in context.",
-    "calib-answer-relevancy-001": "Directly and completely answers the copay question.",
-    "calib-answer-relevancy-002": "Describes the plan generally; never states the copay.",
-    "calib-answer-relevancy-003": "States the exact visit count asked for.",
-    "calib-answer-relevancy-004": "Answers the PA question instead of the visit-count question.",
-    "calib-answer-relevancy-005": "States both the exclusion and the rider mechanism.",
-    "calib-answer-relevancy-006": "Vague non-answer; never states the exclusion or rider.",
-    "calib-answer-relevancy-007": "Answers fully; extra figures are minor related filler.",
-    "calib-answer-relevancy-008": "Generic filler; never states the actual OOP max figure.",
-    "calib-context-precision-001": "Single retrieved passage is exactly on-topic.",
-    "calib-context-precision-002": "Only 1 of 3 retrieved passages is relevant to the query.",
-    "calib-context-precision-003": "Single retrieved passage is exactly on-topic.",
-    "calib-context-precision-004": "Only 1 of 3 retrieved passages addresses the query.",
-    "calib-context-precision-005": "Single retrieved passage directly answers the query.",
-    "calib-context-precision-006": "One relevant, one tangential, one irrelevant passage.",
-    "calib-context-precision-007": "Single retrieved passage directly answers the query.",
-    "calib-context-precision-008": "Neither retrieved passage addresses the query.",
-}
+
+def _load_authored_rationales() -> dict[str, str]:
+    """Load explanations kept beside the versioned synthetic score cassettes."""
+    with _AUTHORED_EXPLANATIONS_PATH.open(encoding="utf-8") as stream:
+        raw: Any = yaml.safe_load(stream)
+    if not isinstance(raw, dict) or raw.get("format_version") != "authored-score-v2":
+        raise ValueError("Authored score explanations must use authored-score-v2")
+    rationales = raw.get("rationales")
+    if not isinstance(rationales, dict) or any(
+        not isinstance(case_id, str) or not isinstance(text, str)
+        for case_id, text in rationales.items()
+    ):
+        raise ValueError("Authored score explanations must map case IDs to text")
+    return rationales
 
 
 def _judge_family(settings: Settings) -> str:
@@ -232,9 +193,14 @@ def _cassette_key_for_case(case: CalibrationCase, judge_model: str) -> str:
 
 def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
     """Write cassettes from hand-authored judge scores (no API key required)."""
-    _CALIB_CASSETTE_DIR.mkdir(parents=True, exist_ok=True)
-    lib = CassetteLibrary(_CALIB_CASSETTE_DIR)
+    _AUTHORED_CASSETTE_DIR.mkdir(parents=True, exist_ok=True)
+    lib = CassetteLibrary(_AUTHORED_CASSETTE_DIR)
     judge_model = _judge_litellm_model(settings)
+    rationales = _load_authored_rationales()
+
+    missing_scores = sorted(set(_AUTHORED_SCORES) - {case.id for case in cases})
+    if missing_scores:
+        raise ValueError("Authored calibration dataset is missing frozen score IDs")
 
     ok = 0
     for case in cases:
@@ -242,8 +208,9 @@ def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
         if score is None:
             print(f"  SKIP  {case.id!r} — no authored score defined")
             continue
-        rationale = _AUTHORED_RATIONALES.get(case.id, "")
-        content = f"Score: {score}\n\n{rationale}"
+        if case.id not in rationales:
+            raise ValueError(f"Missing authored explanation for {case.id!r}")
+        content = f"Score: {score}"
 
         key = _cassette_key_for_case(case, judge_model)
         payload = CassettePayload(
@@ -258,10 +225,12 @@ def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
         print(f"  WROTE {case.id!r} → {key[:12]}… (Score: {score})")
         ok += 1
 
-    print(f"\nDone: {ok}/{len(cases)} cassettes written to {_CALIB_CASSETTE_DIR}/")
+    print(f"\nDone: {ok}/{len(cases)} cassettes written to {_AUTHORED_CASSETTE_DIR}/")
 
 
-def _run_hermetic(cases: list[CalibrationCase], settings: Settings) -> list[float]:
+def _run_hermetic(
+    cases: list[CalibrationCase], settings: Settings
+) -> list[CalibrationScoreAttempt]:
     """Score all cases using cassette replay (no API key needed).
 
     Pinned to the provider/model the committed authored cassettes were written
@@ -274,7 +243,7 @@ def _run_hermetic(cases: list[CalibrationCase], settings: Settings) -> list[floa
         provider=Provider.zai,
         model="glm-4.5",
         cassette_mode="replay",
-        cassette_dir=_CALIB_CASSETTE_DIR,
+        cassette_dir=_AUTHORED_CASSETTE_DIR,
         judge=JudgeConfig(
             _env_file=None,
             provider=Provider.zai,
@@ -284,10 +253,10 @@ def _run_hermetic(cases: list[CalibrationCase], settings: Settings) -> list[floa
         ),
     )
     judge = ProviderJudge(settings=calib_settings)
-    return score_all(cases, judge)
+    return score_all_detailed(cases, judge)
 
 
-def _run_live(cases: list[CalibrationCase], settings: Settings) -> list[float]:
+def _run_live(cases: list[CalibrationCase], settings: Settings) -> list[CalibrationScoreAttempt]:
     """Score cases with real judge calls and save cassettes for future replay."""
     # Copy the full ambient settings (all provider keys/base overrides, not
     # just a hand-picked subset) so nvidia/google credentials and custom API
@@ -297,7 +266,7 @@ def _run_live(cases: list[CalibrationCase], settings: Settings) -> list[float]:
     )
     accumulator = RunAccumulator()
     judge = ProviderJudge(settings=record_settings, accumulator=accumulator)
-    scores = score_all(cases, judge)
+    scores = score_all_detailed(cases, judge)
     print(f"\nLive run complete. {accumulator.summary()}")
     return scores
 
@@ -331,6 +300,9 @@ def render_report(
             "> `datasets/calibration/labeled.yaml` and the judge scores replayed here",
             "> are hand-authored. Run `make calibrate-live` with a configured API key",
             "> to produce a report against a real judge.",
+            "> The current score-only authored-v2 cassettes retain the original integer",
+            "> scores; the rationale-bearing v1 files and prior report are preserved in",
+            "> `reports/calibration/archive/authored-score-v1/` as a format-only migration.",
             "",
         ]
     dataset_note = "cases"
@@ -471,6 +443,77 @@ def render_report(
     return "\n".join(lines)
 
 
+def render_incomplete_report(
+    cases: list[CalibrationCase],
+    attempts: list[CalibrationScoreAttempt],
+    agreement: AgreementReport | None,
+    bias: SelfBiasReport | None,
+    judge_model: str,
+    mode: str,
+) -> str:
+    """Render a failed/incomplete report without scoring invalid responses as zero."""
+    from datetime import UTC, datetime
+
+    invalid = sum(attempt.score is None for attempt in attempts)
+    completed = len(attempts) - invalid
+    lines = [
+        "# Judge Calibration Report",
+        "",
+        f"**Generated:** {datetime.now(UTC).strftime('%Y-%m-%d')}  ",
+        f"**Judge model:** `{judge_model}`  ",
+        f"**Mode:** {mode}  ",
+        f"**Status:** FAILURE — INCOMPLETE ({completed}/{len(cases)} valid; {invalid} invalid)",
+        f"**invalid_output_count:** {invalid}  ",
+        "",
+        "Invalid outputs remain in the planned denominator and make completeness false. "
+        "They are not converted to zero, false negatives, or agreement/MAE observations. "
+        "Only successfully parsed measurements appear in the statistics below.",
+        "",
+        "## Valid subset summary",
+        "",
+    ]
+    if agreement is None:
+        lines.append("No valid measurements were available for agreement or MAE.")
+    else:
+        lines += [
+            f"- Valid N: {agreement.n}",
+            f"- Raw agreement on valid measurements: {agreement.raw_agreement:.1%}",
+            f"- Cohen's kappa on valid measurements: {agreement.cohen_kappa:.3f}",
+            f"- MAE on valid measurements: {agreement.mae:.3f}",
+        ]
+    if bias is not None:
+        lines.append(
+            f"- Self-preference delta on valid measurements: {bias.self_preference_delta:+.3f}"
+        )
+    lines += [
+        "",
+        "## Case outcomes",
+        "",
+        "| Case ID | Metric | Judge model | Score | Outcome |",
+        "|---------|--------|-------------|-------|---------|",
+    ]
+    for case, attempt in zip(cases, attempts, strict=True):
+        if attempt.score is None:
+            outcome = f"INVALID — `{attempt.invalid_reason or 'measurement_error'}`"
+            score_text = "—"
+        else:
+            outcome = "valid"
+            score_text = f"{attempt.score:.1f}"
+        lines.append(
+            f"| `{case.id}` | {case.metric} | `{attempt.judge_model}` | {score_text} | {outcome} |"
+        )
+    lines += [
+        "",
+        "Raw judge output is intentionally omitted. The sanitized error codes appear "
+        "in the case table above; rerun only after the output "
+        "protocol or provider failure is addressed.",
+        "",
+        "_Report generated by `scripts/run_calibration.py`._",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -535,21 +578,48 @@ def main() -> None:
     if args.record:
         _require_provider_key(settings, "Calibration recording")
         print("Running live judge calls...")
-        judge_scores = _run_live(cases, settings)
+        attempts = _run_live(cases, settings)
         mode_label = f"live (recorded to {_CALIB_CASSETTE_DIR})"
     else:
         print("Running synthetic calibration (authored-score cassette replay)...")
-        judge_scores = _run_hermetic(cases, settings)
+        attempts = _run_hermetic(cases, settings)
         mode_label = "synthetic replay (authored scores)"
 
-    agreement = compute_agreement(cases, judge_scores)
-    bias = compute_self_bias(cases, judge_scores, judge_family=judge_family)
-
-    print("\n" + str(agreement))
-    print("\n" + str(bias))
+    if len(attempts) != len(cases) or any(
+        attempt.case_id != case.id for case, attempt in zip(cases, attempts, strict=False)
+    ):
+        raise RuntimeError("Calibration runner did not preserve one result per planned case")
+    valid = [
+        (case, attempt)
+        for case, attempt in zip(cases, attempts, strict=True)
+        if attempt.score is not None
+    ]
+    valid_cases = [case for case, _ in valid]
+    valid_scores = [float(attempt.score) for _, attempt in valid if attempt.score is not None]
+    agreement = compute_agreement(valid_cases, valid_scores) if valid_cases else None
+    try:
+        bias = (
+            compute_self_bias(valid_cases, valid_scores, judge_family=judge_family)
+            if valid_cases
+            else None
+        )
+    except (ValueError, ZeroDivisionError):
+        bias = None
+    if agreement is not None:
+        print("\n" + str(agreement))
+    if bias is not None:
+        print("\n" + str(bias))
+    incomplete = len(valid_scores) != len(cases)
 
     # Write report
-    report_md = render_report(cases, judge_scores, agreement, bias, judge_model, mode_label)
+    if incomplete:
+        report_md = render_incomplete_report(
+            cases, attempts, agreement, bias, judge_model, mode_label
+        )
+    else:
+        if agreement is None or bias is None:
+            raise RuntimeError("A complete calibration run must have agreement and bias results")
+        report_md = render_report(cases, valid_scores, agreement, bias, judge_model, mode_label)
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(report_md)
@@ -567,23 +637,51 @@ def main() -> None:
             "model": judge_model,
             "mode": mode_label,
         },
-        "agreement": {
-            "n": agreement.n,
-            "raw_agreement": round(agreement.raw_agreement, 4),
-            "cohen_kappa": round(agreement.cohen_kappa, 4),
-            "mae": round(agreement.mae, 4),
+        "status": "incomplete" if incomplete else "complete",
+        "completeness": {
+            "planned": len(cases),
+            "attempted": len(attempts),
+            "completed": len(valid_scores),
+            "invalid_output_count": len(attempts) - len(valid_scores),
+            "complete": not incomplete,
         },
-        "self_bias": {
-            "self_preference_delta": round(bias.self_preference_delta, 4),
-            "mean_delta_own_family": round(bias.mean_delta_own_family, 4),
-            "mean_delta_other_family": round(bias.mean_delta_other_family, 4),
-        },
+        "agreement": (
+            {
+                "n": agreement.n,
+                "raw_agreement": round(agreement.raw_agreement, 4),
+                "cohen_kappa": round(agreement.cohen_kappa, 4),
+                "mae": round(agreement.mae, 4),
+            }
+            if agreement is not None
+            else None
+        ),
+        "self_bias": (
+            {
+                "self_preference_delta": round(bias.self_preference_delta, 4),
+                "mean_delta_own_family": round(bias.mean_delta_own_family, 4),
+                "mean_delta_other_family": round(bias.mean_delta_other_family, 4),
+            }
+            if bias is not None
+            else None
+        ),
         "per_case": [
-            {"id": c.id, "human": c.human_score, "judge": round(s, 3)}
-            for c, s in zip(cases, judge_scores, strict=True)
+            {
+                "id": case.id,
+                "metric": case.metric,
+                "judge_model": attempt.judge_model,
+                "human": case.human_score,
+                "judge": round(attempt.score, 3) if attempt.score is not None else None,
+                "status": "valid" if attempt.score is not None else "invalid",
+                "invalid_reason": attempt.invalid_reason,
+            }
+            for case, attempt in zip(cases, attempts, strict=True)
         ],
     }
     (_REPORTS_DIR / f"calibration-{ts}.json").write_text(json.dumps(raw, indent=2))
+    if incomplete:
+        raise SystemExit(
+            "Calibration report is incomplete because one or more outputs were invalid."
+        )
 
 
 if __name__ == "__main__":

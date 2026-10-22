@@ -12,10 +12,12 @@ except ImportError:
     from evidence import parse_junit
 
 EXPECTED_MARKER = "VERITY_EVIDENCE_CONTROL_FAILURE"
+EXPECTED_CLASSNAME = "tests.evidence.test_failure_control"
+EXPECTED_TEST_NAME = "test_expected_failure_control"
 
 
 def verify(path: Path, native_exit: int) -> None:
-    if native_exit != 1:
+    if isinstance(native_exit, bool) or not isinstance(native_exit, int) or native_exit != 1:
         raise ValueError(f"expected the control pytest process to exit 1; got {native_exit}")
     report = parse_junit(path)
     if report.get("state") != "complete":
@@ -37,9 +39,24 @@ def verify(path: Path, native_exit: int) -> None:
     }:
         raise ValueError(f"control did not produce exactly one failed testcase: {counts}")
     root = ET.parse(path).getroot()
-    messages = [node.text or "" for node in root.iter() if node.tag in {"failure", "error"}]
-    if len(messages) != 1 or EXPECTED_MARKER not in messages[0]:
-        raise ValueError("the failed testcase did not contain the expected negative-control marker")
+    cases = root.findall(".//testcase")
+    if len(cases) != 1:
+        raise ValueError("the control JUnit report must contain exactly one testcase")
+    case = cases[0]
+    if case.get("classname") != EXPECTED_CLASSNAME or case.get("name") != EXPECTED_TEST_NAME:
+        raise ValueError("the control JUnit report contains an unexpected testcase")
+    if case.findall("error") or case.findall("skipped"):
+        raise ValueError(
+            "the control testcase has an error or skip instead of the expected failure"
+        )
+    failures = case.findall("failure")
+    if len(failures) != 1:
+        raise ValueError("the control testcase must contain exactly one failure")
+    messages = [failures[0].get("message", ""), "".join(failures[0].itertext())]
+    if EXPECTED_MARKER not in "\n".join(messages):
+        raise ValueError("the expected marker is missing from the control failure")
+    if list(root.iter("error")):
+        raise ValueError("the control JUnit report contains an error, including a setup failure")
 
 
 def main() -> int:

@@ -9,10 +9,26 @@
 > are hand-authored. Run `make calibrate-live` with a configured API key
 > to produce a report against a real judge.
 
-**Generated:** 2026-07-04  
+> **Fixture format:** `authored-score-v2`. This format-only migration keeps the
+> frozen integer scores and the agreement figures below unchanged. The prior
+> rationale-bearing v1 cassettes and this report's original version are retained
+> under `reports/calibration/archive/authored-score-v1/`; their hashes are in
+> its manifest. The v2 cassette hashes and source mappings are recorded in
+> `datasets/calibration/cassettes/authored-score-v2-manifest.json`. Authored
+> rationales now live beside the v2 cassettes in
+> `datasets/calibration/authored-score-explanations-v2.yaml`.
+
+**Reference replay date:** 2026-07-04  
+**Format-only migration:** 2026-10-22  
 **Judge model:** `openai/glm-4.5`  
 **Dataset:** `datasets/calibration/labeled.yaml` (56 cases)  
 **Mode:** synthetic replay (authored scores)
+
+This report covers the custom calibration rubric path only. The separately
+versioned [runtime-adapter calibration protocol](runtime-adapter-calibration.md)
+measures the actual Tier-2 DeepEval/RAGAS paths and remains distinct from this
+synthetic rubric replay. The sanitized malformed-score example is retained in
+the [score protocol negative control](../reports/calibration/score-protocol-negative-control.md).
 
 ---
 

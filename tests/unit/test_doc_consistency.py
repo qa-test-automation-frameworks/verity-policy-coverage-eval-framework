@@ -72,9 +72,16 @@ class TestCalibrationReportConsistency:
                     _env_file=None, provider=Provider.zai, model="glm-4.5", temperature=0.0
                 ),
             )
-        judge_scores = _run_hermetic(cases, settings)
-        agreement = compute_agreement(cases, judge_scores)
-        bias = compute_self_bias(cases, judge_scores, judge_family=_judge_family(settings))
+        attempts = _run_hermetic(cases, settings)
+        valid = [
+            (case, float(attempt.score))
+            for case, attempt in zip(cases, attempts, strict=True)
+            if attempt.score is not None
+        ]
+        valid_cases = [case for case, _ in valid]
+        judge_scores = [score for _, score in valid]
+        agreement = compute_agreement(valid_cases, judge_scores)
+        bias = compute_self_bias(valid_cases, judge_scores, judge_family=_judge_family(settings))
 
         assert f"**{agreement.raw_agreement:.1%}**" in report_text
         assert f"**{agreement.cohen_kappa:.3f}**" in report_text

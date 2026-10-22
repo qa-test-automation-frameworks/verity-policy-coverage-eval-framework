@@ -6,7 +6,7 @@
 The inventory is generated from `portfolio/current-evidence.json`; its source snapshot is `dfcad3e843f1dc25f7b18a3c616460748b111ea1`.
 The current golden corpus has **69 cases** (version `1.0.0`; hash `ec79360e2a25…`).
 
-- **Synthetic rubric replay:** The 2026-07-04 report replays 56 hand-authored cases across seven metrics; it demonstrates methodology and is not live calibration.
+- **Synthetic rubric replay:** The report carries forward the 2026-07-04 synthetic replay of 56 hand-authored cases in score-only v2 cassette format; it demonstrates rubric methodology and is not live or runtime-adapter calibration.
   See [`docs/calibration-report.md`](calibration-report.md).
 - **Historical live rubric:** The archived 2026-07-02 report records 32 live rubric cases with openrouter/openai/gpt-4o-mini; it reports 75% faithfulness agreement and MAE 0.238. The native run ID was not retained.
   See [`reports/calibration/archive/live-2026-07-02/calibration-report.md`](../reports/calibration/archive/live-2026-07-02/calibration-report.md).

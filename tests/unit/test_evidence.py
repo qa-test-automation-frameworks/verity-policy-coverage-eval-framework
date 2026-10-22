@@ -153,8 +153,11 @@ class EvidenceTests(unittest.TestCase):
             report = self.write_xml(
                 directory,
                 "control.xml",
-                """<testsuite name="failure-control" tests="1" failures="1" errors="0" skipped="0">
-                  <testcase name="test_expected_failure_control">
+                """<testsuite name="failure-control" tests="1" failures="1"
+                    errors="0" skipped="0">
+                  <testcase
+                    classname="tests.evidence.test_failure_control"
+                    name="test_expected_failure_control">
                     <failure message="deliberate">VERITY_EVIDENCE_CONTROL_FAILURE</failure>
                   </testcase>
                 </testsuite>""",
@@ -162,6 +165,95 @@ class EvidenceTests(unittest.TestCase):
             verify(report, 1)
             with self.assertRaisesRegex(ValueError, "exit 1"):
                 verify(report, 0)
+            with self.assertRaisesRegex(ValueError, "exit 1"):
+                verify(report, 2)
+
+            unexpected_class = self.write_xml(
+                directory,
+                "unexpected-class.xml",
+                """<testsuite name="failure-control" tests="1" failures="1">
+                  <testcase
+                    classname="tests.evidence.test_unrelated"
+                    name="test_expected_failure_control">
+                    <failure>VERITY_EVIDENCE_CONTROL_FAILURE</failure>
+                  </testcase>
+                </testsuite>""",
+            )
+            with self.assertRaisesRegex(ValueError, "unexpected testcase"):
+                verify(unexpected_class, 1)
+
+            unexpected_name = self.write_xml(
+                directory,
+                "unexpected-name.xml",
+                """<testsuite name="failure-control" tests="1" failures="1">
+                  <testcase
+                    classname="tests.evidence.test_failure_control"
+                    name="test_other">
+                    <failure>VERITY_EVIDENCE_CONTROL_FAILURE</failure>
+                  </testcase>
+                </testsuite>""",
+            )
+            with self.assertRaisesRegex(ValueError, "unexpected testcase"):
+                verify(unexpected_name, 1)
+
+            marker_only_in_output = self.write_xml(
+                directory,
+                "marker-in-output.xml",
+                """<testsuite name="failure-control" tests="1" failures="1">
+                  <testcase
+                    classname="tests.evidence.test_failure_control"
+                    name="test_expected_failure_control">
+                    <failure message="an unrelated assertion failed">assert False</failure>
+                  </testcase>
+                  <system-out>VERITY_EVIDENCE_CONTROL_FAILURE</system-out>
+                </testsuite>""",
+            )
+            with self.assertRaisesRegex(ValueError, "expected marker"):
+                verify(marker_only_in_output, 1)
+
+            setup_error = self.write_xml(
+                directory,
+                "setup-error.xml",
+                """<testsuite name="failure-control" tests="1" failures="0" errors="1">
+                  <testcase
+                    classname="tests.evidence.test_failure_control"
+                    name="test_expected_failure_control">
+                    <error>setup failed</error>
+                  </testcase>
+                </testsuite>""",
+            )
+            with self.assertRaisesRegex(ValueError, "error or skip"):
+                verify(setup_error, 1)
+
+            skipped = self.write_xml(
+                directory,
+                "skipped.xml",
+                """<testsuite name="failure-control" tests="1" failures="0" skipped="1">
+                  <testcase
+                    classname="tests.evidence.test_failure_control"
+                    name="test_expected_failure_control">
+                    <skipped>not selected</skipped>
+                  </testcase>
+                </testsuite>""",
+            )
+            with self.assertRaisesRegex(ValueError, "exactly one failed testcase"):
+                verify(skipped, 1)
+
+    def test_evidence_completed_timestamp_preserves_the_native_process_end(self) -> None:
+        env = {
+            **ENV,
+            "EVIDENCE_STARTED_AT": "2026-10-16T10:00:00Z",
+            "EVIDENCE_COMPLETED_AT": "2026-10-16T10:00:02Z",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.write_xml(
+                directory,
+                "passing.xml",
+                '<testsuite name="unit" tests="1"><testcase name="pass"/></testsuite>',
+            )
+            record = make_record("verity.preserved-time", env, junit=report)
+        self.assertEqual(record["execution"]["startedAt"], "2026-10-16T10:00:00Z")
+        self.assertEqual(record["execution"]["completedAt"], "2026-10-16T10:00:02Z")
 
     def test_parse_junit_rejects_suite_level_outcome_count_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

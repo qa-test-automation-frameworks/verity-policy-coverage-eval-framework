@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-answer-relevancy-006 (answer_relevancy)",
+  "model": "openai/glm-4.5",
+  "content": "Score: 3\n\nVague non-answer; never states the exclusion or rider.",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 30,
+    "total_tokens": 230
+  }
+}
