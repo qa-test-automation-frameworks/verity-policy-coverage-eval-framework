@@ -57,6 +57,14 @@ codebase-memory/
 # Each un-ignored directory must also un-ignore its own "*" before the
 # specific file exception, since git won't descend into an ignored dir.
 reports/*
+# The current calibration report is synthetic; keep this dated live report,
+# its 32-case input, and provider-response cassettes as historical evidence.
+!reports/calibration/
+reports/calibration/*
+!reports/calibration/archive/
+reports/calibration/archive/*
+!reports/calibration/archive/live-2026-07-02/
+!reports/calibration/archive/live-2026-07-02/**
 !reports/semantic/
 reports/semantic/*
 !reports/semantic/results.json
