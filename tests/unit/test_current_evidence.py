@@ -15,7 +15,10 @@ from scripts.check_current_evidence import (
 
 @pytest.fixture
 def current_manifest() -> dict[str, object]:
-    return load_manifest(ROOT / "portfolio/current-evidence.json")
+    manifest_path = ROOT / "portfolio/current-evidence.json"
+    if not manifest_path.is_file():
+        pytest.skip("current evidence manifest is source-only and is not in the runtime image")
+    return load_manifest(manifest_path)
 
 
 def test_valid_synthetic_record_is_accepted(current_manifest: dict[str, object]) -> None:
