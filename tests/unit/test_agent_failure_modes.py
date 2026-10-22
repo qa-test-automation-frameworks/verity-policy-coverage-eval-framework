@@ -125,6 +125,21 @@ class TestProviderFailure:
 
         _assert_safe_failure(response, "provider_unavailable")
 
+    def test_empty_member_id_fails_closed_before_provider_call(self) -> None:
+        settings = _make_settings()
+        provider = MagicMock()
+        provider.accumulator = _no_op_accumulator()
+        agent = CoverageAgent(
+            settings=settings,
+            retriever=FixtureRetriever("ctrl-gold-deductible"),
+            provider=provider,
+        )
+
+        response = agent.answer("What does my Gold plan cover for a lab?", member_id="")
+
+        _assert_safe_failure(response, "member_auth_required")
+        provider.complete.assert_not_called()
+
     def test_empty_final_completion_returns_safe_failure(self) -> None:
         settings = _make_settings()
         accumulator = _no_op_accumulator()
