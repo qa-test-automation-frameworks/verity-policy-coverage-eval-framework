@@ -200,7 +200,8 @@ jobs:
           started_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "started_at=$started_at" >> "$GITHUB_OUTPUT"
           set +e
-          uv run --no-sync pytest tests/evidence/test_control_verdict.py \
+          VERITY_EVIDENCE_CONTROL_VERIFIER=1 uv run --no-sync pytest \
+            tests/evidence/test_control_verdict.py \
             -m evidence_control -q \
             --junitxml=reports/evidence/native/failure-control-verification.xml
           verifier_exit=$?
