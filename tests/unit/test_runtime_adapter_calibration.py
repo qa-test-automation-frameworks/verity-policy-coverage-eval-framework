@@ -10,14 +10,14 @@ import pytest
 from verity.runtime_adapter_calibration import (
     ADAPTERS,
     MeasurementAttempt,
+    _promotion_status,
     analyze_adapter_calibration,
-    build_registry,
     authored_control_labels,
+    build_registry,
     load_dataset,
     load_reviewer_labels,
     resolve_heldout_labels,
     wilson_interval,
-    _promotion_status,
 )
 
 

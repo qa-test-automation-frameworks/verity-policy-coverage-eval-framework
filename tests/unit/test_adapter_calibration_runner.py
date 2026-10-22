@@ -5,7 +5,6 @@ from __future__ import annotations
 from threading import Lock
 
 import pytest
-
 from scripts.run_adapter_calibration import (
     BudgetedJudge,
     RateCeilingError,

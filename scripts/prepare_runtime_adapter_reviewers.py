@@ -12,7 +12,7 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_ROOT / "src"))
 
-from verity.runtime_adapter_calibration import load_dataset
+from verity.runtime_adapter_calibration import load_dataset  # noqa: E402
 
 LABEL_FIELDS = (
     "dataset_sha256",
