@@ -29,6 +29,27 @@ def test_authored_controls_are_separate_and_versioned() -> None:
     assert all(case.control_truth is not None for case in dataset.cases)
 
 
+def test_heldout_cohort_has_nine_unlabeled_pairs_per_adapter() -> None:
+    dataset = load_dataset(Path("datasets/calibration/runtime-adapters/heldout-v1.yaml"))
+
+    assert dataset.cohort_kind == "independently-labeled-heldout"
+    assert len(dataset.cases) == 126
+    assert {case.adapter_key for case in dataset.cases} == set(ADAPTERS)
+    assert all(case.control_truth is None for case in dataset.cases)
+
+    for adapter_key in ADAPTERS:
+        adapter_cases = [case for case in dataset.cases if case.adapter_key == adapter_key]
+        pair_ids = {case.pair_id for case in adapter_cases}
+        assert len(pair_ids) == 9
+        for pair_id in pair_ids:
+            pair = [case for case in adapter_cases if case.pair_id == pair_id]
+            assert len(pair) == 2
+            assert {case.pair_slot for case in pair} == {"a", "b"}
+            assert pair[0].input == pair[1].input
+            assert pair[0].context == pair[1].context
+            assert pair[0].expected_output == pair[1].expected_output
+
+
 def test_wilson_interval_explains_empty_class_denominator() -> None:
     interval = wilson_interval(0, 0, "no valid labeled bad cases")
     assert interval == {

@@ -5,6 +5,13 @@ separate from the frozen D05 rubric-prompt study: D05's dataset, reviewer
 receipts, model, thresholds, and results are unchanged. The protocol code and
 runner are versioned as `runtime-adapter-calibration-v1`.
 
+The new `heldout-v1.yaml` candidate contains fictional cases authored for this
+study. It contains no `control_truth`, reviewer labels, or adapter scores. The
+cases are not measured calibration by themselves: freeze the file, prepare the
+two hash-bound packets, and obtain two independent human label receipts before
+any adapter is judged. No provider call or promotion is authorized by adding
+this candidate cohort.
+
 ## Cohorts and labels
 
 The committed `datasets/calibration/runtime-adapters/authored-controls-v1.yaml`
@@ -12,6 +19,15 @@ contains paired synthetic good/bad examples for all seven adapters. Its
 deterministic no-key run checks report plumbing only and is always stamped
 `synthetic-adapter-control`. It is never measured calibration and cannot qualify
 an adapter for promotion.
+
+The candidate `datasets/calibration/runtime-adapters/heldout-v1.yaml` contains
+nine unlabeled pairs per adapter (126 cases total). Pair slots do not identify
+the expected label. The newly authored cases are fictional, and reviewers must
+label every candidate independently; no AI-generated label set is included.
+The current dataset SHA-256 is
+`8cd042d84bf6b6ee7c0375dc0383cfade49afec632e79036faa07a8685524442`; both
+prepared reviewer packets bind their blank label rows to this exact value. Any
+case change requires regenerating the packets before review.
 
 A measured study needs a separately frozen
 `independently-labeled-heldout` dataset. Every pair has two case IDs (`a` and
