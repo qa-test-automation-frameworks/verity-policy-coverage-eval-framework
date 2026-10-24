@@ -34,7 +34,7 @@ dependencies = [
 dev = [
     "ruff==0.17.1",
     # The Tier-1 image verifies this package against a known security floor.
-    "setuptools>=83.0.0",
+    "setuptools>=84.1.0",
     "mypy>=2.4.0",
     "jsonschema>=4.26.0",
     "pytest>=8.2.0",
@@ -188,18 +188,22 @@ constraint-dependencies = [
     "certifi>=2026.10.19",
     "datasets>=5.0.1",
     "fsspec>=2026.6.0",
+    "filelock>=4.2.1",
     "langgraph-sdk>=0.4.4",
     "litellm>=1.106.0",
     "multidict>=6.9.1",
     "oauthlib>=4.0.0",
+    "opentelemetry-api>=1.45.1",
     "pillow>=13.0.0,<14",
     "pip>=26.2",
-    "setuptools>=83.0.0",
+    "setuptools>=84.1.0",
     "urllib3>=2.8.0",
-    "virtualenv>=21.14.9",
+    "virtualenv>=21.14.10",
 ]
 # FastEmbed 0.9 caps Pillow below 13 for its image-embedding path. This
 # application only uses TextEmbedding, and the installed package has no Pillow
 # imports; override the cap for the security-fixed 13.x line until upstream
 # updates its metadata. Keep the override below the next major pending review.
-override-dependencies = ["pillow>=13.0.0,<14"]
+# LiteLLM 1.106 caps filelock below 4; the advisory fixes start at 4.2.1.
+# Retain its FileLock API while CI exercises the complete dependency graph.
+override-dependencies = ["pillow>=13.0.0,<14", "filelock>=4.2.1,<5"]
