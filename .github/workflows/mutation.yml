@@ -69,15 +69,17 @@ jobs:
       - name: Run mutmut on the planted-survivor fixture
         working-directory: tests/mutation_selftest/fixture
         run: |
-          uv run mutmut run || true
-          uv run mutmut export-cicd-stats
-          uv run mutmut results > mutants/results.txt
+          # Use the repository's environment; the fixture is not a uv project.
+          VENV="$GITHUB_WORKSPACE/.venv/bin"
+          "$VENV/mutmut" run || true
+          "$VENV/mutmut" export-cicd-stats
+          "$VENV/mutmut" results > mutants/results.txt
 
       - name: Checker must fail on the planted survivor
         working-directory: tests/mutation_selftest/fixture
         run: |
           set +e
-          uv run python "$GITHUB_WORKSPACE/scripts/check_mutation_results.py" \
+          "$GITHUB_WORKSPACE/.venv/bin/python" "$GITHUB_WORKSPACE/scripts/check_mutation_results.py" \
             --stats mutants/mutmut-cicd-stats.json --results mutants/results.txt \
             --allowlist allowlist.json > selftest.out 2>&1
           status=$?
