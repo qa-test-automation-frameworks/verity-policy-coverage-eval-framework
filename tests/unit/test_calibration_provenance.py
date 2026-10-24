@@ -61,7 +61,6 @@ def test_provider_identity_and_invented_usage_are_rejected() -> None:
     assert fixture_problems({"model": "authored-fixture", "usage": usage}) == []
 
 
-
 def test_missing_measurement_heading_fails_loudly() -> None:
     with pytest.raises(ValueError, match="heading is missing"):
         measurement_table("# Other content")

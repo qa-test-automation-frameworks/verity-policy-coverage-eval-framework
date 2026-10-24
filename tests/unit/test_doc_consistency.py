@@ -125,9 +125,15 @@ class TestCalibrationReportConsistency:
 
         assert ordered_cases, "no parseable rows found in the Individual Case Scores table"
 
+        family_match = re.search(r"\| (\w+) \(own family\) \|", report_text)
+        assert family_match, "no calculation family found in the report table"
+        judge_family = family_match.group(1).lower()
         judge_model_match = re.search(r"\*\*Judge model:\*\*\s*`([^`]+)`", report_text)
-        assert judge_model_match, "no Judge model line found in report"
-        judge_family = "glm" if "glm" in judge_model_match.group(1).lower() else "other"
+        if judge_model_match:
+            expected_family = "glm" if "glm" in judge_model_match.group(1).lower() else "other"
+            assert judge_family == expected_family
+        else:
+            assert "**Judge:** authored fixture (no model was called)" in report_text
         agreement = compute_agreement(ordered_cases, judge_scores)
         bias = compute_self_bias(ordered_cases, judge_scores, judge_family=judge_family)
 
