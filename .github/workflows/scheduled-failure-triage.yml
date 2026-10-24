@@ -1,0 +1,28 @@
+name: Scheduled failure listener
+
+on:
+  workflow_run:
+    workflows:
+      - "Adversarial Red-Team"
+      - "Dependency Exception Expiry"
+      - "Mutation Testing"
+      - "PR Gate (Tier 1 — lint · type · unit)"
+      - "Semantic Eval (Tier 2 — DeepEval · RAGAS)"
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  triage:
+    if: >-
+      github.event.workflow_run.event == 'schedule' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.repository.full_name == github.repository
+    permissions:
+      issues: write
+    uses: qa-test-automation-frameworks/.github/.github/workflows/scheduled-failure-triage.yml@077cca9daadc6e7371616fe3dd4bae959054f17a
+    with:
+      workflow-name: ${{ github.event.workflow_run.name }}
+      conclusion: ${{ github.event.workflow_run.conclusion }}
+      run-url: ${{ github.event.workflow_run.html_url }}
