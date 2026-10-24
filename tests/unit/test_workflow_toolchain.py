@@ -52,6 +52,7 @@ def test_every_uv_action_reads_the_project_pin() -> None:
         for job in workflow.get("jobs", {}).values():
             for step in job.get("steps", []):
                 if step.get("uses", "").startswith("astral-sh/setup-uv@"):
+                    assert "with" not in step or isinstance(step["with"], dict), str(path)
                     assert "version" not in step.get("with", {}), str(path)
                     found += 1
     assert found > 0

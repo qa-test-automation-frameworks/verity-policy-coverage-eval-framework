@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedFrom": {
-    "sourceSha": "dfcad3e843f1dc25f7b18a3c616460748b111ea1",
+    "sourceSha": "12a613e53a312ffccafd9663e0ed08204a7f90a3",
     "sourcePath": "."
   },
   "datasets": {
@@ -40,7 +40,7 @@
       "model": {
         "value": null,
         "source": null,
-        "reason": "The report model label describes the cassette configuration, not a measured live judge."
+        "reason": "Authored fixtures identify no measured live model."
       },
       "judge": {
         "value": null,
@@ -49,8 +49,8 @@
       },
       "report": {
         "path": "docs/calibration-report.md",
-        "sha256": "38de57c7ca0c666fd390c215dd46a87c3b3a4848caf1e39d5d56e8b82a580743",
-        "date": "2026-07-04",
+        "sha256": "2e3245a518f4841260fa9d2d2252a085a834114ed6a47ed946a081402b57092f",
+        "date": "2026-10-24",
         "dateReason": null,
         "pathReason": null
       },
@@ -62,9 +62,9 @@
       "limitations": [
         "The report is synthetic and is not a live judge-performance measurement.",
         "Its rubric prompt path does not establish end-to-end DeepEval or RAGAS runtime-adapter calibration.",
-        "The report model label openai/glm-4.5 is not a measured judge identity for this replay."
+        "The authored-fixture identity claims no provider execution."
       ],
-      "summary": "The report carries forward the 2026-07-04 synthetic replay of 56 hand-authored cases in score-only v2 cassette format; it demonstrates rubric methodology and is not live or runtime-adapter calibration."
+      "summary": "Calculation self-test regenerated on 2026-10-24 from 56 authored cases; all frozen scores and figures are retained, with explicit fixture identity and zero provider token usage. This is not live or runtime-adapter calibration."
     },
     "live-rubric": {
       "status": "incomplete-provenance",

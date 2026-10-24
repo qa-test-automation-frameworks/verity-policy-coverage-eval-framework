@@ -1,0 +1,11 @@
+{
+  "_request_preview": "[judge] calib-disambiguation-003 (disambiguation)",
+  "model": "authored-fixture",
+  "content": "Score: 9",
+  "tool_calls": [],
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
+  }
+}

@@ -36,4 +36,4 @@ VERITY_REFERENCE_APP_CONTROL_TOKEN="$TEST_CONTROL_TOKEN" \
 docker compose -p verity-a06 -f ../quality-reference-application/compose.yaml down --volumes --remove-orphans
 ```
 
-The runtime integration and deterministic assistant checks are not model-quality evidence. Any live answer-quality claim remains gated on D05's separately budgeted evaluation.
+The runtime integration and deterministic assistant checks are not model-quality evidence. Any live answer-quality claim remains gated on the separately budgeted held-out evaluation.

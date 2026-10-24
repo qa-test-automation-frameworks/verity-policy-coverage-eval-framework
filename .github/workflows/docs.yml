@@ -16,6 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24
+      - name: Test local identifiers and evidence paths
+        run: |
+          bash scripts/test-check-local-identifiers.sh
+          bash scripts/test-check-neutral-evidence-paths.sh
+      - name: Check local identifiers and evidence paths
+        run: |
+          bash scripts/check-local-identifiers.sh
+          bash scripts/check-neutral-evidence-paths.sh
       - name: Reject workstation-only links and unsupported superlatives
         shell: bash
         run: |

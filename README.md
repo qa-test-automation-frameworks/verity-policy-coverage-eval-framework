@@ -3,11 +3,13 @@
 > A structured, multi-tier evaluation framework for LLM applications — addressing non-determinism, cost, provider-coupling, and judge trust — demonstrated on a RAG + tool-use assistant.
 
 [![PR Gate (Tier 1)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/pr-gate.yml)
-[![Semantic Eval (Tier 2)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/semantic-eval.yml)
-[![Adversarial Red-Team (Tier 3)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/adversarial.yml)
 [![Mutation Testing](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/mutation.yml/badge.svg)](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/workflows/mutation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12 | 3.13](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
+
+Tier 2 (semantic, provider-backed): last retained live evaluation 2026-07-02 ([live judge calibration evidence](reports/calibration/archive/live-2026-07-02/calibration-report.md)). Scheduled runs without a provider key record `skipped` evidence and are not counted as passes. This retained report is calibration evidence, not a fresh full-suite result.
+
+Tier 3 includes hermetic adversarial checks; provider-backed red-team and calibration jobs may be skipped without a provider key.
 
 **Status:** Hermetic Tier 1 is implemented and replayable. Committed Tier-2 evidence and judge-calibration artifacts are included; fresh Tier-2/Tier-3 runs still require a configured provider key — see [Limitations](#limitations).
 
@@ -143,12 +145,28 @@ golden cases are built around that profile's intentional gaps.
 
 ---
 
+## Calibration measurements
+
+| Run | Measured result | Evidence |
+|---|---|---|
+| Live judge calibration, 2026-07-02 | N=32; 93.8% agreement; Cohen's kappa 0.870 | [Retained live report](reports/calibration/archive/live-2026-07-02/calibration-report.md) |
+
+The system and judge used the same gpt-4o-mini model family. Labels came from
+the author, and the cohort was small; this is not independent calibration.
+
+### Calculation self-test (synthetic)
+
+The authored 56-case, seven-metric fixture reproduces 96.4% agreement, kappa
+0.926, and a +0.036 self-preference calculation. It checks the calculation and
+reporting method without a model call or provider token usage. See the
+[calculation self-test report](docs/calibration-report.md). Independent
+measurement remains pending in [PR #74](https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/pull/74).
+
 ## Reports
 
 | Report | Description | Link |
 |--------|-------------|------|
 | Defects Caught | Proof matrix — 4/8 defects caught deterministically (no API key); defects 1–4 have a committed live Tier-2 run (see provider note below) | [docs/defects-caught.md](docs/defects-caught.md) |
-| Calibration | Synthetic judge-calibration replay — 56 cases, 7 metrics, 96.4% raw agreement, Cohen's kappa 0.926, self-preference delta +0.036 | [docs/calibration-report.md](docs/calibration-report.md) |
 | Thresholds | Per-metric threshold table with defect coverage map | [docs/thresholds.md](docs/thresholds.md) |
 | Native execution evidence | Schema-v3 records from native pytest results, explicit semantic skips, and verified failure control | [docs/native-execution-evidence.md](docs/native-execution-evidence.md) |
 | Observability | OTel span table, env vars, cost summary | [docs/observability.md](docs/observability.md) |
