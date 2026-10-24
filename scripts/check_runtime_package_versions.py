@@ -8,7 +8,9 @@ from pathlib import Path
 
 MINIMUM_VERSIONS = {
     "msgpack": (1, 2, 1),
-    "setuptools": (78, 1, 1),
+    "setuptools": (84, 1, 0),
+    "filelock": (4, 2, 1),
+    "opentelemetry-api": (1, 45, 1),
     "urllib3": (2, 8, 0),
 }
 
