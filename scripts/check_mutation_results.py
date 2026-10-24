@@ -84,14 +84,18 @@ def _load_allowlist(path: Path) -> list[dict[str, Any]]:
             not isinstance(entry.get(key), str) or not entry[key].strip()
             for key in ("mutant", "status", "reason", "reviewedOn", "expiresOn")
         ):
-            raise FormatError("allowlist entries need mutant, status, reason, reviewedOn, expiresOn")
+            raise FormatError(
+                "allowlist entries need mutant, status, reason, reviewedOn, expiresOn"
+            )
         try:
             reviewed = date.fromisoformat(entry["reviewedOn"])
             expires = date.fromisoformat(entry["expiresOn"])
         except ValueError as exc:
             raise FormatError(f"bad date in allowlist entry {entry['mutant']}") from exc
         if expires - reviewed > timedelta(days=MAX_ALLOWLIST_DAYS):
-            raise FormatError(f"allowlist entry {entry['mutant']} exceeds {MAX_ALLOWLIST_DAYS} days")
+            raise FormatError(
+                f"allowlist entry {entry['mutant']} exceeds {MAX_ALLOWLIST_DAYS} days"
+            )
     return entries
 
 
