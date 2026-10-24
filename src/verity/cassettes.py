@@ -46,7 +46,9 @@ class CassettePayload:
 
 @dataclass
 class CassetteLibrary:
-    """Manages cassette files on disk with an in-memory LRU cache."""
+    """Manages cassette files with an unbounded in-memory cache (dict).
+
+    Entries live for the process lifetime."""
 
     path: Path
     _cache: dict[str, CassettePayload] = field(default_factory=dict)
