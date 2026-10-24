@@ -1,0 +1,6 @@
+# Self-test fixture for scripts/check_mutation_results.py. Not part of the
+# Verity test suite: .github/workflows/mutation.yml runs mutmut here and expects
+# the checker to fail on the survivor this fixture is built to leave.
+[tool.mutmut]
+source_paths = ["src"]
+pytest_add_cli_args_test_selection = ["tests/toy_checks.py"]
