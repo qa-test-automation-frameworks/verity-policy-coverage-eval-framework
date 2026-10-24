@@ -4,6 +4,14 @@ on:
   schedule:
     - cron: "0 4 * * 0"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/check_mutation_results.py
+      - Makefile
+      - pyproject.toml
+      - mutation-allowlist.json
+      - tests/mutation_selftest/**
+      - .github/workflows/mutation.yml
 
 permissions:
   contents: read
@@ -38,3 +46,42 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           uv run mutmut results >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  gate-selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1, Node 24
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --frozen --all-extras
+
+      - name: Run mutmut on the planted-survivor fixture
+        working-directory: tests/mutation_selftest/fixture
+        run: |
+          # Use the repository's environment; the fixture is not a uv project.
+          VENV="$GITHUB_WORKSPACE/.venv/bin"
+          "$VENV/mutmut" run || true
+          "$VENV/mutmut" export-cicd-stats
+          "$VENV/mutmut" results > mutants/results.txt
+
+      - name: Checker must fail on the planted survivor
+        working-directory: tests/mutation_selftest/fixture
+        run: |
+          set +e
+          "$GITHUB_WORKSPACE/.venv/bin/python" "$GITHUB_WORKSPACE/scripts/check_mutation_results.py" \
+            --stats mutants/mutmut-cicd-stats.json --results mutants/results.txt \
+            --allowlist allowlist.json > selftest.out 2>&1
+          status=$?
+          set -e
+          cat selftest.out
+          test "$status" -eq 1
+          grep -E 'add__mutmut_[0-9]+: survived' selftest.out

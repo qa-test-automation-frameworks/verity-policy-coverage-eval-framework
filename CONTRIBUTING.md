@@ -163,9 +163,14 @@ latter.
 
 ```bash
 uv sync --extra mutation
-make mutation-test    # strict — fails the command on surviving mutants
+make mutation-test    # strict — fails on surviving, timed-out, suspicious or untested mutants
 make mutation-report  # diagnostic — always prints results, never fails the command
 ```
+
+mutmut itself exits 0 when mutants survive, so `scripts/check_mutation_results.py` reads the
+stats and results and sets the exit code. Accepted survivors go in `mutation-allowlist.json`
+(reason plus a review and expiry date, at most 90 days apart). The weekly `Mutation Testing`
+workflow also runs a self-test against a fixture with a planted survivor, to show the gate fails.
 
 This is a local/dev quality check, not part of the required CI gate (mutation testing is
 too slow to run on every PR) — see [`docs/ci-policy.md`](docs/ci-policy.md) for what actually

@@ -122,9 +122,11 @@ trace-demo:
 
 mutation-test:
 	@echo "Mutation testing (strict) — src/sut/tools/coverage_calculator.py + src/verity/checks.py (requires: uv sync --extra mutation)"
-	@echo "Fails the command on surviving mutants, matching .github/workflows/mutation.yml."
+	@echo "Fails on any survived, timeout, suspicious, segfault or untested mutant not in mutation-allowlist.json."
 	uv run mutmut run
-	uv run mutmut results
+	uv run mutmut export-cicd-stats
+	uv run mutmut results > mutants/results.txt
+	uv run python scripts/check_mutation_results.py --stats mutants/mutmut-cicd-stats.json --results mutants/results.txt --allowlist mutation-allowlist.json
 
 mutation-report:
 	@echo "Mutation testing (diagnostic) — same run as mutation-test but never fails the command,"
