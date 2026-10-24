@@ -34,6 +34,8 @@ RUN mkdir -p "$FASTEMBED_CACHE_PATH" && uv run --no-sync python -c \
 # Copy source
 COPY src/ ./src/
 COPY tests/ ./tests/
+COPY .github/workflows/ ./.github/workflows/
+COPY Dockerfile ./Dockerfile
 COPY datasets/ ./datasets/
 COPY promptfoo/ ./promptfoo/
 COPY scripts/ ./scripts/
@@ -91,6 +93,8 @@ COPY --from=build /app/README.md ./README.md
 COPY --from=build /app/LICENSE ./LICENSE
 COPY --from=build /app/src/ ./src/
 COPY --from=build /app/tests/ ./tests/
+COPY --from=build /app/.github/workflows/ ./.github/workflows/
+COPY --from=build /app/Dockerfile ./Dockerfile
 COPY --from=build /app/datasets/ ./datasets/
 COPY --from=build /app/promptfoo/ ./promptfoo/
 COPY --from=build /app/scripts/ ./scripts/

@@ -25,13 +25,17 @@ def _producer_contract(workflow: dict) -> None:
 
 
 def test_daily_producer_contract() -> None:
-    workflow = yaml.load((ROOT / ".github/workflows/pr-gate.yml").read_text(), Loader=yaml.BaseLoader)
+    workflow = yaml.load(
+        (ROOT / ".github/workflows/pr-gate.yml").read_text(), Loader=yaml.BaseLoader
+    )
     _producer_contract(workflow)
 
 
 @pytest.mark.parametrize("trigger", ["schedule", "workflow_dispatch"])
 def test_daily_producer_rejects_a_missing_trigger(trigger: str) -> None:
-    workflow = yaml.load((ROOT / ".github/workflows/pr-gate.yml").read_text(), Loader=yaml.BaseLoader)
+    workflow = yaml.load(
+        (ROOT / ".github/workflows/pr-gate.yml").read_text(), Loader=yaml.BaseLoader
+    )
     del workflow["on"][trigger]
     with pytest.raises((AssertionError, KeyError)):
         _producer_contract(workflow)
