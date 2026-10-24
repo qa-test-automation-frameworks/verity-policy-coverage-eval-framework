@@ -99,3 +99,37 @@ def test_unknown_status_is_a_format_error(tmp_path: Path) -> None:
 def test_missing_stats_key_is_a_format_error(tmp_path: Path) -> None:
     stats = {key: value for key, value in STATS.items() if key != "segfault"}
     assert run(tmp_path, stats, "") == 2
+
+
+@pytest.mark.parametrize("value", [-1, "3", 3.5, True, None])
+def test_invalid_stats_values_fail_closed(tmp_path: Path, value) -> None:
+    assert run(tmp_path, {**STATS, "killed": value}, "") == 2
+
+
+def test_stats_total_must_reconcile(tmp_path: Path) -> None:
+    assert run(tmp_path, {**STATS, "total": 4}, "") == 2
+
+
+def test_duplicate_result_names_fail_closed(tmp_path: Path) -> None:
+    results = "toy.x_add__mutmut_1: survived\n" * 2
+    assert run(tmp_path, SURVIVOR, results) == 2
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        {**ENTRY, "status": "timeout"},
+        {**ENTRY, "reviewedOn": "2026-11-01"},
+    ],
+)
+def test_allowlist_does_not_hide_another_status_or_future_review(tmp_path: Path, entry) -> None:
+    assert run(tmp_path, SURVIVOR, "toy.x_add__mutmut_1: survived\n", [entry]) == 1
+
+
+def test_duplicate_allowlist_entries_fail_closed(tmp_path: Path) -> None:
+    assert run(tmp_path, SURVIVOR, "toy.x_add__mutmut_1: survived\n", [ENTRY, ENTRY]) == 2
+
+
+def test_allowlist_expiry_before_review_fails_closed(tmp_path: Path) -> None:
+    entry = {**ENTRY, "expiresOn": "2026-09-30"}
+    assert run(tmp_path, SURVIVOR, "toy.x_add__mutmut_1: survived\n", [entry]) == 2

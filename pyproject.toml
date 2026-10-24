@@ -84,7 +84,6 @@ packages = ["src/verity", "src/sut"]
 # ---------------------------------------------------------------------------
 [tool.ruff]
 target-version = "py312"
-extend-exclude = ["tests/mutation_selftest"]
 line-length = 100
 src = ["src", "tests"]
 
