@@ -384,7 +384,8 @@ class TestParseJudgeScore:
         manifest_path = Path("datasets/calibration/cassettes/authored-score-v2-manifest.json")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         assert manifest["formatVersion"] == "authored-score-v2"
-        assert manifest["cassetteCount"] == 112
+        assert manifest["cassetteCount"] == 56
+        assert len(list(version_two.glob("*.json"))) == 56
         archived_manifest = Path(manifest["sourceArchiveManifest"])
         sidecar_path = Path(manifest["rationaleSidecar"]["path"])
         assert (
@@ -406,8 +407,8 @@ class TestParseJudgeScore:
             with pytest.raises(ScoreProtocolError):
                 parse_judge_score(old_content)
 
-            new_path = version_two / old_path.name
             mapping = mappings[old_path.name]
+            new_path = Path(mapping["target_v2"])
             assert hashlib.sha256(old_path.read_bytes()).hexdigest() == mapping["source_v1_sha256"]
             assert hashlib.sha256(new_path.read_bytes()).hexdigest() == mapping["target_v2_sha256"]
             new_payload = json.loads(new_path.read_text(encoding="utf-8"))

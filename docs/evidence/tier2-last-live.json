@@ -1,0 +1,8 @@
+{
+  "date": "2026-07-02",
+  "evidencePath": "reports/calibration/archive/live-2026-07-02/calibration-report.md",
+  "runUrl": null,
+  "provider": "openrouter",
+  "model": "openai/gpt-4o-mini",
+  "limitation": "Retained live judge calibration; author labels and the same model family for system and judge. Later hosted smoke receipts do not establish a full semantic evaluation."
+}

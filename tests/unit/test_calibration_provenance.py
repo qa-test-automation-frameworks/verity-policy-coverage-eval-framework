@@ -57,11 +57,9 @@ def test_provider_identity_and_invented_usage_are_rejected() -> None:
     assert fixture_problems({"model": "provider/model", "usage": None})
     assert fixture_problems({"model": "authored-fixture", "usage": {"total_tokens": 230}})
     assert fixture_problems({"model": "authored-fixture", "usage": None}) == []
-    assert fixture_problems(
-        {"model": "authored-fixture", "usage": dict.fromkeys(
-            ["prompt_tokens", "completion_tokens", "total_tokens"], 0
-        )}
-    ) == []
+    usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    assert fixture_problems({"model": "authored-fixture", "usage": usage}) == []
+
 
 
 def test_missing_measurement_heading_fails_loudly() -> None:

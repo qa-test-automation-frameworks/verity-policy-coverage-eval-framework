@@ -44,7 +44,12 @@ from verity.calibration import (  # noqa: E402
     load_calibration,
     score_all_detailed,
 )
-from verity.cassettes import CassetteLibrary, CassettePayload, request_key  # noqa: E402
+from verity.cassettes import (  # noqa: E402
+    CassetteLibrary,
+    CassetteMissError,
+    CassettePayload,
+    request_key,
+)
 from verity.config import JudgeConfig, Provider, Settings, resolve_provider  # noqa: E402
 from verity.cost import RunAccumulator  # noqa: E402
 from verity.judges import ProviderJudge  # noqa: E402
@@ -195,7 +200,7 @@ def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
     """Write cassettes from hand-authored judge scores (no API key required)."""
     _AUTHORED_CASSETTE_DIR.mkdir(parents=True, exist_ok=True)
     lib = CassetteLibrary(_AUTHORED_CASSETTE_DIR)
-    judge_model = _judge_litellm_model(settings)
+    judge_model = "authored-fixture"
     rationales = _load_authored_rationales()
 
     missing_scores = sorted(set(_AUTHORED_SCORES) - {case.id for case in cases})
@@ -216,9 +221,10 @@ def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
         payload = CassettePayload(
             content=content,
             tool_calls=[],
-            prompt_tokens=200,
-            completion_tokens=30,
-            total_tokens=230,
+            # Authored scores have no provider usage; zeros retain the cassette schema.
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
             model=judge_model,
         )
         lib.save(key, payload, request_preview=f"[judge] {case.id} ({case.metric})")
@@ -228,32 +234,32 @@ def run_author_mode(cases: list[CalibrationCase], settings: Settings) -> None:
     print(f"\nDone: {ok}/{len(cases)} cassettes written to {_AUTHORED_CASSETTE_DIR}/")
 
 
+class AuthoredFixtureJudge:
+    """Read authored scores without constructing a provider client."""
+
+    model_name = "authored-fixture"
+
+    def __init__(self) -> None:
+        self.library = CassetteLibrary(_AUTHORED_CASSETTE_DIR)
+
+    def generate(self, prompt: str) -> str:
+        messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
+        key = request_key(self.model_name, messages, None, 0.0, 1024)
+        payload = self.library.lookup(key)
+        if payload is None:
+            raise CassetteMissError(f"Missing authored fixture {key}")
+        if payload.model != self.model_name or any(
+            (payload.prompt_tokens, payload.completion_tokens, payload.total_tokens)
+        ):
+            raise ValueError("Authored fixtures must have explicit identity and zero token usage")
+        return payload.content
+
+
 def _run_hermetic(
     cases: list[CalibrationCase], settings: Settings
 ) -> list[CalibrationScoreAttempt]:
-    """Score all cases using cassette replay (no API key needed).
-
-    Pinned to the provider/model the committed authored cassettes were written
-    against (zai/glm-4.5, see run_author_mode), independent of the ambient
-    `settings` passed in — this mode must replay identically regardless of a
-    developer's local provider configuration.
-    """
-    calib_settings = Settings(
-        _env_file=None,
-        provider=Provider.zai,
-        model="glm-4.5",
-        cassette_mode="replay",
-        cassette_dir=_AUTHORED_CASSETTE_DIR,
-        judge=JudgeConfig(
-            _env_file=None,
-            provider=Provider.zai,
-            model="glm-4.5",
-            temperature=0.0,
-            max_tokens=1024,
-        ),
-    )
-    judge = ProviderJudge(settings=calib_settings)
-    return score_all_detailed(cases, judge)
+    """Replay authored fixture scores independently of provider configuration."""
+    return score_all_detailed(cases, AuthoredFixtureJudge())
 
 
 def _run_live(cases: list[CalibrationCase], settings: Settings) -> list[CalibrationScoreAttempt]:
@@ -309,7 +315,11 @@ def render_report(
     mode_note = mode
     lines += [
         f"**Generated:** {now}  ",
-        f"**Judge model:** `{judge_model}`  ",
+        (
+            "**Judge:** authored fixture (no model was called)  "
+            if is_synthetic
+            else f"**Judge model:** `{judge_model}`  "
+        ),
         f"**Dataset:** `datasets/calibration/labeled.yaml` ({agreement.n} {dataset_note})  ",
         f"**Mode:** {mode_note}",
         "",
@@ -573,7 +583,7 @@ def main() -> None:
         warnings.simplefilter("ignore")
         settings = Settings() if args.record else default_replay_settings
 
-    judge_model = _judge_litellm_model(settings)
+    judge_model = _judge_litellm_model(settings) if args.record else "authored-fixture"
     judge_family = _judge_family(settings)
     if args.record:
         _require_provider_key(settings, "Calibration recording")
@@ -581,7 +591,7 @@ def main() -> None:
         attempts = _run_live(cases, settings)
         mode_label = f"live (recorded to {_CALIB_CASSETTE_DIR})"
     else:
-        print("Running synthetic calibration (authored-score cassette replay)...")
+        print("Calculation self-test on authored scores (not a measurement)")
         attempts = _run_hermetic(cases, settings)
         mode_label = "synthetic replay (authored scores)"
 

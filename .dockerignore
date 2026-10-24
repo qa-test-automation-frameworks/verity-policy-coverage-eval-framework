@@ -24,3 +24,6 @@ site/
 .env
 .env.*
 !.env.example
+
+!reports/calibration/archive/live-2026-07-02/
+!reports/calibration/archive/live-2026-07-02/**

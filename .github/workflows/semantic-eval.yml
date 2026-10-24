@@ -196,6 +196,8 @@ jobs:
       - name: Emit explicit no-key skip evidence
         if: steps.key_check.outputs.has_key == 'false'
         run: |
+          echo 'SKIPPED: no provider key; semantic evaluation did not run.' >> "$GITHUB_STEP_SUMMARY"
+          echo '::notice::SKIPPED: no provider key; semantic evaluation did not run.'
           EVIDENCE_CLASS=credentialed \
           EVIDENCE_REQUIRED=false \
           EVIDENCE_FRESHNESS_POLICY=quarterly_experiment_v1 \

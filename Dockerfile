@@ -46,6 +46,7 @@ COPY reports/semantic/results.json ./reports/semantic/results.json
 COPY reports/case-studies/temporal-regression-decision.json ./reports/case-studies/temporal-regression-decision.json
 COPY reports/calibration/score-protocol-negative-control.md ./reports/calibration/score-protocol-negative-control.md
 COPY reports/calibration/archive/authored-score-v1/ ./reports/calibration/archive/authored-score-v1/
+COPY reports/calibration/archive/live-2026-07-02/ ./reports/calibration/archive/live-2026-07-02/
 COPY Makefile ./
 
 # Install the project itself into a fresh environment after all source and
@@ -106,6 +107,7 @@ COPY --from=build --chown=65532:65532 /app/reports/semantic/results.json ./repor
 COPY --from=build /app/reports/case-studies/temporal-regression-decision.json ./reports/case-studies/temporal-regression-decision.json
 COPY --from=build /app/reports/calibration/score-protocol-negative-control.md ./reports/calibration/score-protocol-negative-control.md
 COPY --from=build /app/reports/calibration/archive/authored-score-v1/ ./reports/calibration/archive/authored-score-v1/
+COPY --from=build /app/reports/calibration/archive/live-2026-07-02/ ./reports/calibration/archive/live-2026-07-02/
 COPY --from=build /app/Makefile ./Makefile
 
 # Default: run Tier-1 checks through the same no-key, offline-after-preparation
