@@ -35,11 +35,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
-          version: "latest"
           enable-cache: false
 
       - name: Install pinned Python
-        run: uv python install "$(cat .python-version)"
+        run: uv python install
 
       - name: Install dependencies
         run: uv sync --frozen --extra dev --extra report
@@ -114,10 +113,9 @@ jobs:
 
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
-          version: "latest"
 
       - name: Install pinned Python
-        run: uv python install "$(cat .python-version)"
+        run: uv python install
 
       # The Python provider imports only project base dependencies; pytest/report extras stay out.
       - name: Install dependencies
@@ -159,10 +157,9 @@ jobs:
 
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
-          version: "latest"
 
       - name: Install pinned Python
-        run: uv python install "$(cat .python-version)"
+        run: uv python install
 
       # Calibration imports base project modules, not pytest or semantic extras.
       - name: Install dependencies
