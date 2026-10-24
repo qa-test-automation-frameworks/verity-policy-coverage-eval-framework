@@ -31,6 +31,8 @@ jobs:
           uv run --no-sync python scripts/check_calibration_report_migration.py \
             reports/calibration-fixture-migration/before.md docs/calibration-report.md \
             | tee reports/calibration-fixture-migration/verification.txt
+          uv run --no-sync python scripts/regenerate_authored_calibration.py --refresh-inventory
+          uv run --no-sync python scripts/check_current_evidence.py
       - name: Retain generated fixtures and calculation report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -39,6 +41,8 @@ jobs:
             datasets/calibration/cassettes/authored-score-v2/
             datasets/calibration/cassettes/authored-score-v2-manifest.json
             docs/calibration-report.md
+            docs/capability-status.md
+            portfolio/current-evidence.json
             reports/calibration-fixture-migration/
           if-no-files-found: error
           retention-days: 30
