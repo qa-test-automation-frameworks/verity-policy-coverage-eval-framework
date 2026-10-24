@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "repository": "qa-test-automation-frameworks/verity-policy-coverage-eval-framework",
+  "run": {
+    "id": "39407091131",
+    "attempt": 1,
+    "sourceSha": "d68db30616f10bfbc4de84ef9363a745d1b4d15c",
+    "event": "push",
+    "branch": "main",
+    "workflowName": "PR Gate (Tier 1 — lint · type · unit)",
+    "conclusion": "success",
+    "completedAt": "2026-10-20T10:21:30.000Z",
+    "url": "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/runs/39407091131"
+  },
+  "records": [
+    {
+      "scope": "verity.deterministic-py3.12.15",
+      "evidenceClass": "hermetic",
+      "execution": "passed",
+      "integrity": "complete",
+      "path": "records/a45d4044d6ddbd343e1e92bb.json",
+      "sha256": "c29263d3e2803fc5f685f18f39a2636e77ecbdd04024abeb66843e295f5c04b9"
+    },
+    {
+      "scope": "verity.failure-control-py3.12.15",
+      "evidenceClass": "hermetic",
+      "execution": "failed",
+      "integrity": "complete",
+      "path": "records/2bc679c1611444e96c1a1c5b.json",
+      "sha256": "ed7cbb2bc311c0d56934139f9f4299177315d50a70a6210073d13b29d46dd592"
+    },
+    {
+      "scope": "verity.deterministic-py3.13.16",
+      "evidenceClass": "hermetic",
+      "execution": "passed",
+      "integrity": "complete",
+      "path": "records/30ef093b339788e8430750c2.json",
+      "sha256": "3f681a765985ffb949c19e03cbb20defc375e2995354aa828f5578fa60635a33"
+    }
+  ]
+}

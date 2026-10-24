@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "repository": "qa-test-automation-frameworks/verity-policy-coverage-eval-framework",
+  "run": {
+    "id": "39468342873",
+    "attempt": 1,
+    "sourceSha": "68b999a47957983d6dccb0079ea445e338a33fbd",
+    "event": "workflow_dispatch",
+    "branch": "main",
+    "workflowName": "Semantic Eval (Tier 2 — DeepEval · RAGAS)",
+    "conclusion": "failure",
+    "completedAt": "2026-10-20T17:53:21.000Z",
+    "url": "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/runs/39468342873"
+  },
+  "records": [
+    {
+      "scope": "verity.semantic-evaluation",
+      "evidenceClass": "credentialed",
+      "execution": "failed",
+      "integrity": "complete",
+      "path": "records/ef7767fbad10784c5f752cdb.json",
+      "sha256": "d812350d25d2d24a20cff4f9551ab3a97d6ed097a8fa0d8320ca146074d0cc10"
+    }
+  ]
+}

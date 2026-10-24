@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 3,
+  "repository": "qa-test-automation-frameworks/verity-policy-coverage-eval-framework",
+  "sourceSha": "051d3bb04c45d3261b34c6f6aff2ca1d7af82f2f",
+  "limitations": [
+    "Counts are final pytest testcase outcomes; retries are not separately reported by pytest JUnit XML.",
+    "JUnit testcase names and failure messages are omitted from the portfolio record."
+  ],
+  "kind": "execution",
+  "workflow": {
+    "id": "qa-test-automation-frameworks/verity-policy-coverage-eval-framework/.github/workflows/semantic-eval.yml@refs/heads/main",
+    "name": "Semantic Eval (Tier 2 \u2014 DeepEval \u00b7 RAGAS)",
+    "runId": "39371986098",
+    "attempt": 1,
+    "url": "https://github.com/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/actions/runs/39371986098",
+    "trigger": "workflow_dispatch",
+    "branch": "main"
+  },
+  "scope": {
+    "id": "verity.semantic-evaluation",
+    "evidenceClass": "credentialed",
+    "required": false,
+    "freshnessPolicy": "quarterly_experiment_v1"
+  },
+  "target": {
+    "identity": "verity-evaluation-framework",
+    "revision": "051d3bb04c45d3261b34c6f6aff2ca1d7af82f2f",
+    "fixtureVersion": null,
+    "environment": "github-hosted",
+    "profile": "semantic-evaluation",
+    "tools": {
+      "python": "3.13.16",
+      "uv": "0.13.3",
+      "pytest": "9.1.1"
+    }
+  },
+  "execution": {
+    "disposition": "failed",
+    "reason": "109 pytest testcase(s) failed",
+    "startedAt": "2026-10-20T04:54:09Z",
+    "completedAt": "2026-10-20T04:59:58Z",
+    "integrity": "complete",
+    "counts": {
+      "unit": "test_case",
+      "selected": 111,
+      "executed": 109,
+      "passed": 0,
+      "failed": 109,
+      "skipped": 2,
+      "retried": 0,
+      "semantics": "JUnit testcase invocations; selected includes skips; errors count as failures."
+    },
+    "measurements": [],
+    "shards": {
+      "expected": [
+        "verity.semantic-evaluation"
+      ],
+      "received": [
+        "verity.semantic-evaluation"
+      ]
+    }
+  },
+  "publication": {
+    "disposition": "pending",
+    "reason": "This immutable execution record was emitted before the trusted publisher completed; consult the durable latest index for final publication status.",
+    "publishedAt": null,
+    "reportUrl": null,
+    "artifacts": []
+  },
+  "generator": {
+    "name": "verity-pytest-junit-evidence",
+    "version": "1.0.0"
+  }
+}

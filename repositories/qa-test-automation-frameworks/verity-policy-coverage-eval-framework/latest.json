@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "repository": "qa-test-automation-frameworks/verity-policy-coverage-eval-framework",
+  "scopes": {
+    "verity.semantic-evaluation": {
+      "runId": "40085142441",
+      "attempt": 1,
+      "completedAt": "2026-10-24T10:15:07.000Z",
+      "sourceSha": "e19506e09ff419d9ad6f87af9ad19d880ec039b7",
+      "execution": "skipped",
+      "workflowConclusion": "success",
+      "bundle": "repositories/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/runs/40085142441/1",
+      "manifestSha256": "273262c29190f456582adf9a16e8233062adce276db2d782a1f2209c86b454b3"
+    },
+    "verity.deterministic-py3.12.15": {
+      "runId": "40085142424",
+      "attempt": 1,
+      "completedAt": "2026-10-24T10:17:04.000Z",
+      "sourceSha": "e19506e09ff419d9ad6f87af9ad19d880ec039b7",
+      "execution": "passed",
+      "workflowConclusion": "success",
+      "bundle": "repositories/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/runs/40085142424/1",
+      "manifestSha256": "3bbcdbc2fbda0cf1d0586d8cd4fbe9896a02e468e7d60c9944e6d222513ab0c6"
+    },
+    "verity.failure-control-py3.12.15": {
+      "runId": "40085142424",
+      "attempt": 1,
+      "completedAt": "2026-10-24T10:17:04.000Z",
+      "sourceSha": "e19506e09ff419d9ad6f87af9ad19d880ec039b7",
+      "execution": "failed",
+      "workflowConclusion": "success",
+      "bundle": "repositories/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/runs/40085142424/1",
+      "manifestSha256": "3bbcdbc2fbda0cf1d0586d8cd4fbe9896a02e468e7d60c9944e6d222513ab0c6"
+    },
+    "verity.deterministic-py3.13.16": {
+      "runId": "40085142424",
+      "attempt": 1,
+      "completedAt": "2026-10-24T10:17:04.000Z",
+      "sourceSha": "e19506e09ff419d9ad6f87af9ad19d880ec039b7",
+      "execution": "passed",
+      "workflowConclusion": "success",
+      "bundle": "repositories/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/runs/40085142424/1",
+      "manifestSha256": "3bbcdbc2fbda0cf1d0586d8cd4fbe9896a02e468e7d60c9944e6d222513ab0c6"
+    },
+    "verity.semantic-smoke": {
+      "runId": "39559185807",
+      "attempt": 1,
+      "completedAt": "2026-10-21T07:11:29.000Z",
+      "sourceSha": "f04a5df820076888ff6ebecbcd313247da6e9ffc",
+      "execution": "passed",
+      "workflowConclusion": "success",
+      "bundle": "repositories/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/runs/39559185807/1",
+      "manifestSha256": "461a12ad006ab8764f96b5ae4e691c2cf3ff1145e2a909c208c223ef3c3505b7"
+    },
+    "verity.failure-control-verification-py3.12.15": {
+      "runId": "40085142424",
+      "attempt": 1,
+      "completedAt": "2026-10-24T10:17:04.000Z",
+      "sourceSha": "e19506e09ff419d9ad6f87af9ad19d880ec039b7",
+      "execution": "passed",
+      "workflowConclusion": "success",
+      "bundle": "repositories/qa-test-automation-frameworks/verity-policy-coverage-eval-framework/runs/40085142424/1",
+      "manifestSha256": "3bbcdbc2fbda0cf1d0586d8cd4fbe9896a02e468e7d60c9944e6d222513ab0c6"
+    }
+  }
+}
