@@ -1,7 +1,7 @@
 # Runtime-Adapter Calibration Protocol v1
 
 This study measures the seven actual Tier-2 DeepEval/RAGAS adapter paths. It is
-separate from the frozen D05 rubric-prompt study: D05's dataset, reviewer
+separate from the frozen held-out rubric-prompt study: that study's dataset, reviewer
 receipts, model, thresholds, and results are unchanged. The protocol code and
 runner are versioned as `runtime-adapter-calibration-v1`.
 

@@ -43,7 +43,7 @@ interface. Validate a generated record with
 `uv run --extra dev -- python scripts/validate_evidence.py reports/evidence/<record>.json`.
 The workflows upload native JUnit XML and records as ephemeral 30-day GitHub
 Actions artifacts. Durable publication and portfolio dashboard ingestion are
-separate roadmap work (E03/E04); these artifacts are not durable portfolio
+separate publication and dashboard work; these artifacts are not durable portfolio
 history and do not establish production behavior.
 
 The execution record is immutable and is written before the trusted publisher

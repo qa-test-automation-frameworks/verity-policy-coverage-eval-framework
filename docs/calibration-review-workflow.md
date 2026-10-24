@@ -4,7 +4,7 @@ This protocol prepares an independent evaluation of the Verity semantic judge.
 It does not report human labels, live provider results, or threshold promotion.
 The runtime DeepEval/RAGAS adapter protocol is separate and is documented in
 [Runtime-Adapter Calibration Protocol v1](runtime-adapter-calibration.md); do
-not treat D05 rubric scores as runtime-adapter measurements.
+not treat held-out rubric scores as runtime-adapter measurements.
 The current `datasets/calibration/labeled.yaml` is a tuning/methodology set: its
 labels are synthetic and its replay cassettes are authored. Do not select those
 cases as the held-out evaluation set or describe their results as independent
@@ -105,7 +105,7 @@ retain the quarantine with its owner role, review date, expiry, and next action.
 
 ## 6. Completion boundary
 
-The protocol and blank template are preparation only. D05 remains incomplete
+The protocol and blank template are preparation only. The held-out study remains incomplete
 until the owner authorizes bounded live execution, independent labels are
 collected and locked, the actual artifacts are reconciled, and the held-out
 analysis supports a defensible conclusion. No provider price, reviewer

@@ -106,14 +106,14 @@ The generic static cost estimator remains unpriced for this model. A null
 claim relies on the confirmed free account and current published terms. A
 stable API identifier is not a cryptographically pinned weights revision.
 
-## D05 completion boundary
+## Held-out completion boundary
 
 The smoke selects the first existing tuning case for each metric, in metric-name
 order. Those labels/cassettes are authored/synthetic. Successful live smoke proves
 connectivity and score parsing under the stated limits, not independent judge
 agreement or permission to promote a metric.
 
-For D05, follow the [held-out review protocol](calibration-review-workflow.md):
+For the held-out study, follow the [held-out review protocol](calibration-review-workflow.md):
 freeze a genuinely new split and analysis plan, obtain and lock at least two
 independent reviewers' labels, record provider/model/bounds, then execute and
 analyze the frozen study without tuning on held-out results. Hosted free-tier
