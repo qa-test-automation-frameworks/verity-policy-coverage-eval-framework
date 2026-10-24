@@ -71,7 +71,9 @@ def test_duplicate_nested_metadata_fails_closed(tmp_path, monkeypatch: pytest.Mo
 )
 def test_newly_vulnerable_package_fails(tmp_path, monkeypatch, name, version) -> None:
     _metadata(tmp_path, name, version)
-    monkeypatch.setattr(check_runtime_package_versions.sysconfig, "get_path", lambda _: str(tmp_path))
+    monkeypatch.setattr(
+        check_runtime_package_versions.sysconfig, "get_path", lambda _: str(tmp_path)
+    )
 
     with pytest.raises(SystemExit, match="Vulnerable or duplicate runtime package metadata"):
         check_runtime_package_versions.main()
@@ -83,6 +85,8 @@ def test_newly_vulnerable_package_fails(tmp_path, monkeypatch, name, version) ->
 )
 def test_patched_package_passes(tmp_path, monkeypatch, name, version) -> None:
     _metadata(tmp_path, name, version)
-    monkeypatch.setattr(check_runtime_package_versions.sysconfig, "get_path", lambda _: str(tmp_path))
+    monkeypatch.setattr(
+        check_runtime_package_versions.sysconfig, "get_path", lambda _: str(tmp_path)
+    )
 
     check_runtime_package_versions.main()
