@@ -53,7 +53,7 @@ security = [
 semantic = [
     # DeepEval 4.1 changes HallucinationMetric score polarity; keep <4.1 until its
     # threshold and semantic-corpus calibrations are migrated and independently verified.
-    "deepeval>=1.5.0,<4.1.0",
+    "deepeval>=1.5.0,<4.4.0",
     # Stay on the reviewed version while its local-file/SSRF advisory is
     # unpatched; reassess this bound before any version change.
     "ragas==0.4.3",

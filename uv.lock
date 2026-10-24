@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12, <3.14"
 resolution-markers = [
     "python_full_version >= '3.13' and sys_platform == 'win32'",
@@ -476,7 +476,7 @@ wheels = [
 
 [[package]]
 name = "deepeval"
-version = "4.0.10"
+version = "4.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -501,7 +501,6 @@ dependencies = [
     { name = "questionary" },
     { name = "requests" },
     { name = "rich" },
-    { name = "sentry-sdk" },
     { name = "setuptools" },
     { name = "tabulate" },
     { name = "tenacity" },
@@ -509,9 +508,9 @@ dependencies = [
     { name = "typer" },
     { name = "wheel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/f5/317cde8635062fc7f2ddca866a53898b8c7358ee78eb73ba9226cfb1d71b/deepeval-4.0.10.tar.gz", hash = "sha256:e65ed06f2512d04aba0fc9ece20fccc9b59b22326b08fec304a4d65a54198dd6", size = 765824, upload-time = "2026-07-12T09:28:38.063Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/32/7123fef688c50f06f77e72b62a31d82ca5f2dc70820e12355de01f670bb4/deepeval-4.3.1.tar.gz", hash = "sha256:0f0f1457cca315920b6e1c50876fabfda76e05981e91b9cf63e0a43a34e022b5", size = 1056961, upload-time = "2026-10-16T19:59:47.493Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9f/f7/b1ba66e5c69aeb3c8adfbd6b0710fd26bd3442cae5f440433ac71eec51f0/deepeval-4.0.10-py3-none-any.whl", hash = "sha256:6946b805e74341436b77a998cb67566b18c2e69ee4f135d4d7785cd26dbdf700", size = 1097339, upload-time = "2026-07-12T09:28:40.054Z" },
+    { url = "https://files.pythonhosted.org/packages/80/ba/16959c9b8a899a14227271ea363e5ab5548e3b4d8128ccf1ac70b9184afd/deepeval-4.3.1-py3-none-any.whl", hash = "sha256:a269343d74232b43aa75501d77b21bfacbad2701f3134a5ad76589489e0b7789", size = 1523958, upload-time = "2026-10-16T19:59:50.697Z" },
 ]
 
 [[package]]
@@ -2977,19 +2976,6 @@ wheels = [
 ]
 
 [[package]]
-name = "sentry-sdk"
-version = "2.72.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "certifi" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/26/c1/d2bbb2b03bdc2ef14b35e02b647b8489156c50b6e0b8bacc5fa303902e23/sentry_sdk-2.72.0.tar.gz", hash = "sha256:0d2ffbc28ee2e63cbaf3d015e93b448cffcc3ef3be03a44704ad36ade72faa95", size = 1069699, upload-time = "2026-10-12T13:08:11.195Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/0b/0dd9686842d9dc49c3ee84cced31c54bceb0fb52a826be7d3d4fe30d882a/sentry_sdk-2.72.0-py3-none-any.whl", hash = "sha256:3e13ace4ffd0b3cc78288236edfc4e4bd90eb12a396cc5845fa10a58ff289f50", size = 544754, upload-time = "2026-10-12T13:08:01.619Z" },
-]
-
-[[package]]
 name = "setproctitle"
 version = "1.3.7"
 source = { registry = "https://pypi.org/simple" }
@@ -3411,7 +3397,7 @@ semantic = [
 requires-dist = [
     { name = "allure-pytest", marker = "extra == 'report'", specifier = ">=2.13.0" },
     { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.7.0" },
-    { name = "deepeval", marker = "extra == 'semantic'", specifier = ">=1.5.0,<4.1.0" },
+    { name = "deepeval", marker = "extra == 'semantic'", specifier = ">=1.5.0,<4.4.0" },
     { name = "fastembed", specifier = ">=0.9.0,<1" },
     { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.156.6" },
